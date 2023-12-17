@@ -36,6 +36,10 @@ class WorkerManager {
         taskManager.finishTask(creep.name);
     }
 
+    /**
+     * Cancels tasks for the specified work.
+     * @param {string} name The name of the worker to cancel for.
+     */
     workerDeath(name) {
         taskManager.cancelTask(name);
     }
