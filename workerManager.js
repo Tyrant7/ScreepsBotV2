@@ -1,4 +1,4 @@
-taskManager = require("taskManager");
+const taskManager = require("taskManager");
 
 class WorkerManager {
 
@@ -17,10 +17,9 @@ class WorkerManager {
     }
     
     /**
-     * 
-     * @param {*} creep 
-     * @param {*} task 
-     * @returns 
+     * Runs a given task using a given creep.
+     * @param {Creep} creep The creep to run on the given task.
+     * @param {Task} task The task to run.
      */
     runTask(creep, task) {
         
