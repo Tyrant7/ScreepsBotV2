@@ -26,11 +26,7 @@ class TaskPool {
         let chosenTask = this.tasks[0];
         while (!chosenTask.hasExpired()) {
 
-            // The chosen task has expired, we can remove it and add a replacement task
-            const replacementTask = chosenTask.generateReplacementTask();
-            if (replacementTask) {
-                this.tasks.push(replacementTask);
-            }
+            // The chosen task has expired, we can remove it
             this.tasks.shift();
 
             // Choose new task, if any remain

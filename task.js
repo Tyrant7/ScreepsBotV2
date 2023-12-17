@@ -2,12 +2,19 @@ class Task {
     
     /**
      * Creates a new task with the following properties:
-     * @param {function[]} actions A list of functions to be completed in sequence. Each should take a creep is input 
-     * and return true or false to signify whether or not that step has been completed or not.
-     * @param {RoomPosition} position The position in game where the task will take place.
+     * @param {string} target The object ID of the target. Can be a resource, a structure, a construction site; anything with a position.
+     * @param {number} taskType An ID mapping to the intent for this task. Upgrading: 0, restocking: 1, etc. Refer to "constants.js" to see all.
+   */
+    constructor(target, taskType) {
+        this.target = target;
+        this.taskType = taskType;
+    }
+
+    /**
+     * Determines whether or not this task has expired by whether or not its target is current present.
+     * @returns True if expired, false otherwise
      */
-    constructor(actions, position) {
-        this.actions = actions;
-        this.position = position;
+    hasExpired() {
+        return !Game.getObjectById(this.target);
     }
 }

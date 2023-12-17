@@ -22,14 +22,6 @@ class TaskPoolEntry {
     getPriority(position) {
         return this.basePriority + 
                 (this.age * ageWeight) + 
-                (position.getRangeTo(this.task.position) * distanceWeight);
-    }
-
-    hasExpired() {
-        // TODO
-    }
-
-    generateReplacementTask() {
-        // TODO
+                (position.getRangeTo(Game.getObjectById(this.task.target).pos) * distanceWeight);
     }
 }
