@@ -50,6 +50,22 @@ class TaskManager {
             delete this.activeTasks[name];
         }
     }
+
+    /**
+     * Returns all tasks associated with a given object, including both the task pool and active tasks.
+     * @param {string} ID The ID of the object to which tasks are associated.
+     * @returns {TaskPoolEntry[]} A list of TaskPoolEntries.
+     */
+    getTasksForObject(ID) {
+        const tasks = [];
+        for (const task of this.activeTasks) {
+            if (task.target === ID) {
+                tasks.push(task);
+            }
+        }
+        tasks.push(this.taskPool.getTasksForObject(ID));
+        return tasks;
+    }
 }
 
 module.exports = new TaskManager();
