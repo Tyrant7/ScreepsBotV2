@@ -1,6 +1,6 @@
 TaskPool = require("taskPool");
 
-class TaskManager {
+class TaskHandler {
 
     constructor() {
         this.taskPool = new TaskPool();
@@ -68,4 +68,4 @@ class TaskManager {
     }
 }
 
-module.exports = new TaskManager();
+module.exports = new TaskHandler();

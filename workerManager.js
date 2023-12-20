@@ -1,6 +1,10 @@
-const taskManager = require("taskManager");
+TaskHandler = require("taskHandler");
 
 class WorkerManager {
+
+    constructor() {
+        this.taskHandler = new TaskHandler();
+    }
 
     /**
      * Runs the appropriate task associated with a given worker creep. If none exists, assigns a new one.
@@ -9,9 +13,9 @@ class WorkerManager {
     processWorker(creep) {
 
         // Get the current task, or request a new one if none has been assigned
-        let task = taskManager.hasTask(creep.name);
+        let task = this.taskHandler.hasTask(creep.name);
         if (!task) {
-            task = taskManager.nextTask(creep.name);
+            task = this.taskHandler.nextTask(creep.name);
         }
         runTask(creep, task);
     }
@@ -32,7 +36,7 @@ class WorkerManager {
         }
     
         // All actions were finished, so the task is complete
-        taskManager.finishTask(creep.name);
+        this.taskHandler.finishTask(creep.name);
     }
 
     /**
@@ -40,7 +44,7 @@ class WorkerManager {
      * @param {string} name The name of the worker to cancel for.
      */
     workerDeath(name) {
-        taskManager.cancelTask(name);
+        this.taskHandler.cancelTask(name);
     }
 }
 
