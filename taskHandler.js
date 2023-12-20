@@ -2,8 +2,13 @@ TaskPool = require("taskPool");
 
 class TaskHandler {
 
-    constructor() {
+    /**
+     * Creates a new TaskHandler
+     * @param {*} TaskGenerator A task generator object. Must implement a "run" method which takes in a Room object.
+     */
+    constructor(TaskGenerator) {
         this.taskPool = new TaskPool();
+        this.taskGenerator = new TaskGenerator();
         this.activeTasks = {};
     }
 
@@ -21,11 +26,17 @@ class TaskHandler {
     }
 
     /**
-     * Returns the next task in the task pool.
+     * Returns the next task in the task pool, first calling to its task generator to ensure new tasks are included.
      * @param {Creep} creep The creep to use for priority calculations.
      * @returns {Task} A new task.
      */
     nextTask(creep) {
+
+        // Generate new tasks
+        this.taskGenerator.run(creep.room).forEach(
+            (taskPoolEntry) => this.taskPool.push(taskPoolEntry));
+
+        // Get next task
         const newTask = this.taskPool.next(creep);
         this.activeTasks[creep.name] = newTask;
         return newTask.task;

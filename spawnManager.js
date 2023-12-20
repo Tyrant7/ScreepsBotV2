@@ -1,10 +1,8 @@
 class SpawnManager {
 
     run(room) {
-        // TODO //
-    }
-
-    getImportantFigures(room) {
-        // TODO //
+        // TODO: Figure out how many creeps to spawn
     }
 }
+
+module.exports = SpawnManager;
