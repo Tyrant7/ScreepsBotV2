@@ -1,4 +1,4 @@
-CreepMaker = require("creepMaker.js");
+CreepMaker = require("creepMaker");
 
 class SpawnManager {
 
