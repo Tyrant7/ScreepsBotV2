@@ -5,7 +5,12 @@ Tyrant Bot V2
 */
 
 global.CONSTANTS = require("constants");
-const workerManager = require("workerManager");
+const CreepManager = require("creepManager");
+const SpawnManager = require("spawnManager");
+const WorkerTaskGenerator = require("workerTaskGenerator");
+
+const workerManager = new CreepManager(new WorkerTaskGenerator());
+const spawnManager = new SpawnManager();
 
 module.exports.loop = function() {
 
@@ -17,10 +22,21 @@ module.exports.loop = function() {
     }
     */
 
+    for (const room in Game.rooms) {
+        const info = new RoomInfo(room);
+        spawnManager.run(info);
+        workerManager.generateTasks(info);
+    }
+
     // Run creeps
     for (let name in Memory.creeps) {
         if (Game.creeps[name]) {
             processCreep(Game.creeps[name]);
+
+            // Really bad fix for this, but needed to track room of deceased creeps
+            if (Game.creeps[name].ticksToLive <= 1) {
+                Memory.creeps[name].room = Game.creeps[name].room.name;
+            }
             continue;
         }
         creepDeath(name);
@@ -43,7 +59,7 @@ function processCreep(creep) {
  */
 function creepDeath(name) {
     if (Memory.creeps[name].role === CONSTANTS.roles.worker) {
-        workerManager.workerDeath(name);
+        workerManager.freeCreep(name);
     }
     delete Memory.creeps[name];
 }

@@ -1,6 +1,7 @@
-class WorkerTaskGenerator {
+class WorkerTaskGenerator extends TaskGenerator {
 
-    generateTasks(roomInfo) {
-        
+    run(roomInfo) {
+        // TODO //
+        // Generate tasks to do with workers
     }
 }

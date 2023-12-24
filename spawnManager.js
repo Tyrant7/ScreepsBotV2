@@ -62,7 +62,7 @@ class SpawnManager {
     }
 
     handleHaulers(roomInfo) {
-        
+        // TODO //
     }
 
     handleWorkers(roomInfo) {
@@ -101,4 +101,4 @@ class SpawnManager {
     }
 }
 
-module.exports = new SpawnManager();
+module.exports = SpawnManager;
