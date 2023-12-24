@@ -47,4 +47,4 @@ class CreepMaker {
     }
 }
 
-module.exports = CreepMaker();
+module.exports = CreepMaker;
