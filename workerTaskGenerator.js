@@ -1,0 +1,6 @@
+class WorkerTaskGenerator {
+
+    generateTasks(roomInfo) {
+        
+    }
+}
