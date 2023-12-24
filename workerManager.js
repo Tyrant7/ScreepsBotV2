@@ -1,10 +1,9 @@
 TaskHandler = require("taskHandler");
-WorkerTaskManager = require("workerTaskManager");
 
 class WorkerManager {
 
     constructor() {
-        this.taskHandlers = {};
+        this.taskHandler = new TaskHandler();
     }
 
     /**
@@ -13,17 +12,10 @@ class WorkerManager {
      */
     processWorker(creep) {
 
-        // Initialize a handler for this room if one doesn't already exist
-        const roomName = creep.room.name;
-        if (!this.taskHandlers[roomName]) {
-            this.taskHandlers[roomName] = new TaskHandler(WorkerTaskManager);
-        }
-        const handler = this.taskHandlers[roomName];
-
         // Get the current task, or request a new one if none has been assigned
-        let task = handler.hasTask(creep.name);
+        let task = this.taskHandler.hasTask(creep.name);
         if (!task) {
-            task = handler.nextTask(creep.name);
+            task = this.taskHandler.nextTask(creep.name);
         }
         runTask(creep, task);
     }
@@ -44,7 +36,7 @@ class WorkerManager {
         }
     
         // All actions were finished, so the task is complete
-        this.taskHandlers[creep.room.name].finishTask(creep.name);
+        this.taskHandler.finishTask(creep.name);
     }
 
     /**
@@ -52,7 +44,7 @@ class WorkerManager {
      * @param {string} name The name of the worker to cancel for.
      */
     workerDeath(name) {
-        this.taskHandlers[Memory.creeps[name].room.name].cancelTask(name);
+        this.taskHandler.cancelTask(name);
     }
 }
 
