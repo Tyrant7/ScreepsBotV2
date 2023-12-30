@@ -83,9 +83,7 @@ class WorkerTaskGenerator {
             tasks.push(new TaskPoolEntry(task, priority));
         }
 
-        // Upgrade tasks
-
-        // Ensure at least one, plus additionals for every so much additional energy income
+        // Upgrade tasks -> ensure at least one for now
         const existingTasks = taskHandler.getTasksForObject(roomInfo.controller, CONSTANTS.taskType.upgrade);
         if (!existingTasks.length) {
             const task = new Task(roomInfo.controller, CONSTANTS.taskType.upgrade);

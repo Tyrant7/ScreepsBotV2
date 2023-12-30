@@ -23,7 +23,7 @@ class SpawnManager {
 
     handleReplacements(roomInfo) {
 
-        const income = roomInfo.getIncome();
+        const income = roomInfo.getGrossIncome();
         let totalQueueCost = this.spawnQueue.reduce((total, curr) => total + (curr.cost / CREEP_LIFE_TIME), 0);
 
         // For all creeps that will die before they can be spawned again, add them to the spawn queue
@@ -67,7 +67,7 @@ class SpawnManager {
     handleWorkers(roomInfo) {
 
         // Get the total energy income for this tick
-        const totalEPerTick = roomInfo.getIncome();
+        const totalEPerTick = roomInfo.getGrossIncome();
 
         // Add workers of the appropriate level to the queue while their cost 
         // averaged out over lifetime does not exceed our income
