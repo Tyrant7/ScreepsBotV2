@@ -66,6 +66,15 @@ class TaskHandler {
         tasks.push(this.taskPool.getTasksForObject(ID));
         return tasks;
     }
+
+    /**
+     * Returns all tasks associated with a given object that match the taskType, including both the task pool and active tasks.
+     * @param {string} ID The ID of the object to which tasks are associated.
+     * @param {number} taskType One of the taskType constants. 
+     */
+    getTasksForObject(ID, taskType) {
+        return this.getTasksForObject.filter((entry) => entry.task.taskType === taskType);
+    }
 }
 
 module.exports = new TaskHandler();

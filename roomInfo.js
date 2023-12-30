@@ -36,4 +36,9 @@ class RoomInfo extends Room {
     getMaxIncome() {
         return this.getSources.reduce((total, source) => total + (source.energyCapacity / ENERGY_REGEN_TIME), 0);
     }
+
+    getIncome() {
+        const income = this.miners.reduce((total, curr) => total + curr.body.filter(WORK).length * HARVEST_POWER, 0);
+        return Math.min(income, this.getMaxIncome()) / 1500;
+    }
 }

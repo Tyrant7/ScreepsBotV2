@@ -25,7 +25,7 @@ module.exports.loop = function() {
     for (const room in Game.rooms) {
         const info = new RoomInfo(room);
         spawnManager.run(info);
-        workerManager.generateTasks(info);
+        workerManager.initializeTasks(info);
     }
 
     // Run creeps

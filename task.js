@@ -3,7 +3,7 @@ class Task {
     /**
      * Creates a new task with the following properties:
      * @param {string} target The object ID of the target. Can be a resource, a structure, a construction site; anything with a position.
-     * @param {number} taskType An ID mapping to the intent for this task. Upgrading: 0, restocking: 1, etc. Refer to "constants.js" to see all.
+     * @param {number} taskType An ID mapping to the intent for this task. Upgrade: 0, restock: 1, etc. Refer to "constants.js" to see all.
    */
     constructor(target, taskType) {
         this.target = target;

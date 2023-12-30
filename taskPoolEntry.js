@@ -5,13 +5,13 @@ class TaskPoolEntry {
 
     /**
      * Creates a new TaskPoolEntry object.
-     * @param {number} priority The base priority of this entry.
      * @param {Task} task The task associated with this entry. 
+     * @param {number} priority The base priority of this entry.
      */
-    constructor(priority, task) {
+    constructor(task, priority) {
+        this.task = task;
         this.basePriority = priority;
         this.age = 0;
-        this.task = task;
     }
 
     /**

@@ -12,7 +12,14 @@ class CreepManager {
      * @param {RoomInfo} roomInfo The room to generate tasks for.
      */
     initializeTasks(roomInfo) {
-        this.taskGenerator.run(roomInfo);
+        
+        // Initialize task handler for this room if none exists
+        if (!this.taskHandlers[roomInfo.name]) {
+            this.taskHandlers[roomInfo.name] = new TaskHandler();
+        }
+        const handler = this.taskHandlers[roomInfo.name];
+
+        this.taskGenerator.run(roomInfo, handler);
     }
 
     /**
@@ -22,10 +29,10 @@ class CreepManager {
     processWorker(creep) {
 
         // Initialize task handler for this room if none exists
-        if (!this.taskHandlers[creep.room]) {
-            this.taskHandlers[creep.room] = new TaskHandler();
+        if (!this.taskHandlers[creep.room.name]) {
+            this.taskHandlers[creep.room.name] = new TaskHandler();
         }
-        const handler = this.taskHandlers[creep.room];
+        const handler = this.taskHandlers[creep.room.name];
 
         // Get the current task, or request a new one if none has been assigned
         let task = handler.hasTask(creep.name);

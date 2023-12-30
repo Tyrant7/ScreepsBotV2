@@ -23,7 +23,7 @@ class SpawnManager {
 
     handleReplacements(roomInfo) {
 
-        const maxIncome = roomInfo.getMaxIncome();
+        const income = roomInfo.getIncome();
         let totalQueueCost = this.spawnQueue.reduce((total, curr) => total + (curr.cost / CREEP_LIFE_TIME), 0);
 
         // For all creeps that will die before they can be spawned again, add them to the spawn queue
@@ -33,9 +33,8 @@ class SpawnManager {
             if (creep.ticksToLive === this.creepMaker.getSpawnTime(creep.body)) {
 
                 // Also watch out that this doesn't put us over our income threshold
-
                 const replacement = this.creepMaker.makeClone(creep);
-                if (totalQueueCost + replacement.cost <= maxIncome) {
+                if (totalQueueCost + replacement.cost <= income) {
                     this.spawnQueue.push();
                     totalQueueCost += this.creepMaker.getCost(replacement.body);
                 }
@@ -68,7 +67,7 @@ class SpawnManager {
     handleWorkers(roomInfo) {
 
         // Get the total energy income for this tick
-        const totalEPerTick = roomInfo.getMaxIncome();
+        const totalEPerTick = roomInfo.getIncome();
 
         // Add workers of the appropriate level to the queue while their cost 
         // averaged out over lifetime does not exceed our income
@@ -91,6 +90,10 @@ class SpawnManager {
         for (const spawn in roomInfo.spawns) {
             const next = this.spawnQueue[0];
             if (spawn.spawning) {
+
+                // Show some visuals
+                // TODO //
+
                 continue;
             }
             spawn.spawnCreep(next.body, next.name, { 
