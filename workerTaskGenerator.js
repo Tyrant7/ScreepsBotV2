@@ -8,16 +8,9 @@ class WorkerTaskGenerator {
         // Generate tasks to do with workers
         const tasks = [];
 
-        /*
-        upgrade: 0,
-        restock: 1,
-        repair: 2,
-        build: 3
-        */
-
         // Start with construction tasks
         const sites = roomInfo.find(FIND_MY_CONSTRUCTION_SITES);
-        for (const site in sites) {
+        for (const site of sites) {
 
             // Don't allow more build tasks than each 5000 energy needed to complete
             const existingTasks = taskHandler.getTasksForObject(site.id);
@@ -25,14 +18,13 @@ class WorkerTaskGenerator {
                 continue;
             }
 
-            const task = new Task(site.id, CONSTANTS.taskType.build);
-            const priority = 0; // TODO //
-            tasks.push(new TaskPoolEntry(task, priority));
+            // Create a basic worker task for building
+            tasks.push(this.createBasicTask(site.id, taskType.build));
         }
 
         // Repair tasks
         const repairable = roomInfo.find(FIND_MY_STRUCTURES, { filter: (s) => s.hits < s.hitsMax });
-        for (const target in repairable) {
+        for (const target of repairable) {
             
             // Don't repair these structures too much
             const repairThresholds = {
@@ -46,7 +38,7 @@ class WorkerTaskGenerator {
             }
 
             // One repair task per target for each 150k health missing, max one for walls and ramparts
-            const existingTasks = taskHandler.getTasksForObject(target.id, CONSTANTS.taskType.repair);
+            const existingTasks = taskHandler.getTasksForObject(target.id, taskType.repair);
             if (existingTasks.length &&
                (target.structureType === STRUCTURE_WALL ||
                 target.structureType === STRUCTURE_RAMPART)) {
@@ -56,14 +48,13 @@ class WorkerTaskGenerator {
                 continue;
             }
 
-            const task = new Task(target.id, CONSTANTS.taskType.repair);
-            const priority = 0;
-            tasks.push(new TaskPoolEntry(task, priority));
+            // Create a basic worker task for repairing
+            tasks.push(this.createBasicTask(target.id, taskType.repair));
         }
 
         // Restock tasks
         const restockables = roomInfo.find(FIND_MY_STRUCTURES, { filter: (s) => s.store && s.store.getFreeCapacity > 0 });
-        for (const restock in restockables) {
+        for (const restock of restockables) {
 
             // These will be handled by haulers and miners
             if (restock.structureType === STRUCTURE_CONTAINER ||
@@ -72,23 +63,68 @@ class WorkerTaskGenerator {
             }
 
             // No more than one restock task per object, except before any extensions are built
-            const existingTasks = taskHandler.getTasksForObject(target.id, CONSTANTS.taskType.restock);
+            const existingTasks = taskHandler.getTasksForObject(target.id, taskType.restock);
             if (existingTasks.length && (roomInfo.energyCapacityAvailable > 500 || existingTasks.length >= 3)) {
                 continue;
             }
 
             // All that's left should be towers, spawn, and extensions
-            const task = new Task(restock.id, CONSTANTS.taskType.restock);
-            const priority = 0;
-            tasks.push(new TaskPoolEntry(task, priority));
+            // Create a basic worker task for restocking
+            tasks.push(this.createBasicTask(restock.id, taskType.restock));
         }
 
         // Upgrade tasks -> ensure at least one for now
-        const existingTasks = taskHandler.getTasksForObject(roomInfo.controller, CONSTANTS.taskType.upgrade);
+        const existingTasks = taskHandler.getTasksForObject(roomInfo.controller, taskType.upgrade);
         if (!existingTasks.length) {
-            const task = new Task(roomInfo.controller, CONSTANTS.taskType.upgrade);
-            const priority = 0;
-            tasks.push(new TaskPoolEntry(task, priority))
+
+            // Create a basic worker task for upgrading
+            tasks.push(this.createBasicTask(roomInfo.controller.id, taskType.upgrade));
         }
+
+        return tasks;
+    }
+
+    /**
+     * Creates a basic worker task that consists of a harvest step, and an action step. 
+     * @param {string} targetID The target of the action step of the task.
+     * @param {number} taskType One of the taskType constants to use as a tag for the created task.
+     * @returns {TaskPoolEntry} A new taskPoolEntry object with an assigned priority and task.
+     */
+    createBasicTask(targetID, taskType) {
+
+        // Initialize our action stack with a default harvest, plus a matching action to its type
+        let actionStack = [];
+        actionStack.push(basicWorkerActions["harvest"]);
+        actionStack.push(basicWorkerActions[taskType]);
+
+        const task = new Task(targetID, taskType, actionStack);
+        const priority = 0; // TODO //
+
+        return new TaskPoolEntry(task, priority);
+    }
+}
+
+taskType = {
+    upgrade: "upgrade",
+    restock: "restock",
+    build: "build",
+    repair: "repair"
+}
+
+basicWorkerActions = {
+    [taskType.upgrade]: function() {
+        // TODO // 
+    },
+    [taskType.restock]: function() {
+        // TODO // 
+    },
+    [taskType.build]: function() {
+        // TODO // 
+    },
+    [taskType.repair]: function() {
+        // TODO // 
+    },
+    "harvest": function() {
+        // TODO // 
     }
 }

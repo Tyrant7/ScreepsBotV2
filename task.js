@@ -3,11 +3,14 @@ class Task {
     /**
      * Creates a new task with the following properties:
      * @param {string} target The object ID of the target. Can be a resource, a structure, a construction site; anything with a position.
-     * @param {number} taskType An ID mapping to the intent for this task. Upgrade: 0, restock: 1, etc. Refer to "constants.js" to see all.
+     * @param {number} tag A tag to distinguish this task when filtering task types.
+     * @param {function()[]} actionStack An array of functions to be executed while completing this task. 
+     * Functions will be called in order through the action stack until one returns false.
    */
-    constructor(target, taskType) {
+    constructor(target, tag, actionStack) {
         this.target = target;
-        this.taskType = taskType;
+        this.tag = tag;
+        this.actionStack = actionStack;
     }
 
     /**

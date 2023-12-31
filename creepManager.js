@@ -19,14 +19,18 @@ class CreepManager {
         }
         const handler = this.taskHandlers[roomInfo.name];
 
-        this.taskGenerator.run(roomInfo, handler);
+        // Push all newly created tasks into the appropriate taskHandler's TaskPool
+        const newTasks = this.taskGenerator.run(roomInfo, handler);
+        for (const task of newTasks) {
+            handler.taskPool.push(task);
+        }
     }
 
     /**
-     * Runs the appropriate task associated with a given worker creep. If none exists, assigns a new one.
-     * @param {Creep} creep The worker creep to run.
+     * Runs the appropriate task associated with a given creep. If none exists, assigns a new one.
+     * @param {Creep} creep The creep to run.
      */
-    processWorker(creep) {
+    processCreep(creep) {
 
         // Initialize task handler for this room if none exists
         if (!this.taskHandlers[creep.room.name]) {
@@ -51,7 +55,7 @@ class CreepManager {
     runTask(creep, task, handler) {
         
         // Iterate over each action until we find one that hasn't been finished yet
-        for (const action of task.actions) {
+        for (const action of task.actionStack) {
             if (!action(creep)) {
                 // This action isn't yet finished, we can stop our chain here
                 return;

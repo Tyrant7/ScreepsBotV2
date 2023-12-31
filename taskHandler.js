@@ -68,12 +68,12 @@ class TaskHandler {
     }
 
     /**
-     * Returns all tasks associated with a given object that match the taskType, including both the task pool and active tasks.
+     * Returns all tasks associated with a given object that match the tag, including both the task pool and active tasks.
      * @param {string} ID The ID of the object to which tasks are associated.
-     * @param {number} taskType One of the taskType constants. 
+     * @param {number} tag The tag to search for a match with. 
      */
-    getTasksForObject(ID, taskType) {
-        return this.getTasksForObject.filter((entry) => entry.task.taskType === taskType);
+    getTasksForObject(ID, tag) {
+        return this.getTasksForObject(ID).filter((entry) => entry.task.tag === tag);
     }
 }
 

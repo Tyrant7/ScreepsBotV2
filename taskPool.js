@@ -63,8 +63,8 @@ class TaskPool {
      */
     removeTask(entry) {       
         // Update the object task map
-        this.objectTaskMap[chosenTask.target].splice(
-            this.objectTaskMap[chosenTask.target].indexOf(chosenTask.target), 1
+        this.objectTaskMap[entry.target].splice(
+            this.objectTaskMap[entry.target].indexOf(entry.target), 1
         );
     }
 

@@ -8,9 +8,16 @@ global.CONSTANTS = require("constants");
 const CreepManager = require("creepManager");
 const SpawnManager = require("spawnManager");
 const WorkerTaskGenerator = require("workerTaskGenerator");
+const MinerTaskGenerator = require("minerTaskGenerator");
 
 const workerManager = new CreepManager(new WorkerTaskGenerator());
+const minerManager = new CreepManager(new MinerTaskGenerator());
 const spawnManager = new SpawnManager();
+
+const creepRoleMap = {
+    [CONSTANTS.roles.worker]: workerManager,
+    [CONSTANTS.roles.miner]: minerManager,
+};
 
 module.exports.loop = function() {
 
@@ -25,13 +32,20 @@ module.exports.loop = function() {
     for (const room in Game.rooms) {
         const info = new RoomInfo(room);
         spawnManager.run(info);
-        workerManager.initializeTasks(info);
+
+        // Initialize tasks for all creeps
+        for (const manager of creepRoleMap) {
+            manager.initializeTasks(info);
+        }
     }
 
     // Run creeps
     for (let name in Memory.creeps) {
         if (Game.creeps[name]) {
-            processCreep(Game.creeps[name]);
+
+            // Map the creep's role to its appropriate manager and run behaviour
+            const role = Game.creeps[name].memory.role;
+            creepRoleMap[role].processCreep(creep);
 
             // Really bad fix for this, but needed to track room of deceased creeps
             if (Game.creeps[name].ticksToLive <= 1) {
@@ -44,22 +58,13 @@ module.exports.loop = function() {
 }
 
 /**
- * Processes any creep of any type to perform its duties.
- * @param {Creep} creep The creep to process.
- */
-function processCreep(creep) {
-    if (creep.memory.role === CONSTANTS.roles.worker) {
-        workerManager.processWorker(creep);
-    }
-}
-
-/**
  * Processes the death of a creep to run any cleanup code.
  * @param {string} name The name of the deceased creep.
  */
 function creepDeath(name) {
-    if (Memory.creeps[name].role === CONSTANTS.roles.worker) {
-        workerManager.freeCreep(name);
-    }
+
+    const role = Memory.creeps[name].role;
+    creepRoleMap[role].freeCreep(role);
+
     delete Memory.creeps[name];
 }
