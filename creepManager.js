@@ -56,7 +56,12 @@ class CreepManager {
         
         // Iterate over each action until we find one that hasn't been finished yet
         for (const action of task.actionStack) {
-            if (!action(creep)) {
+            const target = Game.getObjectById(task.targetID);
+            if (action(creep, target)) {
+                // This action is finished, we can pop it off of our action stack
+                task.actionStack.shift();
+            }
+            else {
                 // This action isn't yet finished, we can stop our chain here
                 return;
             }

@@ -92,7 +92,7 @@ class WorkerTaskGenerator {
      */
     createBasicTask(targetID, taskType) {
 
-        // Initialize our action stack with a default harvest, plus a matching action to its type
+        // Initialize our action stack with a default harvest, plus an action matching the task type
         let actionStack = [];
         actionStack.push(basicWorkerActions["harvest"]);
         actionStack.push(basicWorkerActions[taskType]);
@@ -112,19 +112,66 @@ taskType = {
 }
 
 basicWorkerActions = {
-    [taskType.upgrade]: function(creep) {
-        // TODO // 
+    [taskType.upgrade]: function(creep, target) {
+        if (creep.upgradeController(target) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(target);
+        }
+        return !creep.store[RESOURCE_ENERGY];
     },
-    [taskType.restock]: function(creep) {
-        // TODO // 
+    [taskType.restock]: function(creep, target) {
+        if (creep.transfer(target) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(target);
+        }
+        return !creep.store[RESOURCE_ENERGY];
     },
-    [taskType.build]: function(creep) {
-        // TODO // 
+    [taskType.build]: function(creep, target) {
+        if (creep.build(target) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(target);
+        }
+        return !creep.store[RESOURCE_ENERGY];
     },
-    [taskType.repair]: function(creep) {
-        // TODO // 
+    [taskType.repair]: function(creep, target) {
+        if (creep.repair(target) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(target);
+        }
+        return !creep.store[RESOURCE_ENERGY];
     },
-    "harvest": function(creep) {
-        // TODO // 
+    "harvest": function(creep, target) {
+
+        // Gets the closest source of energy in this room, resorting to the storage last
+        function getHarvestTarget(creep) {
+            const energy = creep.room.find(FIND_DROPPED_RESOURCES, { filter: RESOURCE_ENERGY }).
+                push(creep.room.find(FIND_TOMBSTONES).
+                push(creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_CONTAINER })));
+            const closest = !energy.length ? room.storage :
+                             energy.reduce((closest, curr) => curr.getRangeTo(creep.pos) < closest.getRangeTo(creep.pos) ? curr : closest);
+            creep.memory.pickupTarget = closest.id;
+            return closest;
+        }
+
+        // If we already have a target, go for that
+        if (creep.memory.pickupTarget) {
+            let t = Game.getObjectById(creep.memory.pickupTarget);
+
+            // Request a new target if we didn't fill up all the way or lost our target
+            if (!t || t.store[RESOURCE_ENERGY] === 0) {
+                t = getHarvestTarget(creep);
+            }
+
+            const withdrawResult = creep.withdraw(t, RESOURCE_ENERGY);
+            if (withdrawResult === ERR_NOT_IN_RANGE) {
+                creep.moveTo(t);
+            }
+            else if (withdrawResult === ERR_INVALID_TARGET) {
+                if (creep.pickup(t) === ERR_NOT_IN_RANGE) {
+                    creep.moveTo(t);
+                }
+            }
+        }
+        else {
+            getHarvestTarget(creep);
+        }
+
+        return creep.getFreeCapacity() === 0;
     }
 }
