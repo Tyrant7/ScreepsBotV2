@@ -112,19 +112,19 @@ taskType = {
 }
 
 basicWorkerActions = {
-    [taskType.upgrade]: function() {
+    [taskType.upgrade]: function(creep) {
         // TODO // 
     },
-    [taskType.restock]: function() {
+    [taskType.restock]: function(creep) {
         // TODO // 
     },
-    [taskType.build]: function() {
+    [taskType.build]: function(creep) {
         // TODO // 
     },
-    [taskType.repair]: function() {
+    [taskType.repair]: function(creep) {
         // TODO // 
     },
-    "harvest": function() {
+    "harvest": function(creep) {
         // TODO // 
     }
 }
