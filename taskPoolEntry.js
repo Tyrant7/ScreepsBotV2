@@ -28,9 +28,11 @@ class TaskPoolEntry {
     }
 
     /**
-     * Ages up this entry according to its base priority.
+     * Ages this entry up according to its base priority.
      */
     ageUp() {
         this.age += this.basePriority * agingMultiplier;
     }
 }
+
+module.exports = TaskPoolEntry;

@@ -42,3 +42,5 @@ class RoomInfo extends Room {
         return Math.min(income, this.getMaxIncome()) / 1500;
     }
 }
+
+module.exports = RoomInfo;

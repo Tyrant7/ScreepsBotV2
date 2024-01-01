@@ -1,6 +1,8 @@
 const Task = require("task");
 const TaskPoolEntry = require("taskPoolEntry");
 
+console.log("jjjj");
+
 class WorkerTaskGenerator {
 
     run(roomInfo, taskHandler) {
@@ -116,14 +118,14 @@ class WorkerTaskGenerator {
     }
 }
 
-taskType = {
+const taskType = {
     upgrade: "upgrade",
     restock: "restock",
     build: "build",
     repair: "repair"
 }
 
-basicWorkerActions = {
+const basicWorkerActions = {
     [taskType.upgrade]: function(creep, target) {
         if (creep.upgradeController(target) === ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
@@ -171,5 +173,22 @@ basicWorkerActions = {
         return creep.getFreeCapacity() === 0;
     }
 }
+
+/*
+const priorityMap = {
+    [taskType.upgrade]: function(target, roomInfo) {
+        
+    },
+    [taskType.restock]: function(target, roomInfo) {
+
+    },
+    [taskType.build]: function(target, roomInfo) {
+
+    },
+    [taskType.repair]: function(target, roomInfo) {
+
+    }
+}
+*/
 
 module.exports = WorkerTaskGenerator;

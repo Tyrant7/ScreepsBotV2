@@ -84,4 +84,4 @@ class TaskHandler {
     }
 }
 
-module.exports = new TaskHandler();
+module.exports = TaskHandler;

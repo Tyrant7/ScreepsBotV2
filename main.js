@@ -7,8 +7,20 @@ Tyrant Bot V2
 global.CONSTANTS = require("constants");
 const CreepManager = require("creepManager");
 const SpawnManager = require("spawnManager");
+
+const RoomInfo = require("roomInfo");
+
+console.log("bbasdb");
+
+
 const WorkerTaskGenerator = require("workerTaskGenerator");
+
+
+console.log("zzzzz");
+
 const MinerTaskGenerator = require("minerTaskGenerator");
+
+console.log("asdfas");
 
 const workerManager = new CreepManager(new WorkerTaskGenerator());
 const minerManager = new CreepManager(new MinerTaskGenerator());
@@ -20,6 +32,8 @@ const creepRoleMap = {
 };
 
 module.exports.loop = function() {
+
+    console.log("a");
 
     // Passive pixel generation
     // Disable on private server
