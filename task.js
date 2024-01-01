@@ -11,6 +11,7 @@ class Task {
         this.target = target;
         this.tag = tag;
         this.actionStack = actionStack;
+        this.actionStackPointer = 0;
     }
 
     /**

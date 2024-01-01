@@ -27,7 +27,9 @@ class TaskHandler {
      */
     nextTask(creep) {
         const newTask = this.taskPool.next(creep);
-        this.activeTasks[creep.name] = newTask;
+        if (newTask) {
+            this.activeTasks[creep.name] = newTask;
+        }
         return newTask.task;
     }
 
@@ -46,6 +48,11 @@ class TaskHandler {
     cancelTask(name) {
         const task = this.activeTasks[name];
         if (task) {
+            // Reset the action stack
+            task.actionStackPointer = 0;
+
+            // Add task back to pool, and give a priority bonus for returning it
+            task.ageUp();
             this.taskPool.push(task);
             delete this.activeTasks[name];
         }

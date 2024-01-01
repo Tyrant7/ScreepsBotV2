@@ -43,16 +43,19 @@ class TaskPool {
                 chosenTask = this.tasks[0];
             }
             else {
-                // Otherwise, assign a default upgrade task
-
-                // TODO //
-
+                // Otherwise, return null as no tasks remain
+                return null;
             }
         }
         
         // Remove task from pool and update the object task map
         this.tasks.shift();
         this.removeTask(chosenTask);
+
+        // Age up any remaining tasks
+        for (const entry of this.tasks) {
+            entry.ageUp();
+        }
 
         return chosenTask;
     }

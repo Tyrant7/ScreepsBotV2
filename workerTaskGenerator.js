@@ -85,6 +85,15 @@ class WorkerTaskGenerator {
     }
 
     /**
+     * Generates a default task for workers in this room.
+     * @param {RoomInfo} roomInfo The RoomInfo object for this room.
+     * @returns A newly created 'upgrade' task.
+     */
+    generateDefaultTask(roomInfo) {
+        return this.createBasicTask(roomInfo.controller.id, taskType.upgrade);
+    }
+
+    /**
      * Creates a basic worker task that consists of a harvest step, and an action step. 
      * @param {string} targetID The target of the action step of the task.
      * @param {number} taskType One of the taskType constants to use as a tag for the created task.

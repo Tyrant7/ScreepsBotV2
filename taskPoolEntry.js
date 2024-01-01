@@ -1,6 +1,8 @@
 const ageWeight = 1;
 const distanceWeight = 1;
 
+const agingMultiplier = 0.5;
+
 class TaskPoolEntry {
 
     /**
@@ -23,5 +25,12 @@ class TaskPoolEntry {
         return this.basePriority + 
                 (this.age * ageWeight) + 
                 (position.getRangeTo(Game.getObjectById(this.task.target).pos) * distanceWeight);
+    }
+
+    /**
+     * Ages up this entry according to its base priority.
+     */
+    ageUp() {
+        this.age += this.basePriority * agingMultiplier;
     }
 }

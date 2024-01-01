@@ -42,6 +42,10 @@ class CreepManager {
         let task = handler.hasTask(creep.name);
         if (!task) {
             task = handler.nextTask(creep.name);
+            // No tasks were in the pool
+            if (!task) {
+                task = this.taskGenerator.generateDefaultTask();
+            }
         }
         this.runTask(creep, task, handler);
     }
@@ -54,21 +58,18 @@ class CreepManager {
      */
     runTask(creep, task, handler) {
         
-        // Iterate over each action until we find one that hasn't been finished yet
-        for (const action of task.actionStack) {
-            const target = Game.getObjectById(task.targetID);
-            if (action(creep, target)) {
-                // This action is finished, we can pop it off of our action stack
-                task.actionStack.shift();
-            }
-            else {
-                // This action isn't yet finished, we can stop our chain here
-                return;
-            }
+        // Find our associated target
+        const target = Game.getObjectById(task.targetID);
+
+        // Check if current action is completed
+        if (task.actionStack[task.actionStackPointer](creep, target)) {
+            task.actionStackPointer++;
         }
     
         // All actions were finished, so the task is complete
-        handler.finishTask(creep.name);
+        if (task.actionStackPointer >= task.actionStack.length) {
+            handler.finishTask(creep.name);
+        }
     }
 
     /**
