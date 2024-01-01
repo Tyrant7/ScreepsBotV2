@@ -90,7 +90,10 @@ class WorkerTaskGenerator {
      * @returns A newly created 'upgrade' task.
      */
     generateDefaultTask(roomInfo) {
-        return this.createBasicTask(roomInfo.controller.id, taskType.upgrade);
+        // Default the priority to zero in case this worker dies and the task is returned to the pool
+        const entry = this.createBasicTask(roomInfo.controller.id, taskType.upgrade);
+        entry.priority = 0;
+        return entry;
     }
 
     /**
@@ -102,7 +105,7 @@ class WorkerTaskGenerator {
     createBasicTask(targetID, taskType) {
 
         // Initialize our action stack with a default harvest, plus an action matching the task type
-        let actionStack = [];
+        const actionStack = [];
         actionStack.push(basicWorkerActions["harvest"]);
         actionStack.push(basicWorkerActions[taskType]);
 
