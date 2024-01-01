@@ -12,8 +12,8 @@ class CreepMaker {
         }
         return { body: body, 
                  cost: lvl * levelCost,
-                 role: CONSTANTS.roles.worker,
-                 name: "Worker" + Game.time + " [" + lvl.toString() + "]" };
+                 name: "Worker" + Game.time + " [" + lvl.toString() + "]",
+                 memory: { role: CONSTANTS.roles.worker }};
     }
 
     makeMiner(workParts) {
@@ -23,8 +23,8 @@ class CreepMaker {
         }
         return { body: body, 
                  cost: this.getCost(body),
-                 role: CONSTANTS.roles.miner,
-                 name: "Miner " + Game.time + " [" + workParts + "]" };
+                 name: "Miner " + Game.time + " [" + workParts + "]",
+                 memory: { role: CONSTANTS.roles.miner }};
     }
 
     makeClone(creep) {
@@ -34,8 +34,8 @@ class CreepMaker {
         const name = oldName[0] + Game.time + oldName[2];
         return { body: body, 
                  cost: cost,
-                 role: creep.memory.role,
-                 name: name };
+                 name: name,
+                 memory: creep.memory };
     }
 
     getCost(body) {

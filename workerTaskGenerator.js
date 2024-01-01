@@ -147,40 +147,26 @@ basicWorkerActions = {
     },
     "harvest": function(creep, target) {
 
-        // Gets the closest source of energy in this room, resorting to the storage last
-        function getHarvestTarget(creep) {
-            const energy = creep.room.find(FIND_DROPPED_RESOURCES, { filter: RESOURCE_ENERGY }).
-                push(creep.room.find(FIND_TOMBSTONES).
-                push(creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_CONTAINER })));
-            const closest = !energy.length ? room.storage :
-                             energy.reduce((closest, curr) => curr.getRangeTo(creep.pos) < closest.getRangeTo(creep.pos) ? curr : closest);
-            creep.memory.pickupTarget = closest.id;
-            return closest;
+        // Gets energy from the room's storage, or nearest container if one is available
+        const harvest = creep.memory.harvestTarget;
+
+        // Determine our closest target and cache it while it's valid
+        if (!harvest || harvest.store[RESOURCES_ENERGY] === 0) {
+            const sources = creep.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0 });
+            if (creep.room.storage && creep.room.storage.store[RESOURCE_ENERGY] > 0) {
+                sources.push(creep.room.storage);
+            }
+            const closest = sources.reduce((closest, curr) => creep.pos.getRangeTo(closest) <= creep.pos.getRangeTo(curr) ? closest : curr);
+            creep.memory.harvestTarget = closest.id;
         }
 
-        // If we already have a target, go for that
-        if (creep.memory.pickupTarget) {
-            let t = Game.getObjectById(creep.memory.pickupTarget);
-
-            // Request a new target if we didn't fill up all the way or lost our target
-            if (!t || t.store[RESOURCE_ENERGY] === 0) {
-                t = getHarvestTarget(creep);
-            }
-
-            const withdrawResult = creep.withdraw(t, RESOURCE_ENERGY);
-            if (withdrawResult === ERR_NOT_IN_RANGE) {
-                creep.moveTo(t);
-            }
-            else if (withdrawResult === ERR_INVALID_TARGET) {
-                if (creep.pickup(t) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(t);
-                }
-            }
-        }
-        else {
-            getHarvestTarget(creep);
+        // Harvest from it
+        if (creep.withdraw(harvest) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(harvest);
         }
 
         return creep.getFreeCapacity() === 0;
     }
 }
+
+module.exports = WorkerTaskGenerator;

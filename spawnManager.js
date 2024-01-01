@@ -55,6 +55,9 @@ class SpawnManager {
 
         // Create a miner for each work counts
         const miners = workCounts.map((workParts) => this.creepMaker.makeMiner(workParts));
+        for (const i in miners) {
+            miners[i].memory[sourceID] = sources[i].id;
+        }
 
         // Push all miners onto the spawn queue
         miners.forEach((miner) => this.spawnQueue.push(miner));
@@ -97,7 +100,7 @@ class SpawnManager {
                 continue;
             }
             spawn.spawnCreep(next.body, next.name, { 
-                memory: { role: next.role }
+                memory: next.memory
             });
             this.spawnQueue.shift();
         }

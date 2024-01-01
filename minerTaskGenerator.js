@@ -4,12 +4,19 @@ const TaskPoolEntry = require("taskPoolEntry");
 class MinerTaskGenerator {
 
     run(roomInfo, taskHandler) {
+        // Nothing to do here; miners do not need special tasks
+    }
 
-        // Generate tasks to do with miners
-        const tasks = [];
+    generateDefaultTask(roomInfo) {
 
+        // Generate default miner behaviour
+        const actionStack = [];
+        actionStack.push(function(creep, target) {
+            
+        });
 
-
-        return tasks;
+        const task = new Task(creep.memory.sourceID, "mine", actionStack);
     }
 }
+
+module.exports = MinerTaskGenerator;
