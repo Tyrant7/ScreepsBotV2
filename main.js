@@ -36,7 +36,7 @@ module.exports.loop = function() {
         const info = new RoomInfo(Game.rooms[room]);
         spawnManager.run(info);
 
-        // Initialize tasks for all creeps
+        // Initialize tasks for all creep types in the current room
         for (const manager in creepRoleMap) {
             creepRoleMap[manager].initializeTasks(info);
         }

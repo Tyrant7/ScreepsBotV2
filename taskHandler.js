@@ -68,15 +68,18 @@ class TaskHandler {
      */
     getTasksForObject(ID) {
         const tasks = [];
-        for (const task of Object.values(this.activeTasks)) {
-            if (task.target === ID) {
-                tasks.push(task);
+        for (const entry of Object.values(this.activeTasks)) {
+            if (entry.task.target === ID) {
+                tasks.push(entry.task);
             }
         }
-        const activeTasks = this.taskPool.getEntriesForObject(ID);
-        if (activeTasks) {
-            tasks.push(activeTasks);
+        const poolEntries = this.taskPool.getEntriesForObject(ID);
+        if (poolEntries) {
+            for (const entry of poolEntries) {
+                tasks.push(entry.task);
+            }
         }
+        
         return tasks;
     }
 
@@ -84,10 +87,10 @@ class TaskHandler {
      * Returns all tasks associated with a given object that match the tag, including both the task pool and active tasks.
      * @param {string} ID The ID of the object to which tasks are associated.
      * @param {number} tag The tag to search for a match with. 
-     * @returns {TaskPoolEntry[]} A list of TaskpoolEntries matching the given tag and ID.
+     * @returns {TaskPoolEntry[]} A list of TaskPoolEntry objects matching the given tag and ID.
      */
     getTasksForObjectByTag(ID, tag) {
-        return this.getTasksForObject(ID).filter((entry) => entry.task.tag === tag);
+        return this.getTasksForObject(ID).filter((task) => task.tag === tag);
     }
 }
 

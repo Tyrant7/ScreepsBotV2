@@ -73,8 +73,8 @@ class WorkerTaskGenerator {
             tasks.push(this.createBasicTask(restock.id, taskType.restock));
         }
 
-        // Upgrade tasks -> ensure at least one for now
-        const existingTasks = taskHandler.getTasksForObjectByTag(roomInfo.room.controller, taskType.upgrade);
+        // Upgrade tasks -> ensure at least one at all times
+        const existingTasks = taskHandler.getTasksForObjectByTag(roomInfo.room.controller.id, taskType.upgrade);
         if (!existingTasks.length) {
 
             // Create a basic worker task for upgrading
