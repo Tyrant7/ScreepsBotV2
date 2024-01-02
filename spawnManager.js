@@ -12,6 +12,11 @@ class SpawnManager {
 
     run(roomInfo) {
 
+        // Don't try to spawn in rooms that aren't ours
+        if (!roomInfo.spawns || roomInfo.spawns.length === 0) {
+            return;
+        }
+
         // Figure out which creeps will need to be replaced soon in this room
         this.handleReplacements(roomInfo);
 
@@ -26,6 +31,11 @@ class SpawnManager {
 
         // Spawn the next one in the queue
         this.spawnNext(roomInfo);
+
+        console.log(this.spawnQueue.length);
+        for (const spawn of this.spawnQueue) {
+            console.log(spawn.name);
+        }
     }
 
     handleReplacements(roomInfo) {
@@ -87,15 +97,28 @@ class SpawnManager {
         // Add workers of the appropriate level to the queue while their cost 
         // averaged out over lifetime does not exceed our income
         let spawnCosts = this.spawnQueue.reduce((total, curr) => total + (curr.cost / CREEP_LIFE_TIME), 0);
-        while (spawnCosts < totalEPerTick) {
+
+        console.log("sCost: " + spawnCosts);
+        console.log("ePerTick: " + totalEPerTick);
+
+        console.log("queueLen: " + this.spawnQueue.length);
+
+        // Limited to one worker added to the queue per tick to avoid duplicate naming
+        if (spawnCosts < totalEPerTick) {
             // Limit ourselves to spawning lower level workers first if we get wiped out
             const maxLevel = Math.min(roomInfo.workers.length, CONSTANTS.maxWorkerLevel)
             const newWorker = this.creepMaker.makeWorker(maxLevel, roomInfo.room.energyCapacityAvailable);
             spawnCosts += newWorker.cost / CREEP_LIFE_TIME;
+
+            console.log("new sCost: " + spawnCosts);
+
             if (spawnCosts < totalEPerTick) {
                 this.spawnQueue.push(newWorker);
             }
         }
+
+        console.log("queueLen2: " + this.spawnQueue.length);
+
     }
 
     spawnNext(roomInfo) {
@@ -105,7 +128,6 @@ class SpawnManager {
 
         // Spawn next from queue for each non-busy spawn in the room
         for (const spawn of roomInfo.spawns) {
-            const next = this.spawnQueue[0];
             if (spawn.spawning) {
 
                 // Show some visuals
@@ -113,10 +135,10 @@ class SpawnManager {
 
                 continue;
             }
+            const next = this.spawnQueue.shift();
             spawn.spawnCreep(next.body, next.name, { 
                 memory: next.memory
             });
-            this.spawnQueue.shift();
         }
     }
 }

@@ -74,11 +74,13 @@ class WorkerTaskGenerator {
         }
 
         // Upgrade tasks -> ensure at least one at all times
-        const existingTasks = taskHandler.getTasksForObjectByTag(roomInfo.room.controller.id, taskType.upgrade);
-        if (!existingTasks.length) {
-
-            // Create a basic worker task for upgrading
-            tasks.push(this.createBasicTask(roomInfo.room.controller.id, taskType.upgrade));
+        if (roomInfo.room.controller.my) {
+            const existingTasks = taskHandler.getTasksForObjectByTag(roomInfo.room.controller.id, taskType.upgrade);
+            if (!existingTasks.length) {
+    
+                // Create a basic worker task for upgrading
+                tasks.push(this.createBasicTask(roomInfo.room.controller.id, taskType.upgrade));
+            }
         }
 
         return tasks;
@@ -128,7 +130,7 @@ const basicWorkerActions = {
         if (creep.upgradeController(target) === ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
         }
-        return creep.store[RESOURCE_ENERGY] === 0;
+        return creep.store[RESOURCE_ENERGY] === 0 || !target.my;
     },
     [taskType.restock]: function(creep, target) {
         if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {

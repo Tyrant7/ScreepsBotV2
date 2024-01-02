@@ -42,7 +42,7 @@ class RoomInfo {
 
     getGrossIncome() {
         const income = this.miners.reduce((total, curr) => total + curr.body.filter((part) => part === WORK).length * HARVEST_POWER, 0);
-        return Math.min(income, this.getMaxIncome()) / 1500;
+        return Math.min(income, this.getMaxIncome());
     }
 }
 

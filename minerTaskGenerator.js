@@ -13,8 +13,38 @@ class MinerTaskGenerator {
         const actionStack = [];
         actionStack.push(function(creep, target) {
 
-            // Simply mine assigned source
-            if (creep.harvest(target) === ERR_NOT_IN_RANGE) {
+            // Once we get close enough to mine, start checking for containers to stand on
+            if (creep.pos.getRangeTo(target) <= 1) {
+
+                // Look for a container on our tile first
+                const tile = creep.pos.lookFor(LOOK_STRUCTURES);
+                const container = tile.find((item) => item.structureType === STRUCTURE_CONTAINER);
+
+                // We're standing on a container and can mine
+                if (container) {
+                    creep.harvest(target);
+                }
+                else {
+
+                    // Otherwise, let's search around our source
+                    const p = target.pos;
+                    const containers = creep.room.lookAtArea(p.y-1, p.x-1, p.y+1, p.x+1, true).filter(
+                        (item) => item.type === LOOK_STRUCTURES && item.structure.structureType === STRUCTURE_CONTAINER);
+
+                    // No containers near this source -> we should place one where we stand
+                    if (containers.length === 0) {
+                        creep.room.createConstructionSite(creep.pos, STRUCTURE_CONTAINER);
+
+                        // We should harvest while waiting for our containers to not waste time
+                        creep.harvest(target);
+                    }
+                    // Container found -> move to it before mining
+                    else {
+                        creep.moveTo(containers[0].structure);
+                    }
+                }
+            }
+            else {
                 creep.moveTo(target);
             }
 
