@@ -14,16 +14,16 @@ class CreepManager {
     initializeTasks(roomInfo) {
         
         // Initialize task handler for this room if none exists
-        if (!this.taskHandlers[roomInfo.name]) {
-            this.taskHandlers[roomInfo.name] = new TaskHandler();
+        if (!this.taskHandlers[roomInfo.room.name]) {
+            this.taskHandlers[roomInfo.room.name] = new TaskHandler();
         }
-        const handler = this.taskHandlers[roomInfo.name];
+        const handler = this.taskHandlers[roomInfo.room.name];
 
         // Push all newly created tasks into the appropriate taskHandler's TaskPool
-        const newTasks = this.taskGenerator.run(roomInfo, handler);
-        if (newTasks) {
-            for (const task of newTasks) {
-                handler.taskPool.push(task);
+        const newEntries = this.taskGenerator.run(roomInfo, handler);
+        if (newEntries) {
+            for (const entry of newEntries) {
+                handler.taskPool.push(entry);
             }
         }
     }
