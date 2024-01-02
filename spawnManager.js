@@ -47,7 +47,7 @@ class SpawnManager {
                 // Also watch out that this doesn't put us over our income threshold
                 const replacement = this.creepMaker.makeClone(creep);
                 if (totalQueueCost + replacement.cost <= income) {
-                    this.spawnQueue.push();
+                    this.spawnQueue.push(replacement);
                     totalQueueCost += this.creepMaker.getCost(replacement.body);
                 }
             }

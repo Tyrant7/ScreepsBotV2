@@ -53,7 +53,7 @@ class WorkerTaskGenerator {
         }
 
         // Restock tasks
-        const restockables = roomInfo.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.store && s.store.getFreeCapacity > 0 });
+        const restockables = roomInfo.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 });
         for (const restock of restockables) {
 
             // These will be handled by haulers and miners
@@ -63,7 +63,7 @@ class WorkerTaskGenerator {
             }
 
             // No more than one restock task per object, except before any extensions are built
-            const existingTasks = taskHandler.getTasksForObjectByTag(target.id, taskType.restock);
+            const existingTasks = taskHandler.getTasksForObjectByTag(restock.id, taskType.restock);
             if (existingTasks.length && (roomInfo.room.energyCapacityAvailable > 500 || existingTasks.length >= 3)) {
                 continue;
             }
@@ -131,22 +131,22 @@ const basicWorkerActions = {
         return creep.store[RESOURCE_ENERGY] === 0;
     },
     [taskType.restock]: function(creep, target) {
-        if (creep.transfer(target) === ERR_NOT_IN_RANGE) {
+        if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
-        }
-        return creep.store[RESOURCE_ENERGY] === 0;
+        }      
+        return target.store.getFreeCapacity(RESOURCE_ENERGY) === 0 || creep.store[RESOURCE_ENERGY] === 0;
     },
     [taskType.build]: function(creep, target) {
         if (creep.build(target) === ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
         }
-        return creep.store[RESOURCE_ENERGY] === 0;
+        return creep.store[RESOURCE_ENERGY] === 0 || !target;
     },
     [taskType.repair]: function(creep, target) {
         if (creep.repair(target) === ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
         }
-        return creep.store[RESOURCE_ENERGY] === 0;
+        return creep.store[RESOURCE_ENERGY] === 0 || !target;
     },
     "harvest": function(creep, target) {
 
