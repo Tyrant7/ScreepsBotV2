@@ -1,6 +1,4 @@
 const ageWeight = 1;
-const distanceWeight = 1;
-
 const agingMultiplier = 0.5;
 
 class TaskPoolEntry {
@@ -18,13 +16,11 @@ class TaskPoolEntry {
 
     /**
      * Calculates the priority of this entry.
-     * @param {RoomPosition} position The position to use for distance calculations.
      * @returns The weighted priority for this entry.
      */
-    getPriority(position) {
+    getPriority() {
         return this.basePriority + 
-                (this.age * ageWeight) + 
-                (position.getRangeTo(Game.getObjectById(this.task.target).pos) * distanceWeight);
+                (this.age * ageWeight);
     }
 
     /**

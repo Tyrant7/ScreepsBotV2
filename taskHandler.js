@@ -22,11 +22,11 @@ class TaskHandler {
 
     /**
      * Returns the next task in the task pool.
-     * @param {Creep} creep The creep to use for priority calculations.
+     * @param {Creep} creep The creep to reserve this task for.
      * @returns {Task} A new task. Null if no tasks exist in the pool.
      */
     nextTask(creep) {
-        const newTask = this.taskPool.next(creep);
+        const newTask = this.taskPool.next();
         if (newTask) {
             this.activeTasks[creep.name] = newTask;
             return newTask.task;

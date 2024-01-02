@@ -22,10 +22,9 @@ class TaskPool {
 
     /**
      * Returns the highest priority task in the task pool, taking into account base priority, age, and creep positioning.
-     * @param {Creep} creep The creep to use for position.
      * @returns {TaskPoolEntry} A TaskPoolEntry object. Null if no entries remain in the pool.
      */
-    next(creep) {
+    next() {
 
         // No entries, let it decide on a default task higher up the line
         if (this.isEmpty()) {
@@ -33,7 +32,7 @@ class TaskPool {
         }
 
         // Sort entries in descending order by priority
-        this.entries.sort((a, b) => b.getPriority(creep.pos) - a.getPriority(creep.pos));
+        this.entries.sort((a, b) => b.getPriority() - a.getPriority());
 
         // Choose the highest priority task that hasn't yet expired
         let chosenEntry = this.entries.shift();
