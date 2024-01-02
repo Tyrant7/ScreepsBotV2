@@ -128,47 +128,62 @@ const basicWorkerActions = {
         if (creep.upgradeController(target) === ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
         }
-        return !creep.store[RESOURCE_ENERGY];
+        return creep.store[RESOURCE_ENERGY] === 0;
     },
     [taskType.restock]: function(creep, target) {
         if (creep.transfer(target) === ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
         }
-        return !creep.store[RESOURCE_ENERGY];
+        return creep.store[RESOURCE_ENERGY] === 0;
     },
     [taskType.build]: function(creep, target) {
         if (creep.build(target) === ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
         }
-        return !creep.store[RESOURCE_ENERGY];
+        return creep.store[RESOURCE_ENERGY] === 0;
     },
     [taskType.repair]: function(creep, target) {
         if (creep.repair(target) === ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
         }
-        return !creep.store[RESOURCE_ENERGY];
+        return creep.store[RESOURCE_ENERGY] === 0;
     },
     "harvest": function(creep, target) {
 
         // Gets energy from the room's storage, or nearest container if one is available
-        const harvest = creep.memory.harvestTarget;
+        const harvest = Game.getObjectById(creep.memory.harvestTarget);
 
         // Determine our closest target and cache it while it's valid
-        if (!harvest || harvest.store[RESOURCES_ENERGY] === 0) {
-            const sources = creep.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0 });
+        const energy = !harvest ? 0 : harvest instanceof Source ? harvest.energy : harvest.store[RESOURCE_ENERGY];
+        if (energy === 0) {
+            let sources = creep.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0 });
             if (creep.room.storage && creep.room.storage.store[RESOURCE_ENERGY] > 0) {
                 sources.push(creep.room.storage);
             }
+
+            // We don't have any containers or storage yet, mine our own energy
+            if (!sources || !sources.length) {
+                sources = creep.room.find(FIND_SOURCES, { filter: (s) => s.energy > 0 });
+            }
+
             const closest = sources.reduce((closest, curr) => creep.pos.getRangeTo(closest) <= creep.pos.getRangeTo(curr) ? closest : curr);
             creep.memory.harvestTarget = closest.id;
         }
 
         // Harvest from it
-        if (creep.withdraw(harvest) === ERR_NOT_IN_RANGE) {
+        const wdResult = creep.withdraw(harvest, RESOURCE_ENERGY);
+        if (wdResult === ERR_NOT_IN_RANGE) {
             creep.moveTo(harvest);
         }
+        // Must be a source that we're going after
+        else if (wdResult === ERR_INVALID_TARGET) {
+            if (creep.harvest(harvest) === ERR_NOT_IN_RANGE) {
+                creep.moveTo(harvest);
+            }
+        }
 
-        return creep.getFreeCapacity() === 0;
+        // We're done when we can't hold anymore energy
+        return creep.store.getFreeCapacity() === 0;
     }
 };
 

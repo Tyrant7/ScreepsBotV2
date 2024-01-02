@@ -41,7 +41,7 @@ class CreepManager {
         const handler = this.taskHandlers[creep.room.name];
 
         // Get the current task, or request a new one if none has been assigned
-        let task = handler.hasTask(creep);
+        let task = handler.getTask(creep);
         if (!task) {
             // The pool is empty and we should add a default task
             if (handler.taskPool.isEmpty()) {
@@ -71,7 +71,7 @@ class CreepManager {
     
         // All actions were finished, so the task is complete
         if (task.actionStackPointer >= task.actionStack.length) {
-            handler.finishTask(creep.name);
+            handler.finishTask(creep);
         }
     }
 
@@ -80,7 +80,10 @@ class CreepManager {
      * @param {string} name The name of the creep to cancel for.
      */
     freeCreep(name) {
-        this.taskHandlers[Memory.creeps[name].room].cancelTask(name);
+        const handler = this.taskHandlers[Memory.creeps[name].room];
+        if (handler) {
+            handler.cancelTask(name);
+        }
     }
 }
 

@@ -1,12 +1,12 @@
 class CreepMaker {
 
-    makeWorker(maxLevel) {
+    makeWorker(maxLevel, energyCapacity) {
         const workerParts = [WORK, CARRY, MOVE];
         let body = workerParts;
         let lvl = 1;
-        const levelCost = getCost(body);
+        const levelCost = this.getCost(body);
 
-        while (lvl < maxLevel && lvl < workers.length && (lvl + 1) * levelCost <= room.energyCapacityAvailable) {
+        while (lvl < maxLevel && (lvl + 1) * levelCost <= energyCapacity) {
             lvl++;
             body = body.concat(workerParts);
         }
@@ -16,10 +16,14 @@ class CreepMaker {
                  memory: { role: CONSTANTS.roles.worker }};
     }
 
-    makeMiner(workParts) {
+    makeMiner(workParts, energyCapacity) {
         let body = [MOVE, MOVE, MOVE];
         for (let i = 0; i < workParts; i++) {
             body.push(WORK);
+            if (this.getCost(body) > energyCapacity) {
+                body.pop();
+                break;
+            }
         }
         return { body: body, 
                  cost: this.getCost(body),
@@ -30,7 +34,7 @@ class CreepMaker {
     makeClone(creep) {
         const body = creep.body;
         const cost = this.getCost(body);
-        const oldName = cree.name.split(" ");
+        const oldName = creep.name.split(" ");
         const name = oldName[0] + Game.time + oldName[2];
         return { body: body, 
                  cost: cost,

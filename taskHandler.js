@@ -1,4 +1,4 @@
-TaskPool = require("taskPool");
+const TaskPool = require("taskPool");
 
 class TaskHandler {
 
@@ -9,11 +9,11 @@ class TaskHandler {
 
     /**
      * Returns the task currently associated with the specified creep.
-     * @param {string} name The name of the creep to check for association.
+     * @param {Creep} creep The creep to check for association.
      * @returns {Task} The associated task.
      */
-    hasTask(name) {
-        const taskEntry = this.activeTasks[name];
+    getTask(creep) {
+        const taskEntry = this.activeTasks[creep.name];
         if (taskEntry) {
             return taskEntry.task;
         }
@@ -38,10 +38,10 @@ class TaskHandler {
 
     /**
      * Marks a task as finished and removes it from the list of active tasks.
-     * @param {string} name The name of the creep which finished the task.
+     * @param {Creep} creep The creep which finished the task.
      */
-    finishTask(name) {
-        delete this.activeTasks[name];
+    finishTask(creep) {
+        delete this.activeTasks[creep.name];
     }
 
     /**

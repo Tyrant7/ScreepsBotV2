@@ -1,4 +1,7 @@
-CreepMaker = require("creepMaker");
+const CreepMaker = require("creepMaker");
+
+const minerSpawnThreshold = 450;
+const haulerSpawnThreshold = 450;
 
 class SpawnManager {
 
@@ -13,8 +16,12 @@ class SpawnManager {
         this.handleReplacements(roomInfo);
 
         // Figure out what additional creeps this room needs
-        this.handleMiners(roomInfo);
-        this.handleHaulers(roomInfo);
+        if (roomInfo.room.energyAvailable > minerSpawnThreshold) {
+            this.handleMiners(roomInfo);
+        }
+        if (roomInfo.room.energyAvailable > haulerSpawnThreshold) {
+            this.handleHaulers(roomInfo);
+        }
         this.handleWorkers(roomInfo);
 
         // Spawn the next one in the queue
@@ -31,6 +38,11 @@ class SpawnManager {
 
             // Only do this when these two values are EQUAL to prevent replacing the same creep multiple times
             if (creep.ticksToLive === this.creepMaker.getSpawnTime(creep.body)) {
+
+                // Too expensive to replace in this room
+                if (this.creepMaker.getCost(creep.body) > roomInfo.room.energyCapacityAvailable) {
+                    continue;
+                }
 
                 // Also watch out that this doesn't put us over our income threshold
                 const replacement = this.creepMaker.makeClone(creep);
@@ -52,10 +64,9 @@ class SpawnManager {
         
         // Figure out how many WORK parts it will take to harvest each source
         const workCounts = sourceEnergies.map((amount) => (amount / HARVEST_POWER) + 1);
-        const maxWorkParts = roomInfo.room.energyCapacity / BODYPART_COST[WORK];
 
         // Create a miner for each work counts
-        const miners = workCounts.map((workParts) => this.creepMaker.makeMiner(Math.min(workParts, maxWorkParts)));
+        const miners = workCounts.map((workParts) => this.creepMaker.makeMiner(workParts, roomInfo.room.energyCapacityAvailable));
         for (const i in miners) {
             miners[i].memory.sourceID = sources[i].id;
         }
@@ -71,13 +82,15 @@ class SpawnManager {
     handleWorkers(roomInfo) {
 
         // Get the total energy income for this tick
-        const totalEPerTick = roomInfo.getGrossIncome();
+        const totalEPerTick = roomInfo.getMaxIncome();
 
         // Add workers of the appropriate level to the queue while their cost 
         // averaged out over lifetime does not exceed our income
         let spawnCosts = this.spawnQueue.reduce((total, curr) => total + (curr.cost / CREEP_LIFE_TIME), 0);
         while (spawnCosts < totalEPerTick) {
-            const newWorker = this.creepMaker.makeWorker(CONSTANTS.maxWorkerLevel);
+            // Limit ourselves to spawning lower level workers first if we get wiped out
+            const maxLevel = Math.min(roomInfo.workers.length, CONSTANTS.maxWorkerLevel)
+            const newWorker = this.creepMaker.makeWorker(maxLevel, roomInfo.room.energyCapacityAvailable);
             spawnCosts += newWorker.cost / CREEP_LIFE_TIME;
             if (spawnCosts < totalEPerTick) {
                 this.spawnQueue.push(newWorker);

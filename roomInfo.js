@@ -3,6 +3,8 @@ class RoomInfo {
     constructor(room) {
         this.room = room;
         this.creeps = this.room.find(FIND_MY_CREEPS);
+
+        this.workers = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.worker);
         this.miners = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.miner);
 
         this.spawns = this.room.find(FIND_MY_SPAWNS);
