@@ -1,8 +1,6 @@
 const Task = require("task");
 const TaskPoolEntry = require("taskPoolEntry");
 
-console.log("jjjj");
-
 class WorkerTaskGenerator {
 
     run(roomInfo, taskHandler) {
@@ -11,7 +9,7 @@ class WorkerTaskGenerator {
         const tasks = [];
 
         // Start with construction tasks
-        const sites = roomInfo.find(FIND_MY_CONSTRUCTION_SITES);
+        const sites = roomInfo.room.find(FIND_MY_CONSTRUCTION_SITES);
         for (const site of sites) {
 
             // Don't allow more build tasks than each 5000 energy needed to complete
@@ -25,7 +23,7 @@ class WorkerTaskGenerator {
         }
 
         // Repair tasks
-        const repairable = roomInfo.find(FIND_MY_STRUCTURES, { filter: (s) => s.hits < s.hitsMax });
+        const repairable = roomInfo.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.hits < s.hitsMax });
         for (const target of repairable) {
             
             // Don't repair these structures too much
@@ -33,20 +31,20 @@ class WorkerTaskGenerator {
                 [STRUCTURE_WALL]: 0.05,
                 [STRUCTURE_RAMPART]: 0.075,
                 [STRUCTURE_CONTAINER]: 0.5
-            }
+            };
             if (repairThresholds[target.structureType] &&
                 target.hits / target.hitsMax >= repairThresholds[target.structureType]) {
                 continue;
             }
 
             // One repair task per target for each 150k health missing, max one for walls and ramparts
-            const existingTasks = taskHandler.getTasksForObject(target.id, taskType.repair);
+            const existingTasks = taskHandler.getTasksForObjectByTag(target.id, taskType.repair);
             if (existingTasks.length &&
                (target.structureType === STRUCTURE_WALL ||
                 target.structureType === STRUCTURE_RAMPART)) {
                 continue;
             }
-            else if (existingTasks.length >= Math.ceil((target.hitsMax - target.hits) / 150_000)) {
+            else if (existingTasks.length >= Math.ceil((target.hitsMax - target.hits) / 150000)) {
                 continue;
             }
 
@@ -55,7 +53,7 @@ class WorkerTaskGenerator {
         }
 
         // Restock tasks
-        const restockables = roomInfo.find(FIND_MY_STRUCTURES, { filter: (s) => s.store && s.store.getFreeCapacity > 0 });
+        const restockables = roomInfo.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.store && s.store.getFreeCapacity > 0 });
         for (const restock of restockables) {
 
             // These will be handled by haulers and miners
@@ -65,8 +63,8 @@ class WorkerTaskGenerator {
             }
 
             // No more than one restock task per object, except before any extensions are built
-            const existingTasks = taskHandler.getTasksForObject(target.id, taskType.restock);
-            if (existingTasks.length && (roomInfo.energyCapacityAvailable > 500 || existingTasks.length >= 3)) {
+            const existingTasks = taskHandler.getTasksForObjectByTag(target.id, taskType.restock);
+            if (existingTasks.length && (roomInfo.room.energyCapacityAvailable > 500 || existingTasks.length >= 3)) {
                 continue;
             }
 
@@ -76,11 +74,11 @@ class WorkerTaskGenerator {
         }
 
         // Upgrade tasks -> ensure at least one for now
-        const existingTasks = taskHandler.getTasksForObject(roomInfo.controller, taskType.upgrade);
+        const existingTasks = taskHandler.getTasksForObjectByTag(roomInfo.room.controller, taskType.upgrade);
         if (!existingTasks.length) {
 
             // Create a basic worker task for upgrading
-            tasks.push(this.createBasicTask(roomInfo.controller.id, taskType.upgrade));
+            tasks.push(this.createBasicTask(roomInfo.room.controller.id, taskType.upgrade));
         }
 
         return tasks;
@@ -88,12 +86,12 @@ class WorkerTaskGenerator {
 
     /**
      * Generates a default task for workers in this room.
-     * @param {RoomInfo} roomInfo The RoomInfo object for this room.
+     * @param {Creep} creep The creep to generate the task for.
      * @returns A newly created 'upgrade' task.
      */
-    generateDefaultTask(roomInfo) {
+    generateDefaultTask(creep) {
         // Default the priority to zero in case this worker dies and the task is returned to the pool
-        const entry = this.createBasicTask(roomInfo.controller.id, taskType.upgrade);
+        const entry = this.createBasicTask(creep.room.controller.id, taskType.upgrade);
         entry.priority = 0;
         return entry;
     }
@@ -123,7 +121,7 @@ const taskType = {
     restock: "restock",
     build: "build",
     repair: "repair"
-}
+};
 
 const basicWorkerActions = {
     [taskType.upgrade]: function(creep, target) {
@@ -172,7 +170,7 @@ const basicWorkerActions = {
 
         return creep.getFreeCapacity() === 0;
     }
-}
+};
 
 /*
 const priorityMap = {

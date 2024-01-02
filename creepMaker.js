@@ -18,7 +18,7 @@ class CreepMaker {
 
     makeMiner(workParts) {
         let body = [MOVE, MOVE, MOVE];
-        for (const i in workParts) {
+        for (let i = 0; i < workParts; i++) {
             body.push(WORK);
         }
         return { body: body, 

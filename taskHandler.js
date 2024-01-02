@@ -23,14 +23,17 @@ class TaskHandler {
     /**
      * Returns the next task in the task pool.
      * @param {Creep} creep The creep to use for priority calculations.
-     * @returns {Task} A new task.
+     * @returns {Task} A new task. Null if no tasks exist in the pool.
      */
     nextTask(creep) {
         const newTask = this.taskPool.next(creep);
         if (newTask) {
             this.activeTasks[creep.name] = newTask;
+            return newTask.task;
         }
-        return newTask.task;
+
+        // No task in the pool, pass sentinel value up the chain to let the manager decide what to do
+        return null;
     }
 
     /**
@@ -65,12 +68,15 @@ class TaskHandler {
      */
     getTasksForObject(ID) {
         const tasks = [];
-        for (const task of this.activeTasks) {
+        for (const task of Object.values(this.activeTasks)) {
             if (task.target === ID) {
                 tasks.push(task);
             }
         }
-        tasks.push(this.taskPool.getTasksForObject(ID));
+        const activeTasks = this.taskPool.getEntriesForObject(ID);
+        if (activeTasks) {
+            tasks.push(activeTasks);
+        }
         return tasks;
     }
 
@@ -78,8 +84,9 @@ class TaskHandler {
      * Returns all tasks associated with a given object that match the tag, including both the task pool and active tasks.
      * @param {string} ID The ID of the object to which tasks are associated.
      * @param {number} tag The tag to search for a match with. 
+     * @returns {TaskPoolEntry[]} A list of TaskpoolEntries matching the given tag and ID.
      */
-    getTasksForObject(ID, tag) {
+    getTasksForObjectByTag(ID, tag) {
         return this.getTasksForObject(ID).filter((entry) => entry.task.tag === tag);
     }
 }

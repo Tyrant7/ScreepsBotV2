@@ -7,7 +7,7 @@ class MinerTaskGenerator {
         // Nothing to do here; miners do not need special tasks
     }
 
-    generateDefaultTask(roomInfo) {
+    generateDefaultTask(creep) {
 
         // Generate default miner behaviour
         const actionStack = [];

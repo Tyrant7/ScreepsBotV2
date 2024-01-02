@@ -21,8 +21,10 @@ class CreepManager {
 
         // Push all newly created tasks into the appropriate taskHandler's TaskPool
         const newTasks = this.taskGenerator.run(roomInfo, handler);
-        for (const task of newTasks) {
-            handler.taskPool.push(task);
+        if (newTasks) {
+            for (const task of newTasks) {
+                handler.taskPool.push(task);
+            }
         }
     }
 
@@ -39,14 +41,15 @@ class CreepManager {
         const handler = this.taskHandlers[creep.room.name];
 
         // Get the current task, or request a new one if none has been assigned
-        let task = handler.hasTask(creep.name);
+        let task = handler.hasTask(creep);
         if (!task) {
-            task = handler.nextTask(creep.name);
-            // No tasks were in the pool
-            if (!task) {
-                task = this.taskGenerator.generateDefaultTask();
+            // The pool is empty and we should add a default task
+            if (handler.taskPool.isEmpty()) {
+                handler.taskPool.push(this.taskGenerator.generateDefaultTask(creep));
             }
+            task = handler.nextTask(creep);
         }
+
         this.runTask(creep, task, handler);
     }
     
@@ -59,9 +62,9 @@ class CreepManager {
     runTask(creep, task, handler) {
         
         // Find our associated target
-        const target = Game.getObjectById(task.targetID);
+        const target = Game.getObjectById(task.target);
 
-        // Check if current action is completed
+        // Check if current action is completed, if so, we can advance to the next action
         if (task.actionStack[task.actionStackPointer](creep, target)) {
             task.actionStackPointer++;
         }

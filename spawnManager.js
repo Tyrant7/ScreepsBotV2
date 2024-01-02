@@ -18,7 +18,7 @@ class SpawnManager {
         this.handleWorkers(roomInfo);
 
         // Spawn the next one in the queue
-        this.spawnNext();
+        this.spawnNext(roomInfo);
     }
 
     handleReplacements(roomInfo) {
@@ -27,7 +27,7 @@ class SpawnManager {
         let totalQueueCost = this.spawnQueue.reduce((total, curr) => total + (curr.cost / CREEP_LIFE_TIME), 0);
 
         // For all creeps that will die before they can be spawned again, add them to the spawn queue
-        for (const creep in roomInfo.creeps) {
+        for (const creep of roomInfo.creeps) {
 
             // Only do this when these two values are EQUAL to prevent replacing the same creep multiple times
             if (creep.ticksToLive === this.creepMaker.getSpawnTime(creep.body)) {
@@ -52,11 +52,12 @@ class SpawnManager {
         
         // Figure out how many WORK parts it will take to harvest each source
         const workCounts = sourceEnergies.map((amount) => (amount / HARVEST_POWER) + 1);
+        const maxWorkParts = roomInfo.room.energyCapacity / BODYPART_COST[WORK];
 
         // Create a miner for each work counts
-        const miners = workCounts.map((workParts) => this.creepMaker.makeMiner(workParts));
+        const miners = workCounts.map((workParts) => this.creepMaker.makeMiner(Math.min(workParts, maxWorkParts)));
         for (const i in miners) {
-            miners[i].memory[sourceID] = sources[i].id;
+            miners[i].memory.sourceID = sources[i].id;
         }
 
         // Push all miners onto the spawn queue
@@ -90,7 +91,7 @@ class SpawnManager {
         }
 
         // Spawn next from queue for each non-busy spawn in the room
-        for (const spawn in roomInfo.spawns) {
+        for (const spawn of roomInfo.spawns) {
             const next = this.spawnQueue[0];
             if (spawn.spawning) {
 

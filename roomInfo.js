@@ -1,10 +1,11 @@
-class RoomInfo extends Room {
+class RoomInfo {
 
-    constructor() {
-        this.creeps = this.find(FIND_MY_CREEPS);
+    constructor(room) {
+        this.room = room;
+        this.creeps = this.room.find(FIND_MY_CREEPS);
         this.miners = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.miner);
 
-        this.spawns = this.find(FIND_MY_SPAWNS);
+        this.spawns = this.room.find(FIND_MY_SPAWNS);
     }
 
     /**
@@ -15,7 +16,7 @@ class RoomInfo extends Room {
         if (this.sources) {
             return this.sources;
         }
-        return this.find(FIND_SOURCES);
+        return this.room.find(FIND_SOURCES);
     }
 
     /**
@@ -34,11 +35,11 @@ class RoomInfo extends Room {
     }
 
     getMaxIncome() {
-        return this.getSources.reduce((total, source) => total + (source.energyCapacity / ENERGY_REGEN_TIME), 0);
+        return this.getSources().reduce((total, source) => total + (source.energyCapacity / ENERGY_REGEN_TIME), 0);
     }
 
     getGrossIncome() {
-        const income = this.miners.reduce((total, curr) => total + curr.body.filter(WORK).length * HARVEST_POWER, 0);
+        const income = this.miners.reduce((total, curr) => total + curr.body.filter((part) => part === WORK).length * HARVEST_POWER, 0);
         return Math.min(income, this.getMaxIncome()) / 1500;
     }
 }
