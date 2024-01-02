@@ -204,7 +204,6 @@ const basicWorkerActions = {
         if (full) {
             // Revoke our current harvest target after completing the task
             delete creep.memory.harvestTarget;
-            console.log("asdasd");
         }
         return full;
     }

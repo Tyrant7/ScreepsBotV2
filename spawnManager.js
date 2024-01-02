@@ -110,6 +110,8 @@ class SpawnManager {
         // Get the total energy income for this tick
         // TODO // 
         // Figure out how to factor in net income without relying on miners
+        // Pre-miners: Unreserved source spots + 1
+        // Miners: X WORK parts per Y gross Income
         const totalEPerTick = roomInfo.getMaxIncome();
 
         // Add workers of the appropriate level to the queue while their cost 
@@ -124,9 +126,7 @@ class SpawnManager {
             spawnCosts += newWorker.cost / CREEP_LIFE_TIME;
 
             // TODO //
-            // Consider more than just spawn costs, but also usage of energy
-            //
-
+            // Consider more than just spawn costs, but also usage of energy, same as above
             if (spawnCosts < totalEPerTick) {
                 this.spawnQueue.push(newWorker);
             }
@@ -143,12 +143,18 @@ class SpawnManager {
             const next = this.spawnQueue[0];
             if (spawn.spawning) {
                 // Show some visuals
-                const spawningCreep = Game.creeps[spawn.spawning.name]
-                roomInfo.room.visual.text(
-                    spawningCreep.memory.role,
-                    spawn.pos.x,
-                    spawn.pos.y - 1,
-                    { align: "center", opacity: 0.8 });
+                try {
+                    const spawningCreep = Game.creeps[spawn.spawning.name]
+                    roomInfo.room.visual.text(
+                        // Show role + level
+                        spawningCreep.memory.role + " " + next.name.split(" ")[1],
+                        spawn.pos.x,
+                        spawn.pos.y - 1,
+                        { align: "center", opacity: 0.8 });
+                }
+                catch (e) {
+                    console.log("Error when showing spawn visual: " + e);
+                }
 
                 continue;
             }
