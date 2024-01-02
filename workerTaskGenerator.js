@@ -153,12 +153,21 @@ const basicWorkerActions = {
     "harvest": function(creep, target) {
 
         // Gets energy from the room's storage, or nearest container if one is available
-        const harvest = Game.getObjectById(creep.memory.harvestTarget);
+        let harvest = Game.getObjectById(creep.memory.harvestTarget);
 
         // Determine our closest target and cache it while it's valid
-        const energy = !harvest ? 0 : harvest instanceof Source ? harvest.energy : harvest.store[RESOURCE_ENERGY];
+        const energy = !harvest ? 0 : harvest instanceof Source ? harvest.energy : 
+                                      harvest instanceof Resource ? harvest.amount : 
+                                      harvest.store[RESOURCE_ENERGY];
         if (energy === 0) {
-            let sources = creep.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0 });
+            // Containers
+            let sources = creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0 });
+
+            // Add dropped resources that are on unbuilt containers to account for miners who don't have their containers built yet
+            sources.push(...creep.room.find(FIND_DROPPED_RESOURCES, { 
+                filter: (r) => r.resourceType === RESOURCE_ENERGY && r.pos.lookFor(LOOK_CONSTRUCTION_SITES).find((s) => s.structureType === STRUCTURE_CONTAINER) }));
+
+            // Storage
             if (creep.room.storage && creep.room.storage.store[RESOURCE_ENERGY] > 0) {
                 sources.push(creep.room.storage);
             }
@@ -170,22 +179,34 @@ const basicWorkerActions = {
 
             const closest = sources.reduce((closest, curr) => creep.pos.getRangeTo(closest) <= creep.pos.getRangeTo(curr) ? closest : curr);
             creep.memory.harvestTarget = closest.id;
+            harvest = Game.getObjectById(creep.memory.harvestTarget);
         }
 
-        // Harvest from it
-        const wdResult = creep.withdraw(harvest, RESOURCE_ENERGY);
-        if (wdResult === ERR_NOT_IN_RANGE) {
-            creep.moveTo(harvest);
+        // Determine what type of intent to use to gather this energy
+        let intentResult;
+        if (harvest instanceof Source) {
+            intentResult = creep.harvest(harvest);
         }
-        // Must be a source that we're going after
-        else if (wdResult === ERR_INVALID_TARGET) {
-            if (creep.harvest(harvest) === ERR_NOT_IN_RANGE) {
-                creep.moveTo(harvest);
-            }
+        else if (harvest instanceof Resource) {
+            intentResult = creep.pickup(harvest);
+        }
+        else {
+            intentResult = creep.withdraw(harvest, RESOURCE_ENERGY);
+        }
+
+        // Pick it up
+        if (intentResult === ERR_NOT_IN_RANGE) {
+            creep.moveTo(harvest);
         }
 
         // We're done when we can't hold anymore energy
-        return creep.store.getFreeCapacity() === 0;
+        const full = creep.store.getFreeCapacity() === 0;
+        if (full) {
+            // Revoke our current harvest target after completing the task
+            delete creep.memory.harvestTarget;
+            console.log("asdasd");
+        }
+        return full;
     }
 };
 

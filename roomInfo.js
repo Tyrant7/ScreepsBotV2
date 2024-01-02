@@ -44,6 +44,15 @@ class RoomInfo {
         const income = this.miners.reduce((total, curr) => total + curr.body.filter((part) => part === WORK).length * HARVEST_POWER, 0);
         return Math.min(income, this.getMaxIncome());
     }
+
+    getNetIncome() {
+        return this.getGrossIncome() - this.getAvgUsage();
+    }
+
+    getAvgUsage() {
+        // TODO //
+        return 0;
+    }
 }
 
 module.exports = RoomInfo;

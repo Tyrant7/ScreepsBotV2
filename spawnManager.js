@@ -3,6 +3,8 @@ const CreepMaker = require("creepMaker");
 const minerSpawnThreshold = 450;
 const haulerSpawnThreshold = 450;
 
+const workerHardCap = 9;
+
 class SpawnManager {
 
     constructor() {
@@ -32,15 +34,17 @@ class SpawnManager {
         // Spawn the next one in the queue
         this.spawnNext(roomInfo);
 
-        console.log(this.spawnQueue.length);
+        /*
+        console.log("Spawn queue length: " + this.spawnQueue.length);
         for (const spawn of this.spawnQueue) {
             console.log(spawn.name);
         }
+        */
     }
 
     handleReplacements(roomInfo) {
 
-        const income = roomInfo.getGrossIncome();
+        const income = roomInfo.getNetIncome();
         let totalQueueCost = this.spawnQueue.reduce((total, curr) => total + (curr.cost / CREEP_LIFE_TIME), 0);
 
         // For all creeps that will die before they can be spawned again, add them to the spawn queue
@@ -69,6 +73,11 @@ class SpawnManager {
         // Get unreserved sources
         const sources = roomInfo.getUnreservedSources();
 
+        // Don't allow more miners than sources
+        if (this.filterQueue(CONSTANTS.roles.miner) >= sources.length) {
+            return;
+        }
+
         // Calculate an average energy produced for each source in this room
         const sourceEnergies = sources.map((source) => source.energyCapacity / ENERGY_REGEN_TIME);
         
@@ -91,17 +100,21 @@ class SpawnManager {
 
     handleWorkers(roomInfo) {
 
+        // TEMPORARY FIX
+        // Don't allow us to exceed our hard cap
+        const workersInQueue = this.filterQueue(CONSTANTS.roles.worker);
+        if (roomInfo.workers.length + workersInQueue >= workerHardCap) {
+            return;
+        }
+
         // Get the total energy income for this tick
+        // TODO // 
+        // Figure out how to factor in net income without relying on miners
         const totalEPerTick = roomInfo.getMaxIncome();
 
         // Add workers of the appropriate level to the queue while their cost 
         // averaged out over lifetime does not exceed our income
         let spawnCosts = this.spawnQueue.reduce((total, curr) => total + (curr.cost / CREEP_LIFE_TIME), 0);
-
-        console.log("sCost: " + spawnCosts);
-        console.log("ePerTick: " + totalEPerTick);
-
-        console.log("queueLen: " + this.spawnQueue.length);
 
         // Limited to one worker added to the queue per tick to avoid duplicate naming
         if (spawnCosts < totalEPerTick) {
@@ -110,15 +123,14 @@ class SpawnManager {
             const newWorker = this.creepMaker.makeWorker(maxLevel, roomInfo.room.energyCapacityAvailable);
             spawnCosts += newWorker.cost / CREEP_LIFE_TIME;
 
-            console.log("new sCost: " + spawnCosts);
+            // TODO //
+            // Consider more than just spawn costs, but also usage of energy
+            //
 
             if (spawnCosts < totalEPerTick) {
                 this.spawnQueue.push(newWorker);
             }
         }
-
-        console.log("queueLen2: " + this.spawnQueue.length);
-
     }
 
     spawnNext(roomInfo) {
@@ -128,18 +140,29 @@ class SpawnManager {
 
         // Spawn next from queue for each non-busy spawn in the room
         for (const spawn of roomInfo.spawns) {
+            const next = this.spawnQueue[0];
             if (spawn.spawning) {
-
                 // Show some visuals
-                // TODO //
+                const spawningCreep = Game.creeps[spawn.spawning.name]
+                roomInfo.room.visual.text(
+                    spawningCreep.memory.role,
+                    spawn.pos.x,
+                    spawn.pos.y - 1,
+                    { align: "center", opacity: 0.8 });
 
                 continue;
             }
-            const next = this.spawnQueue.shift();
-            spawn.spawnCreep(next.body, next.name, { 
+            const result = spawn.spawnCreep(next.body, next.name, { 
                 memory: next.memory
             });
+            if (result === OK) {
+                this.spawnQueue.shift();
+            }
         }
+    }
+
+    filterQueue(role) {
+        return this.spawnQueue.filter((spawn) => spawn.memory.role === role);
     }
 }
 
