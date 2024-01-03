@@ -117,7 +117,7 @@ class WorkerTaskGenerator {
      * @param {Task[]} tasks The array of tasks to assign priorities for.
      * @param {TaskHandler} handler The handler which the tasks will be associated with.
      * @param {RoomInfo} info A RoomInfo object associated with the room the tasks are generated for.
-     * @returns {TaskPoolEntry[]} An array of TaskPoolEntries with corresponding priorities for each task. Null if no tasks provided.
+     * @returns {TaskPoolEntry[]} An array of TaskPoolEntries with corresponding priorities for each task. Undefined if no tasks provided.
      */
     prioritiseTasks(tasks, handler, info) {
         return tasks.map((task) => new TaskPoolEntry(task, priorityMap[task.tag](task, handler, info)));
