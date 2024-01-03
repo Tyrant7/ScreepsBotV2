@@ -3,6 +3,12 @@ const TaskPoolEntry = require("taskPoolEntry");
 
 class WorkerTaskGenerator {
 
+    /**
+     * Creates a list of appropriate worker tasks for this room.
+     * @param {RoomInfo} roomInfo The info object associated with the room to generate tasks for.
+     * @param {TaskHandler} taskHandler The handler object associated with the room to read existing tasks out of.
+     * @returns {TaskPoolEntry[]} An array of TaskPoolEntry objects with assigned priorities and tasks.
+     */
     run(roomInfo, taskHandler) {
 
         // Generate tasks to do with workers
@@ -19,20 +25,13 @@ class WorkerTaskGenerator {
             }
 
             // Create a basic worker task for building
-            tasks.push(this.createBasicTask(site.id, taskType.build));
+            tasks.push(this.createBasicTask(site, taskType.build));
         }
 
         // Repair tasks
-        const repairable = roomInfo.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.hits < s.hitsMax });
+        const repairable = roomInfo.room.find(FIND_STRUCTURES, { filter: (s) => s.hits < s.hitsMax });
         for (const target of repairable) {
             
-            // Don't repair these structures too much
-            const repairThresholds = {
-                [STRUCTURE_WALL]: 0.05,
-                [STRUCTURE_RAMPART]: 0.075,
-                [STRUCTURE_CONTAINER]: 0.5,
-                [STRUCTURE_ROAD]: 0.65
-            };
             if (repairThresholds[target.structureType] &&
                 target.hits / target.hitsMax >= repairThresholds[target.structureType]) {
                 continue;
@@ -40,9 +39,9 @@ class WorkerTaskGenerator {
 
             // One repair task per target for each 150k health missing, max one for walls and ramparts
             const existingTasks = taskHandler.getTasksForObjectByTag(target.id, taskType.repair);
-            if (existingTasks.length &&
-               (target.structureType === STRUCTURE_WALL ||
-                target.structureType === STRUCTURE_RAMPART)) {
+            if ((target.structureType === STRUCTURE_WALL ||
+                target.structureType === STRUCTURE_RAMPART) &&
+                existingTasks.length) {
                 continue;
             }
             else if (existingTasks.length >= Math.ceil((target.hitsMax - target.hits) / 150000)) {
@@ -50,7 +49,7 @@ class WorkerTaskGenerator {
             }
 
             // Create a basic worker task for repairing
-            tasks.push(this.createBasicTask(target.id, taskType.repair));
+            tasks.push(this.createBasicTask(target, taskType.repair));
         }
 
         // Restock tasks
@@ -71,7 +70,7 @@ class WorkerTaskGenerator {
 
             // All that's left should be towers, spawn, and extensions
             // Create a basic worker task for restocking
-            tasks.push(this.createBasicTask(restock.id, taskType.restock));
+            tasks.push(this.createBasicTask(restock, taskType.restock));
         }
 
         // Upgrade tasks -> ensure at least one at all times
@@ -80,50 +79,64 @@ class WorkerTaskGenerator {
             if (!existingTasks.length) {
     
                 // Create a basic worker task for upgrading
-                tasks.push(this.createBasicTask(roomInfo.room.controller.id, taskType.upgrade));
+                tasks.push(this.createBasicTask(roomInfo.room.controller, taskType.upgrade));
             }
         }
 
-        return tasks;
+        return this.prioritiseTasks(tasks, taskHandler, roomInfo);
     }
 
     /**
      * Generates a default task for workers in this room.
      * @param {Creep} creep The creep to generate the task for.
-     * @returns A newly created 'upgrade' task.
+     * @returns {Task} A newly created 'upgrade' task.
      */
     generateDefaultTask(creep) {
-        // Default the priority to zero in case this worker dies and the task is returned to the pool
-        const entry = this.createBasicTask(creep.room.controller.id, taskType.upgrade);
-        entry.priority = 0;
-        return entry;
+        // Generate a new upgrade task with a priority of zero in case this worker dies and the task is returned to the pool
+        return new TaskPoolEntry(this.createBasicTask(creep.room.controller, taskType.upgrade), 0);
     }
 
     /**
      * Creates a basic worker task that consists of a harvest step, and an action step. 
-     * @param {string} targetID The target of the action step of the task.
+     * @param {*} target The target of the action step of the task.
      * @param {number} taskType One of the taskType constants to use as a tag for the created task.
-     * @returns {TaskPoolEntry} A new taskPoolEntry object with an assigned priority and task.
+     * @returns {Task} A new task object with the appropriate actions, target, and tag.
      */
-    createBasicTask(targetID, taskType) {
+    createBasicTask(target, taskType) {
 
         // Initialize our action stack with a default harvest, plus an action matching the task type
         const actionStack = [];
         actionStack.push(basicWorkerActions["harvest"]);
         actionStack.push(basicWorkerActions[taskType]);
 
-        const task = new Task(targetID, taskType, actionStack);
-        const priority = 1; // TODO //
+        return new Task(target.id, taskType, actionStack);
+    }
 
-        return new TaskPoolEntry(task, priority);
+    /**
+     * Assigns priorities to all tasks in the array and returns appropriate TaskPoolEntries for each.
+     * @param {Task[]} tasks The array of tasks to assign priorities for.
+     * @param {TaskHandler} handler The handler which the tasks will be associated with.
+     * @param {RoomInfo} info A RoomInfo object associated with the room the tasks are generated for.
+     * @returns {TaskPoolEntry[]} An array of TaskPoolEntries with corresponding priorities for each task. Null if no tasks provided.
+     */
+    prioritiseTasks(tasks, handler, info) {
+        return tasks.map((task) => new TaskPoolEntry(task, priorityMap[task.tag](task, handler, info)));
     }
 }
+
+// Don't repair these structures too much
+const repairThresholds = {
+    [STRUCTURE_WALL]: 0.05,
+    [STRUCTURE_RAMPART]: 0.075,
+    [STRUCTURE_CONTAINER]: 0.5,
+    [STRUCTURE_ROAD]: 0.65
+};
 
 const taskType = {
     upgrade: "upgrade",
     restock: "restock",
     build: "build",
-    repair: "repair"
+    repair: "repair",
 };
 
 const basicWorkerActions = {
@@ -221,21 +234,67 @@ const basicWorkerActions = {
     }
 };
 
-/*
+// Each of these should return a single number for priority
 const priorityMap = {
-    [taskType.upgrade]: function(target, roomInfo) {
+    [taskType.upgrade]: function(task, handler, info) {
+
+        // Big problem here -> emergency upgrade
+        if (info.room.controller.ticksToDowngrade <= 1000) {
+            return 50;
+        }
+
+        // Otherwise, default logic
+        // A base of 1 priority, plus an additional 1 priority for each 1000 ticks below 5000
+        const downgrade = Math.min(info.room.controller.ticksToDowngrade / 1000, 5);
+        return 6 - downgrade;
+    },
+    [taskType.restock]: function(task, handler, info) {
+
+        // Need workers urgently
+        if (info.workers.length <= 2) {
+            return 100;
+        }
+
+        // Give a bit of a threshold for both, hence the * 1.2
+        const eTier = Math.min(info.room.energyAvailable * 1.2 / info.room.energyCapacityAvailable, 1);
+        const workerUrgency = Math.min(info.workers.length / info.openSourceSpots, 1);
+        const need = 1 - (eTier * workerUrgency);
+
+        if (need >= 0.9) {
+            return 50;
+        }
+        else if (need >= 0.75) {
+            return 14;
+        }
+        else if (need >= 0.5) {
+            return 5;
+        }
+        return 1;
+    },
+    [taskType.build]: function(task, handler, info) {
         
+        const target = Game.getObjectById(task.target);
+        const buildPriorities = {
+            [STRUCTURE_STORAGE]: 13,
+            [STRUCTURE_CONTAINER]: 8,
+            [STRUCTURE_EXTENSION]: 7,
+            [STRUCTURE_TOWER]: 6,
+            [STRUCTURE_LINK]: 4,
+            [STRUCTURE_RAMPART]: 4,
+            [STRUCTURE_ROAD]: 3,
+            [STRUCTURE_WALL]: 2
+        }
+        return buildPriorities[target.structureType] || 1;
     },
-    [taskType.restock]: function(target, roomInfo) {
+    [taskType.repair]: function(task, handler, info) {
 
+        // A simple equation, which calculates their fraction of total hits, 
+        // factoring in a multiplier for special structures like walls and ramparts
+        const target = Game.getObjectById(task.target);
+        const multiplier = repairThresholds[target.structureType] || 1;
+        const repairNeed = 1 - (target.hits / (target.hitsMax * multiplier));
+        return repairNeed * 20;
     },
-    [taskType.build]: function(target, roomInfo) {
-
-    },
-    [taskType.repair]: function(target, roomInfo) {
-
-    }
-}
-*/
+};
 
 module.exports = WorkerTaskGenerator;
