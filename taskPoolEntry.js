@@ -24,7 +24,7 @@ class TaskPoolEntry {
     getPriority(position) {
         return this.basePriority + 
                 (this.age * ageWeight) +
-                (position.getRangeTo(Game.getObjectById(task.target.pos)) * distanceWeight);
+                (position.getRangeTo(Game.getObjectById(this.task.target.pos)) * distanceWeight);
     }
 
     /**
