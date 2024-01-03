@@ -110,8 +110,8 @@ class SpawnManager {
         // Workers are allocated based on number of WORK parts using the formula
         // Before we have miners, allocate workers using nSourceSpots + 1, otherwise use the formula
         // X WORK parts per Y gross income
-        // 1 determined through trial and error to be an acceptable value
-        const incomeToPartRatio = 1;
+        // 0.8 determined through trial and error to be an acceptable value
+        const incomeToPartRatio = 0.8;
         const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getGrossIncome() * incomeToPartRatio) : roomInfo.openSourceSpots + 1;
 
         // Sum up part counts for workers, both existing and in the queue

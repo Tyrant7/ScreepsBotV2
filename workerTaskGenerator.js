@@ -113,7 +113,7 @@ class WorkerTaskGenerator {
         actionStack.push(basicWorkerActions[taskType]);
 
         const task = new Task(targetID, taskType, actionStack);
-        const priority = 0; // TODO //
+        const priority = 1; // TODO //
 
         return new TaskPoolEntry(task, priority);
     }
