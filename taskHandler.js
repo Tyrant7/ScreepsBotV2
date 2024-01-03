@@ -26,7 +26,7 @@ class TaskHandler {
      * @returns {Task} A new task. Null if no tasks exist in the pool.
      */
     nextTask(creep) {
-        const newTask = this.taskPool.next();
+        const newTask = this.taskPool.next(creep);
         if (newTask) {
             this.activeTasks[creep.name] = newTask;
             return newTask.task;
