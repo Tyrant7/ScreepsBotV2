@@ -1,3 +1,9 @@
+// TODO //
+// Consider:
+// This class is clunky to pass around everywhere
+// What about just extending the base Room prototype to include all of these things?
+
+
 class RoomInfo {
 
     constructor(room) {
@@ -16,6 +22,14 @@ class RoomInfo {
             const lookResults = room.lookForAtArea(LOOK_TERRAIN, p.y-1, p.x-1, p.y+1, p.x+1, true).filter((t) => t.terrain === "wall");
             return total + (9 - lookResults.length);
         }, 0);
+
+        // If this room is a remote, the dependant will be the ID of the adjacent non-remote room
+        // if this room isn't a remote, this is will be it's own ID
+        // TODO //
+        // Better implementation than this to actually account for remotes and not just owned rooms
+        if (room.controller.my) {
+            this.dependant = room.name;
+        }
     }
 
     /**
@@ -51,6 +65,15 @@ class RoomInfo {
     getGrossIncome() {
         const income = this.miners.reduce((total, curr) => total + curr.body.filter((part) => part.type === WORK).length * HARVEST_POWER, 0);
         return Math.min(income, this.getMaxIncome());
+    }
+
+    /**
+     * Is this room owned or important to us?
+     * @returns The name of the dependant for this room: can be this own room's name, or the organizer if this room is a remote.
+     * Undefined if this room isn't important to us.
+     */
+    isRemoteOrDependant() {
+        return this.dependant;
     }
 }
 

@@ -157,6 +157,8 @@ class SpawnManager {
 
                 continue;
             }
+            // Save the room responsible for this creep
+            next.memory.home = roomInfo.room.name;
             const result = spawn.spawnCreep(next.body, next.name, { 
                 memory: next.memory
             });

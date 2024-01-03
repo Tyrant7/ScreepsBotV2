@@ -162,7 +162,7 @@ const basicWorkerActions = {
         if (creep.repair(target) === ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
         }
-        return creep.store[RESOURCE_ENERGY] === 0 || !target;
+        return creep.store[RESOURCE_ENERGY] === 0 || !target || target.hits === target.hitsMax;
     },
     "harvest": function(creep, target) {
 

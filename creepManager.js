@@ -34,11 +34,11 @@ class CreepManager {
      */
     processCreep(creep) {
 
-        // Initialize task handler for this room if none exists
-        if (!this.taskHandlers[creep.room.name]) {
-            this.taskHandlers[creep.room.name] = new TaskHandler();
+        // Initialize task handler for the creep's home room if none exists
+        if (!this.taskHandlers[creep.memory.home]) {
+            this.taskHandlers[creep.memory.home] = new TaskHandler();
         }
-        const handler = this.taskHandlers[creep.room.name];
+        const handler = this.taskHandlers[creep.memory.home];
 
         // Get the current task, or request a new one if none has been assigned
         let task = handler.getTask(creep);
@@ -80,7 +80,7 @@ class CreepManager {
      * @param {string} name The name of the creep to cancel for.
      */
     freeCreep(name) {
-        const handler = this.taskHandlers[Memory.creeps[name].room];
+        const handler = this.taskHandlers[Memory.creeps[name].home];
         if (handler) {
             handler.cancelTask(name);
         }

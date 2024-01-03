@@ -7,7 +7,7 @@ class HaulerTaskGenerator {
         // Nothing to do here; haulers do not need special tasks
     }
 
-    generateDefaultTask(roomInfo) {
+    generateDefaultTask(creep) {
 
         // Generate default hauler behaviour
 
