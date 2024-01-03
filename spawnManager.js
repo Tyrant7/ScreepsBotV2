@@ -121,7 +121,7 @@ class SpawnManager {
 
         // Limited to one worker added to the queue per tick to avoid duplicate naming     
         // Also limit ourselves to spawning lower level workers first if we get wiped out
-        const maxLevel = Math.min(roomInfo.workers.length, CONSTANTS.maxWorkerLevel)
+        const maxLevel = Math.min(roomInfo.workers.length + 1, CONSTANTS.maxWorkerLevel);
 
         // Adjust level so that we spawn lower level workers if we're near our WORK part max
         const adjustedLevel = Math.min(maxLevel, maxWorkParts - currentWorkParts);
