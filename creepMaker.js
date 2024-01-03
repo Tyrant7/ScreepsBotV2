@@ -18,16 +18,18 @@ class CreepMaker {
 
     makeMiner(workParts, energyCapacity) {
         let body = [MOVE, MOVE, MOVE];
+        let lvl = 0;
         for (let i = 0; i < workParts; i++) {
             body.push(WORK);
             if (this.getCost(body) > energyCapacity) {
                 body.pop();
+                lvl = i;
                 break;
             }
         }
         return { body: body, 
                  cost: this.getCost(body),
-                 name: "Miner " + Game.time + " [" + workParts + "]",
+                 name: "Miner " + Game.time + " [" + lvl + "]",
                  memory: { role: CONSTANTS.roles.miner }};
     }
 

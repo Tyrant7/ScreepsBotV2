@@ -30,7 +30,8 @@ class WorkerTaskGenerator {
             const repairThresholds = {
                 [STRUCTURE_WALL]: 0.05,
                 [STRUCTURE_RAMPART]: 0.075,
-                [STRUCTURE_CONTAINER]: 0.5
+                [STRUCTURE_CONTAINER]: 0.5,
+                [STRUCTURE_ROAD]: 0.65
             };
             if (repairThresholds[target.structureType] &&
                 target.hits / target.hitsMax >= repairThresholds[target.structureType]) {
@@ -163,9 +164,11 @@ const basicWorkerActions = {
             // Containers
             let sources = creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0 });
 
-            // Add dropped resources that are on unbuilt containers to account for miners who don't have their containers built yet
+            // Add dropped resources that are on containers or container sites to account for miners who don't have their containers built yet and overflows
             sources.push(...creep.room.find(FIND_DROPPED_RESOURCES, { 
-                filter: (r) => r.resourceType === RESOURCE_ENERGY && r.pos.lookFor(LOOK_CONSTRUCTION_SITES).find((s) => s.structureType === STRUCTURE_CONTAINER) }));
+                filter: (r) => r.resourceType === RESOURCE_ENERGY 
+                && (r.pos.lookFor(LOOK_CONSTRUCTION_SITES).find((s) => s.structureType === STRUCTURE_CONTAINER)
+                || r.pos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER)) }));
 
             // Storage
             if (creep.room.storage && creep.room.storage.store[RESOURCE_ENERGY] > 0) {

@@ -44,7 +44,7 @@ class SpawnManager {
 
     handleReplacements(roomInfo) {
 
-        const income = roomInfo.getNetIncome();
+        const income = roomInfo.getGrossIncome();
         let totalQueueCost = this.spawnQueue.reduce((total, curr) => total + (curr.cost / CREEP_LIFE_TIME), 0);
 
         // For all creeps that will die before they can be spawned again, add them to the spawn queue
@@ -100,36 +100,35 @@ class SpawnManager {
 
     handleWorkers(roomInfo) {
 
-        // TEMPORARY FIX
+        // TEMPORARY FIX //
         // Don't allow us to exceed our hard cap
         const workersInQueue = this.filterQueue(CONSTANTS.roles.worker);
         if (roomInfo.workers.length + workersInQueue >= workerHardCap) {
             return;
         }
 
-        // Get the total energy income for this tick
-        // TODO // 
-        // Figure out how to factor in net income without relying on miners
-        // Pre-miners: Unreserved source spots + 1
-        // Miners: X WORK parts per Y gross Income
-        const totalEPerTick = roomInfo.getMaxIncome();
+        // Workers are allocated based on number of WORK parts using the formula
+        // Before we have miners, allocate workers using nSourceSpots + 1, otherwise use the formula
+        // X WORK parts per Y gross income
+        // 1 determined through trial and error to be an acceptable value
+        const incomeToPartRatio = 1;
+        const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getGrossIncome() * incomeToPartRatio) : roomInfo.openSourceSpots + 1;
 
-        // Add workers of the appropriate level to the queue while their cost 
-        // averaged out over lifetime does not exceed our income
-        let spawnCosts = this.spawnQueue.reduce((total, curr) => total + (curr.cost / CREEP_LIFE_TIME), 0);
+        // Sum up part counts for workers, both existing and in the queue
+        let currentWorkParts = roomInfo.workers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0)
+                             + this.spawnQueue.reduce((total, curr) => 
+                               curr.memory.role === CONSTANTS.roles.worker && total + curr.body.filter((p) => p.type === WORK).length, 0);
 
-        // Limited to one worker added to the queue per tick to avoid duplicate naming
-        if (spawnCosts < totalEPerTick) {
-            // Limit ourselves to spawning lower level workers first if we get wiped out
-            const maxLevel = Math.min(roomInfo.workers.length, CONSTANTS.maxWorkerLevel)
-            const newWorker = this.creepMaker.makeWorker(maxLevel, roomInfo.room.energyCapacityAvailable);
-            spawnCosts += newWorker.cost / CREEP_LIFE_TIME;
+        // Limited to one worker added to the queue per tick to avoid duplicate naming     
+        // Also limit ourselves to spawning lower level workers first if we get wiped out
+        const maxLevel = Math.min(roomInfo.workers.length, CONSTANTS.maxWorkerLevel)
 
-            // TODO //
-            // Consider more than just spawn costs, but also usage of energy, same as above
-            if (spawnCosts < totalEPerTick) {
-                this.spawnQueue.push(newWorker);
-            }
+        // Adjust level so that we spawn lower level workers if we're near our WORK part max
+        const adjustedLevel = Math.min(maxLevel, maxWorkParts - currentWorkParts);
+        if (adjustedLevel > 0) {
+            const newWorker = this.creepMaker.makeWorker(adjustedLevel, roomInfo.room.energyCapacityAvailable);
+            currentWorkParts += newWorker.body.filter((p) => p.type === WORK).length;
+            this.spawnQueue.push(newWorker);
         }
     }
 

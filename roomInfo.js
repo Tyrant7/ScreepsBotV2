@@ -16,7 +16,6 @@ class RoomInfo {
             const lookResults = room.lookForAtArea(LOOK_TERRAIN, p.y-1, p.x-1, p.y+1, p.x+1, true).filter((t) => t.terrain === "wall");
             return total + (9 - lookResults.length);
         }, 0);
-        console.log(this.openSourceSpots);
     }
 
     /**
@@ -50,17 +49,8 @@ class RoomInfo {
     }
 
     getGrossIncome() {
-        const income = this.miners.reduce((total, curr) => total + curr.body.filter((part) => part === WORK).length * HARVEST_POWER, 0);
+        const income = this.miners.reduce((total, curr) => total + curr.body.filter((part) => part.type === WORK).length * HARVEST_POWER, 0);
         return Math.min(income, this.getMaxIncome());
-    }
-
-    getNetIncome() {
-        return this.getGrossIncome() - this.getAvgUsage();
-    }
-
-    getAvgUsage() {
-        // TODO //
-        return 0;
     }
 }
 
