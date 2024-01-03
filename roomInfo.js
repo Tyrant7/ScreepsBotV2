@@ -8,6 +8,15 @@ class RoomInfo {
         this.miners = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.miner);
 
         this.spawns = this.room.find(FIND_MY_SPAWNS);
+
+        this.openSourceSpots = room.find(FIND_SOURCES).reduce(function(total, s) {
+
+            const p = s.pos;
+                                                           // No constant that I could find for this terrain type, unfortunately vv
+            const lookResults = room.lookForAtArea(LOOK_TERRAIN, p.y-1, p.x-1, p.y+1, p.x+1, true).filter((t) => t.terrain === "wall");
+            return total + (9 - lookResults.length);
+        }, 0);
+        console.log(this.openSourceSpots);
     }
 
     /**

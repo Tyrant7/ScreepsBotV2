@@ -28,6 +28,8 @@ class MinerTaskGenerator {
 
                     // Otherwise, let's search around our source
                     const p = target.pos;
+
+                    // TODO // Change out for lookForAtArea to avoid the extra filter condition
                     const containers = creep.room.lookAtArea(p.y-1, p.x-1, p.y+1, p.x+1, true).filter(
                         (item) => item.type === LOOK_STRUCTURES && item.structure.structureType === STRUCTURE_CONTAINER);
 
