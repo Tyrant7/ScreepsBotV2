@@ -182,6 +182,15 @@ const basicWorkerActions = {
             harvest = Game.getObjectById(creep.memory.harvestTarget);
         }
 
+        // Determine if it's worth gathering ->
+        // If we're above a baseline energy threshold and are closer to our target than our refill, 
+        // skip refilling and go directly to our target instead
+        const optionalRefillThreshold = 50;
+        if (creep.store[RESOURCE_ENERGY] >= optionalRefillThreshold &&
+            creep.pos.getRangeTo(target) <= creep.pos.getRangeTo(harvest)) {
+            return true;
+        }
+
         // Determine what type of intent to use to gather this energy
         let intentResult;
         if (harvest instanceof Source) {
