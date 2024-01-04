@@ -34,12 +34,10 @@ class SpawnManager {
         // Spawn the next one in the queue
         this.spawnNext(roomInfo);
 
-        /*
         console.log("Spawn queue length: " + this.spawnQueue.length);
         for (const spawn of this.spawnQueue) {
             console.log(spawn.name);
         }
-        */
     }
 
     handleReplacements(roomInfo) {
@@ -74,7 +72,7 @@ class SpawnManager {
         const sources = roomInfo.getUnreservedSources();
 
         // Don't allow more miners than sources
-        if (this.filterQueue(CONSTANTS.roles.miner) >= sources.length) {
+        if (this.filterQueue(CONSTANTS.roles.miner).length >= sources.length) {
             return;
         }
 
@@ -102,20 +100,19 @@ class SpawnManager {
 
         // TEMPORARY FIX //
         // Don't allow us to exceed our hard cap
-        const workersInQueue = this.filterQueue(CONSTANTS.roles.worker);
-        if (roomInfo.workers.length + workersInQueue >= workerHardCap) {
+        const queuedWorkers = this.filterQueue(CONSTANTS.roles.worker);
+        if (roomInfo.workers.length + queuedWorkers.length >= workerHardCap) {
             return;
         }
 
         // Workers are allocated based on number of WORK parts using the formula
         // Before we have miners, allocate workers using nSourceSpots + 1, otherwise use the formula
         // X WORK parts per Y gross income
-        // 0.8 determined through trial and error to be an acceptable value
-        const incomeToPartRatio = 0.8;
+        // Ratio determined through trial and error to be an acceptable value
+        const incomeToPartRatio = 1.1;
         const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getGrossIncome() * incomeToPartRatio) : roomInfo.openSourceSpots + 1;
 
         // Sum up part counts for workers, both existing and in the queue
-        const queuedWorkers = this.filterQueue(CONSTANTS.roles.worker);
         const currentWorkParts = roomInfo.workers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0)
                                 + queuedWorkers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
 
