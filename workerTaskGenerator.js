@@ -275,14 +275,14 @@ const priorityMap = {
         
         const target = Game.getObjectById(task.target);
         const buildPriorities = {
-            [STRUCTURE_STORAGE]: 13,
-            [STRUCTURE_CONTAINER]: 8,
-            [STRUCTURE_EXTENSION]: 7,
-            [STRUCTURE_TOWER]: 6,
-            [STRUCTURE_LINK]: 4,
-            [STRUCTURE_RAMPART]: 4,
-            [STRUCTURE_ROAD]: 3,
-            [STRUCTURE_WALL]: 2
+            [STRUCTURE_STORAGE]: 9,
+            [STRUCTURE_CONTAINER]: 5,
+            [STRUCTURE_EXTENSION]: 3,
+            [STRUCTURE_TOWER]: 3,
+            [STRUCTURE_LINK]: 2,
+            [STRUCTURE_RAMPART]: 2,
+            [STRUCTURE_ROAD]: 2,
+            [STRUCTURE_WALL]: 1
         }
         return buildPriorities[target.structureType] || 1;
     },

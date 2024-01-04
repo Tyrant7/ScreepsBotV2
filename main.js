@@ -5,6 +5,7 @@ Tyrant Bot V2
 */
 
 global.CONSTANTS = require("constants");
+
 const CreepManager = require("creepManager");
 const SpawnManager = require("spawnManager");
 
