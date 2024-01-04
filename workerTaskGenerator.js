@@ -235,7 +235,7 @@ const basicWorkerActions = {
         // We're done when we can't hold anymore energy
         const full = creep.store.getFreeCapacity() === 0;
         if (full) {
-            // Revoke our current harvest target after completing the task
+            // Relinquish our current harvest target after completing the task
             delete creep.memory.harvestTarget;
         }
         return full;

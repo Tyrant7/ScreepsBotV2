@@ -34,12 +34,10 @@ class SpawnManager {
         // Spawn the next one in the queue
         this.spawnNext(roomInfo);
 
-        /*
         console.log("Spawn queue length: " + this.spawnQueue.length);
         for (const spawn of this.spawnQueue) {
             console.log(spawn.name);
         }
-        */
     }
 
     handleReplacements(roomInfo) {
@@ -214,8 +212,10 @@ class SpawnManager {
         for (const spawn of roomInfo.spawns) {
 
             // We can no longer spawn this creep, remove creeps from the queue until we find one capable of being spawned
+            // If we have no workers, we MUST spawn a worker next
             let next = this.spawnQueue[0];
-            while (next.cost > roomInfo.room.energyCapacityAvailable) {
+            while (next.cost > roomInfo.room.energyCapacityAvailable ||
+                  (roomInfo.workers.length === 0 && next.memory.role !== CONSTANTS.roles.worker)) {
                 this.spawnQueue.shift();
                 next = this.spawnQueue[0];
             }
@@ -263,7 +263,8 @@ class SpawnManager {
 
         // Limited to one worker added to the queue per tick to avoid duplicate naming     
         // Also limit ourselves to spawning lower level workers first if we get wiped out
-        const maxLevel = Math.min(roomInfo.workers.length + queuedWorkers.length + 1, CONSTANTS.maxWorkerLevel);
+        const predictedWorkerCount = roomInfo.workers.length + queuedWorkers.length;
+        const maxLevel = Math.min(Math.ceil(predictedWorkerCount * 1.35) + 1, CONSTANTS.maxWorkerLevel);
 
         // Adjust level so that we spawn lower level workers if we're near our WORK part max
         return Math.min(maxLevel, maxWorkParts - currentWorkParts);
