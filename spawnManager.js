@@ -122,6 +122,12 @@ class SpawnManager {
             const accumulated = [];
             while (totalLevel < idealLevel) {
                 const lowest = candidates.reduce((lowest, curr) => curr.level < lowest.level ? curr : lowest);
+
+                // Nothing to consolidate -> add the worker as-is
+                if (lowest.level >= idealLevel) {
+                    this.spawnQueue.push(this.creepMaker.makeWorker(totalLevel));
+                }
+
                 accumulated.push(lowest);
                 totalLevel += lowest.level;
 
