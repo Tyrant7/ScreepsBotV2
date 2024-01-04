@@ -149,7 +149,7 @@ class SpawnManager {
             }
 
             // Mark consolidated workers as "doNotReplace"
-            for (const levelCreepPair in accumulated) {
+            for (const levelCreepPair of accumulated) {
                 levelCreepPair.worker.memory.doNotReplace = true;
             }
             return true;
