@@ -34,7 +34,7 @@ class CreepMaker {
     }
 
     makeClone(creep) {
-        const body = creep.body;
+        const body = creep.body.map((p) => p.type);
         const cost = this.getCost(body);
         const oldName = creep.name.split(" ");
         const name = oldName[0] + " " + Game.time + " "  + oldName[2];
