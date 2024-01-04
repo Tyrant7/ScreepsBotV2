@@ -112,7 +112,7 @@ class SpawnManager {
             const match = candidates.find((c) => c.level === neededLevels);
             if (match) {
                 creep.memory.doNotReplace = true;
-                match.memory.doNotReplace = true;
+                match.worker.memory.doNotReplace = true;
                 this.spawnQueue.push(this.creepMaker.makeWorker(idealLevel));
                 return true;
             }
