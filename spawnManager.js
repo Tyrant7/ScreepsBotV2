@@ -135,14 +135,21 @@ class SpawnManager {
 
         // Spawn next from queue for each non-busy spawn in the room
         for (const spawn of roomInfo.spawns) {
-            const next = this.spawnQueue[0];
+
+            // We can no longer spawn this creep, remove creeps from the queue until we find one capable of being spawned
+            let next = this.spawnQueue[0];
+            while (next.cost > roomInfo.room.energyCapacityAvailable) {
+                this.spawnQueue.shift();
+                next = this.spawnQueue[0];
+            }
+
             if (spawn.spawning) {
                 // Show some visuals
                 try {
                     const spawningCreep = Game.creeps[spawn.spawning.name]
                     roomInfo.room.visual.text(
                         // Show role + level
-                        spawningCreep.memory.role + " " + next.name.split(" ")[1],
+                        spawningCreep.memory.role + " " + next.name.split(" ")[2],
                         spawn.pos.x,
                         spawn.pos.y - 1,
                         { align: "center", opacity: 0.8 });
