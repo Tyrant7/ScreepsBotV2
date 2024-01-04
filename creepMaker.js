@@ -21,9 +21,9 @@ class CreepMaker {
         let lvl = 0;
         for (let i = 0; i < workParts; i++) {
             body.push(WORK);
+            lvl = i;
             if (this.getCost(body) > energyCapacity) {
                 body.pop();
-                lvl = i;
                 break;
             }
         }
@@ -37,7 +37,7 @@ class CreepMaker {
         const body = creep.body;
         const cost = this.getCost(body);
         const oldName = creep.name.split(" ");
-        const name = oldName[0] + Game.time + oldName[2];
+        const name = oldName[0] + " " + Game.time + " "  + oldName[2];
         return { body: body, 
                  cost: cost,
                  name: name,

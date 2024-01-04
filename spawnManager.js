@@ -51,6 +51,17 @@ class SpawnManager {
             // Only do this when these two values are EQUAL to prevent replacing the same creep multiple times
             if (creep.ticksToLive === this.creepMaker.getSpawnTime(creep.body)) {
 
+                if (creep.memory.doNotReplace) {
+                    continue;
+                }
+
+                // Handle worker replacement logic a little differently
+                if (creep.memory.role === CONSTANTS.roles.worker) {
+                    if (this.replaceWorker(creep, roomInfo)) {
+                        continue;
+                    }
+                }
+
                 // Too expensive to replace in this room
                 if (this.creepMaker.getCost(creep.body) > roomInfo.room.energyCapacityAvailable) {
                     continue;
@@ -64,6 +75,80 @@ class SpawnManager {
                 }
             }
         }
+    }
+
+    /**
+     * Employs some special logic to handle combining lower level workers to reach our currently desired level instead of replacing them as usual.
+     * @param {Creep} creep The worker to replace.
+     * @param {RoomInfo} roomInfo Some information about the worker's room.
+     * @returns True if the worker was consolidated, false if there was no special logic performed and the worker can be replaced as usual.
+     */
+    replaceWorker(creep, roomInfo) {
+
+        // Figure out our desired level to replace this worker with
+        const level = creep.body.filter((p) => p.type === WORK).length;
+        const idealLevel = this.getMaxWorkerLevel(roomInfo);
+        if (level < idealLevel) {
+
+            // Search for other lower level workers to consolidate parts with
+            const candidates = [];
+            for (const worker of roomInfo.workers) {
+                if (worker.memory.doNotReplace) {
+                    continue;
+                }
+
+                const workerLvl = creep.body.filter((p) => p.type === WORK).length;
+                if (workerLvl < idealLevel) {
+                    candidates.push({ worker: worker, level: workerLvl });
+                }
+            }
+
+            // Determine needed part count
+            const neededLevels = idealLevel - level;
+
+            // If we find a match, great! Return early
+            const match = candidates.find((c) => c.level === neededLevels);
+            if (match) {
+                creep.memory.doNotReplace = true;
+                match.memory.doNotReplace = true;
+                this.spawnQueue.push(this.creepMaker.makeWorker(idealLevel));
+                return true;
+            }
+
+            // Otherwise, let's do some logic to combine more than 2 creeps
+            let totalLevel = level;
+            const accumulated = [];
+            while (totalLevel < idealLevel) {
+                const lowest = candidates.reduce((lowest, curr) => curr.level < lowest.level ? curr : lowest);
+                accumulated.push(lowest);
+                totalLevel += lowest.level;
+
+                // Lowest level matches us right up -> return!
+                if (totalLevel === idealLevel) {
+                    break;
+                }
+                // Lowest level puts us over -> combine as best we can
+                else if (totalLevel > idealLevel) {
+
+                    // Here we can take any overflowing level, and add it back to the queue as its own worker
+                    // E.x. We combined two level 3 workers, so we have 6 levels but only want 4
+                    // So we can add one level 4 and one level 2 worker to the queue
+                    const overflow = totalLevel - idealLevel;
+                    const mainWorker = this.creepMaker.makeWorker(idealLevel);
+                    const overflowWorker = this.creepMaker.makeWorker(overflow);
+                    this.spawnQueue.push(mainWorker);
+                    this.spawnQueue.push(overflowWorker);
+                    break;
+                }
+            }
+
+            // Mark consolidated workers as "doNotReplace"
+            for (const levelCreepPair in accumulated) {
+                levelCreepPair.worker.memory.doNotReplace = true;
+            }
+            return true;
+        }
+        return false;
     }
 
     handleMiners(roomInfo) {
@@ -105,25 +190,9 @@ class SpawnManager {
             return;
         }
 
-        // Workers are allocated based on number of WORK parts using the formula
-        // Before we have miners, allocate workers using nSourceSpots + 1, otherwise use the formula
-        // X WORK parts per Y gross income
-        // Ratio determined through trial and error to be an acceptable value
-        const incomeToPartRatio = 1.1;
-        const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getGrossIncome() * incomeToPartRatio) : roomInfo.openSourceSpots + 1;
-
-        // Sum up part counts for workers, both existing and in the queue
-        const currentWorkParts = roomInfo.workers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0)
-                                + queuedWorkers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
-
-        // Limited to one worker added to the queue per tick to avoid duplicate naming     
-        // Also limit ourselves to spawning lower level workers first if we get wiped out
-        const maxLevel = Math.min(roomInfo.workers.length + queuedWorkers.length + 1, CONSTANTS.maxWorkerLevel);
-
-        // Adjust level so that we spawn lower level workers if we're near our WORK part max
-        const adjustedLevel = Math.min(maxLevel, maxWorkParts - currentWorkParts);
-        if (adjustedLevel > 0) {
-            const newWorker = this.creepMaker.makeWorker(adjustedLevel, roomInfo.room.energyCapacityAvailable);
+        const workerLevel = this.getMaxWorkerLevel(roomInfo);
+        if (workerLevel > 0) {
+            const newWorker = this.creepMaker.makeWorker(workerLevel, roomInfo.room.energyCapacityAvailable);
             this.spawnQueue.push(newWorker);
         }
     }
@@ -169,6 +238,27 @@ class SpawnManager {
                 this.spawnQueue.shift();
             }
         }
+    }
+
+    getMaxWorkerLevel(roomInfo) {
+        // Workers are allocated based on number of WORK parts using the formula
+        // Before we have miners, allocate workers using nSourceSpots + 1, otherwise use the formula
+        // X WORK parts per Y gross income
+        // Ratio determined through trial and error to be an acceptable value
+        const incomeToPartRatio = 1.1;
+        const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getGrossIncome() * incomeToPartRatio) : roomInfo.openSourceSpots + 1;
+
+        // Sum up part counts for workers, both existing and in the queue
+        const queuedWorkers = this.filterQueue(CONSTANTS.roles.worker);
+        const currentWorkParts = roomInfo.workers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0)
+                                  + queuedWorkers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
+
+        // Limited to one worker added to the queue per tick to avoid duplicate naming     
+        // Also limit ourselves to spawning lower level workers first if we get wiped out
+        const maxLevel = Math.min(roomInfo.workers.length + queuedWorkers.length + 1, CONSTANTS.maxWorkerLevel);
+
+        // Adjust level so that we spawn lower level workers if we're near our WORK part max
+        return Math.min(maxLevel, maxWorkParts - currentWorkParts);
     }
 
     filterQueue(role) {
