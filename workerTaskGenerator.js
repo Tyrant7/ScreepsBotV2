@@ -187,13 +187,15 @@ const basicWorkerActions = {
             if (creep.room.storage && creep.room.storage.store[RESOURCE_ENERGY] > 0) {
                 sources.push(creep.room.storage);
             }
-
+            
             // We don't have any containers or storage yet, mine our own energy
             if (!sources || !sources.length) {
                 sources = creep.room.find(FIND_SOURCES, { filter: (s) => s.energy > 0 });
             }
 
-            const closest = sources.reduce((closest, curr) => creep.pos.getRangeTo(closest) <= creep.pos.getRangeTo(curr) ? closest : curr);
+            // Find the closest target that isn't the same as our previous one
+            const closest = sources.reduce(
+                (closest, curr) => creep.pos.getRangeTo(closest) > creep.pos.getRangeTo(curr) && curr.id !== creep.memory.harvestTarget ? curr : closest);
             creep.memory.harvestTarget = closest.id;
             harvest = Game.getObjectById(creep.memory.harvestTarget);
         }
