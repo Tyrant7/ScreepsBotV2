@@ -8,15 +8,16 @@ class RoomInfo {
 
     constructor(room) {
         this.room = room;
-        this.creeps = this.room.find(FIND_MY_CREEPS);
+
+        // Find all creeps that this room is responsible for, not just ones in it
+        this.creeps = Object.values(Game.creeps).filter((c) => c.memory.home === room.name);
 
         this.workers = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.worker);
         this.miners = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.miner);
 
-        this.spawns = this.room.find(FIND_MY_SPAWNS);
+        this.spawns = room.find(FIND_MY_SPAWNS);
 
         this.openSourceSpots = room.find(FIND_SOURCES).reduce(function(total, s) {
-
             const p = s.pos;
                                                            // No constant that I could find for this terrain type, unfortunately vv
             const lookResults = room.lookForAtArea(LOOK_TERRAIN, p.y-1, p.x-1, p.y+1, p.x+1, true).filter((t) => t.terrain === "wall");

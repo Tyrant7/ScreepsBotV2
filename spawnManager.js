@@ -115,19 +115,18 @@ class SpawnManager {
         const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getGrossIncome() * incomeToPartRatio) : roomInfo.openSourceSpots + 1;
 
         // Sum up part counts for workers, both existing and in the queue
-        let currentWorkParts = roomInfo.workers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0)
-                             + this.spawnQueue.reduce((total, curr) => 
-                               curr.memory.role === CONSTANTS.roles.worker && total + curr.body.filter((p) => p.type === WORK).length, 0);
+        const queuedWorkers = this.filterQueue(CONSTANTS.roles.worker);
+        const currentWorkParts = roomInfo.workers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0)
+                                + queuedWorkers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
 
         // Limited to one worker added to the queue per tick to avoid duplicate naming     
         // Also limit ourselves to spawning lower level workers first if we get wiped out
-        const maxLevel = Math.min(roomInfo.workers.length + 1, CONSTANTS.maxWorkerLevel);
+        const maxLevel = Math.min(roomInfo.workers.length + queuedWorkers.length + 1, CONSTANTS.maxWorkerLevel);
 
         // Adjust level so that we spawn lower level workers if we're near our WORK part max
         const adjustedLevel = Math.min(maxLevel, maxWorkParts - currentWorkParts);
         if (adjustedLevel > 0) {
             const newWorker = this.creepMaker.makeWorker(adjustedLevel, roomInfo.room.energyCapacityAvailable);
-            currentWorkParts += newWorker.body.filter((p) => p.type === WORK).length;
             this.spawnQueue.push(newWorker);
         }
     }

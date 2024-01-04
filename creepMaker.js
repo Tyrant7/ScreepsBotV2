@@ -12,7 +12,7 @@ class CreepMaker {
         }
         return { body: body, 
                  cost: lvl * levelCost,
-                 name: "Worker" + Game.time + " [" + lvl.toString() + "]",
+                 name: "Worker " + Game.time + " [" + lvl.toString() + "]",
                  memory: { role: CONSTANTS.roles.worker }};
     }
 

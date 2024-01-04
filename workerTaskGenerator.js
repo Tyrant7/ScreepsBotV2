@@ -244,9 +244,9 @@ const priorityMap = {
         }
 
         // Otherwise, default logic
-        // A base of 1 priority, plus an additional 1 priority for each 1000 ticks below 5000
-        const downgrade = Math.min(info.room.controller.ticksToDowngrade / 1000, 5);
-        return 6 - downgrade;
+        // A base of 1 priority, plus an additional 1 priority for each 500 ticks below 5000
+        const downgrade = Math.min(Math.floor(info.room.controller.ticksToDowngrade / 500), 10);
+        return 11 - downgrade;
     },
     [taskType.restock]: function(task, handler, info) {
 
