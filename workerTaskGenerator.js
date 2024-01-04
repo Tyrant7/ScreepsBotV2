@@ -18,9 +18,9 @@ class WorkerTaskGenerator {
         const sites = roomInfo.room.find(FIND_MY_CONSTRUCTION_SITES);
         for (const site of sites) {
 
-            // Don't allow more build tasks than each 5000 energy needed to complete
+            // Don't allow more build tasks than each 10,000 energy needed to complete
             const existingTasks = taskHandler.getTasksForObject(site.id);
-            if (existingTasks.length >= Math.ceil((site.progressTotal - site.progress) / 5000)) {
+            if (existingTasks.length >= Math.ceil((site.progressTotal - site.progress) / 10000)) {
                 continue;
             }
 
@@ -199,12 +199,20 @@ const basicWorkerActions = {
         }
 
         // Determine if it's worth gathering ->
-        // If we're above a baseline energy threshold and are closer to our target than our refill, 
+        // If we're above a baseline energy threshold and are closer to our target than our refill with a margin, 
         // skip refilling and go directly to our target instead
         const optionalRefillThreshold = 50;
+        const refillDistanceThreshold = 2;
         if (creep.store[RESOURCE_ENERGY] >= optionalRefillThreshold &&
-            creep.pos.getRangeTo(target) <= creep.pos.getRangeTo(harvest)) {
+            creep.pos.getRangeTo(target) <= creep.pos.getRangeTo(harvest) + refillDistanceThreshold) {
             return true;
+        }
+        else if (creep.store[RESOURCE_ENERGY] > 0) {
+            // Creep is going to refill, might as well use any remaining energy to repair roads
+            const roads = creep.pos.lookFor(LOOK_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_ROAD });
+            if (roads && roads[0]) {
+                creep.repair(roads[0]);
+            }
         }
 
         // Determine what type of intent to use to gather this energy

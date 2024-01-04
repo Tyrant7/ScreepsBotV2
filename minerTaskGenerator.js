@@ -18,7 +18,12 @@ class MinerTaskGenerator {
 
                 // Look for a container on our tile first
                 const tile = creep.pos.lookFor(LOOK_STRUCTURES);
-                const container = tile.find((item) => item.structureType === STRUCTURE_CONTAINER);
+                let container = tile.find((s) => s.structureType === STRUCTURE_CONTAINER);
+
+                // No container -> try sites
+                if (!container) {
+                    container = creep.pos.lookFor(LOOK_CONSTRUCTION_SITES).find((s) => s.structureType === STRUCTURE_CONTAINER);
+                }
 
                 // We're standing on a container and can mine
                 if (container) {
@@ -28,17 +33,28 @@ class MinerTaskGenerator {
 
                     // Otherwise, let's search around our source
                     const p = target.pos;
-
-                    // TODO // Change out for lookForAtArea to avoid the extra filter condition
-                    const containers = creep.room.lookAtArea(p.y-1, p.x-1, p.y+1, p.x+1, true).filter(
-                        (item) => item.type === LOOK_STRUCTURES && item.structure.structureType === STRUCTURE_CONTAINER);
+                    const containers = creep.room.lookForAtArea(LOOK_STRUCTURES, p.y-1, p.x-1, p.y+1, p.x+1, true).filter(
+                        (s) => s.structure.structureType === STRUCTURE_CONTAINER);
 
                     // No containers near this source -> we should place one where we stand
                     if (containers.length === 0) {
-                        creep.room.createConstructionSite(creep.pos, STRUCTURE_CONTAINER);
 
-                        // We should harvest while waiting for our containers to not waste time
-                        creep.harvest(target);
+                        // Verify that there are no other construction sites before placing one
+                        const sites = creep.room.lookForAtArea(LOOK_CONSTRUCTION_SITES, p.y-1, p.x-1, p.y+1, p.x+1, true).filter(
+                            (s) => s.constructionSite.structureType === STRUCTURE_CONTAINER);
+
+                        if (sites.length === 0) {
+                            creep.room.createConstructionSite(creep.pos, STRUCTURE_CONTAINER);
+                        }
+                        else {
+                            if (creep.pos.getRangeTo(sites[0].constructionSite) > 0) {
+                                creep.moveTo(sites[0].constructionSite);
+                            }
+                            else {
+                                // We should harvest while waiting for our containers to not waste time
+                                creep.harvest(target);
+                            }
+                        }
                     }
                     // Container found -> move to it before mining
                     else {

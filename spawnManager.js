@@ -34,10 +34,12 @@ class SpawnManager {
         // Spawn the next one in the queue
         this.spawnNext(roomInfo);
 
+        /*
         console.log("Spawn queue length: " + this.spawnQueue.length);
         for (const spawn of this.spawnQueue) {
             console.log(spawn.name);
         }
+        */
     }
 
     handleReplacements(roomInfo) {
