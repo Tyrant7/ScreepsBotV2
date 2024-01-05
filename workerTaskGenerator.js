@@ -161,11 +161,11 @@ const basicWorkerActions = {
                 extensions.reduce((closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, target) :
                 target;
         }
-        
-        if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-            creep.moveTo(target);
+
+        if (creep.transfer(restock, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(restock);
         }
-        return target.store.getFreeCapacity(RESOURCE_ENERGY) === 0 || creep.store[RESOURCE_ENERGY] === 0;
+        return restock.store.getFreeCapacity(RESOURCE_ENERGY) === 0 || creep.store[RESOURCE_ENERGY] === 0;
     },
     [taskType.build]: function(creep, target) {
         if (creep.build(target) === ERR_NOT_IN_RANGE) {
