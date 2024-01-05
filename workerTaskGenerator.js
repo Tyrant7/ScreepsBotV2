@@ -208,10 +208,16 @@ const basicWorkerActions = {
                 sources = creep.room.find(FIND_SOURCES, { filter: (s) => s.energy > 0 });
             }
 
-            // Find the closest target that isn't the same as our previous one
-            const closest = sources.reduce(
-                (closest, curr) => creep.pos.getRangeTo(closest) > creep.pos.getRangeTo(curr) ? curr : closest);
-            creep.memory.harvestTarget = closest.id;
+            // Find the best target -> measured by a blend of distance and energy amount
+            const best = sources.reduce(function(best, curr) {
+                const bEnergy = best instanceof Source ? best.energy : best instanceof Resource ? best.amount : best.store[RESOURCE_ENERGY];
+                const cEnergy = curr instanceof Source ? curr.energy : curr instanceof Resource ? best.amount : curr.store[RESOURCE_ENERGY];
+                // Every 20 energy in a container counts as 1 distance closer when prioritising
+                const bScore = creep.pos.getRangeTo(best) - (bEnergy / 20);
+                const cScore = creep.pos.getRangeTo(curr) - (cEnergy / 20);
+                return bScore > cScore ? curr : best;
+            });
+            creep.memory.harvestTarget = best.id;
             harvest = Game.getObjectById(creep.memory.harvestTarget);
         }
 
