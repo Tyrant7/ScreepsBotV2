@@ -147,9 +147,28 @@ const basicWorkerActions = {
         return creep.store[RESOURCE_ENERGY] === 0 || !target.my;
     },
     [taskType.restock]: function(creep, target) {
-        if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-            creep.moveTo(target);
-        }      
+
+        // Since refilling any extension or spawn is essentially the same, just find the closest one
+        if (target instanceof StructureExtension || target instanceof StructureSpawn) {
+            const extensions = creep.room.find(FIND_MY_STRUCTURES, { filter: 
+                (s) => (s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN) 
+                && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 });
+            const closestExt = extensions ?
+                extensions.reduce((closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, target) :
+                target;
+
+            const result = creep.transfer(closestExt, RESOURCE_ENERGY);
+            if (result === ERR_NOT_IN_RANGE) {
+                creep.moveTo(target);
+            }
+            return result === OK;
+        }
+        // If it's a tower then we must refill the appropriate one
+        else {
+            if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+                creep.moveTo(target);
+            }
+        }
         return target.store.getFreeCapacity(RESOURCE_ENERGY) === 0 || creep.store[RESOURCE_ENERGY] === 0;
     },
     [taskType.build]: function(creep, target) {
