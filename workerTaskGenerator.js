@@ -214,7 +214,7 @@ const basicWorkerActions = {
 
             // Find the closest target that isn't the same as our previous one
             const closest = sources.reduce(
-                (closest, curr) => creep.pos.getRangeTo(closest) > creep.pos.getRangeTo(curr) && curr.id !== creep.memory.harvestTarget ? curr : closest);
+                (closest, curr) => creep.pos.getRangeTo(closest) > creep.pos.getRangeTo(curr) ? curr : closest);
             creep.memory.harvestTarget = closest.id;
             harvest = Game.getObjectById(creep.memory.harvestTarget);
         }
