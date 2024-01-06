@@ -105,11 +105,17 @@ class HaulerTaskGenerator {
             // Increment the path pointer if we're going towards the storage
             // Decrement if we're going towards the source
             const prevP = creep.memory.previousPos;
+            const full = creep.store.getFreeCapacity() === 0;
             if (!prevP || p.x !== prevP.x || p.y !== prevP.y || p.roomName !== prevP.roomName) {
-                creep.memory.pathPointer += creep.store.getFreeCapacity() ? -1 : 1;
+                creep.memory.pathPointer += full ? 1 : -1;
                 creep.memory.pathPointer = Math.max(creep.memory.pathPointer, 0);
             }
+            // We've filled up at the end of our path after waiting, let's turn around
+            else if (!creep.memory.fullLastTick && full) {
+                creep.memory.pathPointer += 2;
+            }
             creep.memory.previousPos = creep.pos;
+            creep.memory.fullLastTick = full;
 
             return false;
         });
