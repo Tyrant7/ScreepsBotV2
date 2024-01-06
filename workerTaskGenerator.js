@@ -212,9 +212,9 @@ const basicWorkerActions = {
             const best = sources.reduce(function(best, curr) {
                 const bEnergy = best instanceof Source ? best.energy : best instanceof Resource ? best.amount : best.store[RESOURCE_ENERGY];
                 const cEnergy = curr instanceof Source ? curr.energy : curr instanceof Resource ? best.amount : curr.store[RESOURCE_ENERGY];
-                // Every 20 energy in a container counts as 1 distance closer when prioritising
-                const bScore = creep.pos.getRangeTo(best) - (bEnergy / 20);
-                const cScore = creep.pos.getRangeTo(curr) - (cEnergy / 20);
+                // Every 25 energy in a container counts as 1 distance closer when prioritising
+                const bScore = creep.pos.getRangeTo(best) - (bEnergy / 25);
+                const cScore = creep.pos.getRangeTo(curr) - (cEnergy / 25);
                 return bScore > cScore ? curr : best;
             });
             creep.memory.harvestTarget = best.id;
