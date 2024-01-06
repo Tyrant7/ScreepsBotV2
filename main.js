@@ -14,8 +14,6 @@ const RoomInfo = require("roomInfo");
 const WorkerTaskGenerator = require("workerTaskGenerator");
 const MinerTaskGenerator = require("minerTaskGenerator");
 
-const AdvancedRoomVisuals = require("advancedRoomVisuals");
-
 const workerManager = new CreepManager(new WorkerTaskGenerator());
 const minerManager = new CreepManager(new MinerTaskGenerator());
 const spawnManager = new SpawnManager();
@@ -42,12 +40,6 @@ module.exports.loop = function() {
         // Initialize tasks for all creep types in the current room
         for (const manager in creepRoleMap) {
             creepRoleMap[manager].initializeTasks(info);
-        }
-
-        // Draw some visuals for the room currently visiting
-        const currentRoom = true;
-        if (currentRoom) {
-            new AdvancedRoomVisuals(info);
         }
     }
 
