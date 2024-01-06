@@ -22,12 +22,14 @@ class SpawnManager {
         // Figure out which creeps will need to be replaced soon in this room
         this.handleReplacements(roomInfo);
 
-        // Figure out what additional creeps this room needs
-        if (roomInfo.room.energyAvailable > minerSpawnThreshold) {
-            this.handleMiners(roomInfo);
-        }
-        if (roomInfo.room.energyAvailable > haulerSpawnThreshold) {
-            this.handleHaulers(roomInfo);
+        // Figure out what additional creeps this room needs if we have enough workers to sustain it
+        if (roomInfo.workers.length >= 3) {
+            if (roomInfo.room.energyAvailable > minerSpawnThreshold) {
+                this.handleMiners(roomInfo);
+            }
+            if (roomInfo.room.energyAvailable > haulerSpawnThreshold) {
+                this.handleHaulers(roomInfo);
+            }
         }
         this.handleWorkers(roomInfo);
 
