@@ -225,7 +225,7 @@ class SpawnManager {
             if (spawn.spawning) {
                 // Show some visuals
                 try {
-                    const spawningCreep = Game.creeps[spawn.spawning.name]
+                    const spawningCreep = Game.creeps[spawn.spawning.name];
                     roomInfo.room.visual.text(
                         // Show role + level
                         spawningCreep.memory.role + " " + next.name.split(" ")[2],
@@ -253,10 +253,10 @@ class SpawnManager {
     getMaxWorkerLevel(roomInfo) {
         // Workers are allocated based on number of WORK parts using the formula
         // Before we have miners, allocate workers using nSourceSpots + 1, otherwise use the formula
-        // X WORK parts per Y gross income
+        // X WORK parts per Y max income
         // Ratio determined through trial and error to be an acceptable value
         const incomeToPartRatio = 1.1;
-        const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getGrossIncome() * incomeToPartRatio) : roomInfo.openSourceSpots + 1;
+        const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getMaxIncome() * incomeToPartRatio) : roomInfo.openSourceSpots + 1;
 
         // Sum up part counts for workers, both existing and in the queue
         const queuedWorkers = this.filterQueue(CONSTANTS.roles.worker);

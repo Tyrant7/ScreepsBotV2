@@ -230,7 +230,7 @@ const basicWorkerActions = {
             creep.pos.getRangeTo(target) <= creep.pos.getRangeTo(harvest) + refillDistanceThreshold) {
             return true;
         }
-        else if (creep.store[RESOURCE_ENERGY] > 0) {
+        else if (creep.store[RESOURCE_ENERGY] > 0 && creep.pos.getRangeTo(harvest) > 1) {
             // Creep is going to refill, might as well use any remaining energy to repair roads
             const roads = creep.pos.lookFor(LOOK_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_ROAD });
             if (roads && roads[0]) {
