@@ -27,7 +27,7 @@ class SpawnManager {
             if (roomInfo.room.energyAvailable > minerSpawnThreshold) {
                 this.handleMiners(roomInfo);
             }
-            if (roomInfo.room.energyAvailable > haulerSpawnThreshold) {
+            if (roomInfo.room.storage && roomInfo.miners.length > 0) {
                 this.handleHaulers(roomInfo);
             }
         }
@@ -188,7 +188,30 @@ class SpawnManager {
     }
 
     handleHaulers(roomInfo) {
-        // TODO //
+        // Verify that we have cached paths
+        const paths = Memory.rooms[roomInfo.room.name].haulerPaths;
+        if (!paths) {
+            return;
+        }
+
+        // Calculate the number of needed haulers using the formula
+        // CARRY count per source = Path length * 0.4
+        for (const sourceID in paths) {
+            const path = paths[sourceID];
+
+            // Keep creating haulers that are as large as we can make them until we've made enough
+            let neededCarry = path.length * 0.4;
+            while (neededCarry > 0) {
+                const newHauler = this.creepMaker.makeHauler(neededCarry, roomInfo.room.energyCapacityAvailable);
+                neededCarry -= newHauler.body.filter((p) => p === CARRY).length;
+
+                // Assign this hauler a path to follow
+                // Sentinal value for path pointer until we get onto our path
+                newHauler.memory.pathKey = sourceID;
+                newHauler.memory.pathPointer = -1;
+                this.spawnQueue.push(newHauler);
+            }
+        }
     }
 
     handleWorkers(roomInfo) {

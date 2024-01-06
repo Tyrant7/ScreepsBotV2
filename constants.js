@@ -1,7 +1,8 @@
 module.exports = {
     roles: {
         worker: "worker",
-        miner: "miner"
+        miner: "miner",
+        hauler: "hauler",
     },
     maxWorkerLevel: 8,
 }

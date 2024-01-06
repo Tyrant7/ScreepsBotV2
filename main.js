@@ -13,14 +13,17 @@ const RoomInfo = require("roomInfo");
 
 const WorkerTaskGenerator = require("workerTaskGenerator");
 const MinerTaskGenerator = require("minerTaskGenerator");
+const HaulerTaskGenerator = require("haulerTaskGenerator");
 
 const workerManager = new CreepManager(new WorkerTaskGenerator());
 const minerManager = new CreepManager(new MinerTaskGenerator());
+const haulerManager = new CreepManager(new HaulerTaskGenerator());
 const spawnManager = new SpawnManager();
 
 const creepRoleMap = {
     [CONSTANTS.roles.worker]: workerManager,
     [CONSTANTS.roles.miner]: minerManager,
+    [CONSTANTS.roles.hauler]: haulerManager,
 };
 
 module.exports.loop = function() {
@@ -38,8 +41,8 @@ module.exports.loop = function() {
         spawnManager.run(info);
 
         // Initialize tasks for all creep types in the current room
-        for (const manager in creepRoleMap) {
-            creepRoleMap[manager].initializeTasks(info);
+        for (const role in creepRoleMap) {
+            creepRoleMap[role].initializeTasks(info);
         }
     }
 

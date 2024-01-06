@@ -31,6 +31,54 @@ class RoomInfo {
         if (room.controller.my) {
             this.dependant = room.name;
         }
+
+        // Cache some important paths for haulers for this room in memory
+        // Make paths from each source to the storage, and cache them. Verify that they're valid each tick
+        if (room.storage) {
+            for (const source of room.find(FIND_SOURCES)) {
+                if (!Memory.rooms) {
+                    Memory.rooms = {};
+                }
+                if (!Memory.rooms[room.name]) {
+                    Memory.rooms[room.name] = {};
+                }
+                if (!Memory.rooms[room.name].haulerPaths) {
+                    Memory.rooms[room.name].haulerPaths = {};
+                }
+                const cachedPath = Memory.rooms[room.name].haulerPaths[source.id];
+                const lastPos = cachedPath[cachedPath.length - 1];
+
+                // TODO //
+                // Will currently only redraw path when storage doesn't match up, but we want all structures to match up
+                // to ensure that paths aren't blocked by structures, and roads are included in calculations
+
+                const storageNext = new RoomPosition(lastPos.x, lastPos.y, lastPos.roomName);
+                if (!cachedPath || storageNext.getRangeTo(room.storage.pos) > 1) {
+                    const result = PathFinder.search(source.pos, { pos: room.storage.pos, range: 1 }, { 
+                        plainCost: 2,
+                        swampCost: 10,
+                        roomCallBack: function(roomName) {
+                            const room = Game.rooms[roomName];
+                            if (!room) {
+                                return;
+                            }
+                            const matrix = new PathFinder.CostMatrix;
+                            room.find(FIND_STRUCTURES).forEach(function(s) {
+                                if (s.structureType === STRUCTURE_ROAD) {
+                                    matrix.set(s.pos.x, s.pos.y, 1);
+                                }
+                                else if (s.structureType !== STRUCTURE_CONTAINER &&
+                                        (s.structureType !== STRUCTURE_RAMPART || !s.my)) {
+                                    matrix.set(s.pos.x, s.pos.y, 255);
+                                }
+                            });
+                            return matrix;
+                        }
+                    });
+                    Memory.rooms[room.name].haulerPaths[source.id] = result.path;
+                }
+            }
+        }
     }
 
     /**

@@ -21,7 +21,7 @@ class CreepMaker {
         let lvl = 0;
         for (let i = 0; i < workParts; i++) {
             body.push(WORK);
-            lvl = i;
+            lvl = i + 1;
             if (this.getCost(body) > energyCapacity) {
                 body.pop();
                 break;
@@ -31,6 +31,24 @@ class CreepMaker {
                  cost: this.getCost(body),
                  name: "Miner " + Game.time + " [" + lvl + "]",
                  memory: { role: CONSTANTS.roles.miner }};
+    }
+
+    makeHauler(carryParts, energyCapacity) {
+        let body = [MOVE, CARRY];
+        let lvl = 1;
+        for (let i = 0; i < carryParts; i++) {
+            body.push(MOVE, CARRY);
+            lvl = i + 2;
+            if (this.getCost(body) > energyCapacity) {
+                body.pop();
+                body.pop();
+                break;
+            }
+        }
+        return { body: body, 
+                 cost: this.getCost(body), 
+                 name: "Hauler " + Game.time + " [" + lvl + "]",
+                 memory: { role: CONSTANTS.roles.hauler }};
     }
 
     makeClone(creep) {
