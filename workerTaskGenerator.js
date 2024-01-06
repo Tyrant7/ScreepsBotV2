@@ -81,6 +81,10 @@ class WorkerTaskGenerator {
                 // Create a basic worker task for upgrading
                 tasks.push(this.createBasicTask(roomInfo.room.controller, taskType.upgrade));
             }
+            // Emergency situation -> let's force ourselves to spend some energy keeping our controller alive
+            else if (roomInfo.room.controller.ticksToDowngrade < 1000) {
+                existingTasks[0].priority = 1000;
+            }
         }
 
         return this.prioritiseTasks(tasks, taskHandler, roomInfo);
