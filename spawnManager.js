@@ -195,12 +195,19 @@ class SpawnManager {
         }
 
         // Calculate the number of needed haulers using the formula
+        // CARRY count per source = Path length * 0.2
+        // Ideal formula would be
         // CARRY count per source = Path length * 0.4
+        // But we have workers also drawing from containers so we can easily half the capacity without any trouble
+        const queuedCarry = this.filterQueue(CONSTANTS.roles.hauler).reduce(
+            (total, hauler) => total + hauler.body.filter((p) => p === WORK).length, 0);
+        const existingCarry = roomInfo.haulers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
+        const totalCarry = queuedCarry + existingCarry;
         for (const sourceID in paths) {
             const path = paths[sourceID];
 
             // Keep creating haulers that are as large as we can make them until we've made enough
-            let neededCarry = path.length * 0.4;
+            let neededCarry = (path.length * 0.2) - totalCarry;
             while (neededCarry > 0) {
                 const newHauler = this.creepMaker.makeHauler(neededCarry, roomInfo.room.energyCapacityAvailable);
                 neededCarry -= newHauler.body.filter((p) => p === CARRY).length;

@@ -40,18 +40,13 @@ class HaulerTaskGenerator {
 
                 // If we're close enough to this point to move to it immediately, then we're good
                 const dist = creep.pos.getRangeTo(nearestPoint);
-                if (dist <= 1) {
-                    // Figure out which point we actually chose
-                    let pathPointer = path.findIndex(
+                if (dist === 0) {
+                    // Figure out which point we actually chose and save it as our current pointer
+                    creep.memory.pathPointer = path.findIndex(
                         (point) => point.x === nearestPoint.x 
                                 && point.y === nearestPoint.y 
                                 && point.roomName === nearestPoint.roomName);
-
-                    // If we're standing on the path, advance the pointer once towards the source
-                    if (dist === 0) {
-                        pathPointer--;
-                    }
-                    creep.memory.pathPointer = pathPointer;
+                    creep.memory.pathPointer--;
                 }
                 // We're too far to start on our path, let's move towards the closest point until we've entered the path
                 else {
@@ -73,6 +68,7 @@ class HaulerTaskGenerator {
             }
 
             // Move along our path
+            console.log(creep.name + ": " + pathPointer);
             const step = new RoomPosition(path[pathPointer].x, path[pathPointer].y, path[pathPointer].roomName);
             const dir = creep.pos.getDirectionTo(step);
             creep.move(dir);
@@ -85,7 +81,7 @@ class HaulerTaskGenerator {
              || (item.type === LOOK_RUINS && item.ruin.store[RESOURCE_ENERGY] > 0) 
              || (item.type === LOOK_STRUCTURES && item.structure.structureType === STRUCTURE_CONTAINER 
                 // Verify that this is our container to pull from by checking it's distance to our source
-             && Game.getObjectById(creep.memory.pathKey).getRangeTo(item.structure) <= 1))
+             && Game.getObjectById(creep.memory.pathKey).pos.getRangeTo(item.structure) <= 1))
              // This line just extracts out the type of the object, so the structure of strucutres, the resource of resources, etc.
              .map((item) => item[item.type]);
         

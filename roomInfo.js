@@ -14,6 +14,7 @@ class RoomInfo {
 
         this.workers = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.worker);
         this.miners = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.miner);
+        this.haulers = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.hauler);
 
         this.spawns = room.find(FIND_MY_SPAWNS);
 
