@@ -55,17 +55,18 @@ class HaulerTaskGenerator {
                 }
             }
             
-            // We're somewhere within range of our assigned path
-            // Let's move to the next space and advance the pointer
-            const pathPointer = creep.memory.pathPointer;
-
             // We're next to the storage, let's deposit everything
             if (creep.store[RESOURCE_ENERGY] > 0 && creep.pos.getRangeTo(creep.room.storage) <= 1) {
                 creep.transfer(creep.room.storage, RESOURCE_ENERGY);
-                creep.memory.pathPointer--;
+
+                // Turn around
+                creep.memory.pathPointer -= 2;
                 console.log("depositing...");
-                return false;
             }
+
+            // We're somewhere within range of our assigned path
+            // Let's move to the next space and advance the pointer
+            const pathPointer = creep.memory.pathPointer;
 
             // Move along our path
             console.log(creep.name + ": " + pathPointer);
