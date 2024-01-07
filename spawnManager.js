@@ -200,8 +200,8 @@ class SpawnManager {
         // CARRY count per source = Path length * 0.4
         // But we have workers also drawing from containers so we can easily half the capacity without any trouble
         const queuedCarry = this.filterQueue(CONSTANTS.roles.hauler).reduce(
-            (total, hauler) => total + hauler.body.filter((p) => p === WORK).length, 0);
-        const existingCarry = roomInfo.haulers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
+            (total, hauler) => total + hauler.body.filter((p) => p === CARRY).length, 0);
+        const existingCarry = roomInfo.haulers.reduce((total, curr) => total + curr.body.filter((p) => p.type === CARRY).length, 0);
         const totalCarry = queuedCarry + existingCarry;
         for (const sourceID in paths) {
             const path = paths[sourceID];
