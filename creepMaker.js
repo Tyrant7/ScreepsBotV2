@@ -34,12 +34,13 @@ class CreepMaker {
     }
 
     makeHauler(carryParts, energyCapacity) {
-        let body = [MOVE, CARRY];
+        let body = [MOVE, CARRY, CARRY];
         let lvl = 1;
         for (let i = 0; i < carryParts; i++) {
-            body.push(MOVE, CARRY);
+            body.push(MOVE, CARRY, CARRY);
             lvl = i + 2;
             if (this.getCost(body) > energyCapacity) {
+                body.pop();
                 body.pop();
                 body.pop();
                 break;

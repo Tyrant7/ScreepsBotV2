@@ -27,6 +27,29 @@ class WorkerTaskGenerator {
             // Create a basic worker task for building
             tasks.push(this.createBasicTask(site, taskType.build));
         }
+        
+        // Create some restock tasks if we don't have haulers and miners yet
+        // Yes, duplicated code, I know :/
+        if (!roomInfo.miners.length && !roomInfo.haulers.length) {
+            const restockables = roomInfo.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 });
+            for (const restock of restockables) {
+    
+                // These will be handled by haulers and miners
+                if (restock.structureType === STRUCTURE_CONTAINER ||
+                    restock.structureType === STRUCTURE_STORAGE) {
+                    continue;
+                }
+    
+                // No more than one restock task per object
+                const existingTasks = taskHandler.getTasksForObjectByTag(restock.id, taskType.restock);
+                if (existingTasks.length) {
+                    continue;
+                }
+    
+                // All that's left should be towers, spawn, and extensions
+                tasks.push(this.createBasicTask(restock, taskType.restock));
+            }
+        }
 
         // Repair tasks
         const repairable = roomInfo.room.find(FIND_STRUCTURES, { filter: (s) => s.hits < s.hitsMax });
@@ -52,27 +75,6 @@ class WorkerTaskGenerator {
             tasks.push(this.createBasicTask(target, taskType.repair));
         }
 
-        // Restock tasks
-        const restockables = roomInfo.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 });
-        for (const restock of restockables) {
-
-            // These will be handled by haulers and miners
-            if (restock.structureType === STRUCTURE_CONTAINER ||
-                restock.structureType === STRUCTURE_STORAGE) {
-                continue;
-            }
-
-            // No more than one restock task per object, except before any extensions are built
-            const existingTasks = taskHandler.getTasksForObjectByTag(restock.id, taskType.restock);
-            if (existingTasks.length && (roomInfo.room.energyCapacityAvailable > 500 || existingTasks.length >= 3)) {
-                continue;
-            }
-
-            // All that's left should be towers, spawn, and extensions
-            // Create a basic worker task for restocking
-            tasks.push(this.createBasicTask(restock, taskType.restock));
-        }
-
         // Upgrade tasks -> ensure at least one at all times
         if (roomInfo.room.controller.my) {
             const existingTasks = taskHandler.getTasksForObjectByTag(roomInfo.room.controller.id, taskType.upgrade);
@@ -93,7 +95,7 @@ class WorkerTaskGenerator {
     /**
      * Generates a default task for workers in this room.
      * @param {Creep} creep The creep to generate the task for.
-     * @returns {Task} A newly created 'upgrade' task.
+     * @returns {TaskPoolEntry} A newly created entry for an 'upgrade' task.
      */
     generateDefaultTask(creep) {
         // Generate a new upgrade task with a priority of zero in case this worker dies and the task is returned to the pool
@@ -185,6 +187,14 @@ const basicWorkerActions = {
     },
     "harvest": function(creep, target) {
 
+        // We're done when we can't hold anymore energy
+        // -> check this at the beginning of the tick before planning any of our actions
+        if (creep.store.getFreeCapacity() === 0) {
+            // Relinquish our current harvest target after completing the task
+            delete creep.memory.harvestTarget;
+            return true;
+        }
+
         // Gets energy from the room's storage, or nearest container if one is available
         let harvest = Game.getObjectById(creep.memory.harvestTarget);
 
@@ -242,6 +252,24 @@ const basicWorkerActions = {
             }
         }
 
+        // If we're too far away from our target energy, look for straggling energy around us to pickup instead
+        if (creep.pos.getRangeTo(harvest) > 1) {
+            const p = creep.pos;
+            if (p.x !== 0 && p.x !== 49 && p.y !== 0 && p.y !== 49) {
+                const nearby = creep.room.lookAtArea(p.y-1, p.x-1, p.y+1, p.x+1, true).find((item) => 
+                    (item.type === LOOK_RESOURCES && item.resource.resourceType === RESOURCE_ENERGY && item.resource.amount > 0) 
+                 || (item.type === LOOK_TOMBSTONES && item.tombstone.store[RESOURCE_ENERGY] > 0) 
+                 || (item.type === LOOK_RUINS && item.ruin.store[RESOURCE_ENERGY] > 0)
+                // We're free to take energy off of haulers if they aren't doing anything super important
+                 || (item.type === LOOK_CREEPS && item.creep.memory && item.creep.memory.openPull));
+
+                // Let's pick something up
+                if (nearby) {
+                    harvest = nearby[nearby.type];
+                }
+            }
+        }
+
         // Determine what type of intent to use to gather this energy
         let intentResult;
         if (harvest instanceof Source) {
@@ -250,22 +278,19 @@ const basicWorkerActions = {
         else if (harvest instanceof Resource) {
             intentResult = creep.pickup(harvest);
         }
+        else if (harvest instanceof Creep) {
+            // Ask the openPull creep to give us some energy
+            intentResult = harvest.transfer(creep, RESOURCE_ENERGY);
+        }
         else {
             intentResult = creep.withdraw(harvest, RESOURCE_ENERGY);
         }
-
-        // Pick it up
+       
+        // Move if too far away
         if (intentResult === ERR_NOT_IN_RANGE) {
             creep.moveTo(harvest);
         }
-
-        // We're done when we can't hold anymore energy
-        const full = creep.store.getFreeCapacity() === 0;
-        if (full) {
-            // Relinquish our current harvest target after completing the task
-            delete creep.memory.harvestTarget;
-        }
-        return full;
+        return false;
     }
 };
 
@@ -299,7 +324,7 @@ const priorityMap = {
             return 50;
         }
         else if (need >= 0.75) {
-            return 14;
+            return 13;
         }
         else if (need >= 0.5) {
             return 5;

@@ -1,7 +1,6 @@
 const CreepMaker = require("creepMaker");
 
 const minerSpawnThreshold = 450;
-const haulerSpawnThreshold = 450;
 
 const workerHardCap = 9;
 
@@ -23,13 +22,10 @@ class SpawnManager {
         this.handleReplacements(roomInfo);
 
         // Figure out what additional creeps this room needs if we have enough workers to sustain it
-        if (roomInfo.workers.length >= 3) {
-            if (roomInfo.room.energyAvailable > minerSpawnThreshold) {
-                this.handleMiners(roomInfo);
-            }
-            if (roomInfo.room.storage && roomInfo.miners.length > 0) {
-                this.handleHaulers(roomInfo);
-            }
+        const workerCount = roomInfo.workers.length + this.filterQueue(CONSTANTS.roles.worker);
+        if (workerCount >= 3 && roomInfo.room.energyAvailable > minerSpawnThreshold) {
+            this.handleMiners(roomInfo);
+            this.handleHaulers(roomInfo);
         }
         this.handleWorkers(roomInfo);
 
@@ -188,36 +184,30 @@ class SpawnManager {
     }
 
     handleHaulers(roomInfo) {
-        // Verify that we have cached paths
-        const paths = Memory.rooms[roomInfo.room.name].haulerPaths;
-        if (!paths) {
-            return;
-        }
 
-        // Calculate the number of needed haulers using the formula
-        // CARRY count per source = Path length * 0.2
-        // Ideal formula would be
-        // CARRY count per source = Path length * 0.4
-        // But we have workers also drawing from containers so we can easily half the capacity without any trouble
+        // Figure out how many WORK parts we have
+        const queuedWork = this.filterQueue(CONSTANTS.roles.worker).reduce(
+            (total, worker) => total + worker.body.filter((p) => p === WORK).length, 0);
+        const existingWork = roomInfo.workers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
+        const totalWork = queuedWork + existingWork;
+
+        // Figure out how many CARRY parts we have
         const queuedCarry = this.filterQueue(CONSTANTS.roles.hauler).reduce(
             (total, hauler) => total + hauler.body.filter((p) => p === CARRY).length, 0);
         const existingCarry = roomInfo.haulers.reduce((total, curr) => total + curr.body.filter((p) => p.type === CARRY).length, 0);
         const totalCarry = queuedCarry + existingCarry;
-        for (const sourceID in paths) {
-            const path = paths[sourceID];
 
-            // Keep creating haulers that are as large as we can make them until we've made enough
-            let neededCarry = (path.length * 0.2) - totalCarry;
-            while (neededCarry > 0) {
-                const newHauler = this.creepMaker.makeHauler(neededCarry, roomInfo.room.energyCapacityAvailable);
-                neededCarry -= newHauler.body.filter((p) => p === CARRY).length;
+        // TODO //
+        // Calculate dynamically based on roads
+        const carryToWorkRatio = 3 / 2;
 
-                // Assign this hauler a path to follow
-                // Sentinal value for path pointer until we get onto our path
-                newHauler.memory.pathKey = sourceID;
-                newHauler.memory.pathPointer = -1;
-                this.spawnQueue.push(newHauler);
-            }
+        // Figure out how many CARRY parts is ideal given our ratio
+        const wantedCarry = Math.ceil(totalWork / carryToWorkRatio) - totalCarry;
+
+        // Again, limit to one per tick to prevent duplicate names
+        if (wantedCarry - totalCarry > 0) {
+            const newHauler = this.creepMaker.makeHauler(wantedCarry - totalCarry, roomInfo.room.energyCapacityAvailable);
+            this.spawnQueue.push(newHauler);
         }
     }
 
@@ -229,7 +219,7 @@ class SpawnManager {
         if (roomInfo.workers.length + queuedWorkers.length >= workerHardCap) {
             return;
         }
-
+        
         const workerLevel = this.getMaxWorkerLevel(roomInfo);
         if (workerLevel > 0) {
             const newWorker = this.creepMaker.makeWorker(workerLevel, roomInfo.room.energyCapacityAvailable);
@@ -240,6 +230,10 @@ class SpawnManager {
     spawnNext(roomInfo) {
         if (this.spawnQueue.length === 0) {
             return;
+        }
+
+        for (const w of this.spawnQueue) {
+            console.log(w.name);
         }
 
         // Spawn next from queue for each non-busy spawn in the room

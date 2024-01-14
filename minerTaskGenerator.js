@@ -4,7 +4,8 @@ const TaskPoolEntry = require("taskPoolEntry");
 class MinerTaskGenerator {
 
     run(roomInfo, taskHandler) {
-        // Nothing to do here; miners do not need special tasks
+        // Nothing to do here; 
+        // miners do not need special tasks since they are built specifically for the source they are assigned
     }
 
     generateDefaultTask(creep) {
