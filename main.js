@@ -4,13 +4,17 @@ Tyrant Bot V2
 
 */
 
+// Globals
 global.CONSTANTS = require("constants");
 
+// Managers
 const CreepManager = require("creepManager");
 const SpawnManager = require("spawnManager");
 
+// Data
 const RoomInfo = require("roomInfo");
 
+// Tasks
 const WorkerTaskGenerator = require("workerTaskGenerator");
 const MinerTaskGenerator = require("minerTaskGenerator");
 const HaulerTaskGenerator = require("haulerTaskGenerator");
@@ -18,8 +22,14 @@ const HaulerTaskGenerator = require("haulerTaskGenerator");
 const workerManager = new CreepManager(new WorkerTaskGenerator());
 const minerManager = new CreepManager(new MinerTaskGenerator());
 const haulerManager = new CreepManager(new HaulerTaskGenerator());
+
+// Spawning
+const WorkerSpawnInfo = require("workerSpawnInfo");
+const MinerSpawnInfo = require("minerSpawnInfo");
+const HaulerSpawnInfo = require("haulerSpawnInfo");
 const spawnManager = new SpawnManager();
 
+// Mapping
 const creepRoleMap = {
     [CONSTANTS.roles.worker]: workerManager,
     [CONSTANTS.roles.miner]: minerManager,
@@ -38,7 +48,7 @@ module.exports.loop = function() {
     
     for (const room in Game.rooms) {
         const info = new RoomInfo(Game.rooms[room]);
-        spawnManager.run(info);
+        spawnManager.run(info, [new WorkerSpawnInfo(), new MinerSpawnInfo(), new HaulerSpawnInfo()]);
 
         // Initialize tasks for all creep types in the current room
         for (const role in creepRoleMap) {
