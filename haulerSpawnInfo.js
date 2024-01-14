@@ -49,7 +49,7 @@ class HaulerSpawnInfo {
         // Create our body and composition
         let body = [MOVE, CARRY, CARRY];
         let lvl = 1;
-        for (let i = 0; i < nextCarry; i++) {
+        for (let i = 0; i < nextCarry - 1; i++) {
             body.push(MOVE, CARRY, CARRY);
             lvl = i + 2;
             if (creepSpawnUtility.getCost(body) > roomInfo.room.energyCapacityAvailable) {
