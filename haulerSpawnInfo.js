@@ -18,7 +18,11 @@ class HaulerSpawnInfo {
 
         // An estimation for how much energy haulers would carry per part on average per tick
         const neededCarryParts = roomInfo.getMaxIncome() / 20;
-        const neededHaulers = neededCarryParts / this.make(roomInfo).body.filter((p) => p === CARRY).length;
+        const haulerBody = this.make(roomInfo);
+        if (!haulerBody) {
+            return 0;
+        }
+        const neededHaulers = neededCarryParts / haulerBody.body.filter((p) => p === CARRY).length;
         return (minerCount * 4) + (workerCount * 1) + (neededHaulers * 1);
     }
 
@@ -35,14 +39,14 @@ class HaulerSpawnInfo {
 
         // Figure out how many CARRY parts is ideal given our ratio
         const wantedCarry = Math.ceil(existingWork / carryToWorkRatio) - existingCarry;
-        if (wantedCarry - existingCarry <= 0) {
+        if (wantedCarry <= 0) {
             return;
         }
 
         // Create our body and composition
         let body = [MOVE, CARRY, CARRY];
         let lvl = 1;
-        for (let i = 0; i < wantedCarry - existingCarry; i++) {
+        for (let i = 0; i < wantedCarry; i++) {
             body.push(MOVE, CARRY, CARRY);
             lvl = i + 2;
             if (creepSpawnUtility.getCost(body) > roomInfo.room.energyCapacityAvailable) {

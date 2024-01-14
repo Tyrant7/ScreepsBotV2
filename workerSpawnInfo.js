@@ -12,7 +12,11 @@ class WorkerSpawnInfo {
 
         // An estimation for how much energy workers would use per part on average per tick
         const neededWorkParts = roomInfo.getMaxIncome() * 1;
-        const neededWorkers = neededWorkParts / this.make(roomInfo).body.filter((p) => p === WORK).length;
+        const workerBody = this.make(roomInfo);
+        if (!workerBody) {
+            return 0;
+        }
+        const neededWorkers = neededWorkParts / workerBody.body.filter((p) => p === WORK).length;
         return (neededWorkers * 2.5);
     }
 
