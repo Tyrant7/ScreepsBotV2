@@ -28,9 +28,9 @@ class WorkerTaskGenerator {
             tasks.push(this.createBasicTask(site, taskType.build));
         }
         
-        // Create some restock tasks if we don't have haulers and miners yet
+        // Create some restock tasks if we don't have haulers or miners yet
         // Yes, duplicated code, I know :/
-        if (!roomInfo.miners.length && !roomInfo.haulers.length) {
+        if (!roomInfo.miners.length || !roomInfo.haulers.length) {
             const restockables = roomInfo.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 });
             for (const restock of restockables) {
     

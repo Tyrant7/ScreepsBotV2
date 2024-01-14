@@ -27,6 +27,12 @@ class SpawnManager {
         const highestPriority = 
             Object.keys(priorities).reduce((key, highestKey) => priorities[key] > priorities[highestKey] ? key : highestKey);
 
+        // None need for spawning
+        if (!highestPriority) {
+            console.log("wa");
+            return;
+        }
+
         // Create new creep of the highest priority role
         const next = spawnInfos[highestPriority].make(roomInfo);
 
