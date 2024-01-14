@@ -4,6 +4,7 @@ const TaskPoolEntry = require("taskPoolEntry");
 class HaulerTaskGenerator {
 
     run(roomInfo, taskHandler) {
+
         // Generate some tasks for haulers, namely:
         // Restock tasks
         // transport tasks between miner and storage
@@ -29,8 +30,8 @@ class HaulerTaskGenerator {
             // All that's left should be towers, spawn, and extensions
             // Create a task comprised of harvesting and restocking
             const actionStack = [];
-            actionStack.push(basicWorkerActions["harvest"]);
-            actionStack.push(basicWorkerActions[taskType.restock]);
+            actionStack.push(basicActions["harvest"]);
+            actionStack.push(basicActions[taskType.restock]);
             tasks.push(new Task(restock.id, taskType.restock, actionStack));
         }
 
@@ -46,7 +47,7 @@ class HaulerTaskGenerator {
                 }
     
                 // Create a task to transfer the energy from this miner's position to the storage
-                tasks.push(new Task(miner.id, taskType.transport, [basicWorkerActions[taskType.transport]]));
+                tasks.push(new Task(miner.id, taskType.transport, [basicActions[taskType.transport]]));
             }
         }
 
@@ -62,8 +63,8 @@ class HaulerTaskGenerator {
             // Likely a container near the controller where upgraders will sit
 
             const actionStack = [];
-            actionStack.push(basicWorkerActions["harvest"]);
-            actionStack.push(basicWorkerActions[taskType.deliver]);
+            actionStack.push(basicActions["harvest"]);
+            actionStack.push(basicActions[taskType.deliver]);
             tasks.push(new Task(roomInfo.room.controller.id, taskType.deliver, actionStack));
         }
 
@@ -77,7 +78,7 @@ class HaulerTaskGenerator {
      * @returns {TaskPoolEntry} A newly created entry for a 'deliver' task.
      */
     generateDefaultTask(creep) {
-        const deliverTask = new Task(creep.room.controller.id, taskType.deliver, [basicWorkerActions[taskType.deliver]]);
+        const deliverTask = new Task(creep.room.controller.id, taskType.deliver, [basicActions[taskType.deliver]]);
         return new TaskPoolEntry(deliverTask, 0);
     }
 
@@ -100,7 +101,7 @@ const taskType = {
     restock: "restock",
 };
 
-const basicWorkerActions = {
+const basicActions = {
     // Transports energy from 'target' to the room's storage
     [taskType.transport]: function(creep, target) {
 
