@@ -35,9 +35,9 @@ class SpawnManager {
 
         // Create new creep of the highest priority role
         const next = spawnInfos[highestPriority].make(roomInfo);
-
-        // Spawn it
-        this.trySpawnCreep(roomInfo, next);
+        if (next) {
+            this.trySpawnCreep(roomInfo, next);
+        }
 
         // Visuals!
         this.showSpawnVisuals(roomInfo);
