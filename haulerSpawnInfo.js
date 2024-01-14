@@ -43,10 +43,13 @@ class HaulerSpawnInfo {
             return;
         }
 
+        // Don't make haulers too big, even if we're able to
+        const nextCarry = Math.min(wantedCarry, CONSTANTS.maxHaulerSize);
+
         // Create our body and composition
         let body = [MOVE, CARRY, CARRY];
         let lvl = 1;
-        for (let i = 0; i < wantedCarry; i++) {
+        for (let i = 0; i < nextCarry; i++) {
             body.push(MOVE, CARRY, CARRY);
             lvl = i + 2;
             if (creepSpawnUtility.getCost(body) > roomInfo.room.energyCapacityAvailable) {
