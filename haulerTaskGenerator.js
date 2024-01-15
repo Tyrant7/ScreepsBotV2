@@ -105,8 +105,10 @@ const basicActions = {
     // Transports energy from 'target' to the room's storage
     [taskType.transport]: function(creep, target) {
 
+        console.log("transport");
+
         // If there's no storage in this creep's home, we're done
-        const storage = Game.rooms[creep.memory.home];
+        const storage = Game.rooms[creep.memory.home].storage;
         if (!storage) {
             delete creep.memory.openPull;
             return true;
@@ -131,9 +133,8 @@ const basicActions = {
         }
 
         // Otherwise, let's go get it
-        let harvest;
-        if (creep.pos.getRangeTo(target) <= 1) {
-            harvest = creep.pos.lookForAt(LOOK_STRUCTURES, target).find((s) => s.structure.structureType === STRUCTURE_CONTAINER);
+        let harvest = creep.room.lookForAt(LOOK_STRUCTURES, target).find((s) => s.structureType === STRUCTURE_CONTAINER);
+        if (creep.pos.getRangeTo(harvest) <= 1) {
 
             // We've some energy and we've gone all the way there, let's flag ourselves to start going back
             if (creep.store[RESOURCE_ENERGY]) {
@@ -144,8 +145,8 @@ const basicActions = {
         // If we're not there yet, or didn't find a container...
         if (!harvest) {
             // We can search the floor near us for energy
+            const p = creep.pos;
             if (p.x !== 0 && p.x !== 49 && p.y !== 0 && p.y !== 49) {
-                const p = creep.pos;
                 const nearby = creep.room.lookAtArea(p.y-1, p.x-1, p.y+1, p.x+1, true).find((item) => 
                     (item.type === LOOK_RESOURCES && item.resource.resourceType === RESOURCE_ENERGY) 
                  || (item.type === LOOK_TOMBSTONES && item.tombstone.store[RESOURCE_ENERGY] > 0) 
@@ -165,6 +166,9 @@ const basicActions = {
     // Delivers the creep's current inventory to target
     [taskType.deliver]: function(creep, target) {
 
+        console.log("deliver");
+
+
         // Let workers know that this hauler is open to pull energy off of if needed
         creep.memory.openPull = true;
 
@@ -175,7 +179,9 @@ const basicActions = {
         }
 
         const transferResult = creep.transfer(target, RESOURCE_ENERGY);
-        if (transferResult === ERR_NOT_IN_RANGE) {
+        if (transferResult === ERR_NOT_IN_RANGE ||
+            // Just in case we're going towards the controller
+            (target.id === creep.room.controller.id && creep.pos.getRangeTo(target) > 3)) {
             creep.moveTo(target);
         }
         else if (transferResult === OK) {

@@ -17,7 +17,7 @@ class HaulerSpawnInfo {
         }
 
         // An estimation for how much energy haulers would carry per part on average per tick
-        const neededCarryParts = roomInfo.getMaxIncome() / 20;
+        const neededCarryParts = roomInfo.getMaxIncome() / 18;
         const haulerBody = this.make(roomInfo);
         if (!haulerBody) {
             return 0;
