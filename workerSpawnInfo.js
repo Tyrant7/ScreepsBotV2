@@ -25,7 +25,7 @@ class WorkerSpawnInfo {
         // Before we have miners -> allocate workers using: nSourceSpots + 1
         // With miners -> use the formula: X WORK parts per Y max income
         // Ratio determined through minimal testing to be an acceptable value
-        const incomeToPartRatio = 1.2;
+        const incomeToPartRatio = 1.25;
         const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getMaxIncome() * incomeToPartRatio) : roomInfo.openSourceSpots + 1;
 
         // Sum up existing part counts for workers

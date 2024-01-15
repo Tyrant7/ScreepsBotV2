@@ -34,8 +34,8 @@ class HaulerSpawnInfo {
         // Figure out how many CARRY parts we have on haulers
         const existingCarry = roomInfo.haulers.reduce((total, curr) => total + curr.body.filter((p) => p.type === CARRY).length, 0);
 
-        // TODO: Calculate dynamically based on roads and accessibility //
-        const carryToWorkRatio = 3 / 2;
+        // TODO: Fine tune and calculate dynamically based on roads and accessibility //
+        const carryToWorkRatio = 4 / 3;
 
         // Figure out how many CARRY parts is ideal given our ratio
         const wantedCarry = Math.ceil(existingWork / carryToWorkRatio) - existingCarry;

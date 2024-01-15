@@ -212,6 +212,11 @@ const basicWorkerActions = {
                 && (r.pos.lookFor(LOOK_CONSTRUCTION_SITES).find((s) => s.structureType === STRUCTURE_CONTAINER)
                 || r.pos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER)) }));
 
+            // We can allow ourselves to target planted haulers
+            sources.push(...creep.room.find(FIND_MY_CREEPS, { 
+                filter: (c) => c.memory.role === CONSTANTS.roles.hauler && c.memory.openPull && c.memory.planted
+            }));
+
             // Storage
             if (creep.room.storage && creep.room.storage.store[RESOURCE_ENERGY] > 0) {
                 sources.push(creep.room.storage);
