@@ -336,10 +336,7 @@ const priorityMap = {
         else if (need >= 0.75) {
             return 13;
         }
-        else if (need >= 0.5) {
-            return 5;
-        }
-        return 1;
+        return 5;
     },
 };
 
