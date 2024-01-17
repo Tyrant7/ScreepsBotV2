@@ -62,7 +62,7 @@ module.exports.loop = function() {
         const creep = Game.creeps[name];
         if (creep) {
             // Map the creep's role to its appropriate manager and run behaviour
-            creepRoleMap[creep.memory.role].processCreep(creep, roomInfos[creep.room.name]);
+            creepRoleMap[creep.memory.role].processCreep(creep, roomInfos[creep.memory.home]);
         }
         else {
             creepDeath(name);
