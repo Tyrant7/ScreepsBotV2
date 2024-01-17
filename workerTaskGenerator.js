@@ -116,8 +116,8 @@ class WorkerTaskGenerator {
 
 // Don't repair these structures too much
 const repairThresholds = {
-    [STRUCTURE_WALL]: 0.05,
-    [STRUCTURE_RAMPART]: 0.075,
+    [STRUCTURE_WALL]: 0.01,
+    [STRUCTURE_RAMPART]: 0.03,
     [STRUCTURE_CONTAINER]: 0.5,
     [STRUCTURE_ROAD]: 0.65
 };
@@ -162,7 +162,7 @@ const basicWorkerActions = {
         // Find the closest site in the creep's homeroom matching its target sturctureType
         // Do this so that all roads or extensions will be built in order of distance instead of all at once
         const home = Game.rooms[creep.memory.home];
-        const buildTarget = home.find(FIND_MY_CONSTRUCTION_SITES, { 
+        const buildTarget = home.find(FIND_CONSTRUCTION_SITES, { 
             filter: (site) => site.structureType === target.structureType })
             .reduce((closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, target);
 
