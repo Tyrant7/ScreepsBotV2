@@ -33,7 +33,8 @@ class HaulerSpawnInfo {
             .reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
 
         // Figure out how many CARRY parts we have on haulers
-        const existingCarry = creepSpawnUtility.getPredictiveCreeps(roomInfo.haulers)
+        const predictiveHaulers = creepSpawnUtility.getPredictiveCreeps(roomInfo.haulers);
+        const existingCarry = predictiveHaulers
             .reduce((total, curr) => total + curr.body.filter((p) => p.type === CARRY).length, 0);
 
         // TODO: Fine tune and calculate dynamically based on roads and accessibility //
@@ -45,9 +46,9 @@ class HaulerSpawnInfo {
             return;
         }
 
-        // Don't make haulers too big, even if we're able to
-        // Also distribute CARRY parts over a few different haulers to avoid one giant one, floor to avoid level 1 stragglers
-        const nextCarry = Math.floor(Math.min(wantedCarry, CONSTANTS.maxHaulerSize) / CONSTANTS.idealHaulerCount);
+        // Don't make haulers too big, even if we're able to, and split them up to match our ideal size
+        const split = CONSTANTS.idealHaulerCount - predictiveHaulers.length;
+        const nextCarry = Math.min(wantedCarry / split, CONSTANTS.maxHaulerSize);
 
         // Create our body and composition
         let body = [MOVE, CARRY, CARRY];
