@@ -68,8 +68,8 @@ class HaulerTaskGenerator {
         }
 
         // Prioritise all of our tasks and return them
-        const prioritisedTasks = tasks.forEach((task) => task.priority = priorityMap[task.tag](task, roomInfo));
-        return prioritisedTasks;
+        tasks.forEach((task) => task.priority = priorityMap[task.tag](task, roomInfo));
+        return tasks;
     }
 
     /**
