@@ -1,57 +1,58 @@
 const creepSpawnUtility = require("creepSpawnUtility");
+const LeveledSpawnInfo = require("leveledSpawnInfo");
 
-class WorkerSpawnInfo {
+class WorkerSpawnInfo extends LeveledSpawnInfo {
 
-    getPriority(roomInfo) {
+    /**
+     * Figures out the ideal spawn levels for workers in this room.
+     * @param {RoomInfo} roomInfo The info object associated with the room.
+     * @returns An array of levels for the ideal workers in this room. Each element corresponds to a creep.
+     */
+    getIdealSpawns(roomInfo) {
 
-        // We need workers always
-        const workerCount = creepSpawnUtility.getPredictiveCreeps(roomInfo.workers).length;
-        if (workerCount <= 2) {
-            return 1000;
+        // Figure out how many WORK parts we ideally want
+        const incomeToPartRatio = 1.25;
+        const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getMaxIncome() * incomeToPartRatio)
+            : roomInfo.openSourceSpots + 1;
+
+        // Find the most expensive worker we can build in this room
+        const levelCost = creepSpawnUtility.getCost([WORK, CARRY, MOVE]);
+        const workerLevel = Math.min(roomInfo.room.energyCapacityAvailable / levelCost, CONSTANTS.maxWorkerLevel);
+
+        // Divide our desired part count to get our desired number of workers
+        const workerCount = Math.floor(maxWorkParts / workerLevel);
+
+        // If we have leftover parts that didn't fit into a max size worker, let's make a smaller one
+        const leftover = maxWorkParts % workerLevel;
+
+        // Add these desired workers to the queue, pushing the leftover last
+        const queue = [];
+        queue.push(leftover);
+        for (let i = 0; i < workerCount; i++) {
+            queue.push(workerLevel);
         }
-
-        // An estimation for how much energy workers would use per part on average per tick
-        const neededWorkParts = roomInfo.getMaxIncome() * 1;
-        const workerBody = this.make(roomInfo);
-        if (!workerBody) {
-            return 0;
-        }
-        const neededWorkers = neededWorkParts / workerBody.body.filter((p) => p === WORK).length;
-        return (neededWorkers * 2.5);
+        return queue;
     }
 
-    make(roomInfo) {
+    /**
+     * Figures out the levels of all workers in this room.
+     * @param {RoomInfo} roomInfo The info object associated with the room.
+     * @returns {number[]} An array of levels for current workers in this room. Each elements corresponds to a creep.
+    */
+    getRealMembers(roomInfo) {
+        return roomInfo.workers.map((h) => h.body.filter((p) => p.type === WORK).length);
+    }
 
-        // Sum up existing part counts for workers
-        const predictiveWorkers = creepSpawnUtility.getPredictiveCreeps(roomInfo.workers);
-        const workCount = predictiveWorkers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
-
-        // Workers are allocated based on number of WORK parts
-        // Before we have miners -> allocate workers based on count using: nSourceSpots + 1
-        // With miners -> use the formula: X WORK parts per Y max income
-        // Ratio determined through minimal testing to be an acceptable value
-        const incomeToPartRatio = 1.25;
-        const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getMaxIncome() * incomeToPartRatio) 
-            // Averaging the worker parts to allocate based on worker count instead of part count
-            : roomInfo.openSourceSpots * (workCount / predictiveWorkers.length) + 1;
-    
-        // Adjust level so that we spawn lower level workers to avoid exceeding our WORK part max
-        const adjustedLevel = Math.min(CONSTANTS.maxWorkerLevel, maxWorkParts - workCount);
-        if (adjustedLevel <= 0) {
-            return;
-        }
-
-        // Let's make the body and composition
+    make(desiredLevel, energy) {
         const workerParts = [WORK, CARRY, MOVE];
         let body = workerParts;
         let lvl = 1;
         const levelCost = creepSpawnUtility.getCost(body);
-        while (lvl < adjustedLevel && (lvl + 1) * levelCost <= roomInfo.room.energyCapacityAvailable) {
+        while (lvl < desiredLevel && (lvl + 1) * levelCost <= energy) {
             lvl++;
             body = body.concat(workerParts);
         }
         return { body: body, 
-                 cost: lvl * levelCost,
                  name: "Worker " + Game.time + " [" + lvl.toString() + "]",
                  memory: { role: CONSTANTS.roles.worker }};
     }

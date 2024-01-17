@@ -1,36 +1,22 @@
-const WorkerSpawnInfo = require("./workerSpawnInfo");
-
 class SpawnManager {
 
     /**
      * Spawns the most urgently needed creep for this room from the list of spawn infos. Spawns none if none are needed.
      * @param {RoomInfo} roomInfo The info for the room to spawn in.
-     * @param {*[]} spawnInfos An array of SpawnInfo objects containing information about each role. Each should implement the following methods:
-     * - `getPriority(roomInfo)`: which returns the priority that the given role is spawned in the given room.
-     * - `make(roomInfo)`: which returns a new creep body along with the meta data needed to spawn the creep.
-     * Meta data is an object which includes properties for the creep's body, cost, name, and memory object.
+     * @param {*[]} spawnInfos An array of SpawnInfo objects containing information about each role. Each should implement the following method:
+     * - `getNextSpawn(roomInfo)`: Returns an object containing necessary spawn information, including body, name, and memory object.
      */
     run(roomInfo, spawnInfos) {
 
-        // Don't try to spawn in rooms that aren't ours
-        if (!roomInfo.spawns || roomInfo.spawns.length === 0) {
-            return;
-        }
+        // Find the first spawn info that doesn't meet its requirements
+        for (const info of spawnInfos) {
+            const next = info.getNextSpawn(roomInfo);
 
-        // Get spawn priorities for each role
-        const priorities = {};
-        for (const spawn in spawnInfos) {
-            priorities[spawn] = spawnInfos[spawn].getPriority(roomInfo);
-        }
-
-        // Find index with highest priority
-        const highestPriority = 
-            Object.keys(priorities).reduce((key, highestKey) => priorities[key] > priorities[highestKey] ? key : highestKey);
-
-        // Create new creep of the highest priority role
-        const next = spawnInfos[highestPriority].make(roomInfo);
-        if (next) {
-            this.trySpawnCreep(roomInfo, next);
+            if (next) {
+                console.log(next.name);
+                this.trySpawnCreep(roomInfo, next);
+                break;
+            }
         }
 
         // Visuals!
@@ -44,7 +30,6 @@ class SpawnManager {
      */
     trySpawnCreep(roomInfo, data) {
 
-        // Spawn next from queue for each non-busy spawn in the room
         for (const spawn of roomInfo.spawns) {
             if (spawn.spawning) {
                 continue;

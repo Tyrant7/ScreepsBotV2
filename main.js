@@ -63,11 +63,14 @@ module.exports.loop = function() {
         roomInfos[room] = new RoomInfo(Game.rooms[room]);
         const info = roomInfos[room];
 
-        spawnManager.run(info, [
-            new WorkerSpawnInfo(), 
-            new MinerSpawnInfo(), 
-            new HaulerSpawnInfo()
-        ]);
+        // Don't try to spawn in rooms that aren't ours
+        if (info.spawns && info.spawns.length) {
+            spawnManager.run(info, [
+                new WorkerSpawnInfo(), 
+                new MinerSpawnInfo(), 
+                new HaulerSpawnInfo()
+            ]);
+        }
 
         // Defense
         towerManager.run(info);

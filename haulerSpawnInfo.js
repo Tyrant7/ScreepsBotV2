@@ -1,70 +1,69 @@
 const creepSpawnUtility = require("creepSpawnUtility");
+const LeveledSpawnInfo = require("leveledSpawnInfo");
 
-class HaulerSpawnInfo {
+class HaulerSpawnInfo extends LeveledSpawnInfo {
 
-    getPriority(roomInfo) {
+    /**
+     * Figures out the ideal spawn levels for haulers in this room.
+     * @param {RoomInfo} roomInfo The info object associated with the room.
+     * @returns {number[]} An array of levels for ideal haulers in this room. Each elements corresponds to a creep.
+     */
+    getIdealSpawns(roomInfo) {
 
-        // No workers, no haulers
-        const workerCount = creepSpawnUtility.getPredictiveCreeps(roomInfo.workers).length;
-        if (!workerCount) {
-            return 0;
+        // Figure out how many CARRY parts we ideally want
+        const incomeToPartRatio = 1.1;
+        const maxCarryParts = Math.ceil(roomInfo.getMaxIncome() * incomeToPartRatio);
+
+        // Find the most expensive hauler we can build in this room
+        const levelCost = creepSpawnUtility.getCost([MOVE, CARRY, CARRY]);
+        const haulerLevel = Math.min(roomInfo.room.energyCapacityAvailable / levelCost, CONSTANTS.maxHaulerLevel);
+
+        // Divide our desired part count to get our desired number of haulers
+        const haulerCount = Math.floor(maxCarryParts / haulerLevel);
+
+        // If we have leftover parts that didn't fit into a max size hauler, let's make a smaller one
+        const leftover = maxCarryParts % haulerLevel;
+
+        // Add these desired haulers to the queue, pushing the leftover first
+        const queue = [];
+        queue.push(leftover);
+        for (let i = 0; i < haulerCount; i++) {
+            queue.push(haulerLevel);
         }
-
-        // Same for miners
-        const minerCount = creepSpawnUtility.getPredictiveCreeps(roomInfo.miners).length;
-        if (!minerCount) {
-            return 0;
-        }
-
-        // An estimation for how much energy haulers would carry per part on average per tick
-        const neededCarryParts = roomInfo.getMaxIncome() / 18;
-        const haulerBody = this.make(roomInfo);
-        if (!haulerBody) {
-            return 0;
-        }
-        const neededHaulers = neededCarryParts / haulerBody.body.filter((p) => p === CARRY).length;
-        return (minerCount * 4) + (workerCount * 1) + (neededHaulers * 1);
+        return queue;
     }
 
-    make(roomInfo) {
+    /**
+     * Figures out the levels of all haulers in this room.
+     * @param {RoomInfo} roomInfo The info object associated with the room.
+     * @returns {number[]} An array of levels for current haulers in this room. Each elements corresponds to a creep.
+     */
+    getRealMembers(roomInfo) {
 
-        // Figure out how many WORK parts we have on workers
-        const existingWork = creepSpawnUtility.getPredictiveCreeps(roomInfo.workers)
-            .reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
+        // Reduces all existing haulers to an array containing only their level
+        return roomInfo.haulers.map((h) => h.body.filter((p) => p.type === MOVE).length);
+    }
 
-        // Figure out how many CARRY parts we have on haulers
-        const predictiveHaulers = creepSpawnUtility.getPredictiveCreeps(roomInfo.haulers);
-        const existingCarry = predictiveHaulers
-            .reduce((total, curr) => total + curr.body.filter((p) => p.type === CARRY).length, 0);
-
-        // TODO: Fine tune and calculate dynamically based on roads and accessibility //
-        const carryToWorkRatio = 4 / 3;
-
-        // Figure out how many CARRY parts is ideal given our ratio
-        const wantedCarry = Math.ceil(existingWork / carryToWorkRatio) - existingCarry;
-        if (wantedCarry <= 0) {
-            return;
-        }
-
-        // Don't make haulers too big, even if we're able to, and split them up to match our ideal size
-        const split = Math.min(CONSTANTS.idealHaulerCount - predictiveHaulers.length, 1);
-        const nextCarry = Math.min(Math.ceil(wantedCarry / split), CONSTANTS.maxHaulerSize);
-
-        // Create our body and composition
-        let body = [MOVE, CARRY, CARRY];
-        let lvl = 1;
-        for (let i = 0; i < Math.ceil((nextCarry / 2)) - 1; i++) {
+    /**
+     * Creates some meta data for spawning a hauler of the desired level.
+     * @param {number} desiredLevel The level of hauler to create.
+     * @param {number} energy The max energy cost of the created hauler.
+     * @returns {{}} An object with meta data.
+     */
+    make(desiredLevel, energy) {
+        let body = [];
+        let lvl = 0;
+        for (let i = 0; i < desiredLevel; i++) {
+            lvl = i + 1;
             body.push(MOVE, CARRY, CARRY);
-            lvl = i + 2;
-            if (creepSpawnUtility.getCost(body) > roomInfo.room.energyCapacityAvailable) {
+            if (creepSpawnUtility.getCost(body) > energy) {
                 body.pop();
                 body.pop();
                 body.pop();
-                break;
-            }
+                return;
+            } 
         }
         return { body: body, 
-                 cost: creepSpawnUtility.getCost(body), 
                  name: "Hauler " + Game.time + " [" + lvl + "]",
                  memory: { role: CONSTANTS.roles.hauler }};
     }
