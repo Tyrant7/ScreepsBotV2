@@ -46,8 +46,8 @@ class HaulerSpawnInfo {
         }
 
         // Don't make haulers too big, even if we're able to
-        // Also distribute CARRY parts over a few different haulers to avoid one giant one
-        const nextCarry = Math.ceil(Math.min(wantedCarry, CONSTANTS.maxHaulerSize) / CONSTANTS.idealHaulerCount);
+        // Also distribute CARRY parts over a few different haulers to avoid one giant one, floor to avoid level 1 stragglers
+        const nextCarry = Math.floor(Math.min(wantedCarry, CONSTANTS.maxHaulerSize) / CONSTANTS.idealHaulerCount);
 
         // Create our body and composition
         let body = [MOVE, CARRY, CARRY];
