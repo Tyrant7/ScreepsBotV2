@@ -47,7 +47,7 @@ class HaulerSpawnInfo {
         }
 
         // Don't make haulers too big, even if we're able to, and split them up to match our ideal size
-        const split = CONSTANTS.idealHaulerCount - predictiveHaulers.length || 1;
+        const split = Math.min(CONSTANTS.idealHaulerCount - predictiveHaulers.length, 1);
         const nextCarry = Math.min(Math.ceil(wantedCarry / split), CONSTANTS.maxHaulerSize);
 
         // Create our body and composition
