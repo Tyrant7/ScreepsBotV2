@@ -49,7 +49,10 @@ class CreepManager {
      */
     runTask(creep, task) {
         
-        console.log(creep.memory.role + ": " + task.tag);
+        // Debug
+        if (DEBUG.logTasks) {
+            creep.say(task.tag);
+        }
 
         // Find our associated target
         const target = Game.getObjectById(task.target);

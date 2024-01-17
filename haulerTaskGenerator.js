@@ -93,8 +93,6 @@ const basicActions = {
     // Transports energy from 'target' to the room's storage
     [taskType.transport]: function(creep, target) {
 
-        console.log("transport");
-
         // If there's no storage in this creep's home, we're done
         const storage = Game.rooms[creep.memory.home].storage;
         if (!storage) {
@@ -153,9 +151,6 @@ const basicActions = {
     },
     // Delivers the creep's current inventory to target
     [taskType.deliver]: function(creep, target) {
-
-        console.log("deliver");
-
 
         // Let workers know that this hauler is open to pull energy off of if needed
         creep.memory.openPull = true;
