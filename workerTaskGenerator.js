@@ -219,6 +219,11 @@ const basicWorkerActions = {
                 sources = creep.room.find(FIND_SOURCES, { filter: (s) => s.energy > 0 });
             }
 
+            // Still nothing, let's just wait
+            if (!sources || !sources.length) {
+                return false;
+            }
+
             // Find the best target -> measured by a blend of distance and energy amount
             const best = sources.reduce(function(best, curr) {
                 const bEnergy = best instanceof Source ? best.energy : best instanceof Resource ? best.amount : best.store[RESOURCE_ENERGY];
