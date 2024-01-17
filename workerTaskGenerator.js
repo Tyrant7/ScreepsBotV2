@@ -116,8 +116,8 @@ class WorkerTaskGenerator {
 
 // Don't repair these structures too much
 const repairThresholds = {
-    [STRUCTURE_WALL]: 0.01,
-    [STRUCTURE_RAMPART]: 0.03,
+    [STRUCTURE_WALL]: 0.002,
+    [STRUCTURE_RAMPART]: 0.005,
     [STRUCTURE_CONTAINER]: 0.5,
     [STRUCTURE_ROAD]: 0.65
 };
