@@ -5,13 +5,13 @@ class HaulerSpawnInfo {
     getPriority(roomInfo) {
 
         // No workers, no haulers
-        const workerCount = roomInfo.workers.length;
+        const workerCount = creepSpawnUtility.getPredictiveCreeps(roomInfo.workers).length;
         if (!workerCount) {
             return 0;
         }
 
         // Same for miners
-        const minerCount = roomInfo.miners.length;
+        const minerCount = creepSpawnUtility.getPredictiveCreeps(roomInfo.miners).length;
         if (!minerCount) {
             return 0;
         }
@@ -29,10 +29,12 @@ class HaulerSpawnInfo {
     make(roomInfo) {
 
         // Figure out how many WORK parts we have on workers
-        const existingWork = roomInfo.workers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
+        const existingWork = creepSpawnUtility.getPredictiveCreeps(roomInfo.workers)
+            .reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
 
         // Figure out how many CARRY parts we have on haulers
-        const existingCarry = roomInfo.haulers.reduce((total, curr) => total + curr.body.filter((p) => p.type === CARRY).length, 0);
+        const existingCarry = creepSpawnUtility.getPredictiveCreeps(roomInfo.haulers)
+            .reduce((total, curr) => total + curr.body.filter((p) => p.type === CARRY).length, 0);
 
         // TODO: Fine tune and calculate dynamically based on roads and accessibility //
         const carryToWorkRatio = 4 / 3;

@@ -5,7 +5,7 @@ class WorkerSpawnInfo {
     getPriority(roomInfo) {
 
         // We need workers always
-        const workerCount = roomInfo.workers.length;
+        const workerCount = creepSpawnUtility.getPredictiveCreeps(roomInfo.workers).length;
         if (workerCount <= 2) {
             return 1000;
         }
@@ -29,11 +29,12 @@ class WorkerSpawnInfo {
         const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getMaxIncome() * incomeToPartRatio) : roomInfo.openSourceSpots + 1;
 
         // Sum up existing part counts for workers
-        const workCount = roomInfo.workers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
+        const predictiveWorkers = creepSpawnUtility.getPredictiveCreeps(roomInfo.workers);
+        const workCount = predictiveWorkers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
     
         // Limit ourselves to spawning lower level workers first if we get wiped out
         // Starting at level one, then an additional two levels per existing worker
-        const maxLevel = Math.min(Math.ceil(roomInfo.workers.length * 2) + 1, CONSTANTS.maxWorkerLevel);
+        const maxLevel = Math.min(Math.ceil(predictiveWorkers.length * 2) + 1, CONSTANTS.maxWorkerLevel);
 
         // Adjust level so that we spawn lower level workers to avoid exceeding our WORK part max
         const adjustedLevel = Math.min(maxLevel, maxWorkParts - workCount);

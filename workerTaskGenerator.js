@@ -158,10 +158,18 @@ const basicWorkerActions = {
         return restock.store.getFreeCapacity(RESOURCE_ENERGY) === 0 || creep.store[RESOURCE_ENERGY] === 0;
     },
     [taskType.build]: function(creep, target) {
-        if (creep.build(target) === ERR_NOT_IN_RANGE) {
-            creep.moveTo(target);
+
+        // Find the closest site in the creep's homeroom matching its target sturctureType
+        // Do this so that all roads or extensions will be built in order of distance instead of all at once
+        const home = Game.rooms[creep.memory.home];
+        const buildTarget = home.find(FIND_MY_CONSTRUCTION_SITES, { 
+            filter: (site) => site.structureType === target.structureType })
+            .reduce((closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, target);
+
+        if (creep.build(buildTarget) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(buildTarget);
         }
-        return creep.store[RESOURCE_ENERGY] === 0 || !target;
+        return creep.store[RESOURCE_ENERGY] === 0 || !buildTarget;
     },
     [taskType.repair]: function(creep, target) {
         if (creep.repair(target) === ERR_NOT_IN_RANGE) {

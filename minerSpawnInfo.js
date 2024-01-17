@@ -5,7 +5,7 @@ class MinerSpawnInfo {
     getPriority(roomInfo) {
 
         // No workers, no miners
-        const workerCount = roomInfo.workers.length;
+        const workerCount = creepSpawnUtility.getPredictiveCreeps(roomInfo.workers).length;
         if (!workerCount) {
             return 0;
         }
