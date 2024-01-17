@@ -13,6 +13,7 @@ global.DEBUG = {
 // Managers
 const CreepManager = require("creepManager");
 const SpawnManager = require("spawnManager");
+const TowerManager = require("towerManager");
 
 // Data
 const RoomInfo = require("roomInfo");
@@ -31,6 +32,9 @@ const WorkerSpawnInfo = require("workerSpawnInfo");
 const MinerSpawnInfo = require("minerSpawnInfo");
 const HaulerSpawnInfo = require("haulerSpawnInfo");
 const spawnManager = new SpawnManager();
+
+// Defense
+const towerManager = new TowerManager();
 
 // Mapping
 const creepRoleMap = {
@@ -53,11 +57,16 @@ module.exports.loop = function() {
     const roomInfos = {};
     for (const room in Game.rooms) {
         roomInfos[room] = new RoomInfo(Game.rooms[room]);
-        spawnManager.run(roomInfos[room], [
+        const info = roomInfos[room];
+
+        spawnManager.run(info, [
             new WorkerSpawnInfo(), 
             new MinerSpawnInfo(), 
             new HaulerSpawnInfo()
         ]);
+
+        // Defense
+        towerManager.run(info);
     }
 
     // Run creeps

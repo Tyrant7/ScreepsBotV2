@@ -6,4 +6,5 @@ module.exports = {
     },
     maxWorkerLevel: 8,
     maxHaulerSize: 10,
+    idealHaulerCount: 2,
 };
