@@ -76,13 +76,8 @@ class WorkerTaskGenerator {
         if (roomInfo.room.controller.my) {
             const existingTasks = activeTasks.filter((task) => task.target === roomInfo.room.controller.id && task.tag === taskType.upgrade);
             if (!existingTasks.length) {
-    
                 // Create a basic worker task for upgrading
                 tasks.push(this.createBasicTask(roomInfo.room.controller, taskType.upgrade));
-            }
-            // Emergency situation -> let's force ourselves to spend some energy keeping our controller alive
-            else if (roomInfo.room.controller.ticksToDowngrade < 1000) {
-                existingTasks[0].priority = 1000;
             }
         }
 
