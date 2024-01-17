@@ -21,23 +21,22 @@ class WorkerSpawnInfo {
     }
 
     make(roomInfo) {
-        // Workers are allocated based on number of WORK parts
-        // Before we have miners -> allocate workers using: nSourceSpots + 1
-        // With miners -> use the formula: X WORK parts per Y max income
-        // Ratio determined through minimal testing to be an acceptable value
-        const incomeToPartRatio = 1.25;
-        const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getMaxIncome() * incomeToPartRatio) : roomInfo.openSourceSpots + 1;
 
         // Sum up existing part counts for workers
         const predictiveWorkers = creepSpawnUtility.getPredictiveCreeps(roomInfo.workers);
         const workCount = predictiveWorkers.reduce((total, curr) => total + curr.body.filter((p) => p.type === WORK).length, 0);
-    
-        // Limit ourselves to spawning lower level workers first if we get wiped out
-        // Starting at level one, then an additional two levels per existing worker
-        const maxLevel = Math.min(Math.ceil(predictiveWorkers.length * 2) + 1, CONSTANTS.maxWorkerLevel);
 
+        // Workers are allocated based on number of WORK parts
+        // Before we have miners -> allocate workers based on count using: nSourceSpots + 1
+        // With miners -> use the formula: X WORK parts per Y max income
+        // Ratio determined through minimal testing to be an acceptable value
+        const incomeToPartRatio = 1.25;
+        const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getMaxIncome() * incomeToPartRatio) 
+            // Averaging the worker parts to allocate based on worker count instead of part count
+            : roomInfo.openSourceSpots * (workCount / predictiveWorkers.length) + 1;
+    
         // Adjust level so that we spawn lower level workers to avoid exceeding our WORK part max
-        const adjustedLevel = Math.min(maxLevel, maxWorkParts - workCount);
+        const adjustedLevel = Math.min(CONSTANTS.maxWorkerLevel, maxWorkParts - workCount);
         if (adjustedLevel <= 0) {
             return;
         }

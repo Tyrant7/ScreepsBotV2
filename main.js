@@ -18,6 +18,10 @@ const TowerManager = require("towerManager");
 // Data
 const RoomInfo = require("roomInfo");
 
+// Remotes
+const RemotePlanner = require("remotePlanner");
+const remotePlanner = new RemotePlanner();
+
 // Tasks
 const WorkerTaskGenerator = require("workerTaskGenerator");
 const MinerTaskGenerator = require("minerTaskGenerator");

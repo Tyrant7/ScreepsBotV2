@@ -4,6 +4,7 @@ class RemotePlanner {
 
         // Get adjacent rooms
         const room = roomInfo.room;
+        const adjacentRooms = Object.values(Game.map.describeExits(room.name));
 
     }
 
