@@ -47,16 +47,13 @@ class HaulerSpawnInfo {
         }
 
         // Don't make haulers too big, even if we're able to, and split them up to match our ideal size
-        const split = CONSTANTS.idealHaulerCount - predictiveHaulers.length;
-        const nextCarry = Math.ceil(Math.min(wantedCarry / split, CONSTANTS.maxHaulerSize));
-
-        console.log("wanted: " + wantedCarry);
-        console.log("next: " + (wantedCarry / split));
+        const split = CONSTANTS.idealHaulerCount - predictiveHaulers.length || 1;
+        const nextCarry = Math.min(Math.ceil(wantedCarry / split), CONSTANTS.maxHaulerSize);
 
         // Create our body and composition
         let body = [MOVE, CARRY, CARRY];
         let lvl = 1;
-        for (let i = 0; i < nextCarry - 1; i++) {
+        for (let i = 0; i < Math.ceil((nextCarry / 2)) - 1; i++) {
             body.push(MOVE, CARRY, CARRY);
             lvl = i + 2;
             if (creepSpawnUtility.getCost(body) > roomInfo.room.energyCapacityAvailable) {
