@@ -1,9 +1,8 @@
 const Task = require("task");
-const TaskPoolEntry = require("taskPoolEntry");
 
 class MinerTaskGenerator {
 
-    run(roomInfo, taskHandler) {
+    run(roomInfo, activeTasks) {
         // Nothing to do here; 
         // miners do not need special tasks since they are built specifically for the source they are assigned
     }
@@ -71,8 +70,8 @@ class MinerTaskGenerator {
             return false;
         });
 
-        const task = new Task(creep.memory.sourceID, "mine", actionStack);
-        return new TaskPoolEntry(task, 0);
+        // Create and return our task
+        return new Task(creep.memory.sourceID, "mine", actionStack, 0);
     }
 }
 

@@ -46,14 +46,15 @@ module.exports.loop = function() {
     }
     */
     
+    // Initialize our info map
+    const roomInfos = {};
     for (const room in Game.rooms) {
-        const info = new RoomInfo(Game.rooms[room]);
-        spawnManager.run(info, [new WorkerSpawnInfo(), new MinerSpawnInfo(), new HaulerSpawnInfo()]);
-
-        // Initialize tasks for all creep types in the current room
-        for (const role in creepRoleMap) {
-            creepRoleMap[role].initializeTasks(info);
-        }
+        roomInfos[room] = new RoomInfo(Game.rooms[room]);
+        spawnManager.run(roomInfos[room], [
+            new WorkerSpawnInfo(), 
+            new MinerSpawnInfo(), 
+            new HaulerSpawnInfo()
+        ]);
     }
 
     // Run creeps
@@ -61,7 +62,7 @@ module.exports.loop = function() {
         const creep = Game.creeps[name];
         if (creep) {
             // Map the creep's role to its appropriate manager and run behaviour
-            creepRoleMap[creep.memory.role].processCreep(creep);
+            creepRoleMap[creep.memory.role].processCreep(creep, roomInfos[creep.room.name]);
         }
         else {
             creepDeath(name);

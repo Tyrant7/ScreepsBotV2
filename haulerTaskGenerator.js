@@ -1,9 +1,8 @@
 const Task = require("task");
-const TaskPoolEntry = require("taskPoolEntry");
 
 class HaulerTaskGenerator {
 
-    run(roomInfo, taskHandler) {
+    run(roomInfo, activeTasks) {
 
         // Generate some tasks for haulers, namely:
         // Restock tasks
@@ -22,7 +21,7 @@ class HaulerTaskGenerator {
             }
 
             // No more than one restock task per object
-            const existingTasks = taskHandler.getTasksForObjectByTag(restock.id, taskType.restock);
+            const existingTasks = activeTasks.filter((task) => task.target === restock.id && task.tag === taskType.restock);
             if (existingTasks.length) {
                 continue;
             }
@@ -41,7 +40,7 @@ class HaulerTaskGenerator {
             for (const miner of roomInfo.miners) {
 
                 // No more than one hauler per miner
-                const existingTasks = taskHandler.getTasksForObjectByTag(miner.id, taskType.transport);
+                const existingTasks = activeTasks.filter((task) => task.target === miner.id && task.tag === taskType.transport);
                 if (existingTasks.length) {
                     continue;
                 }
@@ -52,7 +51,7 @@ class HaulerTaskGenerator {
         }
 
         // Deliver task for controller
-        const existingTasks = taskHandler.getTasksForObjectByTag(roomInfo.room.controller.id, taskType.deliver);
+        const existingTasks = activeTasks.filter((task) => task.target === roomInfo.room.controller.id, taskType.deliver);
         if (!existingTasks.length) {
 
             // Create a new task to deliver energy to the controller
@@ -68,29 +67,18 @@ class HaulerTaskGenerator {
             tasks.push(new Task(roomInfo.room.controller.id, taskType.deliver, actionStack));
         }
 
-        // Prioritise all of our tasks and return new entries for them
-        return this.prioritiseTasks(tasks, taskHandler, roomInfo);
+        // Prioritise all of our tasks and return them
+        const prioritisedTasks = tasks.forEach((task) => task.priority = priorityMap[task.tag](task, roomInfo));
+        return prioritisedTasks;
     }
 
     /**
      * Generates a default deliver task for haulers.
      * @param {Creep} creep The creep to generate the task for.
-     * @returns {TaskPoolEntry} A newly created entry for a 'deliver' task.
+     * @returns {Task} A newly created 'deliver' task.
      */
     generateDefaultTask(creep) {
-        const deliverTask = new Task(creep.room.controller.id, taskType.deliver, [basicActions[taskType.deliver]]);
-        return new TaskPoolEntry(deliverTask, 0);
-    }
-
-    /**
-     * Assigns priorities to all tasks in the array and returns appropriate TaskPoolEntries for each.
-     * @param {Task[]} tasks The array of tasks to assign priorities for.
-     * @param {TaskHandler} handler The handler which the tasks will be associated with.
-     * @param {RoomInfo} info A RoomInfo object associated with the room the tasks are generated for.
-     * @returns {TaskPoolEntry[]} An array of TaskPoolEntries with corresponding priorities for each task. Undefined if no tasks provided.
-     */
-    prioritiseTasks(tasks, handler, info) {
-        return tasks.map((task) => new TaskPoolEntry(task, priorityMap[task.tag](task, handler, info)));
+        return new Task(creep.room.controller.id, taskType.deliver, [basicActions[taskType.deliver]], 0);
     }
 }
 
@@ -327,15 +315,15 @@ function harvest(creep, target, strict) {
 
 // Each of these should return a single number for priority
 const priorityMap = {
-    [taskType.transport]: function(task, handler, info) {
+    [taskType.transport]: function(task, info) {
         // TODO //
         return 1;
     },
-    [taskType.deliver]: function(task, handler, info) {
+    [taskType.deliver]: function(task, info) {
         // TODO //
         return 3;
     },
-    [taskType.restock]: function(task, handler, info) {
+    [taskType.restock]: function(task, info) {
 
         // Need workers urgently
         if (info.workers.length <= 2) {
