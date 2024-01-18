@@ -11,7 +11,7 @@ class WorkerSpawnInfo extends LeveledSpawnInfo {
     getIdealSpawns(roomInfo) {
 
         // Figure out how many WORK parts we ideally want
-        const incomeToPartRatio = 1.25;
+        const incomeToPartRatio = 1.2;
         const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getMaxIncome() * incomeToPartRatio)
             : roomInfo.openSourceSpots + 1;
 
@@ -27,7 +27,9 @@ class WorkerSpawnInfo extends LeveledSpawnInfo {
 
         // Add these desired workers to the queue, pushing the leftover last
         const queue = [];
-        queue.push(leftover);
+        if (leftover > 0) {
+            queue.push(leftover);
+        }
         for (let i = 0; i < workerCount; i++) {
             queue.push(workerLevel);
         }
