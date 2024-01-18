@@ -34,7 +34,7 @@ class RoomInfo {
         }
 
         // Colony is restarting from scratch. We've been wiped out
-        this.wiped = this.workers.length < 2 && this.dependant === room.name; 
+        this.wiped = this.workers.length < 2 && this.dependant === room.name;
     }
 
     /**

@@ -229,7 +229,7 @@ function harvest(creep, target, strict) {
     // Relinquish our current harvest target and complete this task
     // -> check this at the beginning of the tick before planning any of our actions
     if (strict) {
-        if (creep.store.getFreeCapacity() === 0) {
+        if (creep.store.getUsedCapacity() > creep.store.getCapacity() / 2) {
             delete creep.memory.harvestTarget;
             return true;
         }

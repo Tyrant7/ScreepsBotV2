@@ -11,9 +11,7 @@ class SpawnManager {
         // Find the first spawn info that doesn't meet its requirements
         for (const info of spawnInfos) {
             const next = info.getNextSpawn(roomInfo);
-
             if (next) {
-                console.log(next.name);
                 this.trySpawnCreep(roomInfo, next);
                 break;
             }
