@@ -11,7 +11,7 @@ class HaulerSpawnInfo extends LeveledSpawnInfo {
     getIdealSpawns(roomInfo) {
 
         // Figure out how many CARRY parts we ideally want
-        const incomeToPartRatio = 1.1;
+        const incomeToPartRatio = 0.95;
         const maxCarryParts = Math.ceil(roomInfo.getMaxIncome() * incomeToPartRatio);
 
         // Find the most expensive hauler we can build in this room
