@@ -24,24 +24,29 @@ const remotePlanner = new RemotePlanner();
 
 // Tasks
 const WorkerTaskGenerator = require("workerTaskGenerator");
-const MinerTaskGenerator = require("minerTaskGenerator");
 const HaulerTaskGenerator = require("haulerTaskGenerator");
+const MinerTaskGenerator = require("minerTaskGenerator");
+const ScoutTaskGenerator = require("scoutTaskGenerator");
 
 const workerManager = new CreepManager(new WorkerTaskGenerator());
-const minerManager = new CreepManager(new MinerTaskGenerator());
 const haulerManager = new CreepManager(new HaulerTaskGenerator());
+const minerManager = new CreepManager(new MinerTaskGenerator());
+const scoutManager = new CreepManager(new ScoutTaskGenerator());
 
 // Spawning
+const spawnManager = new SpawnManager();
+
 const CrashSpawnHandler = require("crashSpawnHandler");
 const WorkerSpawnHandler = require("workerSpawnHandler");
 const MinerSpawnHandler = require("minerSpawnHandler");
 const HaulerSpawnHandler = require("haulerSpawnHandler");
-const spawnManager = new SpawnManager();
+const ScoutSpawnHandler = require("scoutSpawnHandler");
 
 const crashSpawnHandler = new CrashSpawnHandler();
 const workerSpawnHandler = new WorkerSpawnHandler();
 const minerSpawnHandler = new MinerSpawnHandler();
 const haulerSpawnHandler = new HaulerSpawnHandler();
+const scoutSpawnHandler = new ScoutSpawnHandler();
 
 // Defense
 const towerManager = new TowerManager();
@@ -49,8 +54,9 @@ const towerManager = new TowerManager();
 // Mapping
 const creepRoleMap = {
     [CONSTANTS.roles.worker]: workerManager,
-    [CONSTANTS.roles.miner]: minerManager,
     [CONSTANTS.roles.hauler]: haulerManager,
+    [CONSTANTS.roles.miner]: minerManager,
+    [CONSTANTS.roles.scout]: scoutManager,
 };
 
 module.exports.loop = function() {
@@ -71,11 +77,13 @@ module.exports.loop = function() {
 
         // Don't try to spawn in rooms that aren't ours
         if (info.spawns && info.spawns.length) {
+            // Spawn handlers are passed in order of priority
             spawnManager.run(info, [
-                crashSpawnHandler,
-                workerSpawnHandler, 
-                minerSpawnHandler, 
-                haulerSpawnHandler,
+                crashSpawnHandler, // Bare necessities
+                haulerSpawnHandler, // To restock quickly
+                minerSpawnHandler, // To not waste source energy
+                workerSpawnHandler, // To use the energy
+                scoutSpawnHandler, // To expand
             ]);
         }
 

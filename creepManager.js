@@ -21,7 +21,9 @@ class CreepManager {
         }
 
         // Run our task
-        this.runTask(creep, task);
+        if (task) {
+            this.runTask(creep, task);
+        }
     }
 
 
