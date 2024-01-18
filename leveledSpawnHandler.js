@@ -34,13 +34,10 @@ class LeveledSpawnHandler {
             }
         }
 
-        // Make sure we only use available energy if we've been wiped out
-        const capacity = roomInfo.wiped ? roomInfo.room.energyAvailable : roomInfo.room.energyCapacityAvailable;
-
         // Let's sort missingLevels by lowest value first
         const sortedLevels = missingLevels.sort();
         if (sortedLevels.length) {
-            return this.make(sortedLevels[0], capacity);
+            return this.make(sortedLevels[0], roomInfo.room.energyCapacityAvailable);
         }
 
         // No valid levels to spawn with

@@ -32,9 +32,6 @@ class RoomInfo {
         if (room.controller.my) {
             this.dependant = room.name;
         }
-
-        // Colony is restarting from scratch. We've been wiped out
-        this.wiped = this.workers.length < 2 && this.dependant === room.name;
     }
 
     /**
