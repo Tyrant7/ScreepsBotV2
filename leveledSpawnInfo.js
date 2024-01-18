@@ -25,9 +25,9 @@ class LeveledSpawnInfo {
         // Let's create a new array that contains what we're missing from real levels to reach ideal
         const missingLevels = [];
         for (const level of idealLevels) {
-            // If real levels contains this ideal one, let's remove it
+            // If we already have a creep of this level, let's remove it so it doesn't get detected again
             const index = realLevels.indexOf(level);
-            if (index >= 0) {
+            if (index > -1) {
                 realLevels.splice(index, 1);
             }
             // Otherwise, we're missing it
@@ -36,32 +36,16 @@ class LeveledSpawnInfo {
             }
         }
 
-        if (realLevels.length) {
+        // Make sure we only use available energy if we've been wiped out
+        const capacity = roomInfo.wiped ? roomInfo.room.energyAvailable : roomInfo.room.energyCapacityAvailable;
 
-            // Let's sum up all levels still left in real levels
-            let extraLevels = realLevels.reduce((total, curr) => total + curr, 0);
-            
-            // Now missingLevels should contain all of the creeps of levels we have yet to spawn
-            // Let's subtract our existing extra levels to balance the scale
-            for (let level of missingLevels) {
-                const oldLevel = level;
-                level -= extraLevels;
-                extraLevels -= oldLevel;
-                if (extraLevels <= 0) {
-                    break;
-                }
-            }
+        // Let's sort missingLevels by lowest value first
+        const sortedLevels = missingLevels.sort();
+        if (sortedLevels.length) {
+            return this.make(sortedLevels[0], capacity);
         }
 
-        // Now we have a list of all levels that we're below by in the largest increment this room can handle spawning
-        // Let's simply return an appropriate creep for the first one that is still valid
-        for (const level of missingLevels) {
-            if (level > 0) {
-                return this.make(level, roomInfo.room.energyCapacityAvailable);
-            }
-        }
-
-        // No valid levels remaining
+        // No valid levels to spawn with
         return;
     }
 }
