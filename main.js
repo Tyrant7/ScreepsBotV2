@@ -32,9 +32,9 @@ const minerManager = new CreepManager(new MinerTaskGenerator());
 const haulerManager = new CreepManager(new HaulerTaskGenerator());
 
 // Spawning
-const WorkerSpawnInfo = require("workerSpawnInfo");
-const MinerSpawnInfo = require("minerSpawnInfo");
-const HaulerSpawnInfo = require("haulerSpawnInfo");
+const WorkerSpawnHandler = require("workerSpawnHandler");
+const MinerSpawnHandler = require("minerSpawnHandler");
+const HaulerSpawnHandler = require("haulerSpawnHandler");
 const spawnManager = new SpawnManager();
 
 // Defense
@@ -66,9 +66,9 @@ module.exports.loop = function() {
         // Don't try to spawn in rooms that aren't ours
         if (info.spawns && info.spawns.length) {
             spawnManager.run(info, [
-                new WorkerSpawnInfo(), 
-                new MinerSpawnInfo(), 
-                new HaulerSpawnInfo()
+                new WorkerSpawnHandler(), 
+                new MinerSpawnHandler(), 
+                new HaulerSpawnHandler()
             ]);
         }
 

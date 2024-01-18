@@ -1,8 +1,6 @@
-const creepSpawnUtility = require("creepSpawnUtility");
-
 // Base class for WorkerSpawnInfo and HaulerSpawnInfo objects
 // Allows for combining or lower level creeps into higher level ones as capability for larger creeps increases
-class LeveledSpawnInfo {
+class LeveledSpawnHandler {
 
     getIdealSpawns(roomInfo) {
         throw new Error("You must implement getIdealSpawns()");
@@ -50,4 +48,4 @@ class LeveledSpawnInfo {
     }
 }
 
-module.exports = LeveledSpawnInfo;
+module.exports = LeveledSpawnHandler;

@@ -1,7 +1,7 @@
 const creepSpawnUtility = require("creepSpawnUtility");
-const LeveledSpawnInfo = require("leveledSpawnInfo");
+const LeveledSpawnHandler = require("leveledSpawnHandler");
 
-class WorkerSpawnInfo extends LeveledSpawnInfo {
+class WorkerSpawnHandler extends LeveledSpawnHandler {
 
     /**
      * Figures out the ideal spawn levels for workers in this room.
@@ -60,4 +60,4 @@ class WorkerSpawnInfo extends LeveledSpawnInfo {
     }
 }
 
-module.exports = WorkerSpawnInfo;
+module.exports = WorkerSpawnHandler;

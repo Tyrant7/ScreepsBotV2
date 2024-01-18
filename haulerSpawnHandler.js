@@ -1,7 +1,7 @@
 const creepSpawnUtility = require("creepSpawnUtility");
-const LeveledSpawnInfo = require("leveledSpawnInfo");
+const LeveledSpawnHandler = require("leveledSpawnHandler");
 
-class HaulerSpawnInfo extends LeveledSpawnInfo {
+class HaulerSpawnHandler extends LeveledSpawnHandler {
 
     /**
      * Figures out the ideal spawn levels for haulers in this room.
@@ -71,4 +71,4 @@ class HaulerSpawnInfo extends LeveledSpawnInfo {
     }
 }
 
-module.exports = HaulerSpawnInfo;
+module.exports = HaulerSpawnHandler;

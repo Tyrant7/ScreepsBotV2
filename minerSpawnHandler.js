@@ -1,6 +1,6 @@
 const creepSpawnUtility = require("creepSpawnUtility");
 
-class MinerSpawnInfo {
+class MinerSpawnHandler {
 
     getNextSpawn(roomInfo) {
         const sources = roomInfo.getUnreservedSources();
@@ -32,4 +32,4 @@ class MinerSpawnInfo {
     }
 }
 
-module.exports = MinerSpawnInfo;
+module.exports = MinerSpawnHandler;
