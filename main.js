@@ -50,12 +50,12 @@ const creepRoleMap = {
 module.exports.loop = function() {
 
     // Passive pixel generation
-    // Disable on private server
-    /*
-    if (Game.cpu.bucket >= 10000) {
-        Game.cpu.generatePixel();
+    // Disabled on most servers
+    if (Game.cpu.generatePixel) {
+        if (Game.cpu.bucket >= 10000) {
+            Game.cpu.generatePixel();
+        }
     }
-    */
     
     // Initialize our info map
     const roomInfos = {};
