@@ -12,7 +12,7 @@ class MinerSpawnHandler {
             // Figure out how many WORK parts it will take to harvest this source
             const workCount = (energy / HARVEST_POWER) + 1;
 
-            // Build it right here
+            // Make a miner!
             let body = [MOVE, MOVE, MOVE];
             let lvl = 0;
             for (let i = 0; i < workCount; i++) {

@@ -32,10 +32,16 @@ const minerManager = new CreepManager(new MinerTaskGenerator());
 const haulerManager = new CreepManager(new HaulerTaskGenerator());
 
 // Spawning
+const CrashSpawnHandler = require("crashSpawnHandler");
 const WorkerSpawnHandler = require("workerSpawnHandler");
 const MinerSpawnHandler = require("minerSpawnHandler");
 const HaulerSpawnHandler = require("haulerSpawnHandler");
 const spawnManager = new SpawnManager();
+
+const crashSpawnHandler = new CrashSpawnHandler();
+const workerSpawnHandler = new WorkerSpawnHandler();
+const minerSpawnHandler = new MinerSpawnHandler();
+const haulerSpawnHandler = new HaulerSpawnHandler();
 
 // Defense
 const towerManager = new TowerManager();
@@ -66,9 +72,10 @@ module.exports.loop = function() {
         // Don't try to spawn in rooms that aren't ours
         if (info.spawns && info.spawns.length) {
             spawnManager.run(info, [
-                new WorkerSpawnHandler(), 
-                new MinerSpawnHandler(), 
-                new HaulerSpawnHandler()
+                crashSpawnHandler,
+                workerSpawnHandler, 
+                minerSpawnHandler, 
+                haulerSpawnHandler,
             ]);
         }
 
