@@ -11,9 +11,9 @@ class ScoutTaskGenerator {
 
             // We should only update data when leaving or entering a room to be efficient with CPU
             const leavingOrEntering = creep.pos.x >= 49 ||
-                                      creep.pos.x <= 1  ||
+                                      creep.pos.x <= 0  ||
                                       creep.pos.y >= 49 ||
-                                      creep.pos.y <= 1;
+                                      creep.pos.y <= 0;
 
             // We've hit our target room -> we can request a new task!
             if (creep.room.name === target && !leavingOrEntering) {
@@ -29,9 +29,6 @@ class ScoutTaskGenerator {
             // Update room data if needed
             let roomData = Memory.rooms[creep.room.name];
             if (!roomData || leavingOrEntering) {
-
-                console.log("commit for: " + target);
-
                 roomData = { lastVisit: Game.time };
 
                 // The controller position
