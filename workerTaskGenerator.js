@@ -154,6 +154,13 @@ const basicWorkerActions = {
     },
     [taskType.build]: function(creep, target) {
 
+        // Our target has been built so we won't be able to make proper comparison to it
+        // We can request a new task, and if there are any build tasks remaining it's likely
+        // that we'll receive one for the structureType we were trying to build anyway
+        if (!target) {
+            return true;
+        }
+
         // Find the closest site in the creep's homeroom matching its target sturctureType
         // Do this so that all roads or extensions will be built in order of distance instead of all at once
         const home = Game.rooms[creep.memory.home];
