@@ -7,7 +7,7 @@ Tyrant Bot V2
 // Globals
 global.CONSTANTS = require("constants");
 global.DEBUG = {
-    logTasks: false,
+    logTasks: true,
 };
 
 // Managers

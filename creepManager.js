@@ -56,7 +56,7 @@ class CreepManager {
         
         // Debug
         if (DEBUG.logTasks) {
-            creep.say(task.tag);
+            creep.memory.taskKey = task.tag;
         }
 
         // Find our associated target 
