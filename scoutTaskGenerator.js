@@ -9,8 +9,6 @@ class ScoutTaskGenerator {
         const actionStack = [];
         actionStack.push(function(creep, target) {
 
-            console.log(target);
-
             // We should only update data when leaving or entering a room to be efficient with CPU
             const leavingOrEntering = creep.pos.x >= 49 ||
                                       creep.pos.x <= 1  ||
