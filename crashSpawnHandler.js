@@ -25,6 +25,11 @@ class CrashSpawnHandler {
             }
         }
 
+        // We don't need anything, we should be good to restart now
+        if (roomInfo.workers.length >= 2 && roomInfo.haulers.length >= 1) {
+            return;
+        } 
+
         // Otherwise, let's spawn one worker with whatever we have, then a miner and a second worker
         if (roomInfo.workers.length < 1) {
             return workerSpawnHandler.make(CONSTANTS.maxWorkerLevel, roomInfo.room.energyAvailable);
