@@ -2,7 +2,7 @@ const Task = require("task");
 
 class HaulerTaskGenerator {
 
-    run(roomInfo, activeTasks) {
+    run(creep, roomInfo, activeTasks) {
 
         // Generate some tasks for haulers, namely:
         // Restock tasks

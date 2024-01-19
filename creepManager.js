@@ -30,7 +30,7 @@ class CreepManager {
     getBestTask(creep, roomInfo) {
 
         // Generate a list of possible tasks for this creep's role
-        const tasks = this.taskGenerator.run(roomInfo, Object.values(this.activeTasks));
+        const tasks = this.taskGenerator.run(creep, roomInfo, Object.values(this.activeTasks));
 
         // We should always have an least one task in this array
         // So if this triggers, we likely haven't implemented this task generator yet
@@ -59,17 +59,19 @@ class CreepManager {
             creep.say(task.tag);
         }
 
-        // Find our associated target
-        const target = Game.getObjectById(task.target);
+        // Find our associated target 
+        // -> if it's not a valid ID let's let the creep handle it in cases like scouts taking room names as targets
+        const target = Game.getObjectById(task.target) || task.target;
 
         // Check if current action is completed, if so, we can advance to the next action
-        if (task.actionStack[task.actionStackPointer](creep, target)) {
+        while (task.actionStack[task.actionStackPointer](creep, target)) {
             task.actionStackPointer++;
-        }
-    
-        // All actions were finished, so the task is complete
-        if (task.actionStackPointer >= task.actionStack.length) {
-            delete this.activeTasks[creep.name];
+
+            // All actions were finished, so the task is complete
+            if (task.actionStackPointer >= task.actionStack.length) {
+                delete this.activeTasks[creep.name];
+                break;
+            }
         }
     }
 

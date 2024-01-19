@@ -6,7 +6,7 @@ class WorkerTaskGenerator {
      * Creates a list of appropriate worker tasks for this room.
      * @param {RoomInfo} roomInfo The info object associated with the room to generate tasks for.
      */
-    run(roomInfo, activeTasks) {
+    run(creep, roomInfo, activeTasks) {
 
         // Generate tasks to do with workers
         const tasks = [];

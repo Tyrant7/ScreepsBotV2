@@ -30,7 +30,7 @@ class RoomInfo {
         // if this room isn't a remote, this is will be it's own ID
         // TODO //
         // Better implementation than this to actually account for remotes and not just owned rooms
-        if (room.controller.my) {
+        if (room.controller && room.controller.my) {
             this.dependant = room.name;
         }
 
