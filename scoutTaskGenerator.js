@@ -4,9 +4,6 @@ class ScoutTaskGenerator {
 
     run(roomInfo, activeTasks) {
 
-    }
-
-    generateDefaultTask(creep) {
         
     }
 }

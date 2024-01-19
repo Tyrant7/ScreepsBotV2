@@ -69,16 +69,11 @@ class HaulerTaskGenerator {
 
         // Prioritise all of our tasks and return them
         tasks.forEach((task) => task.priority = priorityMap[task.tag](task, roomInfo));
-        return tasks;
-    }
 
-    /**
-     * Generates a default deliver task for haulers.
-     * @param {Creep} creep The creep to generate the task for.
-     * @returns {Task} A newly created 'deliver' task.
-     */
-    generateDefaultTask(creep) {
-        return new Task(creep.room.controller.id, taskType.deliver, [basicActions[taskType.deliver]], 0);
+        // Let's push a low-priority default task in case we're out of other tasks
+        tasks.push(new Task(roomInfo.room.controller.id, taskType.deliver, [basicActions[taskType.deliver]], -1000));
+
+        return tasks;
     }
 }
 

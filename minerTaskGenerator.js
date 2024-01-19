@@ -3,18 +3,19 @@ const Task = require("task");
 class MinerTaskGenerator {
 
     run(roomInfo, activeTasks) {
-        // Nothing to do here; 
-        // miners do not need special tasks since they are built specifically for the source they are assigned
-    }
 
-    generateDefaultTask(creep) {
-
-        // Generate default miner behaviour
+        // Generate default miner behaviour -> miners only behave in one specific way
         const actionStack = [];
         actionStack.push(function(creep, target) {
 
+            // Our actual target won't be valid, let's get our assigned source
+            const harvestTarget = Game.getObjectById(creep.memory.sourceID);
+            if (!harvestTarget) {
+                return;
+            }
+
             // Once we get close enough to mine, start checking for containers to stand on
-            if (creep.pos.getRangeTo(target) <= 1) {
+            if (creep.pos.getRangeTo(harvestTarget) <= 1) {
 
                 // Look for a container on our tile first
                 const tile = creep.pos.lookFor(LOOK_STRUCTURES);
@@ -27,12 +28,12 @@ class MinerTaskGenerator {
 
                 // We're standing on a container and can mine
                 if (container) {
-                    creep.harvest(target);
+                    creep.harvest(harvestTarget);
                 }
                 else {
 
                     // Otherwise, let's search around our source
-                    const p = target.pos;
+                    const p = harvestTarget.pos;
                     const containers = creep.room.lookForAtArea(LOOK_STRUCTURES, p.y-1, p.x-1, p.y+1, p.x+1, true).filter(
                         (s) => s.structure.structureType === STRUCTURE_CONTAINER);
 
@@ -52,7 +53,7 @@ class MinerTaskGenerator {
                             }
                             else {
                                 // We should harvest while waiting for our containers to not waste time
-                                creep.harvest(target);
+                                creep.harvest(harvestTarget);
                             }
                         }
                     }
@@ -63,15 +64,15 @@ class MinerTaskGenerator {
                 }
             }
             else {
-                creep.moveTo(target);
+                creep.moveTo(harvestTarget);
             }
 
             // Always return false since miners can never finish their task
             return false;
         });
 
-        // Create and return our task
-        return new Task(creep.memory.sourceID, "mine", actionStack, 0);
+        // Since this task isn't associated with any particular object, we don't have to give it a target
+        return [new Task(null, "mine", actionStack)];
     }
 }
 

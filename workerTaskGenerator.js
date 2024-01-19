@@ -83,18 +83,13 @@ class WorkerTaskGenerator {
 
         // Prioritise all of our tasks and return them
         tasks.forEach((task) => task.priority = priorityMap[task.tag](task, roomInfo));
-        return tasks;
-    }
 
-    /**
-     * Generates a default task for workers in this room.
-     * @param {Creep} creep The creep to generate the task for.
-     * @returns {Task} A newly created 'upgrade' task.
-     */
-    generateDefaultTask(creep) {
-        const task = this.createBasicTask(creep.room.controller, taskType.upgrade);
-        task.priority = 0;
-        return task;
+        // Let's push a default task in case we're out of other options
+        const defaulTask = this.createBasicTask(roomInfo.room.controller, taskType.upgrade);
+        defaulTask.priority = -1000;
+        tasks.push(defaulTask);
+
+        return tasks;
     }
 
     /**

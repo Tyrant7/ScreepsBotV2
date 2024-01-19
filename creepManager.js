@@ -31,8 +31,11 @@ class CreepManager {
 
         // Generate a list of possible tasks for this creep's role
         const tasks = this.taskGenerator.run(roomInfo, Object.values(this.activeTasks));
+
+        // We should always have an least one task in this array
+        // So if this triggers, we likely haven't implemented this task generator yet
         if (!tasks || !tasks.length) {
-            return this.taskGenerator.generateDefaultTask(creep);
+            return;
         }
 
         // Apply weights to each task's priority based on distance to the requesting creep
