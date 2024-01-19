@@ -133,6 +133,12 @@ const basicWorkerActions = {
     },
     [taskType.restock]: function(creep, target) {
 
+        // Our target got destroyed for some reason, so comparisons against its type will no longer work
+        // -> let's get a new task
+        if (!target) {
+            return true;
+        }
+
         // Since refilling any extension or spawn is essentially the same, just find the closest one
         // If it's a tower then we must refill the appropriate one
         let restock = target;
