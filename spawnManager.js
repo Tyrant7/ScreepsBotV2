@@ -12,7 +12,6 @@ class SpawnManager {
         for (const info of spawnInfos) {
             const next = info.getNextSpawn(roomInfo);
             if (next && next.body.length) {
-                console.log(next.name);
                 this.trySpawnCreep(roomInfo, next);
                 break;
             }

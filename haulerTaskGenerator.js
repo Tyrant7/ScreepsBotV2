@@ -123,18 +123,15 @@ const basicActions = {
             }
         }
 
-        // If we're not there yet, or didn't find a container...
-        if (!harvest) {
-            // We can search the floor near us for energy
-            const p = creep.pos;
-            if (p.x !== 0 && p.x !== 49 && p.y !== 0 && p.y !== 49) {
-                const nearby = creep.room.lookAtArea(p.y-1, p.x-1, p.y+1, p.x+1, true).find((item) => 
-                    (item.type === LOOK_RESOURCES && item.resource.resourceType === RESOURCE_ENERGY) 
-                 || (item.type === LOOK_TOMBSTONES && item.tombstone.store[RESOURCE_ENERGY] > 0) 
-                 || (item.type === LOOK_RUINS && item.ruin.store[RESOURCE_ENERGY] > 0))
-                if (nearby) {
-                    harvest = nearby;
-                }
+        // Search the floor near us for energy -> this will also handle cleaning up overflowing energy from containers
+        const p = creep.pos;
+        if (p.x !== 0 && p.x !== 49 && p.y !== 0 && p.y !== 49) {
+            const nearby = creep.room.lookAtArea(p.y-1, p.x-1, p.y+1, p.x+1, true).find((item) => 
+                (item.type === LOOK_RESOURCES && item.resource.resourceType === RESOURCE_ENERGY) 
+             || (item.type === LOOK_TOMBSTONES && item.tombstone.store[RESOURCE_ENERGY] > 0) 
+             || (item.type === LOOK_RUINS && item.ruin.store[RESOURCE_ENERGY] > 0))
+            if (nearby) {
+                harvest = nearby;
             }
         }
 
@@ -276,19 +273,17 @@ function harvest(creep, target, strict) {
         harvest = Game.getObjectById(creep.memory.harvestTarget);
     }
 
-    // If we're too far away from our target energy, look for straggling energy around us to pickup instead
-    if (creep.pos.getRangeTo(harvest) > 1) {
-        const p = creep.pos;
-        if (p.x !== 0 && p.x !== 49 && p.y !== 0 && p.y !== 49) {
-            const nearby = creep.room.lookAtArea(p.y-1, p.x-1, p.y+1, p.x+1, true).find((item) => 
-                (item.type === LOOK_RESOURCES && item.resource.resourceType === RESOURCE_ENERGY) 
-             || (item.type === LOOK_TOMBSTONES && item.tombstone.store[RESOURCE_ENERGY] > 0) 
-             || (item.type === LOOK_RUINS && item.ruin.store[RESOURCE_ENERGY] > 0))
+    // Look for straggling energy around us to pickup
+    const p = creep.pos;
+    if (p.x !== 0 && p.x !== 49 && p.y !== 0 && p.y !== 49) {
+        const nearby = creep.room.lookAtArea(p.y-1, p.x-1, p.y+1, p.x+1, true).find((item) => 
+            (item.type === LOOK_RESOURCES && item.resource.resourceType === RESOURCE_ENERGY) 
+         || (item.type === LOOK_TOMBSTONES && item.tombstone.store[RESOURCE_ENERGY] > 0) 
+         || (item.type === LOOK_RUINS && item.ruin.store[RESOURCE_ENERGY] > 0))
 
-            // Let's pick something up
-            if (nearby) {
-                harvest = nearby[nearby.type];
-            }
+        // Let's pick something up
+        if (nearby) {
+            harvest = nearby[nearby.type];
         }
     }
 

@@ -249,21 +249,19 @@ const basicWorkerActions = {
             }
         }
 
-        // If we're too far away from our target energy, look for straggling energy around us to pickup instead
-        if (creep.pos.getRangeTo(harvest) > 1) {
-            const p = creep.pos;
-            if (p.x !== 0 && p.x !== 49 && p.y !== 0 && p.y !== 49) {
-                const nearby = creep.room.lookAtArea(p.y-1, p.x-1, p.y+1, p.x+1, true).find((item) => 
-                    (item.type === LOOK_RESOURCES && item.resource.resourceType === RESOURCE_ENERGY && item.resource.amount > 0) 
-                 || (item.type === LOOK_TOMBSTONES && item.tombstone.store[RESOURCE_ENERGY] > 0) 
-                 || (item.type === LOOK_RUINS && item.ruin.store[RESOURCE_ENERGY] > 0)
-                // We're free to take energy off of haulers if they aren't doing anything super important
-                 || (item.type === LOOK_CREEPS && item.creep.memory && item.creep.memory.openPull));
+        // Look for straggling energy around us to pickup
+        const p = creep.pos;
+        if (p.x !== 0 && p.x !== 49 && p.y !== 0 && p.y !== 49) {
+            const nearby = creep.room.lookAtArea(p.y-1, p.x-1, p.y+1, p.x+1, true).find((item) => 
+                (item.type === LOOK_RESOURCES && item.resource.resourceType === RESOURCE_ENERGY) 
+             || (item.type === LOOK_TOMBSTONES && item.tombstone.store[RESOURCE_ENERGY] > 0) 
+             || (item.type === LOOK_RUINS && item.ruin.store[RESOURCE_ENERGY] > 0)
+            // We're free to take energy off of haulers if they aren't doing anything super important
+             || (item.type === LOOK_CREEPS && item.creep.memory && item.creep.memory.openPull));
 
-                // Let's pick something up
-                if (nearby) {
-                    harvest = nearby[nearby.type];
-                }
+            // Let's pick something up
+            if (nearby) {
+                harvest = nearby[nearby.type];
             }
         }
 
