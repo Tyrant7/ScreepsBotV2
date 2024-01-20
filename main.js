@@ -110,11 +110,7 @@ module.exports.loop = function() {
 
             // This represent the fraction of our total spawn capacity we sit at
             // i.e. the amount of time we spend spawning / 1
-            const avgSustainCost = spawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
-            
-
-            console.log("Fraction of maximum: " + avgSustainCost);
-
+            const avgSustainCost = spawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;      
             if (DEBUG.drawOverlay) {
                 overlay(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
             }

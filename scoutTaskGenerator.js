@@ -5,7 +5,7 @@ class ScoutTaskGenerator {
     run(creep, roomInfo, activeTasks) {
 
         // Let's generate a new 'explore' task for the closest room within an arbitrary range to the creep's current room
-        const targetName = this.searchForUnexploredRoomsNearby(creep.room.name, 10);
+        const targetName = this.searchForUnexploredRoomsNearby(creep.room.name, 8);
         const actionStack = [];
         actionStack.push(function(creep, target) {
 
