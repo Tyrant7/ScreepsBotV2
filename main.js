@@ -80,8 +80,8 @@ module.exports.loop = function() {
             // Spawn handlers are passed in order of priority
             spawnManager.run(info, [
                 crashSpawnHandler, // Bare necessities
-                haulerSpawnHandler, // To restock quickly
                 minerSpawnHandler, // To not waste source energy
+                haulerSpawnHandler, // To recover quickly
                 workerSpawnHandler, // To use the energy
                 scoutSpawnHandler, // To expand
             ]);
