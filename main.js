@@ -8,6 +8,7 @@ Tyrant Bot V2
 global.CONSTANTS = require("constants");
 global.DEBUG = {
     logTasks: true,
+    drawOverlay: true,
 };
 
 // Managers
@@ -48,10 +49,11 @@ const minerSpawnHandler = new MinerSpawnHandler();
 const haulerSpawnHandler = new HaulerSpawnHandler();
 const scoutSpawnHandler = new ScoutSpawnHandler();
 
-const creepSpawnUtility = require("creepSpawnUtility");
-
 // Defense
 const towerManager = new TowerManager();
+
+// Overlay
+const overlay = require("overlay");
 
 // Mapping
 const creepRoleMap = {
@@ -111,8 +113,11 @@ module.exports.loop = function() {
             const avgSustainCost = spawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
             
 
-            console.log("Total spawn ticks to sustain colony: " + Math.round(avgSustainCost * CREEP_LIFE_TIME));
             console.log("Fraction of maximum: " + avgSustainCost);
+
+            if (DEBUG.drawOverlay) {
+                overlay(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
+            }
         }
     }
 
