@@ -37,12 +37,13 @@ class WorkerSpawnHandler extends LeveledSpawnHandler {
     }
 
     /**
-     * Figures out the levels of all workers in this room.
+     * Figures out the levels of all workers in this room, excluding ones that will die before being replaced.
      * @param {RoomInfo} roomInfo The info object associated with the room.
      * @returns {number[]} An array of levels for current workers in this room. Each elements corresponds to a creep.
     */
     getRealMembers(roomInfo) {
-        return roomInfo.workers.map((h) => h.body.filter((p) => p.type === WORK).length);
+        const predictiveWorkers = creepSpawnUtility.getPredictiveCreeps(roomInfo.workers);
+        return predictiveWorkers.map((h) => h.body.filter((p) => p.type === WORK).length);
     }
 
     make(desiredLevel, energy) {

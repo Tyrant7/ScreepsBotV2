@@ -48,6 +48,8 @@ const minerSpawnHandler = new MinerSpawnHandler();
 const haulerSpawnHandler = new HaulerSpawnHandler();
 const scoutSpawnHandler = new ScoutSpawnHandler();
 
+const creepSpawnUtility = require("creepSpawnUtility");
+
 // Defense
 const towerManager = new TowerManager();
 
@@ -89,6 +91,29 @@ module.exports.loop = function() {
 
         // Defense
         towerManager.run(info);
+    }
+
+    // Plan remotes
+    for (const room in Game.rooms) {
+        const info = roomInfos[room];
+        if (info.spawns && info.spawns.length) {
+
+            // Add more spawn handlers to this for each role, 
+            // do not include handlers that are not meant to regularly spawn 
+            // such as the crashSpawnHandler which only handles recovery cases
+            const spawnHandlers = [minerSpawnHandler,
+                                   haulerSpawnHandler,
+                                   workerSpawnHandler,
+                                   scoutSpawnHandler];
+
+            // This represent the fraction of our total spawn capacity we sit at
+            // i.e. the amount of time we spend spawning / 1
+            const avgSustainCost = spawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
+            
+
+            console.log("Total spawn ticks to sustain colony: " + Math.round(avgSustainCost * CREEP_LIFE_TIME));
+            console.log("Fraction of maximum: " + avgSustainCost);
+        }
     }
 
     // Run creeps

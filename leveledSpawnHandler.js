@@ -1,3 +1,5 @@
+const creepSpawnUtility = require("creepSpawnUtility");
+
 // Base class for WorkerSpawnInfo and HaulerSpawnInfo objects
 // Allows for combining or lower level creeps into higher level ones as capability for larger creeps increases
 class LeveledSpawnHandler {
@@ -42,6 +44,17 @@ class LeveledSpawnHandler {
 
         // No valid levels to spawn with
         return;
+    }
+
+    /**
+     * Gets the total spawn time for ideal creeps in this room, averaged out of their lifetimes.
+     * @param {RoomInfo} roomInfo The info object associated with the room.
+     * @returns {number} The total spawn time.
+     */
+    getTotalAvgSpawnTime(roomInfo) {
+        return this.getIdealSpawns(roomInfo).reduce(
+            (total, curr) => total + creepSpawnUtility.getSpawnTime(this.make(curr, roomInfo.room.energyCapacityAvailable).body), 0)
+            / CREEP_LIFE_TIME;
     }
 }
 
