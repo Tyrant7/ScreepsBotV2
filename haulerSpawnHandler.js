@@ -45,7 +45,6 @@ class HaulerSpawnHandler extends LeveledSpawnHandler {
         // Reduces all existing haulers to an array containing only their level, 
         // excluding ones that will die before they can be replaced
         const predictiveHaulers = creepSpawnUtility.getPredictiveCreeps(roomInfo.haulers);
-        console.log(predictiveHaulers.length);
         return predictiveHaulers.map((h) => h.body.filter((p) => p.type === MOVE).length);
     }
 

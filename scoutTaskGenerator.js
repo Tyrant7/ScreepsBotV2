@@ -36,25 +36,26 @@ class ScoutTaskGenerator {
                 if (controller) {
                     roomData.controller = {};
                     roomData.controller.pos = { x: controller.pos.x, y: controller.pos.y };
+                    roomData.controller.id = controller.id;
+
+                    // If this room is owned by somebody else,
+                    // Record the owner's username and controller level
+                    if (controller.owner && !controller.my) {
+                        roomData.controller.owner = controller.owner.username;
+                        roomData.controller.level = controller.level;
+                    }
                 }
 
                 // Source positions
-                roomData.sourcePositions = [];
+                roomData.sources = [];
                 const sources = creep.room.find(FIND_SOURCES);
-                sources.forEach((source) => roomData.sourcePositions.push({ x: source.pos.x, y: source.pos.y }));
+                sources.forEach((source) => roomData.sources.push({ pos: { x: source.pos.x, y: source.pos.y }, id: source.id }));
 
                 // Mineral position, if one exists
-                roomData.mineralPositions = [];
+                roomData.minerals = [];
                 const minerals = creep.room.find(FIND_MINERALS);
-                minerals.forEach((mineral) => roomData.mineralPositions.push(
-                    { x: mineral.pos.x, y: mineral.pos.y, density: mineral.density, type: mineral.mineralType }));
-
-                // If this room is owned by somebody else,
-                // Record the owner's username and controller level
-                if (controller && controller.owner && !controller.my) {
-                    roomData.controller.owner = controller.owner.username;
-                    roomData.controller.level = controller.level;
-                }
+                minerals.forEach((mineral) => roomData.minerals.push(
+                    { pos: { x: mineral.pos.x, y: mineral.pos.y }, density: mineral.density, type: mineral.mineralType, id: mineral.id }));
 
                 // If there are invaders in this room, record the amount and current tick
                 const hostiles = creep.room.find(FIND_HOSTILE_CREEPS);
