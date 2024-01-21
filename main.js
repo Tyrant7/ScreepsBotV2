@@ -114,6 +114,17 @@ module.exports.loop = function() {
             if (DEBUG.drawOverlay) {
                 overlay(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
             }
+
+            if (Game.time % 10 === 0) {
+                const exits = Object.values(Game.map.describeExits(info.room.name));
+                exits.forEach(exit => {
+                    const rem = remotePlanner.scoreRemote(info, exit);
+                    if (rem) {
+                        console.log("calculating for remote: " + exit + " of " + info.room.name);
+                        console.log("score: " + rem.score + " E/t, cost: " + rem.cost + " spawn capacity");
+                    }         
+                });
+            }
         }
     }
 

@@ -15,7 +15,7 @@ class RemoteSpawnHandler {
 
     makeMiner(sourceInfo, maxCost) {
         sourceInfo.energyCapacity = SOURCE_ENERGY_CAPACITY;
-        const miner = minerSpawnHandler.makeMiner(sourceInfo, maxCost);
+        const miner = minerSpawnHandler.make(sourceInfo, maxCost);
         return miner;
     }
 
@@ -48,7 +48,7 @@ class RemoteSpawnHandler {
         const maxCost = homeRoomInfo.room.energyCapacityAvailable;
 
         // Start with miners
-        const miners = remoteInfo.sources.forEach(
+        const miners = remoteInfo.sources.map(
             (source) => this.makeMiner(source, maxCost));
         upkeeps.energy += calculateUpkeep(miners, creepSpawnUtility.getCost);
         upkeeps.spawnTime += calculateUpkeep(miners, creepSpawnUtility.getSpawnTime);

@@ -77,7 +77,6 @@ class ScoutTaskGenerator {
                 // Record invader structures as well
                 const invaderCores = creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_INVADER_CORE });
                 if (invaderCores.length) {
-                    roomData.invaderCores = [];
                     roomData.invaderCores = invaderCores.map(function(core) {
                         return { x: core.pos.x, y: core.pos.y, level: core.level };
                     });
@@ -86,7 +85,6 @@ class ScoutTaskGenerator {
                 // And keeper lairs
                 const keeperLairs = creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_KEEPER_LAIR });
                 if (keeperLairs.length) {
-                    roomData.keeperLairs = [];
                     roomData.keeperLairs = keeperLairs.map(function(lair) {
                         return { x: lair.pos.x, y: lair.pos.y };
                     });

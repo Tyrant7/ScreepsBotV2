@@ -12,22 +12,32 @@ class RemotePlanner {
      */
     scoreRemote(roomInfo, targetName) {
 
+        console.log("Step 0");
+
         // Ensure that we have information on the target room
         const remoteInfo = Memory.rooms[targetName];
-        if (!remoteInfo.lastVisit) {
+        if (!remoteInfo || !remoteInfo.lastVisit) {
             return;
         }
 
+        console.log("Step 1");
+
         // Make sure it's a valid remote
-        if (!remoteInfo.isValidRemote(targetName)) {
+        if (!this.isValidRemote(targetName)) {
             return;
         }
+
+        console.log("Step 2");
+
 
         // Let's get the necessary pathing info for this remote
         const remotePaths = this.getRemotePaths(roomInfo, targetName);
         if (!remotePaths) {
             return;
         }
+
+        console.log("Step 3");
+
 
         // Let's calculate some upkeep costs using those newly created paths
         const upkeep = {};
@@ -38,7 +48,7 @@ class RemotePlanner {
         
         // Then roads, for this we can combine all paths and remove duplicate path positions
         const roadUpkeep = ROAD_DECAY_AMOUNT / ROAD_DECAY_TIME / REPAIR_POWER;
-        const allPaths = remotePaths.controllerPath.concat(...remotePaths.sourcesPaths);
+        const allPaths = remotePaths.controllerPath.concat(...remotePaths.sourcePaths);
         const allRoads = allPaths.sort((a, b) => a.x + a.y + a.roomName > b.x + b.y + b.roomName ? a : b).filter(function(item, pos, arr) {
             return !pos || item.isEqualTo(arr[pos - 1]);
         });
@@ -50,12 +60,18 @@ class RemotePlanner {
         // Now for creeps spawn costs, total up energy and spawn time upkeeps
         upkeep.creeps = remoteSpawnHandler.getUpkeepCosts(roomInfo, remoteInfo, remotePaths);
 
+        console.log("Step 4");
+
+
         // Calculate net energy produced in this room
         const grossEnergy = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME * remoteInfo.sources.length;
         const netEnergy = grossEnergy - (upkeep.structures + upkeep.creeps.energy);
         if (netEnergy <= 0) {
             return;
         }
+
+        console.log("Step 5");
+
 
         // Here's the score and cost of this remote so we can calculate which are most important
         return {
@@ -70,7 +86,7 @@ class RemotePlanner {
      * @returns True or false depending on the presence of sources, invaders, players, and other factors.
      */
     isValidRemote(roomName) {
-        const remoteInfo = Memory.rooms[targetName];
+        const remoteInfo = Memory.rooms[roomName];
 
         // Owned by another player
         if (remoteInfo.controller.owner) {
@@ -110,7 +126,7 @@ class RemotePlanner {
         // Make our cost matrix, setting structures as unwalkable,
         // We don't have to worry about roads since those are our targets
         const costMatrix = new PathFinder.CostMatrix();
-        roomInfo.find(FIND_STRUCTURES).forEach(function(s) {
+        roomInfo.room.find(FIND_STRUCTURES).forEach(function(s) {
             if (s.structureType !== STRUCTURE_CONTAINER &&
                 (s.structureType !== STRUCTURE_RAMPART || !s.my)) {
                 costMatrix.set(s.pos.x, s.pos.y, 255);
@@ -129,7 +145,7 @@ class RemotePlanner {
 
         // Let's get a path from the remote's controller to the closest existing road in the dependant room
         const controllerPos = new RoomPosition(remoteInfo.controller.pos.x, remoteInfo.controller.pos.y, targetName);
-        const goals = roomInfo.find(FIND_STRUCTURES, { filter: STRUCTURE_ROAD }).map((road) => road.pos);
+        const goals = roomInfo.room.find(FIND_STRUCTURES, { filter: STRUCTURE_ROAD }).map((road) => road.pos);
         const controllerResult = PathFinder.search(controllerPos, goals, {
             roomCallback: getCostMatrix,
         });
@@ -141,8 +157,8 @@ class RemotePlanner {
 
         // Next, let's do the same thing but for the remote's sources
         const sourceResults = [];
-        remoteInfo.sourcePositions.forEach(pos => {
-            const sourcePos = new RoomPosition(pos.x, pos.y, targetName);
+        remoteInfo.sources.forEach(source => {
+            const sourcePos = new RoomPosition(source.pos.x, source.pos.y, targetName);
             sourceResults.push(PathFinder.search(sourcePos, goals, {
                 roomCallback: getCostMatrix,
             }));
@@ -157,7 +173,7 @@ class RemotePlanner {
 
         return {
             controllerPath: controllerResult.path,
-            sourcesPaths: sourceResults.map((r) => r.path),
+            sourcePaths: sourceResults.map((r) => r.path),
         };
     }
 
