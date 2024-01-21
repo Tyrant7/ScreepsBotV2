@@ -115,7 +115,10 @@ module.exports.loop = function() {
                 overlay(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
             }
 
-            if (Game.time % 10 === 0) {
+            // TODO // 
+            // Time planning
+            // 
+            if (/* Game.time % 20 === 0 */ false) {
                 const exits = Object.values(Game.map.describeExits(info.room.name));
                 exits.forEach(exit => {
                     const rem = remotePlanner.scoreRemote(info, exit);

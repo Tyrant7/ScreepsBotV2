@@ -76,7 +76,7 @@ class RemoteSpawnHandler {
         // imperfections in pathing and spawning priorities
         const claimerBody = [CLAIM, CLAIM, MOVE, MOVE];
         upkeeps.energy += creepSpawnUtility.getCost(claimerBody) / CREEP_CLAIM_LIFE_TIME;
-        upkeeps.spawmTime += creepSpawnUtility.getSpawnTime(claimerBody) / CREEP_CLAIM_LIFE_TIME;
+        upkeeps.spawnTime += creepSpawnUtility.getSpawnTime(claimerBody) / CREEP_CLAIM_LIFE_TIME;
 
         return upkeeps;
     }
