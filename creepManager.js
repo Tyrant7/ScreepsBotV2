@@ -38,10 +38,6 @@ class CreepManager {
             return;
         }
 
-        // Apply weights to each task's priority based on distance to the requesting creep
-        const distanceWeight = 0.35;
-        tasks.forEach((task) => task.priority += Math.ceil(creep.pos.getRangeTo(Game.getObjectById(task.target)) * distanceWeight));
-
         // Find the highest priority task
         const bestTask = tasks.reduce((highest, curr) => curr.priority > highest.priority ? curr : highest);
         return bestTask;

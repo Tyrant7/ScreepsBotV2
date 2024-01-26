@@ -82,7 +82,12 @@ class WorkerTaskGenerator {
         }
 
         // Prioritise all of our tasks and return them
-        tasks.forEach((task) => task.priority = priorityMap[task.tag](task, roomInfo));
+        const distanceWeight = 0.35;
+        tasks.forEach((task) => task.priority = priorityMap[task.tag](task, roomInfo) +
+        // Apply weights to each task's priority based on distance to the requesting creep only if 
+        // the requesting creep has enough energy remaining to fill an extension
+            (creep.store[RESOURCE_ENERGY] >= EXTENSION_ENERGY_CAPACITY[roomInfo.room.controller.level] 
+            ? Math.ceil(creep.pos.getRangeTo(Game.getObjectById(task.target)) * distanceWeight) : 0));
 
         // Let's push a default task in case we're out of other options
         const defaulTask = this.createBasicTask(roomInfo.room.controller, taskType.upgrade);
