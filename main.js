@@ -117,7 +117,7 @@ module.exports.loop = function() {
 
             if (Game.time % 20 === 0) {
                 const cpu = Game.cpu.getUsed();
-                const bestBranch = remotePlanner.planRemotes(info, avgSustainCost, 0.7);
+                const bestBranch = remotePlanner.planRemotes(info, 0.5 - avgSustainCost);
                 console.log("Planned remotes with: " + (Game.cpu.getUsed() - cpu) + " cpu");
                 bestBranch.branch.forEach((b) => console.log("Room " + b.name + " with score: " + b.score + " and cost: " + b.cost));
             }

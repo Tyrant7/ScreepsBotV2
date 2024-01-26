@@ -8,10 +8,9 @@ class RemotePlanner {
     /**
      * Plans remotes for a room. Returns early if not enough rooms have been scouted.
      * @param {RoomInfo} roomInfo The associated room info object.
-     * @param {number} currSpawnCapacity The current spawn capacity of the room to plan remotes for. Should be a decimal / 1.
      * @param {number} maxSpawnCapacity The maximum allowed spawn capacity of the room to plan remotes for. 
      */
-    planRemotes(roomInfo, currSpawnCapacity, maxSpawnCapacity) {
+    planRemotes(roomInfo, maxSpawnCapacity) {
 
         // Let's check that all rooms within a range of 3 have been scouted
         const unexplored = scoutingUtility.searchForUnexploredRoomsNearby(roomInfo.room.name, 3);
@@ -80,7 +79,7 @@ class RemotePlanner {
         });
 
         // Get our combination of remotes with the highest score, algorithm explained below
-        return this.traverseRecursively(remotes, maxSpawnCapacity - currSpawnCapacity, 0);
+        return this.traverseRecursively(remotes, maxSpawnCapacity, 0);
     }
 
     /**
@@ -259,10 +258,11 @@ class RemotePlanner {
     traverseRecursively(choices, remainingCost, score) {
 
         // Leaf node, return score and empty branch
-        if (remainingCost < 0) {
+        if (remainingCost <= 0) {
             return {
                 score: score,
                 branch: [],
+                leafNode: true,
             };
         }
 
@@ -277,17 +277,27 @@ class RemotePlanner {
             const nextChoices = choices.filter((c) => c !== choice).concat(choice.children);
             const result = this.traverseRecursively(nextChoices, remainingCost - choice.cost, score + choice.score);
 
+            // Adjust score to be correct for leaf nodes
+            if (result.leafNode) {
+                result.score -= choice.score;
+            }
+
             // If this choice beats our current one, let's track the score and append it and its best children
             if (!bestBranch || result.score > bestScore) {
                 bestScore = result.score;
-                bestBranch.push(...result.branch);
-                bestBranch.push(choice);
+                bestBranch = result.branch;
+
+                // Don't push the choice that resulted in a leaf node, since it exceeds our allowed cost
+                if (!result.leafNode) {
+                    bestBranch.push(choice);
+                }
             }
         });
 
         return {
             score: score,
             branch: bestBranch,
+            leafNode: false,
         };
     }
 
