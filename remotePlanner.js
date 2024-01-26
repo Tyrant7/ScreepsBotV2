@@ -1,43 +1,113 @@
 const RemoteSpawnHandler = require("remoteSpawnHandler");
+
 const remoteSpawnHandler = new RemoteSpawnHandler();
+const scoutingUtility = require("scoutingUtility");
 
 class RemotePlanner {
+
+    /**
+     * Plans remotes for a room. Returns early if not enough rooms have been scouted.
+     * @param {RoomInfo} roomInfo The associated room info object.
+     * @param {number} currSpawnCapacity The current spawn capacity of the room to plan remotes for. Should be a decimal / 1.
+     * @param {number} maxSpawnCapacity The maximum allowed spawn capacity of the room to plan remotes for. 
+     */
+    planRemotes(roomInfo, currSpawnCapacity, maxSpawnCapacity) {
+
+        // Let's check that all rooms within a range of 3 have been scouted
+        const unexplored = scoutingUtility.searchForUnexploredRoomsNearby(roomInfo.room.name, 3);
+        if (unexplored) {
+            return;
+        }
+
+        // Now, let's find all rooms within range 2
+        // Organize them in a tree-like structure 
+        // ->  { }
+        //    /   \
+        //   1     1
+        //  / \   / \
+        // 2   2 2   2
+        const nearbyRooms = {};
+        const exits = Object.values(Game.map.describeExits(roomInfo.room.name));
+        for (const room of exits) {
+            const exitsOfExits = Object.values(Game.map.describeExits(room)).filter((exit) => exit !== roomInfo.room.name);
+            nearbyRooms[room] = exitsOfExits;
+        }
+
+        // Now we're going to build a new tree structure a little bit differently to the one above
+        const remotes = [];
+
+        // Traverse this tree from the base upwards when planning roads so we can guarantee that
+        // roads from closer remotes exist when planning further remotes
+        Object.keys(nearbyRooms).forEach((distOne) => {
+
+            // Let's plan roads for our distOne first to home first
+            const goals = roomInfo.room.find(FIND_STRUCTURES, { filter: STRUCTURE_ROAD }).map((road) => road.pos);
+            const distOnePaths = this.getRemotePaths(roomInfo, distOne, goals);
+            const distOneRoads = this.planRoads(distOnePaths);
+            const scoreCost = this.scoreRemote(roomInfo, distOne, distOnePaths, distOneRoads.length);
+
+            // Make sure it's a valid remote
+            if (this.isValidRemote(distOne)) {
+
+                // Then plan roads for each child one this remote
+                // Each distOne should have multiple distTwo depending remotes
+                const children = [];
+                nearbyRooms[distOne].forEach((distTwo) => {
+                    const goals = distOneRoads.map(road => { road.pos });
+                    const distTwoPaths = this.getRemotePaths(roomInfo, distTwo, goals);
+                    const distTwoRoads = this.planRoads(distTwoPaths);
+                    const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoPaths, distTwoRoads.length);
+
+                    // Score this remote
+                    children.push({
+                        name: distTwo,
+                        score: scoreCost.score,
+                        cost: scoreCost.cost,
+                        roads: distTwoRoads,
+                        children: []
+                    });
+                });
+
+                // Populate this tree node
+                remotes.push({
+                    name: distOne,
+                    score: scoreCost.score,
+                    cost: scoreCost.cost,
+                    roads: distOneRoads,
+                    children: children,
+                });
+            }
+        });
+
+        // Get our combination of remotes with the highest score, algorithm explained below
+        return this.traverseRecursively(remotes, maxSpawnCapacity - currSpawnCapacity, 0);
+    }
+
+    /**
+     * Plans roads for a remote in the room matching roomName with a dependant.
+     * @param {{}} remotePaths Paths for this remote obtained using getRemotePaths()
+     */
+    planRoads(remotePaths) {
+
+        const allPaths = remotePaths.controllerPath.concat(...remotePaths.sourcePaths);
+        const allRoads = allPaths.sort((a, b) => a.roomName + a.x + a.y > b.roomName + b.x + b.y ? a : b).filter(function(item, pos, arr) {
+            return !pos || item.isEqualTo(arr[pos - 1]);
+        });
+
+        return allRoads;
+    }
 
     /**
      * Scores a potential remote for this room.
      * @param {RoomInfo} roomInfo The info object associated with the host room.
      * @param {string} targetName The name of the room to score a remote for. Must have been scouted previously.
+     * @param {{}} remotePaths Paths for this remote obtained using `getRemotePaths()`.
+     * @param {number} roadCount The number of roads needed to plan this remote. Should be the length of the array obtained by `planRoads()`.
      * @returns An object with scoring information for this remotes. 
      * Contains a `score` property for energy output and a `cost` property for spawn time.
      */
-    scoreRemote(roomInfo, targetName) {
-
-        console.log("Step 0");
-
-        // Ensure that we have information on the target room
+    scoreRemote(roomInfo, targetName, remotePaths, roadCount) {
         const remoteInfo = Memory.rooms[targetName];
-        if (!remoteInfo || !remoteInfo.lastVisit) {
-            return;
-        }
-
-        console.log("Step 1");
-
-        // Make sure it's a valid remote
-        if (!this.isValidRemote(targetName)) {
-            return;
-        }
-
-        console.log("Step 2");
-
-
-        // Let's get the necessary pathing info for this remote
-        const remotePaths = this.getRemotePaths(roomInfo, targetName);
-        if (!remotePaths) {
-            return;
-        }
-
-        console.log("Step 3");
-
 
         // Let's calculate some upkeep costs using those newly created paths
         const upkeep = {};
@@ -48,11 +118,7 @@ class RemotePlanner {
         
         // Then roads, for this we can combine all paths and remove duplicate path positions
         const roadUpkeep = ROAD_DECAY_AMOUNT / ROAD_DECAY_TIME / REPAIR_POWER;
-        const allPaths = remotePaths.controllerPath.concat(...remotePaths.sourcePaths);
-        const allRoads = allPaths.sort((a, b) => a.x + a.y + a.roomName > b.x + b.y + b.roomName ? a : b).filter(function(item, pos, arr) {
-            return !pos || item.isEqualTo(arr[pos - 1]);
-        });
-        const totalRoadUpkeep = roadUpkeep * allRoads.length;
+        const totalRoadUpkeep = roadUpkeep * roadCount;
 
         // Total energy upkeep for structures in this room
         upkeep.structures = totalContainerUpkeep + totalRoadUpkeep;
@@ -60,18 +126,9 @@ class RemotePlanner {
         // Now for creeps spawn costs, total up energy and spawn time upkeeps
         upkeep.creeps = remoteSpawnHandler.getUpkeepCosts(roomInfo, remoteInfo, remotePaths);
 
-        console.log("Step 4");
-
-
         // Calculate net energy produced in this room
         const grossEnergy = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME * remoteInfo.sources.length;
         const netEnergy = grossEnergy - (upkeep.structures + upkeep.creeps.energy);
-        if (netEnergy <= 0) {
-            return;
-        }
-
-        console.log("Step 5");
-
 
         // Here's the score and cost of this remote so we can calculate which are most important
         return {
@@ -87,6 +144,9 @@ class RemotePlanner {
      */
     isValidRemote(roomName) {
         const remoteInfo = Memory.rooms[roomName];
+        if (!remoteInfo.lastVisit) {
+            return false;
+        }
 
         // Owned by another player
         if (remoteInfo.controller.owner) {
@@ -115,12 +175,13 @@ class RemotePlanner {
      * Draws paths between a remote's sources and controllers and the nearest road in its host room.
      * @param {RoomInfo} roomInfo The info object associated with the host room.
      * @param {string} targetName The name of the room to remote.
+     * @param {{}[]} goals Goal objects for the pathfinder, these should be somewhere in the dependant room.
      * @returns An object with 2 properties: 
      * - `controllerPath`: an array of RoomPosition objects between the controller and nearest road in the host room.
      * - `sourcesPaths`: an array of arrays of RoomPositions between each source and the nearest road in the host room.
      * Each element corresponds to a unique path.
      */
-    getRemotePaths(roomInfo, targetName) {
+    getRemotePaths(roomInfo, targetName, goals) {
         const remoteInfo = Memory.rooms[targetName];
 
         // Make our cost matrix, setting structures as unwalkable,
@@ -140,12 +201,11 @@ class RemotePlanner {
             // trust that there aren't any structures blocking our path
             // TODO //
             // Have scouts track structures as well and use those when drawing our path
-            return new PathFinder.CostMatrix;
+            return new PathFinder.CostMatrix();
         }
 
         // Let's get a path from the remote's controller to the closest existing road in the dependant room
         const controllerPos = new RoomPosition(remoteInfo.controller.pos.x, remoteInfo.controller.pos.y, targetName);
-        const goals = roomInfo.room.find(FIND_STRUCTURES, { filter: STRUCTURE_ROAD }).map((road) => road.pos);
         const controllerResult = PathFinder.search(controllerPos, goals, {
             roomCallback: getCostMatrix,
         });
@@ -177,6 +237,59 @@ class RemotePlanner {
         };
     }
 
+
+    /**
+     * Traverses a tree of remotes in a specific way in order to find the branch with the highest score.
+     * The steps are as follows:
+     * - For each node we can currently access, let's search its first child, sum its score and cost with our current total, 
+     * then recursively search the list again, excluding this node and including all of its children
+     * - Once we exceed our cost threshold, we can back up one step and record this branch's score, checking it against our highest score
+     * - From here time we should access the second available node, and so on until all children have been checked
+     * - At this point we should know the highest score and can return the corresponding branch
+     * @param {[]} choices An array of objects. Each object should have a parameter `children` which is an 
+     * array of any number of objects with the property `children`.
+     * Each object should also have a cost and a score.
+     * @param {number} remainingCost The max cost before a branch is cut. 
+     * @param {number} score The current score of this branch.
+     * @returns An object with the following properties: 
+     * - The score of the highest scoring branch
+     * - The cost of the highest scoring branch
+     * - The rooms that make up the highest scoring branch
+     */
+    traverseRecursively(choices, remainingCost, score) {
+
+        // Leaf node, return score and empty branch
+        if (remainingCost < 0) {
+            return {
+                score: score,
+                branch: [],
+            };
+        }
+
+        // Track best option available
+        let bestScore = 0;
+        let bestBranch = [];
+
+        // Search each of our current choices
+        choices.forEach((choice) => {
+
+            // Pass children recusively
+            const nextChoices = choices.filter((c) => c !== choice).concat(choice.children);
+            const result = this.traverseRecursively(nextChoices, remainingCost - choice.cost, score + choice.score);
+
+            // If this choice beats our current one, let's track the score and append it and its best children
+            if (!bestBranch || result.score > bestScore) {
+                bestScore = result.score;
+                bestBranch.push(...result.branch);
+                bestBranch.push(choice);
+            }
+        });
+
+        return {
+            score: score,
+            branch: bestBranch,
+        };
+    }
 
     createRemote() {
 

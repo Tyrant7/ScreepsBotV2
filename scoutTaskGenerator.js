@@ -1,11 +1,16 @@
 const Task = require("task");
+const scoutingUtility = require("scoutingUtility");
 
 class ScoutTaskGenerator {
 
     run(creep, roomInfo, activeTasks) {
 
         // Let's generate a new 'explore' task for the closest room within an arbitrary range to the creep's current room
-        const targetName = this.searchForUnexploredRoomsNearby(creep.room.name, 8);
+        const targetName = scoutingUtility.searchForUnexploredRoomsNearby(creep.room.name, 6) 
+            // If we've explored all directions, just go somewhere random
+            // TODO //
+            // Make this better
+            || Object.values(Game.map.describeExits(creep.room.name))[0];
         const actionStack = [];
         actionStack.push(function(creep, target) {
 
@@ -96,34 +101,6 @@ class ScoutTaskGenerator {
         });
 
         return [new Task(targetName, "explore", actionStack)];
-    }
-
-    /**
-     * Performs a breadth-first search of neighbouring rooms until an unexplored room has been found.
-     * @param {string} startingRoom The name of the room to start in.
-     * @param {number} maxIterations The max iterations to search for. After this, whatever room in is currently looking at will be returned.
-     * @returns 
-     */
-    searchForUnexploredRoomsNearby(startingRoom, maxIterations) {
-
-        // Perform a breadth-first search of neighbouring rooms
-        // If all of them have been explored, repeat with their neighbours
-        // Continue until an unexplored room has been found
-        let current = Object.values(Game.map.describeExits(startingRoom));
-        for (let i = 0; i < maxIterations; i++) {
-            let next = [];
-            for (const room of current) {
-                if (!Memory.rooms[room]) {
-                    return room;
-                }
-                next.push(...Object.values(Game.map.describeExits(room)));
-            }
-            current = next;
-        }
-
-        // None found before maxIterations expired, let's just return whatever one 
-        // we looked at first during our last iteration
-        return current[0];
     }
 }
 

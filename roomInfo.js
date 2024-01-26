@@ -33,8 +33,6 @@ class RoomInfo {
         if (room.controller && room.controller.my) {
             this.dependant = room.name;
         }
-
-        this.requestScouts = false;
     }
 
     /**

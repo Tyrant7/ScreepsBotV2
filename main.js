@@ -110,23 +110,16 @@ module.exports.loop = function() {
 
             // This represent the fraction of our total spawn capacity we sit at
             // i.e. the amount of time we spend spawning / 1
-            const avgSustainCost = spawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;      
+            const avgSustainCost = spawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
             if (DEBUG.drawOverlay) {
                 overlay(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
             }
 
-            // TODO // 
-            // Time planning
-            // 
-            if (/* Game.time % 20 === 0 */ false) {
-                const exits = Object.values(Game.map.describeExits(info.room.name));
-                exits.forEach(exit => {
-                    const rem = remotePlanner.scoreRemote(info, exit);
-                    if (rem) {
-                        console.log("calculating for remote: " + exit + " of " + info.room.name);
-                        console.log("score: " + rem.score + " E/t, cost: " + rem.cost + " spawn capacity");
-                    }         
-                });
+            if (Game.time % 20 === 0) {
+                const cpu = Game.cpu.getUsed();
+                const bestBranch = remotePlanner.planRemotes(info, avgSustainCost, 0.7);
+                console.log("Planned remotes with: " + (Game.cpu.getUsed() - cpu) + " cpu");
+                bestBranch.branch.forEach((b) => console.log("Room " + b.name + " with score: " + b.score + " and cost: " + b.cost));
             }
         }
     }
