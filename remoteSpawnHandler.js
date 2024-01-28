@@ -29,7 +29,7 @@ class RemoteSpawnHandler {
                 body.pop();
                 body.pop();
                 body.pop();
-                return;
+                break;
             }
         }
         return { body: body, 
@@ -55,10 +55,10 @@ class RemoteSpawnHandler {
 
         // Haulers next
         const haulers = [];
-        pathInfo.sourcePaths.forEach(function(path) {
+        pathInfo.sourcePaths.forEach((path) => {
             // Each source gives 10 energy per tick, and hauler is empty on the way back
             // Therefore, 20 * distance / CARRY_CAPACITY
-            let neededCarry = 20 * path.length / CARRY_CAPACITY;
+            let neededCarry = Math.ceil(20 * path.length / CARRY_CAPACITY);
 
             // Keep making haulers until we have enough to transport all energy we'll mine
             while (neededCarry > 0) {

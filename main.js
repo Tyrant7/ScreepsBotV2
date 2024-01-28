@@ -112,14 +112,24 @@ module.exports.loop = function() {
             // i.e. the amount of time we spend spawning / 1
             const avgSustainCost = spawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
             if (DEBUG.drawOverlay) {
-                overlay(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
+                overlay.text(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
             }
 
-            if (Game.time % 20 === 0) {
+            if (Game.time % 3 === 0) {
                 const cpu = Game.cpu.getUsed();
                 const bestBranch = remotePlanner.planRemotes(info, 0.5 - avgSustainCost);
+
+                // Save some info for the best branch to memory
+                Memory.temp = {};
+                Memory.temp.roads = bestBranch.branch[0].roads.map((road) => { return { x: road.x, y: road.y }; });
+                Memory.temp.roadTarget = bestBranch.branch[0].name;
+
+
                 console.log("Planned remotes with: " + (Game.cpu.getUsed() - cpu) + " cpu");
                 bestBranch.branch.forEach((b) => console.log("Room " + b.name + " with score: " + b.score + " and cost: " + b.cost));
+            }
+            if (Memory.temp.roads) {
+                overlay.squares(Memory.temp.roadTarget, Memory.temp.roads, "#FF3333");
             }
         }
     }

@@ -64,7 +64,7 @@ class HaulerSpawnHandler extends LeveledSpawnHandler {
                 body.pop();
                 body.pop();
                 body.pop();
-                return;
+                break;
             } 
         }
         return { body: body, 

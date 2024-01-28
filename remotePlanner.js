@@ -20,7 +20,7 @@ class RemotePlanner {
 
         // Now, let's find all rooms within range 2
         // Organize them in a tree-like structure 
-        // ->  { }
+        //     { }
         //    /   \
         //   1     1
         //  / \   / \
@@ -39,11 +39,25 @@ class RemotePlanner {
         // roads from closer remotes exist when planning further remotes
         Object.keys(nearbyRooms).forEach((distOne) => {
 
+            console.log("planning for dist 1: " + distOne);
+
+
             // Let's plan roads for our distOne first to home first
-            const goals = roomInfo.room.find(FIND_STRUCTURES, { filter: STRUCTURE_ROAD }).map((road) => road.pos);
+            const goals = roomInfo.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } })
+                .map((road) => { return { pos: road.pos, range: 1 } });
             const distOnePaths = this.getRemotePaths(roomInfo, distOne, goals);
-            const distOneRoads = this.planRoads(distOnePaths);
-            const scoreCost = this.scoreRemote(roomInfo, distOne, distOnePaths, distOneRoads.length);
+            const distOneRoadPositions = this.planRoads(distOnePaths);
+            const scoreCost = this.scoreRemote(roomInfo, distOne, distOnePaths, distOneRoadPositions.length);
+
+
+            console.log("roads1: " + distOneRoadPositions.length);
+            const v = new RoomVisual(distOne);
+            distOneRoadPositions.forEach((pos) => {
+                if (pos.roomName === distOne) {
+                    v.circle(pos.x, pos.y);
+                }
+            });
+
 
             // Make sure it's a valid remote
             if (this.isValidRemote(distOne)) {
@@ -52,17 +66,28 @@ class RemotePlanner {
                 // Each distOne should have multiple distTwo depending remotes
                 const children = [];
                 nearbyRooms[distOne].forEach((distTwo) => {
-                    const goals = distOneRoads.map(road => { road.pos });
+
+                    console.log("planning for dist 2: " + distTwo);
+
+                    const goals = distOneRoadPositions.map(roadPos => { return { pos: roadPos, range: 1 } });
                     const distTwoPaths = this.getRemotePaths(roomInfo, distTwo, goals);
-                    const distTwoRoads = this.planRoads(distTwoPaths);
-                    const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoPaths, distTwoRoads.length);
+                    const distTwoRoadPositions = this.planRoads(distTwoPaths);
+                    const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoPaths, distTwoRoadPositions.length);
+
+                    console.log("roads2: " + distTwoRoadPositions.length);
+                    const v = new RoomVisual(distTwo);
+                    distTwoRoadPositions.forEach((pos) => {
+                        if (pos.roomName === distTwo) {
+                            v.circle(pos.x, pos.y);
+                        }
+                    });
 
                     // Score this remote
                     children.push({
                         name: distTwo,
                         score: scoreCost.score,
                         cost: scoreCost.cost,
-                        roads: distTwoRoads,
+                        roads: distTwoRoadPositions,
                         children: []
                     });
                 });
@@ -72,7 +97,7 @@ class RemotePlanner {
                     name: distOne,
                     score: scoreCost.score,
                     cost: scoreCost.cost,
-                    roads: distOneRoads,
+                    roads: distOneRoadPositions,
                     children: children,
                 });
             }
@@ -88,9 +113,10 @@ class RemotePlanner {
      */
     planRoads(remotePaths) {
 
-        const allPaths = remotePaths.controllerPath.concat(...remotePaths.sourcePaths);
+        const allPaths = [...remotePaths.controllerPath];
+        remotePaths.sourcePaths.forEach((sourcePath) => allPaths.push(...sourcePath));
         const allRoads = allPaths.sort((a, b) => a.roomName + a.x + a.y > b.roomName + b.x + b.y ? a : b).filter(function(item, pos, arr) {
-            return !pos || item.isEqualTo(arr[pos - 1]);
+            return !pos || !item.isEqualTo(arr[pos - 1]);
         });
 
         return allRoads;
@@ -211,16 +237,33 @@ class RemotePlanner {
 
         // We need a full path for the rest of the steps
         if (controllerResult.incomplete) {
+            console.log("could not complete path in: " + targetName + ", dumping info...");
+            console.log("ops: " + controllerResult.ops);
+            console.log("cost: " + controllerResult.cost);
+            console.log("path: ");
+            controllerResult.path.forEach((point) => console.log(point));
+            console.log("goals: ");
+            goals.forEach((goal) => console.log(goal.pos));
+
             return;
         }
+
+        // Let's append all of our paths from our controller path to our source paths to allow them to combine paths
+        // This will result in minor pathing efficiency detriments, but will also allow us to save on upkeep costs
+        goals.push(...controllerResult.path.map((path) => { return { pos: path, range: 1 } }));
 
         // Next, let's do the same thing but for the remote's sources
         const sourceResults = [];
         remoteInfo.sources.forEach(source => {
             const sourcePos = new RoomPosition(source.pos.x, source.pos.y, targetName);
-            sourceResults.push(PathFinder.search(sourcePos, goals, {
+            const result = PathFinder.search(sourcePos, goals, {
                 roomCallback: getCostMatrix,
-            }));
+            });
+            sourceResults.push(result);
+
+            // Push path to allow sources to share path segments as well
+            // This will result in minor pathing efficiency detriments, but will also allow us to save on upkeep costs
+            goals.push(...result.path.map((path) => { return { pos: path, range: 1 } }));
         });
 
         // Same thing for sources
