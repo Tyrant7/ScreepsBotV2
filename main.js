@@ -86,14 +86,29 @@ module.exports.loop = function() {
 
         // Don't try to spawn in rooms that aren't ours
         if (info.spawns && info.spawns.length) {
+
             // Spawn handlers are passed in order of priority
-            spawnManager.run(info, [
-                crashSpawnHandler, // Bare necessities
+            // Add more spawn handlers to this for each role, 
+            // do not include handlers that are not meant to regularly spawn 
+            // such as the crashSpawnHandler which only handles recovery cases
+            const basicSpawnHandlers = [
                 minerSpawnHandler, // To not waste source energy
                 haulerSpawnHandler, // To recover quickly
                 workerSpawnHandler, // To use the energy
                 scoutSpawnHandler, // To expand
+            ];
+
+            spawnManager.run(info, [
+                crashSpawnHandler, // For bare necessities
+                ...basicSpawnHandlers,
             ]);
+
+            // This represent the fraction of our total spawn capacity we sit at
+            // i.e. the amount of time we spend spawning / 1
+            const avgSustainCost = basicSpawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
+            if (DEBUG.drawOverlay) {
+                overlay.text(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
+            }
         }
 
         // Defense
@@ -105,40 +120,36 @@ module.exports.loop = function() {
         const info = roomInfos[room];
         if (info.spawns && info.spawns.length) {
 
-            // Add more spawn handlers to this for each role, 
-            // do not include handlers that are not meant to regularly spawn 
-            // such as the crashSpawnHandler which only handles recovery cases
-            const spawnHandlers = [minerSpawnHandler,
-                                   haulerSpawnHandler,
-                                   workerSpawnHandler,
-                                   scoutSpawnHandler];
-
-            // This represent the fraction of our total spawn capacity we sit at
-            // i.e. the amount of time we spend spawning / 1
-            const avgSustainCost = spawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
-            if (DEBUG.drawOverlay) {
-                overlay.text(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
-            }
+            const avgSustainCost = 0.278;
 
             if (Game.time % 3 === 0) {
                 const cpu = Game.cpu.getUsed();
-                const bestBranch = remotePlanner.planRemotes(info, 0.5 - avgSustainCost);
+                const bestBranch = remotePlanner.planRemotes(info, 0.6 - avgSustainCost);
 
                 if (!bestBranch) {
                     break;
                 }
 
+                const allRoads = bestBranch.branch.reduce((roads, node) => roads.concat(node.roads), []);
+
                 // Save some info for the best branch to memory
                 Memory.temp = {};
-                Memory.temp.roads = bestBranch.branch[0].roads.map((road) => { return { x: road.x, y: road.y }; });
-                Memory.temp.roadTarget = bestBranch.branch[0].name;
-
+                Memory.temp.roads = allRoads.map((road) => { 
+                    return { x: road.x, y: road.y, roomName: road.roomName }; 
+                });
 
                 console.log("Planned remotes with: " + (Game.cpu.getUsed() - cpu) + " cpu");
                 bestBranch.branch.forEach((b) => console.log("Room " + b.name + " with score: " + b.score + " and cost: " + b.cost));
             }
             if (Memory.temp.roads) {
-                overlay.squares(Memory.temp.roadTarget, Memory.temp.roads, "#FF3333");
+
+                const roomVisuals = {};
+                Memory.temp.roads.forEach((road) => {
+                    if (!roomVisuals[road.roomName]) {
+                        roomVisuals[road.roomName] = new RoomVisual(road.roomName);
+                    }
+                    roomVisuals[road.roomName].circle(road.x, road.y);
+                });
             }
         }
     }

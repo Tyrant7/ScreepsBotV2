@@ -44,57 +44,35 @@ class RemotePlanner {
         // roads from closer remotes exist when planning further remotes
         Object.keys(nearbyRooms).forEach((distOne) => {
 
-            console.log("planning for dist 1: " + distOne);
-
-
-            // Let's plan roads for our distOne first to home first
-            const goals = roomInfo.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } })
-                .map((road) => { return { pos: road.pos, range: 1 } });
-            const distOnePaths = this.getRemotePaths(roomInfo, distOne, goals);
-            const distOneRoadPositions = this.planRoads(distOnePaths);
-            const scoreCost = this.scoreRemote(roomInfo, distOne, distOnePaths, distOneRoadPositions.length);
-
-
-            console.log("roads1: " + distOneRoadPositions.length);
-            const v = new RoomVisual(distOne);
-            distOneRoadPositions.forEach((pos) => {
-                if (pos.roomName === distOne) {
-                    v.circle(pos.x, pos.y);
-                }
-            });
-
-
-            // Make sure it's a valid remote
+            // Make sure it's a valid remote before planning
             if (this.isValidRemote(distOne)) {
+
+                // Let's plan roads for our distOne first to home first
+                const goals = roomInfo.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } })
+                    .map((road) => { return { pos: road.pos, range: 1 } });
+                const distOnePaths = this.getRemotePaths(roomInfo, distOne, goals);
+                const distOneRoadPositions = this.planRoads(distOnePaths);
+                const scoreCost = this.scoreRemote(roomInfo, distOne, distOnePaths, distOneRoadPositions.length);
 
                 // Then plan roads for each child one this remote
                 // Each distOne should have multiple distTwo depending remotes
                 const children = [];
                 nearbyRooms[distOne].forEach((distTwo) => {
-
-                    console.log("planning for dist 2: " + distTwo);
-
-                    const goals = distOneRoadPositions.map(roadPos => { return { pos: roadPos, range: 1 } });
-                    const distTwoPaths = this.getRemotePaths(roomInfo, distTwo, goals);
-                    const distTwoRoadPositions = this.planRoads(distTwoPaths);
-                    const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoPaths, distTwoRoadPositions.length);
-
-                    console.log("roads2: " + distTwoRoadPositions.length);
-                    const v = new RoomVisual(distTwo);
-                    distTwoRoadPositions.forEach((pos) => {
-                        if (pos.roomName === distTwo) {
-                            v.circle(pos.x, pos.y);
-                        }
-                    });
-
-                    // Score this remote
-                    children.push({
-                        name: distTwo,
-                        score: scoreCost.score,
-                        cost: scoreCost.cost,
-                        roads: distTwoRoadPositions,
-                        children: []
-                    });
+                    if (this.isValidRemote(distTwo)) {
+                        const goals = distOneRoadPositions.map(roadPos => { return { pos: roadPos, range: 1 } });
+                        const distTwoPaths = this.getRemotePaths(roomInfo, distTwo, goals);
+                        const distTwoRoadPositions = this.planRoads(distTwoPaths);
+                        const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoPaths, distTwoRoadPositions.length);
+    
+                        // Score this remote
+                        children.push({
+                            name: distTwo,
+                            score: scoreCost.score,
+                            cost: scoreCost.cost,
+                            roads: distTwoRoadPositions,
+                            children: []
+                        });
+                    }
                 });
 
                 // Populate this tree node
@@ -179,7 +157,7 @@ class RemotePlanner {
         }
 
         // Owned by another player
-        if (remoteInfo.controller.owner) {
+        if (!remoteInfo.controller || remoteInfo.controller.owner) {
             return false;
         }
 
