@@ -6,6 +6,10 @@ module.exports = {
     
     text: function(room, importantFigures) {
 
+        if (!DEBUG.drawOverlay) {
+            return;
+        }
+
         // Draw a simple overlay
         let offset = 0.5;
         const visual = new RoomVisual(room.name).text(room.name, 0, offset, { align: "left" });
@@ -18,6 +22,10 @@ module.exports = {
 
     rects: function(positions, width = 0.5, height = 0.5, style = defaultStyle) {
 
+        if (!DEBUG.drawOverlay) {
+            return;
+        }
+
         const visuals = {};
         positions.forEach((pos) => {
             if (!visuals[pos.roomName]) {
@@ -28,6 +36,10 @@ module.exports = {
     },
 
     circles: function(positions, style = defaultStyle) {
+
+        if (!DEBUG.drawOverlay) {
+            return;
+        }
 
         const visuals = {};
         positions.forEach((pos) => {

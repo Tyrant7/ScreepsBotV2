@@ -15,13 +15,10 @@ global.DEBUG = {
 const CreepManager = require("creepManager");
 const SpawnManager = require("spawnManager");
 const TowerManager = require("towerManager");
+const RemoteManager = require("remoteManager");
 
 // Data
 const RoomInfo = require("roomInfo");
-
-// Remotes
-const RemotePlanner = require("remotePlanner");
-const remotePlanner = new RemotePlanner();
 
 // Tasks
 const WorkerTaskGenerator = require("workerTaskGenerator");
@@ -49,8 +46,21 @@ const minerSpawnHandler = new MinerSpawnHandler();
 const haulerSpawnHandler = new HaulerSpawnHandler();
 const scoutSpawnHandler = new ScoutSpawnHandler();
 
+// Only include economy based spawn handlers,
+// and do not include handlers that are not meant to regularly spawn in bases
+// such as the crashSpawnHandler which only handles recovery cases
+const basicSpawnHandlers = [
+    minerSpawnHandler, // To not waste source energy
+    haulerSpawnHandler, // To recover quickly
+    workerSpawnHandler, // To use the energy
+    scoutSpawnHandler, // To expand
+];
+
 // Defense
 const towerManager = new TowerManager();
+
+// Remote
+const remoteManager = new RemoteManager();
 
 // Overlay
 const overlay = require("overlay");
@@ -87,17 +97,8 @@ module.exports.loop = function() {
         // Don't try to spawn in rooms that aren't ours
         if (info.spawns && info.spawns.length) {
 
+            // Handle spawns
             // Spawn handlers are passed in order of priority
-            // Add more spawn handlers to this for each role, 
-            // do not include handlers that are not meant to regularly spawn 
-            // such as the crashSpawnHandler which only handles recovery cases
-            const basicSpawnHandlers = [
-                minerSpawnHandler, // To not waste source energy
-                haulerSpawnHandler, // To recover quickly
-                workerSpawnHandler, // To use the energy
-                scoutSpawnHandler, // To expand
-            ];
-
             spawnManager.run(info, [
                 crashSpawnHandler, // For bare necessities
                 ...basicSpawnHandlers,
@@ -106,33 +107,10 @@ module.exports.loop = function() {
             // This represent the fraction of our total spawn capacity we sit at
             // i.e. the amount of time we spend spawning / 1
             const avgSustainCost = basicSpawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
-            if (DEBUG.drawOverlay) {
-                overlay.text(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
-            }
+            overlay.text(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
 
-            // Remote planning logic
-            if (Game.time % 3 === 0) {
-                const cpu = Game.cpu.getUsed();
-                const bestBranch = remotePlanner.planRemotes(info, 0.6 - avgSustainCost);
-
-                if (!bestBranch) {
-                    break;
-                }
-
-                const allRoads = bestBranch.branch.reduce((roads, node) => roads.concat(node.roads), []);
-
-                // Save some info for the best branch to memory
-                Memory.temp = {};
-                Memory.temp.roads = allRoads.map((road) => { 
-                    return { x: road.x, y: road.y, roomName: road.roomName }; 
-                });
-
-                console.log("Planned remotes with: " + (Game.cpu.getUsed() - cpu) + " cpu");
-                bestBranch.branch.forEach((b) => console.log("Room " + b.name + " with score: " + b.score + " and cost: " + b.cost));
-            }
-            if (Memory.temp.roads) {
-                overlay.circles(Memory.temp.roads);
-            }
+            // Plan remotes for bases!
+            remoteManager.run(info, CONSTANTS.maxBaseSpawnCapacity - avgSustainCost);
         }
 
         // Defense
