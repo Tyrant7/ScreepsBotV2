@@ -109,19 +109,8 @@ module.exports.loop = function() {
             if (DEBUG.drawOverlay) {
                 overlay.text(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
             }
-        }
 
-        // Defense
-        towerManager.run(info);
-    }
-
-    // Plan remotes
-    for (const room in Game.rooms) {
-        const info = roomInfos[room];
-        if (info.spawns && info.spawns.length) {
-
-            const avgSustainCost = 0.278;
-
+            // Remote planning logic
             if (Game.time % 3 === 0) {
                 const cpu = Game.cpu.getUsed();
                 const bestBranch = remotePlanner.planRemotes(info, 0.6 - avgSustainCost);
@@ -142,16 +131,12 @@ module.exports.loop = function() {
                 bestBranch.branch.forEach((b) => console.log("Room " + b.name + " with score: " + b.score + " and cost: " + b.cost));
             }
             if (Memory.temp.roads) {
-
-                const roomVisuals = {};
-                Memory.temp.roads.forEach((road) => {
-                    if (!roomVisuals[road.roomName]) {
-                        roomVisuals[road.roomName] = new RoomVisual(road.roomName);
-                    }
-                    roomVisuals[road.roomName].circle(road.x, road.y);
-                });
+                overlay.circles(Memory.temp.roads);
             }
         }
+
+        // Defense
+        towerManager.run(info);
     }
 
     // Run creeps
