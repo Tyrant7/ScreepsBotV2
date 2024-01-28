@@ -5,8 +5,12 @@ class ScoutTaskGenerator {
 
     run(creep, roomInfo, activeTasks) {
 
-        // Let's generate a new 'explore' task for the closest room within an arbitrary range to the creep's current room
-        const targetName = scoutingUtility.searchForUnexploredRoomsNearby(creep.room.name, 6) 
+        // If for some reason our room data has been cleared, start by exploring 
+        // the room we're in already to avoid throwing an error
+        const targetName = !Memory.rooms[creep.room.name] ? creep.room.name :
+
+            // Let's generate a new 'explore' task for the closest room within an arbitrary range to the creep's current room
+            scoutingUtility.searchForUnexploredRoomsNearby(creep.room.name, 6) 
             // If we've explored all directions, just go somewhere random
             // TODO //
             // Make this better

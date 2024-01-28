@@ -65,6 +65,11 @@ const creepRoleMap = {
 
 module.exports.loop = function() {
 
+    // Let's make sure some essential objects are initialized
+    if (!Memory.rooms) {
+        Memory.rooms = {};
+    }
+
     // Passive pixel generation
     // Disabled on most servers
     if (Game.cpu.generatePixel) {
@@ -119,6 +124,10 @@ module.exports.loop = function() {
                 const cpu = Game.cpu.getUsed();
                 const bestBranch = remotePlanner.planRemotes(info, 0.5 - avgSustainCost);
 
+                if (!bestBranch) {
+                    break;
+                }
+
                 // Save some info for the best branch to memory
                 Memory.temp = {};
                 Memory.temp.roads = bestBranch.branch[0].roads.map((road) => { return { x: road.x, y: road.y }; });
@@ -140,7 +149,12 @@ module.exports.loop = function() {
         if (creep) {
 
             // Map the creep's role to its appropriate manager and run behaviour
-            creepRoleMap[creep.memory.role].processCreep(creep, roomInfos[creep.memory.home]);
+            if (creepRoleMap[creep.memory.role]) {
+                creepRoleMap[creep.memory.role].processCreep(creep, roomInfos[creep.memory.home]);
+            }
+            else {
+                creep.say("??");
+            }
         }
         else {
             creepDeath(name);
@@ -155,7 +169,9 @@ module.exports.loop = function() {
 function creepDeath(name) {
 
     const role = Memory.creeps[name].role;
-    creepRoleMap[role].freeCreep(name);
+    if (creepRoleMap[role]) {
+        creepRoleMap[role].freeCreep(name);
+    }
 
     delete Memory.creeps[name];
 }

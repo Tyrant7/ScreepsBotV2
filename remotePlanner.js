@@ -12,6 +12,11 @@ class RemotePlanner {
      */
     planRemotes(roomInfo, maxSpawnCapacity) {
 
+        // If we haven't even scouted our own room, we definitely shouldn't plan remotes
+        if (!Memory.rooms[roomInfo.room.name]) {
+            return;
+        }
+
         // Let's check that all rooms within a range of 3 have been scouted
         const unexplored = scoutingUtility.searchForUnexploredRoomsNearby(roomInfo.room.name, 3);
         if (unexplored) {
@@ -238,6 +243,7 @@ class RemotePlanner {
         // We need a full path for the rest of the steps
         if (controllerResult.incomplete) {
             console.log("could not complete path in: " + targetName + ", dumping info...");
+            console.log("controllerPos: " + controllerPos);
             console.log("ops: " + controllerResult.ops);
             console.log("cost: " + controllerResult.cost);
             console.log("path: ");
