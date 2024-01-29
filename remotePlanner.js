@@ -70,7 +70,8 @@ class RemotePlanner {
                             score: scoreCost.score,
                             cost: scoreCost.cost,
                             roads: distTwoRoadPositions,
-                            children: []
+                            children: [],
+                            parent: distOne,
                         });
                     }
                 });
@@ -82,6 +83,7 @@ class RemotePlanner {
                     cost: scoreCost.cost,
                     roads: distOneRoadPositions,
                     children: children,
+                    parent: roomInfo.room.name,
                 });
             }
         });

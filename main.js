@@ -9,6 +9,7 @@ global.CONSTANTS = require("constants");
 global.DEBUG = {
     logTasks: true,
     drawOverlay: true,
+    trackCPUUsage: true,
 };
 
 // Managers
@@ -79,6 +80,9 @@ module.exports.loop = function() {
     if (!Memory.rooms) {
         Memory.rooms = {};
     }
+    if (!Memory.bases) {
+        Memory.bases = {};
+    }
 
     // Passive pixel generation
     // Disabled on most servers
@@ -110,7 +114,12 @@ module.exports.loop = function() {
             overlay.text(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
 
             // Plan remotes for bases!
-            remoteManager.run(info, CONSTANTS.maxBaseSpawnCapacity - avgSustainCost);
+            try {
+                remoteManager.run(info, CONSTANTS.maxBaseSpawnCapacity - avgSustainCost);
+            }
+            catch(e) {
+                console.log("remoteManager encountered error: " + e);
+            }
         }
 
         // Defense
