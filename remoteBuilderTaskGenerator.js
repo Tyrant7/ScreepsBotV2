@@ -22,7 +22,7 @@ class RemoteBuilderTaskGenerator {
             for (const site of sites) {
 
                 // If there are no other builders already building this one, let's go for it
-                if (!activeTasks.find((task) => task.target === site.id)) {
+                if (!activeTasks.find((task) => !task || task.target === site.id)) {
                     return this.makeBuildTask(site);
                 }
             }
@@ -33,9 +33,13 @@ class RemoteBuilderTaskGenerator {
         }
 
         // We're not in the room yet, let's get over there
-        const target = Memory.rooms[creep.memory.targetRoom].controller.pos;
         const actionStack = [];
         actionStack.push(function(creep, target) {
+
+            // Wait to get reassigned
+            if (!target) {
+                return true;
+            }
 
             // Don't reassign when standing on an exit
             const leavingOrEntering = creep.pos.x >= 49 ||
@@ -43,13 +47,14 @@ class RemoteBuilderTaskGenerator {
                                       creep.pos.y >= 49 ||
                                       creep.pos.y <= 0;
 
-            const pos = new RoomPosition(target.x, target.y, creep.memory.targetRoom);
-            if (creep.room.name === creep.memory.targetRoom && !leavingOrEntering) {
+            const moveTarget = Memory.rooms[target].controller.pos;
+            const pos = new RoomPosition(moveTarget.x, moveTarget.y, target);
+            if (creep.room.name === target && !leavingOrEntering) {
                 return true;
             }
             creep.moveTo(pos);
         });
-        return [new Task(target, "move", actionStack)];
+        return [new Task(creep.memory.targetRoom, "move", actionStack)];
     }
 
     makeBuildTask(site) {
@@ -58,19 +63,10 @@ class RemoteBuilderTaskGenerator {
         actionStack.push(harvest);
         actionStack.push(function(creep, target) {
 
-            console.log("building 0");
-
             // We should have a target, if not just request a new build task
             if (!target) {
-
-                console.log("building 1");
-
-
                 return true;
             }
-
-            console.log("building 2");
-
 
             // It's a remote, there won't be anything too expensive to build in it
             // Just pick whatever's closest

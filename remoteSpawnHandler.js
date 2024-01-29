@@ -7,9 +7,6 @@ class RemoteSpawnHandler {
 
     getNextSpawn(roomInfo) {
         const idealSpawns = this.getIdealSpawns(roomInfo);
-
-        console.log("current: " + roomInfo.remoteBuilders.length + " workers!");
-
         if (roomInfo.remoteBuilders.length < idealSpawns.length) {
             return idealSpawns[0];
         }
@@ -32,8 +29,6 @@ class RemoteSpawnHandler {
                 spawns.push(builder);
             }
         });
-
-        console.log("requesting: " + sourceCounts.reduce((total, curr) => total + curr.count, 0) + " workers!");
         return spawns;
     }
 

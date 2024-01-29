@@ -76,11 +76,12 @@ class RemoteManager {
             // Let's remove all roads that have already been built or have a construction site from this plan
             remote.roads = remote.roads.filter((road) => {
                 const room = Game.rooms[road.roomName];
-                if (room) {
-                    const sites = room.lookForAt(road.x, road.y, LOOK_CONSTRUCTION_SITES);
-                    const roads = room.lookForAt(road.x, road.y, LOOK_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } });
-                    return sites.length === 0 && roads.length === 0;
-                } 
+                if (!room) {
+                    return true;
+                }
+                const sites = room.lookForAt(LOOK_CONSTRUCTION_SITES, road.x, road.y);
+                const roads = room.lookForAt(LOOK_STRUCTURES, road.x, road.y, { filter: { structureType: STRUCTURE_ROAD } });
+                return sites.length === 0 && roads.length === 0;
             });
 
             const match = Memory.bases[roomName].remotes.find((r) => r.room === remote.room);
@@ -162,13 +163,16 @@ class RemoteManager {
             // Let's place the wanted site currently closest to an arbirary source
             const source = room.find(FIND_SOURCES)[0];
             const currentSites = room.find(FIND_CONSTRUCTION_SITES);
-            const wantedSites = remoteInfo.roads.sort((a, b) => {
+            remoteInfo.roads.sort((a, b) => {
                 return source.pos.getRangeTo(b) - source.pos.getRangeTo(a);
             });
-            while (currentSites.length <= currentBuilders.length + 1 && wantedSites.length > 0) {
-                const next = wantedSites.pop();
+
+            let placed = 0;
+            while (currentSites.length + placed <= currentBuilders.length + 1 && remoteInfo.roads.length > 0) {
+                const next = remoteInfo.roads.pop();
                 const sitePos = new RoomPosition(next.x, next.y, next.roomName);
                 sitePos.createConstructionSite(STRUCTURE_ROAD);
+                placed++;
             }
 
             // Finally, when we have fewer things left to build than the number of builders assigned to this room, 
