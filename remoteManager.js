@@ -148,10 +148,10 @@ class RemoteManager {
         const currentBuilders = roomInfo.remoteBuilders.filter((builder) => builder.memory.targetRoom === remoteInfo.room);
         const wantedBuilderCount = Math.max(Memory.rooms[remoteInfo.room].sources.length, 0);
         while (wantedBuilderCount > currentBuilders.length && unassignedBuilders.length > 0) {
-            const found = unassignedBuilders.pop();
-            if (found) {
-                found.memory.targetRoom = remoteInfo.room;
-                currentBuilders.push(found);
+            const unassigned = unassignedBuilders.pop();
+            if (unassigned) {
+                unassigned.memory.targetRoom = remoteInfo.room;
+                currentBuilders.push(unassigned);
             }
         }
 
