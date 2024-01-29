@@ -161,10 +161,11 @@ class RemoteManager {
 
             // Let's place the wanted site currently closest to an arbirary source
             const source = room.find(FIND_SOURCES)[0];
+            const currentSites = room.find(FIND_CONSTRUCTION_SITES);
             const wantedSites = remoteInfo.roads.sort((a, b) => {
                 return source.pos.getRangeTo(b) - source.pos.getRangeTo(a);
             });
-            while (wantedSites.length <= currentBuilders.length + 1 && wantedSites.length > 0) {
+            while (currentSites.length <= currentBuilders.length + 1 && wantedSites.length > 0) {
                 const next = wantedSites.pop();
                 const sitePos = new RoomPosition(next.x, next.y, next.roomName);
                 sitePos.createConstructionSite(STRUCTURE_ROAD);
@@ -172,7 +173,7 @@ class RemoteManager {
 
             // Finally, when we have fewer things left to build than the number of builders assigned to this room, 
             // even after creating more sites, it means that there is nothing left to build and we can mark the extra builders for reassignment
-            while (room.find(FIND_CONSTRUCTION_SITES).length < currentBuilders.length) {
+            while (currentSites.length < currentBuilders.length) {
                 const extra = currentBuilders.pop();
                 delete extra.memory.targetRoom;
             }
