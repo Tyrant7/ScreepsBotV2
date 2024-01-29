@@ -3,8 +3,11 @@ const Task = require("task");
 class WorkerTaskGenerator {
 
     /**
-     * Creates a list of appropriate worker tasks for this room.
+     * Creates a list of appropriate worker tasks for this room and scores them by priority.
+     * @param {Creep} creep The creep to create tasks for.
      * @param {RoomInfo} roomInfo The info object associated with the room to generate tasks for.
+     * @param {Task[]} activeTasks List of current worker tasks to take into consideration when finding a new task.
+     * @returns {Task[]} An array of tasks.
      */
     run(creep, roomInfo, activeTasks) {
 

@@ -7,7 +7,6 @@ class RemoteManager {
 
     constructor() {
         this.remotePlans = {};
-        this.buildTarget = null;
     }
 
     run(roomInfo, remainingSpawnCapacity) {
@@ -44,17 +43,39 @@ class RemoteManager {
         //      attempt to build a new remote somewhere else once threat has subsided for other rooms
 
 
-        // Start by tracking active remotes of this room
-        if (!Memory.bases[roomInfo.room.name]) {
-            Memory.bases[roomInfo.room.name] = {};
-            Memory.bases[roomInfo.room.name].remotes = [];
-        }
-        const activeRemotes = Memory.bases[roomInfo.room.name].remotes;
+        // Plan our remotes, if we haven't already
+        const roomName = roomInfo.room.name;
+        if (!this.remotePlans[roomName]) {
+            const unsortedPlans = this.getRemotePlans(roomInfo, remainingSpawnCapacity);
 
-        if (!this.buildTarget) {
-            this.buildTarget = this.getBuildTarget(roomInfo, remainingSpawnCapacity);
+            // Sort plans by distance, then efficiency score to allow creeps to be assigned under a natural priority 
+            // of more important (i.e. higher scoring and closer) remotes
+            this.remotePlans[roomName] = unsortedPlans.sort((a, b) => {
+                const aScore = (a.children.length ? 100000 : 0) + a.score;
+                const bScore = (b.children.length ? 100000 : 0) + b.score;
+                return bScore - aScore;
+            });
         }
-        this.buildRemote(this.buildTarget);
+        const plans = this.remotePlans[roomName];
+
+        if (!Memory.bases[roomName]) {
+            Memory.bases[roomName] = {};
+        }
+
+        if (!Memory.bases[roomName].remotes) {
+            Memory.bases[roomName].remotes = [];
+            plans.forEach((remote) => Memory.bases[roomName].remotes.push({ 
+                room: remote.room, 
+                state: CONSTANTS.remoteStates.constructing,
+            }));
+        }
+
+        // Let's update each remote's state in memory so that remote creeps know where to go and how to react
+        plans.forEach((remote) => {
+            const match = Memory.bases[roomName].remotes.find((r) => r.room === remote.room);
+            match.state = this.getState(remote);
+            this.handleRemote(roomInfo, remote, match.state);
+        });
 
         // Overlays
         if (Memory.temp.roads) {
@@ -69,7 +90,7 @@ class RemoteManager {
         // Here's out best combination of remotes and the order they have to be built in
         // Keep in mind that distance 1's are interchangable, so we can use a greedy algorithm 
         // to easily pull the most efficient one
-        const bestBranch = remotePlanner.planRemotes(roomInfo, remainingSpawnCapacity).branch;
+        const bestBranch = remotePlanner.planRemotes(roomInfo, remainingSpawnCapacity);
         if (!bestBranch) {
             return;
         }
@@ -92,47 +113,68 @@ class RemoteManager {
         return bestBranch;
     }
 
-    getBuildTarget(roomInfo, remainingSpawnCapacity) {
+    getState(remoteInfo) {
 
-        // Get our active remotes
-        const activeRemotes = Memory.bases[roomInfo.room.name].remotes;
+        // TODO //
 
-        // Let's get a plan for all of the remotes we want if we haven't done this already
-        if (!this.remotePlans[roomInfo.room.name]) {
-            this.remotePlans[roomInfo.room.name] = this.getRemotePlans(roomInfo, remainingSpawnCapacity);
-        }
-        const plans = this.remotePlans[roomInfo.room.name];
-
-        // We're going to use a simple greedy algorithm to determine the best remote to start with
-        // by simply filtering for only ones that can be currently built and taking the highest scoring
-        return plans.filter((candidate) => { 
-            const canBuild = candidate.parent === roomInfo.room.name 
-                          || activeRemotes.includes(candidate.parent);
-            const alreadyBuilt = activeRemotes.includes(candidate.room);
-            return canBuild && !alreadyBuilt;
-        }).reduce((best, curr) => best.score >= curr.score ? best : curr);
+        return CONSTANTS.remoteStates.constructing;
     }
 
-    buildRemote(remoteInfo) {
+    handleRemote(roomInfo, remoteInfo, state) {
+
+        // TODO //
+        // Other states
+
+        if (state === CONSTANTS.remoteStates.constructing) {
+
+            this.handleConstruction(roomInfo, remoteInfo);
+        }
+    }
+
+    handleConstruction(roomInfo, remoteInfo) {
         
-        // All wanted remotes must have been built already, so we don't need to do anything
-        if (!remoteInfo) {
-            return;
+        // Request a builder if we have fewer than the number of sources in this room
+        const currentBuilders = roomInfo.remoteBuilders.filter((builder) => builder.memory.targetRoom === remoteInfo.room);
+        const wantedBuilders = Math.max(Memory.rooms[remoteInfo.room].sources.length - currentBuilders.length, 0);
+        if (wantedBuilders > 0) {
+
+            // Let's search for a builder with an unassigned targetRoom
+            const found = roomInfo.remoteBuilders.find((builder) => !builder.memory.targetRoom);
+            if (found) {
+                found.memory.targetRoom = remoteInfo.room;
+                currentBuilders.push(found);
+            }
         }
 
-        // Plan roads
-        const roadBlueprint = remoteInfo.roads;
+        // Now let's handle construction sites
+        // We should ideally keep nBuilders + 1 sites active at a time
+        const room = Game.rooms[remoteInfo.room];
+        if (room) {
+            const sites = room.find(FIND_MY_CONSTRUCTION_SITES);
+            while (sites.length <= currentBuilders.length + 1) {
 
-        // Simply place all of them down
-        while(roadBlueprint.length > 0) {
-            try {
-                const next = roadBlueprint.pop();
-                const pos = new RoomPosition(next.x, next.y, next.roomName);
-                pos.createConstructionSite(STRUCTURE_ROAD);
-                console.log("placed site at: " + pos);
+                // Place a new construction site
+                // Let's place the one currently closest to an arbirary source
+                const wantedSites = remoteInfo.roads;
+                const source = room.find(FIND_SOURCES)[0];
+                const next = wantedSites.reduce((best, curr) => {
+                    const currRange = room.lookForAt(LOOK_CONSTRUCTION_SITES, curr.x, curr.y).length ? 1000 : source.getRangeTo(curr);
+                    const bestRange = room.lookForAt(LOOK_CONSTRUCTION_SITES, best.x, best.y).length ? 1000 : source.getRangeTo(best);
+                    return currRange < bestRange ? curr : best;
+                }, wantedSites[0]);
+
+                // Make sure there isn't already a site everywhere we wanted
+                if (room.lookForAt(LOOK_CONSTRUCTION_SITES, next.x, next.y).length === 0) {
+                    const sitePos = new RoomPosition(next.x, next.y, next.roomName);
+                    sitePos.createConstructionSite(STRUCTURE_ROAD);
+                }
             }
-            catch (e) {
-                console.log("we're fine");
+
+            // Finally, when we have fewer things left to build than the number of builders assigned to this room, 
+            // even after creating more sites, it means that there is nothing left to build and we can mark the extra builders for reassignment
+            while (sites.length < currentBuilders.length) {
+                const extra = currentBuilders.pop();
+                delete extra.memory.targetRoom;
             }
         }
     }

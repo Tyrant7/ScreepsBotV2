@@ -56,7 +56,7 @@ class CreepManager {
         }
 
         // Find our associated target 
-        // -> if it's not a valid ID let's let the creep handle it in cases like scouts taking room names as targets
+        // -> if it's not a valid ID let's let the creep handle it in cases like scouts or remote builders taking room names as targets
         const target = Game.getObjectById(task.target) || task.target;
 
         // Check if current action is completed, if so, we can advance to the next action

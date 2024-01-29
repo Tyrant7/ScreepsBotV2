@@ -66,30 +66,28 @@ class RemotePlanner {
     
                         // Score this remote
                         children.push({
-                            name: distTwo,
+                            room: distTwo,
                             score: scoreCost.score,
                             cost: scoreCost.cost,
                             roads: distTwoRoadPositions,
                             children: [],
-                            parent: distOne,
                         });
                     }
                 });
 
                 // Populate this tree node
                 remotes.push({
-                    name: distOne,
+                    room: distOne,
                     score: scoreCost.score,
                     cost: scoreCost.cost,
                     roads: distOneRoadPositions,
                     children: children,
-                    parent: roomInfo.room.name,
                 });
             }
         });
 
         // Get our combination of remotes with the highest score, algorithm explained below
-        return this.traverseRecursively(remotes, maxSpawnCapacity, 0);
+        return this.traverseRecursively(remotes, maxSpawnCapacity, 0).branch;
     }
 
     /**
@@ -328,10 +326,6 @@ class RemotePlanner {
             branch: bestBranch,
             leafNode: false,
         };
-    }
-
-    createRemote() {
-
     }
 }
 
