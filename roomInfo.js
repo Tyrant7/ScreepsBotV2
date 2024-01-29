@@ -27,11 +27,7 @@ class RoomInfo {
             return total + (9 - lookResults.length);
         }, 0);
 
-        // If this room is a remote, the parent will be the ID of the managing non-remote room
-        // if this room isn't a remote, this is will be it's own ID
-        if (room.controller && room.controller.my) {
-            this.parent = room.name;
-        }
+        this.remoting = room.controller && room.controller.my && room.controller.level >= 4;
     }
 
     /**

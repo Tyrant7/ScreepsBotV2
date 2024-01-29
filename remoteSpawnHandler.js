@@ -6,11 +6,46 @@ const minerSpawnHandler = new MinerSpawnHandler();
 class RemoteSpawnHandler {
 
     getNextSpawn(roomInfo) {
-
+        const idealSpawns = this.getIdealSpawns(roomInfo);
+        if (roomInfo.remoteBuilders.length < idealSpawns.length) {
+            return idealSpawns[0];
+        }
     }
 
     getIdealSpawns(roomInfo) {
+        // Let's start by requesting builders for remotes that are in construction
+        const constructingRemotes = Memory.bases[roomInfo.room.name].remotes
+            .filter((remote) => remote.state === CONSTANTS.remoteStates.constructing);
 
+        const sourceCounts = constructingRemotes.map((remote) => {
+            return { room: remote.room, count: Memory.rooms[curr.room].sources.length };
+        });
+
+        const spawns = [];
+        sourceCounts.forEach((remote) => {
+            for (let i = 0; i < remote.count; i++) {
+                const builder = this.makeBuilder(CONSTANTS.maxRemoteBuilderLevel, roomInfo.room.energyCapacityAvailable);
+                builder.memory.targetRoom = remote.room;
+                spawns.push(builder);
+            }
+        });
+
+        console.log("requesting: " + sourceCounts.reduce((total, curr) => total + curr.count, 0) + " workers!");
+        return spawns;
+    }
+
+    makeBuilder(desiredLevel, maxCost) {
+        const builderParts = [WORK, CARRY, MOVE];
+        let body = builderParts;
+        let lvl = 1;
+        const levelCost = creepSpawnUtility.getCost(body);
+        while (lvl < desiredLevel && (lvl + 1) * levelCost <= maxCost) {
+            lvl++;
+            body = body.concat(builderParts);
+        }
+        return { body: body, 
+                 name: "Remote Builder " + Game.time + " [" + lvl.toString() + "]",
+                 memory: { role: CONSTANTS.roles.remoteBuilder }};
     }
 
     makeMiner(sourceInfo, maxCost) {

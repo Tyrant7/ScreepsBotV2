@@ -12,6 +12,11 @@ class RemoteBuilderTaskGenerator {
      */
     run(creep, roomInfo, activeTasks) {
 
+        // Wait for a target before
+        if (!creep.memory.targetRoom) {
+            return null;
+        }
+
         if (creep.room.name === creep.memory.targetRoom) {
             const sites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
             for (const site of sites) {
@@ -28,13 +33,21 @@ class RemoteBuilderTaskGenerator {
         }
 
         // We're not in the room yet, let's get over there
-        const target = Memory.rooms[creep.memory.targetRoom].controller.id;
+        const target = Memory.rooms[creep.memory.targetRoom].controller.pos;
         const actionStack = [];
         actionStack.push(function(creep, target) {
-            if (creep.room.name === target.pos.roomName) {
+
+            // Don't reassign when standing on an exit
+            const leavingOrEntering = creep.pos.x >= 49 ||
+                                      creep.pos.x <= 0  ||
+                                      creep.pos.y >= 49 ||
+                                      creep.pos.y <= 0;
+
+            const pos = new RoomPosition(target.x, target.y, creep.memory.targetRoom);
+            if (creep.room.name === creep.memory.targetRoom && !leavingOrEntering) {
                 return true;
             }
-            creep.moveTo(target);
+            creep.moveTo(pos);
         });
         return [new Task(target, "move", actionStack)];
     }
@@ -45,10 +58,19 @@ class RemoteBuilderTaskGenerator {
         actionStack.push(harvest);
         actionStack.push(function(creep, target) {
 
+            console.log("building 0");
+
             // We should have a target, if not just request a new build task
             if (!target) {
+
+                console.log("building 1");
+
+
                 return true;
             }
+
+            console.log("building 2");
+
 
             // It's a remote, there won't be anything too expensive to build in it
             // Just pick whatever's closest

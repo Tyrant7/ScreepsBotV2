@@ -72,6 +72,17 @@ class RemoteManager {
 
         // Let's update each remote's state in memory so that remote creeps know where to go and how to react
         plans.forEach((remote) => {
+
+            // Let's remove all roads that have already been built or have a construction site from this plan
+            remote.roads = remote.roads.filter((road) => {
+                const room = Game.rooms[road.roomName];
+                if (room) {
+                    const sites = room.lookForAt(road.x, road.y, LOOK_CONSTRUCTION_SITES);
+                    const roads = room.lookForAt(road.x, road.y, LOOK_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } });
+                    return sites.length === 0 && roads.length === 0;
+                } 
+            });
+
             const match = Memory.bases[roomName].remotes.find((r) => r.room === remote.room);
             match.state = this.getState(remote);
             this.handleRemote(roomInfo, remote, match.state);
@@ -125,7 +136,6 @@ class RemoteManager {
         // Other states
 
         if (state === CONSTANTS.remoteStates.constructing) {
-
             this.handleConstruction(roomInfo, remoteInfo);
         }
     }
@@ -133,12 +143,11 @@ class RemoteManager {
     handleConstruction(roomInfo, remoteInfo) {
 
         // Request a builder if we have fewer than the number of sources in this room
+        const unassignedBuilders = roomInfo.remoteBuilders.filter((builder) => !builder.memory.targetRoom);
         const currentBuilders = roomInfo.remoteBuilders.filter((builder) => builder.memory.targetRoom === remoteInfo.room);
-        const wantedBuilders = Math.max(Memory.rooms[remoteInfo.room].sources.length - currentBuilders.length, 0);
-        if (wantedBuilders > 0) {
-
-            // Let's search for a builder with an unassigned targetRoom
-            const found = roomInfo.remoteBuilders.find((builder) => !builder.memory.targetRoom);
+        const wantedBuilderCount = Math.max(Memory.rooms[remoteInfo.room].sources.length, 0);
+        while (wantedBuilderCount > currentBuilders.length && unassignedBuilders.length > 0) {
+            const found = unassignedBuilders.pop();
             if (found) {
                 found.memory.targetRoom = remoteInfo.room;
                 currentBuilders.push(found);
@@ -149,33 +158,34 @@ class RemoteManager {
         // We should ideally keep nBuilders + 1 sites active at a time
         const room = Game.rooms[remoteInfo.room];
         if (room) {
-            const sites = room.find(FIND_MY_CONSTRUCTION_SITES);
-            while (sites.length <= currentBuilders.length + 1) {
 
-                // Place a new construction site
-                // Let's place the one currently closest to an arbirary source
-                const wantedSites = remoteInfo.roads;
-                const source = room.find(FIND_SOURCES)[0];
-                const next = wantedSites.reduce((best, curr) => {
-                    const currRange = room.lookForAt(LOOK_CONSTRUCTION_SITES, curr.x, curr.y).length ? 1000 : source.getRangeTo(curr);
-                    const bestRange = room.lookForAt(LOOK_CONSTRUCTION_SITES, best.x, best.y).length ? 1000 : source.getRangeTo(best);
-                    return currRange < bestRange ? curr : best;
-                }, wantedSites[0]);
-
-                // Make sure there isn't already a site everywhere we wanted
-                if (room.lookForAt(LOOK_CONSTRUCTION_SITES, next.x, next.y).length === 0) {
-                    const sitePos = new RoomPosition(next.x, next.y, next.roomName);
-                    sitePos.createConstructionSite(STRUCTURE_ROAD);
-                }
+            // Let's place the wanted site currently closest to an arbirary source
+            const source = room.find(FIND_SOURCES)[0];
+            const wantedSites = remoteInfo.roads.sort((a, b) => {
+                return source.pos.getRangeTo(b) - source.pos.getRangeTo(a);
+            });
+            while (wantedSites.length <= currentBuilders.length + 1 && wantedSites.length > 0) {
+                const next = wantedSites.pop();
+                const sitePos = new RoomPosition(next.x, next.y, next.roomName);
+                sitePos.createConstructionSite(STRUCTURE_ROAD);
             }
 
             // Finally, when we have fewer things left to build than the number of builders assigned to this room, 
             // even after creating more sites, it means that there is nothing left to build and we can mark the extra builders for reassignment
-            while (sites.length < currentBuilders.length) {
+            while (room.find(FIND_CONSTRUCTION_SITES).length < currentBuilders.length) {
                 const extra = currentBuilders.pop();
                 delete extra.memory.targetRoom;
             }
         }
+
+        // Let's take a simple approach to making sure the inside our main room are built by simply placing all of them
+        // Our aggressive base building allocation should take care of this quite easily
+        remoteInfo.roads.forEach((pos) => {
+            if (pos.roomName === roomInfo.room.name) {
+                const sitePos = new RoomPosition(pos.x, pos.y, pos.roomName);
+                sitePos.createConstructionSite(STRUCTURE_ROAD);
+            }
+        });
     }
 }
 

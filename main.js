@@ -27,10 +27,23 @@ const HaulerTaskGenerator = require("haulerTaskGenerator");
 const MinerTaskGenerator = require("minerTaskGenerator");
 const ScoutTaskGenerator = require("scoutTaskGenerator");
 
+const RemoteBuilderTaskGenerator = require("remoteBuilderTaskGenerator");
+
 const workerManager = new CreepManager(new WorkerTaskGenerator());
 const haulerManager = new CreepManager(new HaulerTaskGenerator());
 const minerManager = new CreepManager(new MinerTaskGenerator());
 const scoutManager = new CreepManager(new ScoutTaskGenerator());
+
+const remoteBuilderManager = new CreepManager(new RemoteBuilderTaskGenerator());
+
+// Mapping
+const creepRoleMap = {
+    [CONSTANTS.roles.worker]: workerManager,
+    [CONSTANTS.roles.hauler]: haulerManager,
+    [CONSTANTS.roles.miner]: minerManager,
+    [CONSTANTS.roles.scout]: scoutManager,
+    [CONSTANTS.roles.remoteBuilder]: remoteBuilderManager,
+};
 
 // Spawning
 const spawnManager = new SpawnManager();
@@ -41,11 +54,15 @@ const MinerSpawnHandler = require("minerSpawnHandler");
 const HaulerSpawnHandler = require("haulerSpawnHandler");
 const ScoutSpawnHandler = require("scoutSpawnHandler");
 
+const RemoteSpawnHandler = require("remoteSpawnHandler");
+
 const crashSpawnHandler = new CrashSpawnHandler();
 const workerSpawnHandler = new WorkerSpawnHandler();
 const minerSpawnHandler = new MinerSpawnHandler();
 const haulerSpawnHandler = new HaulerSpawnHandler();
 const scoutSpawnHandler = new ScoutSpawnHandler();
+
+const remoteSpawnHandler = new RemoteSpawnHandler();
 
 // Only include economy based spawn handlers,
 // and do not include handlers that are not meant to regularly spawn in bases
@@ -65,14 +82,6 @@ const remoteManager = new RemoteManager();
 
 // Overlay
 const overlay = require("overlay");
-
-// Mapping
-const creepRoleMap = {
-    [CONSTANTS.roles.worker]: workerManager,
-    [CONSTANTS.roles.hauler]: haulerManager,
-    [CONSTANTS.roles.miner]: minerManager,
-    [CONSTANTS.roles.scout]: scoutManager,
-};
 
 module.exports.loop = function() {
 
@@ -101,12 +110,17 @@ module.exports.loop = function() {
         // Don't try to spawn in rooms that aren't ours
         if (info.spawns && info.spawns.length) {
 
-            // Handle spawns
             // Spawn handlers are passed in order of priority
-            spawnManager.run(info, [
-                crashSpawnHandler, // For bare necessities
+            const currentSpawnHandlers = [
+                crashSpawnHandler,
                 ...basicSpawnHandlers,
-            ]);
+            ];
+            if (info.remoting) {
+                currentSpawnHandlers.push(remoteSpawnHandler);
+            }
+
+            // Handle spawns
+            spawnManager.run(info, currentSpawnHandlers);
 
             // This represent the fraction of our total spawn capacity we sit at
             // i.e. the amount of time we spend spawning / 1
@@ -114,12 +128,7 @@ module.exports.loop = function() {
             overlay.text(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
 
             // Plan remotes for bases!
-            try {
-                remoteManager.run(info, CONSTANTS.maxBaseSpawnCapacity - avgSustainCost);
-            }
-            catch(e) {
-                console.log("remoteManager encountered error: " + e);
-            }
+            remoteManager.run(info, CONSTANTS.maxBaseSpawnCapacity - avgSustainCost);
         }
 
         // Defense
@@ -136,7 +145,7 @@ module.exports.loop = function() {
                 creepRoleMap[creep.memory.role].processCreep(creep, roomInfos[creep.memory.home]);
             }
             else {
-                creep.say("??");
+                creep.say("Missing");
             }
         }
         else {
