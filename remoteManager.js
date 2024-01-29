@@ -20,8 +20,9 @@ class RemoteManager {
         // 3. Tracking states for each remote
         // -> constructing: remote is in progress of being built
         //    - requesting builders
-        //    - handling placement of construction sites in a streamlined manner
+        //    - handling placement of construction sites in an efficient order
         //    - ensuring that only one remote per base room is being constructed at a time for efficiency
+        //    - handling switching the state when remote is built enough to be efficient
         // -> active: remote is healthy and producing
         //    - handling maintenance if roads become too low or destroyed
         //    - requesting additional haulers if containers overflow
