@@ -78,8 +78,8 @@ class RemoteManager {
         });
 
         // Overlays
-        if (Memory.temp.roads) {
-            overlay.circles(Memory.temp.roads);
+        if (this.roadVisuals) {
+            overlay.circles(this.roadVisuals);
         }
     }
 
@@ -97,9 +97,8 @@ class RemoteManager {
 
         // Track road postions for debugging
         if (DEBUG.drawOverlay) {
-            const allRoads = bestBranch.reduce((roads, node) => roads.concat(node.roads), []);
-            Memory.temp = {};
-            Memory.temp.roads = allRoads.map((road) => { 
+            const allRoads = bestBranch.reduce((roads, node) => roads.concat(node.roads), []);     
+            this.roadVisuals =  allRoads.map((road) => { 
                 return { x: road.x, y: road.y, roomName: road.roomName };
             });
         }
