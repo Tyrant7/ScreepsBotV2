@@ -107,7 +107,7 @@ class RemoteManager {
         // CPU tracking
         if (DEBUG.trackCPUUsage) {
             console.log("Planned remotes with: " + (Game.cpu.getUsed() - cpu) + " cpu");
-            bestBranch.forEach((b) => console.log("Room " + b.name + " with score: " + b.score + " and cost: " + b.cost));
+            bestBranch.forEach((b) => console.log("Room " + b.room + " with score: " + b.score + " and cost: " + b.cost));
         }
 
         return bestBranch;
@@ -132,7 +132,7 @@ class RemoteManager {
     }
 
     handleConstruction(roomInfo, remoteInfo) {
-        
+
         // Request a builder if we have fewer than the number of sources in this room
         const currentBuilders = roomInfo.remoteBuilders.filter((builder) => builder.memory.targetRoom === remoteInfo.room);
         const wantedBuilders = Math.max(Memory.rooms[remoteInfo.room].sources.length - currentBuilders.length, 0);

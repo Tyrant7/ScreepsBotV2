@@ -1,4 +1,5 @@
 const Task = require("task");
+const harvest = require("harvest");
 
 class RemoteBuilderTaskGenerator {
 
@@ -41,6 +42,7 @@ class RemoteBuilderTaskGenerator {
     makeBuildTask(site) {
 
         const actionStack = [];
+        actionStack.push(harvest);
         actionStack.push(function(creep, target) {
 
             // We should have a target, if not just request a new build task
