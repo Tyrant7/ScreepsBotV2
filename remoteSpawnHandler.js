@@ -18,7 +18,7 @@ class RemoteSpawnHandler {
             .filter((remote) => remote.state === CONSTANTS.remoteStates.constructing);
 
         const sourceCounts = constructingRemotes.map((remote) => {
-            return { room: remote.room, count: Memory.rooms[curr.room].sources.length };
+            return { room: remote.room, count: Memory.rooms[remote.room].sources.length };
         });
 
         const spawns = [];
