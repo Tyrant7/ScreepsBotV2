@@ -14,6 +14,7 @@ class RemoteBuilderTaskGenerator {
 
         // Wait for a target before
         if (!creep.memory.targetRoom) {
+            creep.say("No room!");
             return null;
         }
 
@@ -72,11 +73,20 @@ class RemoteBuilderTaskGenerator {
             // Just pick whatever's closest
             const buildTarget = creep.room.find(FIND_MY_CONSTRUCTION_SITES)
                 .reduce((closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, target);
+            if (!buildTarget) {
+                return true;
+            }
 
-            if (creep.build(buildTarget) === ERR_NOT_IN_RANGE) {
+            const intentResult = creep.build(buildTarget);
+            console.log("Intent result: " + intentResult + " with creep: " + creep.name);
+            if (intentResult === ERR_INVALID_TARGET) {
+                console.log(creep.name + ": " + buildTarget);
+            }
+
+            if (intentResult === ERR_NOT_IN_RANGE) {
                 creep.moveTo(buildTarget);
             }
-            return creep.store[RESOURCE_ENERGY] === 0 || !buildTarget;
+            return creep.store[RESOURCE_ENERGY] === 0;
         });
 
         return [new Task(site.id, "build", actionStack)];

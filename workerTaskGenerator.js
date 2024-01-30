@@ -182,11 +182,14 @@ const basicWorkerActions = {
         const buildTarget = home.find(FIND_CONSTRUCTION_SITES, { 
             filter: (site) => site.structureType === target.structureType })
             .reduce((closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, target);
+        if (!buildTarget) {
+            return true;
+        }
 
         if (creep.build(buildTarget) === ERR_NOT_IN_RANGE) {
             creep.moveTo(buildTarget);
         }
-        return creep.store[RESOURCE_ENERGY] === 0 || !buildTarget;
+        return creep.store[RESOURCE_ENERGY] === 0;
     },
     [taskType.repair]: function(creep, target) {
         if (creep.repair(target) === ERR_NOT_IN_RANGE) {
