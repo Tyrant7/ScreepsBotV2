@@ -9,6 +9,8 @@ global.CONSTANTS = require("constants");
 global.DEBUG = {
     logTasks: true,
     drawOverlay: true,
+    drawRoadOverlay: true,
+    drawPathOverlay: true,
     trackCPUUsage: true,
 };
 

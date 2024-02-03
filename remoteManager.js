@@ -91,10 +91,10 @@ class RemoteManager {
         });
 
         // Overlays
-        if (this.roadVisuals) {
+        if (DEBUG.drawRoadOverlay && this.roadVisuals) {
             overlay.circles(this.roadVisuals);
         }
-        if (this.haulerPaths) {
+        if (DEBUG.drawPathOverlay && this.haulerPaths) {
             const colours = [
                 "#FF0000",
                 "#00FF00",
