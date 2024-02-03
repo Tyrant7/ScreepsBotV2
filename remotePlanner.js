@@ -50,9 +50,10 @@ class RemotePlanner {
                 // Let's plan roads for our distOne first to home first
                 const goals = roomInfo.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } })
                     .map((road) => { return { pos: road.pos, range: 1 } });
-                const distOnePaths = this.getRemotePaths(roomInfo, distOne, goals);
+                const distOnePaths = this.getSourcePaths(roomInfo, distOne, goals);
                 const distOneRoadPositions = this.planRoads(distOnePaths);
-                const scoreCost = this.scoreRemote(roomInfo, distOne, distOnePaths, distOneRoadPositions.length);
+                const distOneHaulerPaths = this.getHaulerPaths(roomInfo, distOne, { pos: roomInfo.room.storage.pos, range: 1 }, distOneRoadPositions);
+                const scoreCost = this.scoreRemote(roomInfo, distOne, distOneHaulerPaths, distOneRoadPositions.length);
 
                 // Then plan roads for each child one this remote
                 // Each distOne should have multiple distTwo depending remotes
@@ -60,9 +61,11 @@ class RemotePlanner {
                 nearbyRooms[distOne].forEach((distTwo) => {
                     if (this.isValidRemote(distTwo)) {
                         const goals = distOneRoadPositions.map(roadPos => { return { pos: roadPos, range: 1 } });
-                        const distTwoPaths = this.getRemotePaths(roomInfo, distTwo, goals);
+                        const distTwoPaths = this.getSourcePaths(roomInfo, distTwo, goals);
                         const distTwoRoadPositions = this.planRoads(distTwoPaths);
-                        const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoPaths, distTwoRoadPositions.length);
+                        const distTwoHaulerPaths = this.getHaulerPaths(roomInfo, distTwo, 
+                            { pos: roomInfo.room.storage.pos, range: 1 }, distTwoRoadPositions.concat(distOneRoadPositions));
+                        const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoHaulerPaths, distTwoRoadPositions.length);
     
                         // Score this remote
                         children.push({
@@ -70,6 +73,7 @@ class RemotePlanner {
                             score: scoreCost.score,
                             cost: scoreCost.cost,
                             roads: distTwoRoadPositions,
+                            haulerPaths: distTwoHaulerPaths,
                             children: [],
                         });
                     }
@@ -81,6 +85,7 @@ class RemotePlanner {
                     score: scoreCost.score,
                     cost: scoreCost.cost,
                     roads: distOneRoadPositions,
+                    haulerPaths: distOneHaulerPaths,
                     children: children,
                 });
             }
@@ -92,12 +97,12 @@ class RemotePlanner {
 
     /**
      * Plans roads for a remote in the room matching roomName with a dependant.
-     * @param {{}} remotePaths Paths for this remote obtained using getRemotePaths()
+     * @param {[]} remotePaths Paths for this remote obtained using getSourcePaths()
      */
-    planRoads(remotePaths) {
+    planRoads(sourcePaths) {
 
-        const allPaths = [...remotePaths.controllerPath];
-        remotePaths.sourcePaths.forEach((sourcePath) => allPaths.push(...sourcePath));
+        const allPaths = [];
+        sourcePaths.forEach((sourcePath) => allPaths.push(...sourcePath));
         const allRoads = allPaths.sort((a, b) => a.roomName + a.x + a.y > b.roomName + b.x + b.y ? a : b).filter(function(item, pos, arr) {
             return !pos || !item.isEqualTo(arr[pos - 1]);
         });
@@ -109,12 +114,12 @@ class RemotePlanner {
      * Scores a potential remote for this room.
      * @param {RoomInfo} roomInfo The info object associated with the host room.
      * @param {string} targetName The name of the room to score a remote for. Must have been scouted previously.
-     * @param {{}} remotePaths Paths for this remote obtained using `getRemotePaths()`.
+     * @param {[]} haulerPaths Haulers paths for this remote.
      * @param {number} roadCount The number of roads needed to plan this remote. Should be the length of the array obtained by `planRoads()`.
      * @returns An object with scoring information for this remotes. 
      * Contains a `score` property for energy output and a `cost` property for spawn time.
      */
-    scoreRemote(roomInfo, targetName, remotePaths, roadCount) {
+    scoreRemote(roomInfo, targetName, haulerPaths, roadCount) {
         const remoteInfo = Memory.rooms[targetName];
 
         // Let's calculate some upkeep costs using those newly created paths
@@ -132,7 +137,7 @@ class RemotePlanner {
         upkeep.structures = totalContainerUpkeep + totalRoadUpkeep;
 
         // Now for creeps spawn costs, total up energy and spawn time upkeeps
-        upkeep.creeps = remoteSpawnHandler.getUpkeepCosts(roomInfo, remoteInfo, remotePaths);
+        upkeep.creeps = remoteSpawnHandler.getUpkeepCosts(roomInfo, remoteInfo, haulerPaths);
 
         // Calculate net energy produced in this room
         const grossEnergy = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME * remoteInfo.sources.length;
@@ -184,12 +189,10 @@ class RemotePlanner {
      * @param {RoomInfo} roomInfo The info object associated with the host room.
      * @param {string} targetName The name of the room to remote.
      * @param {{}[]} goals Goal objects for the pathfinder, these should be somewhere in the dependant room.
-     * @returns An object with 2 properties: 
-     * - `controllerPath`: an array of RoomPosition objects between the controller and nearest road in the host room.
-     * - `sourcesPaths`: an array of arrays of RoomPositions between each source and the nearest road in the host room.
+     * @returns An array of arrays of RoomPositions between each source and the nearest road in the host room.
      * Each element corresponds to a unique path.
      */
-    getRemotePaths(roomInfo, targetName, goals) {
+    getSourcePaths(roomInfo, targetName, goals) {
         const remoteInfo = Memory.rooms[targetName];
 
         // Make our cost matrix, setting structures as unwalkable,
@@ -212,55 +215,97 @@ class RemotePlanner {
             return new PathFinder.CostMatrix();
         }
 
-        // Let's get a path from the remote's controller to the closest existing road in the dependant room
-        const controllerPos = new RoomPosition(remoteInfo.controller.pos.x, remoteInfo.controller.pos.y, targetName);
-        const controllerResult = PathFinder.search(controllerPos, goals, {
-            roomCallback: getCostMatrix,
-        });
-
-        // We need a full path for the rest of the steps
-        if (controllerResult.incomplete) {
-            console.log("could not complete path in: " + targetName + ", dumping info...");
-            console.log("controllerPos: " + controllerPos);
-            console.log("ops: " + controllerResult.ops);
-            console.log("cost: " + controllerResult.cost);
-            console.log("path: ");
-            controllerResult.path.forEach((point) => console.log(point));
-            console.log("goals: ");
-            goals.forEach((goal) => console.log(goal.pos));
-
-            return;
-        }
-
-        // Let's append all of our paths from our controller path to our source paths to allow them to combine paths
-        // This will result in minor pathing efficiency detriments, but will also allow us to save on upkeep costs
-        goals.push(...controllerResult.path.map((path) => { return { pos: path, range: 1 } }));
-
-        // Next, let's do the same thing but for the remote's sources
+        // Let's find paths to each source in the room
         const sourceResults = [];
         remoteInfo.sources.forEach(source => {
             const sourcePos = new RoomPosition(source.pos.x, source.pos.y, targetName);
             const result = PathFinder.search(sourcePos, goals, {
                 roomCallback: getCostMatrix,
             });
-            sourceResults.push(result);
+
+            // If we're missing any paths this won't work, return early
+            if (result.incomplete) {
+                console.log("No source path found in " + targetName);
+                return;
+            }
+
+            sourceResults.push(result.path);
 
             // Push path to allow sources to share path segments as well
             // This will result in minor pathing efficiency detriments, but will also allow us to save on upkeep costs
             goals.push(...result.path.map((path) => { return { pos: path, range: 1 } }));
         });
 
-        // Same thing for sources
-        for (const result of sourceResults) {
-            if (result.incomplete) {
-                return;
+        return sourceResults;
+    }
+
+    /**
+     * Gets paths from remote sources to goals in the homeroom, only allowing planned roads as transport except in the home room.
+     * @param {RoomInfo} roomInfo Info for the homeroom.
+     * @param {string} targetName Name of the remote to plan for.
+     * @param {[]} goals An array of goals objects for the pathfinder to use. Should have pos and range attributes. 
+     * @param {RoomPosition[]} plannedRoads An array of all planned roads in rooms we expect haulers to traverse through.
+     * @returns 
+     */
+    getHaulerPaths(roomInfo, targetName, goals, plannedRoads) {
+
+        // Setup an unwalkable matrix for room we shouldn't go through
+        const unwalkable = new PathFinder.CostMatrix();
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                unwalkable.set(x, y, 255);
             }
         }
 
-        return {
-            controllerPath: controllerResult.path,
-            sourcePaths: sourceResults.map((r) => r.path),
-        };
+        // Generate cost matrices for each room we're planning on moving through
+        const matrices = { [roomInfo.room.name]: new PathFinder.CostMatrix() };
+        plannedRoads.forEach((road) => {
+            if (!matrices[road.roomName]) {
+                matrices[road.roomName] = unwalkable.clone();
+            }
+            matrices[road.roomName].set(road.x, road.y, 1);
+        });
+
+        // Make an ordinary matrix for our home room
+        roomInfo.room.find(FIND_STRUCTURES).forEach((s) => {
+            if (s.structureType === STRUCTURE_ROAD) {
+                matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, 1);
+            }
+            else if (s.structureType !== STRUCTURE_CONTAINER &&
+                (s.structureType !== STRUCTURE_RAMPART || !s.my)) {
+                matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, 255);
+            }
+        });
+
+        function getCostMatrix(roomName) {
+            if (matrices[roomName]) {
+                return matrices[roomName];
+            }
+            return unwalkable;
+        }
+
+        // Simply path from source to goal, only allowing planned roads as transport, except in the home room
+        const haulerPaths = [];
+        const remoteInfo = Memory.rooms[targetName];
+        remoteInfo.sources.forEach((source) => {
+            const sourcePos = new RoomPosition(source.pos.x, source.pos.y, targetName);
+            const result = PathFinder.search(sourcePos, goals, {
+                // These normally wouldn't be necessary, however we should include them for our home room
+                plainCost: 2,
+                swampCost: 10,
+                roomCallback: getCostMatrix,
+            });
+
+            // No path found!
+            if (result.incomplete) {
+                console.log("No hauler path found in " + targetName);
+                return;
+            }
+
+            haulerPaths.push(result.path);
+        });
+
+        return haulerPaths;
     }
 
 

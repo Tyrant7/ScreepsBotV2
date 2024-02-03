@@ -70,7 +70,7 @@ class RemoteSpawnHandler {
                  memory: { role: CONSTANTS.roles.remoteHauler }};
     }
 
-    getUpkeepCosts(homeRoomInfo, remoteInfo, pathInfo) {
+    getUpkeepCosts(homeRoomInfo, remoteInfo, haulerPaths) {
 
         function calculateUpkeep(creeps, calculation) {
             return creeps.reduce((total, curr) => total + calculation(curr.body), 0) / CREEP_LIFE_TIME;
@@ -88,7 +88,7 @@ class RemoteSpawnHandler {
 
         // Haulers next
         const haulers = [];
-        pathInfo.sourcePaths.forEach((path) => {
+        haulerPaths.forEach((path) => {
             // Each source gives 10 energy per tick, and hauler is empty on the way back
             // Therefore, 20 * distance / CARRY_CAPACITY
             let neededCarry = Math.ceil(20 * path.length / CARRY_CAPACITY);

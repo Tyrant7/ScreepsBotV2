@@ -45,7 +45,8 @@ class RemoteManager {
 
         // Plan our remotes, if we haven't already
         const roomName = roomInfo.room.name;
-        if (!this.remotePlans[roomName]) {
+        let reload = !this.remotePlans[roomName];
+        if (reload) {
             const unsortedPlans = this.getRemotePlans(roomInfo, remainingSpawnCapacity);
 
             // Sort plans by distance, then efficiency score to allow creeps to be assigned under a natural priority 
@@ -62,7 +63,7 @@ class RemoteManager {
             Memory.bases[roomName] = {};
         }
 
-        if (!Memory.bases[roomName].remotes) {
+        if (!Memory.bases[roomName].remotes || reload) {
             Memory.bases[roomName].remotes = [];
             plans.forEach((remote) => Memory.bases[roomName].remotes.push({ 
                 room: remote.room, 
@@ -93,6 +94,22 @@ class RemoteManager {
         if (this.roadVisuals) {
             overlay.circles(this.roadVisuals);
         }
+        if (this.haulerPaths) {
+            const colours = [
+                "#FF0000",
+                "#00FF00",
+                "#0000FF",
+            ];
+
+            let i = 0;
+            this.haulerPaths.forEach((path) => {
+                const pathFixed = path.map((point) => {
+                    return { x: point.x, y: point.y, roomName: point.roomName };
+                });
+                overlay.circles(pathFixed, { fill: colours[i % colours.length], radius: 0.25, opacity: 0.3 });
+                i++;
+            });
+        }
     }
 
     getRemotePlans(roomInfo, remainingSpawnCapacity) {
@@ -110,9 +127,13 @@ class RemoteManager {
         // Track road postions for debugging
         if (DEBUG.drawOverlay) {
             const allRoads = bestBranch.reduce((roads, node) => roads.concat(node.roads), []);     
-            this.roadVisuals =  allRoads.map((road) => { 
+            this.roadVisuals = allRoads.map((road) => { 
                 return { x: road.x, y: road.y, roomName: road.roomName };
             });
+
+            const allHaulerPaths = [];
+            bestBranch.forEach((node) => allHaulerPaths.push(...node.haulerPaths));
+            this.haulerPaths = allHaulerPaths;
         }
 
         // CPU tracking

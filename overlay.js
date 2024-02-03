@@ -1,5 +1,5 @@
 const defaultStyle = {
-    colour: "#FFFFFF",
+    fill: "#FFFFFF",
 }
 
 module.exports = {

@@ -78,10 +78,12 @@ class RemoteBuilderTaskGenerator {
             }
 
             const intentResult = creep.build(buildTarget);
+            /*
             console.log("Intent result: " + intentResult + " with creep: " + creep.name);
             if (intentResult === ERR_INVALID_TARGET) {
                 console.log(creep.name + ": " + buildTarget);
             }
+            */
 
             if (intentResult === ERR_NOT_IN_RANGE) {
                 creep.moveTo(buildTarget);
