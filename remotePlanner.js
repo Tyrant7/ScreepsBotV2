@@ -230,10 +230,6 @@ class RemotePlanner {
             }
 
             sourceResults.push(result.path);
-
-            // Push path to allow sources to share path segments as well
-            // This will result in minor pathing efficiency detriments, but will also allow us to save on upkeep costs
-            goals.push(...result.path.map((path) => { return { pos: path, range: 1 } }));
         });
 
         return sourceResults;
