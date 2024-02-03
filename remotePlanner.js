@@ -143,6 +143,11 @@ class RemotePlanner {
         const grossEnergy = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME * remoteInfo.sources.length;
         const netEnergy = grossEnergy - (upkeep.structures + upkeep.creeps.energy);
 
+        // We're going to allocate a little bit of extra cost to this remote for the energy in produces
+        // This is for the home room to be able to use the energy we produce here
+        // We'll use a simple formula of the cost to spawn a single WORK part for each energy we produce each tick
+        upkeep.creeps.spawnTime += Math.floor(netEnergy) * CREEP_SPAWN_TIME / CREEP_LIFE_TIME;
+
         // Here's the score and cost of this remote so we can calculate which are most important
         return {
             score: netEnergy,
