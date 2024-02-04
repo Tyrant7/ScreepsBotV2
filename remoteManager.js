@@ -229,7 +229,7 @@ class RemoteManager {
 
         // If we can't see the room, let's just decide based on whether or not we have enough 
         // builders to build the remaining planned roads or not
-        return (remoteInfo.roads.length > builders.length) ? 1 : 0;
+        return { ideal: Memory.rooms[remoteInfo.room].sources.length, current: builders.length };
     }
 
     /**
