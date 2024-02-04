@@ -71,9 +71,21 @@ class RemoteManager {
         }
 
         // Let's process each remote
+        const neededSpawns = {};
         plans.forEach((remote) => {
-            this.processRemote(roomInfo, remote);
+            const remoteSpawns = this.processRemote(roomInfo, remote);
+
+            // Sum up the needed spawns of each role for all remotes
+            for (const role in remoteSpawns) {
+                if (!neededSpawns[role]) {
+                    neededSpawns[role] = 0;
+                }
+                neededSpawns[role] += remoteSpawns[role];
+            }
         });
+
+        console.log("Wahoo!");
+        Object.keys(neededSpawns).forEach((key) => console.log(key + ": " + neededSpawns[key]));
 
         // Overlays
         this.drawOverlays();
@@ -168,16 +180,20 @@ class RemoteManager {
             });
         }
 
-        // Handle some relevant things in this remote
-        this.handleConstruction(roomInfo, remoteInfo);
-        this.handleClaimers(roomInfo, remoteInfo);
-        this.handleMiners(roomInfo, remoteInfo);
+        // Handle some relevant things in this remote, and track needed spawns
+        const neededSpawns = {};
+        neededSpawns.builders = this.handleConstruction(roomInfo, remoteInfo);
+        neededSpawns.claimers = this.handleClaimers(roomInfo, remoteInfo);
+        neededSpawns.miners = this.handleMiners(roomInfo, remoteInfo);
+        return neededSpawns;
     }
 
+    
     /**
      * Handles requesting builders and placing sites in this remote if needed.
      * @param {RoomInfo} roomInfo The info object associated with the home room of this remote.
      * @param {{}} remoteInfo An object containing relevant info about the remote.
+     * @returns {number} The number of builders wanted by this room.
      */
     handleConstruction(roomInfo, remoteInfo) {
 
@@ -187,14 +203,15 @@ class RemoteManager {
             remoteInfo.roads.length) {
 
             // Allocate builders
-            const builders = this.handleBuilderCount(roomInfo, remoteInfo);
+            const builders = roomInfo.remoteBuilders.filter((builder) => builder.memory.targetRoom === remoteInfo.room);
+            const wantedBuilderCount = this.handleBuilderCount(roomInfo, remoteInfo, builders);
 
             // Manage sites
             const sites = this.handleSites(roomInfo, remoteInfo, builders);
 
             // Must not have vision in the room
             if (!builders || !sites) {
-                return;
+                return wantedBuilderCount;
             }
 
             // When we have fewer things left to build than the number of builders assigned to this room, 
@@ -204,28 +221,28 @@ class RemoteManager {
                 delete extra.memory.targetRoom;
             }
         }
+        return wantedBuilderCount;
     }
 
     /**
      * Handles allocating more builders to this remote if under the ideal amount.
      * @param {RoomInfo} roomInfo The info object for the home room to pull builders from.
      * @param {{}} remoteInfo An object containing relevant info about the remote.
-     * @returns An array of the builders currently allocated to this remote after assignment.
+     * @returns {number} The number of builders still needed by this remote.
      */
-    handleBuilderCount(roomInfo, remoteInfo) {
+    handleBuilderCount(roomInfo, remoteInfo, builders) {
 
         // Request a builder while we have fewer than the number of sources in this room
         const unassignedBuilders = roomInfo.remoteBuilders.filter((builder) => !builder.memory.targetRoom);
-        const currentBuilders = roomInfo.remoteBuilders.filter((builder) => builder.memory.targetRoom === remoteInfo.room);
         const wantedBuilderCount = Math.max(Memory.rooms[remoteInfo.room].sources.length, 0);
-        while (wantedBuilderCount > currentBuilders.length && unassignedBuilders.length > 0) {
+        while (wantedBuilderCount > builders.length && unassignedBuilders.length > 0) {
             const unassigned = unassignedBuilders.pop();
             if (unassigned) {
                 unassigned.memory.targetRoom = remoteInfo.room;
-                currentBuilders.push(unassigned);
+                builders.push(unassigned);
             }
         }
-        return currentBuilders;
+        return wantedBuilderCount - builders.length;
     }
 
     /**
@@ -284,6 +301,7 @@ class RemoteManager {
      * Handles requesting a claimer for this remote if one does not yet exist.
      * @param {RoomInfo} roomInfo The info object for the home room to pull miners from.
      * @param {{}} remoteInfo An object containing relevant info about the remote.
+     * @returns {number} The number of claimers still needed by this remote.
      */
     handleClaimers(roomInfo, remoteInfo) {
 
@@ -297,13 +315,16 @@ class RemoteManager {
         const unassignedClaimer = roomInfo.claimers.find((claimer) => !claimer.memory.controllerID);
         if (unassignedClaimer) {
             unassignedClaimer.memory.controllerID = roomInfo.controller.id;
+            return 0;
         }
+        return 1;
     }
 
     /**
      * Handles requesting miners for this room.
      * @param {RoomInfo} roomInfo The info object for the home room to pull miners from.
      * @param {{}} remoteInfo An object containing relevant info about the remote.
+     * @returns {number} The number of miners still needed by this remote.
      */
     handleMiners(roomInfo, remoteInfo) {
 
@@ -317,11 +338,12 @@ class RemoteManager {
         // Pair them while unassigned of both exist
         while (unassignedSources.length > 0 && unassignedMiners.length > 0) {
             const miner = unassignedMiners.pop();
-            const source =  unassignedSources.pop();
+            const source = unassignedSources.pop();
             if (miner && source) {
                 miner.memory.sourceID = source.id;
             }
         }
+        return unassignedSources.length;
     }
 }
 
