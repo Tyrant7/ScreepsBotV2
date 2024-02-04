@@ -229,7 +229,7 @@ class RemoteManager {
 
         // If we can't see the room, let's just decide based on whether or not we have enough 
         // builders to build the remaining planned roads or not
-        return { ideal: Memory.rooms[remoteInfo.room].sources.length, current: builders.length };
+        return { ideal: Math.min(Memory.rooms[remoteInfo.room].sources.length, remoteInfo.roads.length), current: builders.length };
     }
 
     /**
@@ -297,8 +297,10 @@ class RemoteManager {
 
             while (currentSites.length + placed <= builders.length + 1 && remoteInfo.roads.length > 0) {
                 const next = remoteInfo.roads.pop();
-                next.createConstructionSite(STRUCTURE_ROAD);
-                placed++;
+                if (Game.rooms[next.roomName]) {
+                    next.createConstructionSite(STRUCTURE_ROAD);
+                    placed++;
+                }
             }
             return currentSites;
         }

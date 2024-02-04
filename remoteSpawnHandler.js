@@ -57,7 +57,12 @@ class RemoteSpawnHandler {
     }
 
     makeMiner(maxCost) {
-        return minerSpawnHandler.make(maxCost);
+        const body = minerSpawnHandler.make(maxCost).body;
+        return {
+            body: body,
+            name: "Remote Miner " + Game.time + " [" + body.filter((p) => p === WORK).length + "]",
+            memory: { role: CONSTANTS.roles.remoteMiner }, 
+        };
     }
 
     makeHauler(carryParts, maxCost) {
