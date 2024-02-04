@@ -11,6 +11,7 @@ global.DEBUG = {
     drawOverlay: true,
     drawRoadOverlay: true,
     drawPathOverlay: true,
+    drawContainerOverlay: true,
     trackCPUUsage: true,
 };
 

@@ -66,31 +66,60 @@ class RemoteManager {
         if (!Memory.bases[roomName].remotes || reload) {
             Memory.bases[roomName].remotes = [];
             plans.forEach((remote) => Memory.bases[roomName].remotes.push({ 
-                room: remote.room, 
-                state: CONSTANTS.remoteStates.constructing,
+                room: remote.room,
             }));
         }
 
-        // Let's update each remote's state in memory so that remote creeps know where to go and how to react
+        // Let's process each remote
         plans.forEach((remote) => {
-
-            // Let's remove all roads that have already been built or have a construction site from this plan
-            remote.roads = remote.roads.filter((road) => {
-                const room = Game.rooms[road.roomName];
-                if (!room) {
-                    return true;
-                }
-                const sites = room.lookForAt(LOOK_CONSTRUCTION_SITES, road.x, road.y);
-                const roads = room.lookForAt(LOOK_STRUCTURES, road.x, road.y, { filter: { structureType: STRUCTURE_ROAD } });
-                return sites.length === 0 && roads.length === 0;
-            });
-
-            const match = Memory.bases[roomName].remotes.find((r) => r.room === remote.room);
-            match.state = this.getState(remote);
-            this.handleRemote(roomInfo, remote, match.state);
+            this.processRemote(roomInfo, remote);
         });
 
         // Overlays
+        this.drawOverlays();
+    }
+
+    getRemotePlans(roomInfo, remainingSpawnCapacity) {
+
+        const cpu = Game.cpu.getUsed();
+
+        // Here's out best combination of remotes and the order they have to be built in
+        // Keep in mind that distance 1's are interchangable, so we can use a greedy algorithm 
+        // to easily pull the most efficient one
+        const bestBranch = remotePlanner.planRemotes(roomInfo, remainingSpawnCapacity);
+        if (!bestBranch) {
+            return;
+        }
+
+        // Track road postions for debugging
+        if (DEBUG.drawOverlay) {
+            if (DEBUG.drawRoadOverlay) {
+                const allRoads = bestBranch.reduce((roads, node) => roads.concat(node.roads), []);     
+                this.roadVisuals = allRoads;
+            }
+            if (DEBUG.drawPathOverlay) {
+                const allHaulerPaths = [];
+                bestBranch.forEach((node) => allHaulerPaths.push(...node.haulerPaths));
+                this.haulerPaths = allHaulerPaths;
+            }
+            if (DEBUG.drawContainerOverlay) {
+                const allContainerPositions = bestBranch.reduce((containers, node) => containers.concat(node.containers), []);
+                this.containerPositions = allContainerPositions;
+            }
+        }
+
+        // CPU tracking
+        if (DEBUG.trackCPUUsage) {
+            console.log("Planned remotes with: " + (Game.cpu.getUsed() - cpu) + " cpu");
+            bestBranch.forEach((b) => console.log("Room " + b.room + " with score: " + b.score + " and cost: " + b.cost));
+            const totalCost = bestBranch.reduce((usage, node) => usage + node.cost, 0);
+            console.log("Total spawn usage after remotes: " + (CONSTANTS.maxBaseSpawnCapacity - remainingSpawnCapacity + totalCost));
+        }
+
+        return bestBranch;
+    }
+
+    drawOverlays() {
         if (DEBUG.drawRoadOverlay && this.roadVisuals) {
             overlay.circles(this.roadVisuals);
         }
@@ -110,63 +139,71 @@ class RemoteManager {
                 i++;
             });
         }
-    }
-
-    getRemotePlans(roomInfo, remainingSpawnCapacity) {
-
-        const cpu = Game.cpu.getUsed();
-
-        // Here's out best combination of remotes and the order they have to be built in
-        // Keep in mind that distance 1's are interchangable, so we can use a greedy algorithm 
-        // to easily pull the most efficient one
-        const bestBranch = remotePlanner.planRemotes(roomInfo, remainingSpawnCapacity);
-        if (!bestBranch) {
-            return;
-        }
-
-        // Track road postions for debugging
-        if (DEBUG.drawOverlay) {
-            const allRoads = bestBranch.reduce((roads, node) => roads.concat(node.roads), []);     
-            this.roadVisuals = allRoads.map((road) => { 
-                return { x: road.x, y: road.y, roomName: road.roomName };
-            });
-
-            const allHaulerPaths = [];
-            bestBranch.forEach((node) => allHaulerPaths.push(...node.haulerPaths));
-            this.haulerPaths = allHaulerPaths;
-        }
-
-        // CPU tracking
-        if (DEBUG.trackCPUUsage) {
-            console.log("Planned remotes with: " + (Game.cpu.getUsed() - cpu) + " cpu");
-            bestBranch.forEach((b) => console.log("Room " + b.room + " with score: " + b.score + " and cost: " + b.cost));
-            const totalCost = bestBranch.reduce((usage, node) => usage + node.cost, 0);
-            console.log("Total spawn usage after remotes: " + (CONSTANTS.maxBaseSpawnCapacity - remainingSpawnCapacity + totalCost));
-        }
-
-        return bestBranch;
-    }
-
-    getState(remoteInfo) {
-
-        // TODO //
-
-        return CONSTANTS.remoteStates.constructing;
-    }
-
-    handleRemote(roomInfo, remoteInfo, state) {
-
-        // TODO //
-        // Other states
-
-        if (state === CONSTANTS.remoteStates.constructing) {
-            this.handleConstruction(roomInfo, remoteInfo);
+        if (DEBUG.drawContainerOverlay && this.containerPositions) {
+            overlay.rects(this.containerPositions);
         }
     }
 
+    processRemote(roomInfo, remoteInfo) {
+
+        // Let's remove all roads that have already been built or have a construction site from this plan
+        remoteInfo.roads = remoteInfo.roads.filter((road) => {
+            const room = Game.rooms[road.roomName];
+            if (!room) {
+                return true;
+            }
+            const roadSites = room.lookForAt(LOOK_CONSTRUCTION_SITES, road.x, road.y);
+            const roads = room.lookForAt(LOOK_STRUCTURES, road.x, road.y, { filter: { structureType: STRUCTURE_ROAD } });
+            return roadSites.length === 0 && roads.length === 0;
+        });
+
+        // Handle some relevant things in this remote
+        this.handleConstruction(roomInfo, remoteInfo);
+        this.handleClaimers(roomInfo, remoteInfo);
+        this.handleMiners(roomInfo, remoteInfo);
+    }
+
+    /**
+     * Handles requesting builders and placing sites in this remote if needed.
+     * @param {RoomInfo} roomInfo The info object associated with the home room of this remote.
+     * @param {{}} remoteInfo An object containing relevant info about the remote.
+     */
     handleConstruction(roomInfo, remoteInfo) {
 
-        // Request a builder if we have fewer than the number of sources in this room
+        // Handle builders for this remote if we have things left to build
+        const room = Game.rooms[remoteInfo.room];
+        if ((room && room.find(FIND_CONSTRUCTION_SITES).length > 0) ||
+            remoteInfo.roads.length) {
+
+            // Allocate builders
+            const builders = this.handleBuilderCount(roomInfo, remoteInfo);
+
+            // Manage sites
+            const sites = this.handleSites(roomInfo, remoteInfo, builders);
+
+            // Must not have vision in the room
+            if (!builders || !sites) {
+                return;
+            }
+
+            // When we have fewer things left to build than the number of builders assigned to this room, 
+            // even after creating more sites, it means that there is nothing left to build and we can mark the extra builders for reassignment
+            while (sites.length < builders.length) {
+                const extra = builders.pop();
+                delete extra.memory.targetRoom;
+            }
+        }
+    }
+
+    /**
+     * Handles allocating more builders to this remote if under the ideal amount.
+     * @param {RoomInfo} roomInfo The info object for the home room to pull builders from.
+     * @param {{}} remoteInfo An object containing relevant info about the remote.
+     * @returns An array of the builders currently allocated to this remote after assignment.
+     */
+    handleBuilderCount(roomInfo, remoteInfo) {
+
+        // Request a builder while we have fewer than the number of sources in this room
         const unassignedBuilders = roomInfo.remoteBuilders.filter((builder) => !builder.memory.targetRoom);
         const currentBuilders = roomInfo.remoteBuilders.filter((builder) => builder.memory.targetRoom === remoteInfo.room);
         const wantedBuilderCount = Math.max(Memory.rooms[remoteInfo.room].sources.length, 0);
@@ -177,34 +214,17 @@ class RemoteManager {
                 currentBuilders.push(unassigned);
             }
         }
+        return currentBuilders;
+    }
 
-        // Now let's handle construction sites
-        // We should ideally keep nBuilders + 1 sites active at a time
-        const room = Game.rooms[remoteInfo.room];
-        if (room) {
-
-            // Let's place the wanted site currently closest to an arbirary source
-            const source = room.find(FIND_SOURCES)[0];
-            const currentSites = room.find(FIND_CONSTRUCTION_SITES);
-            remoteInfo.roads.sort((a, b) => {
-                return source.pos.getRangeTo(b) - source.pos.getRangeTo(a);
-            });
-
-            let placed = 0;
-            while (currentSites.length + placed <= currentBuilders.length + 1 && remoteInfo.roads.length > 0) {
-                const next = remoteInfo.roads.pop();
-                const sitePos = new RoomPosition(next.x, next.y, next.roomName);
-                sitePos.createConstructionSite(STRUCTURE_ROAD);
-                placed++;
-            }
-
-            // Finally, when we have fewer things left to build than the number of builders assigned to this room, 
-            // even after creating more sites, it means that there is nothing left to build and we can mark the extra builders for reassignment
-            while (currentSites.length < currentBuilders.length) {
-                const extra = currentBuilders.pop();
-                delete extra.memory.targetRoom;
-            }
-        }
+    /**
+     * Handles the appropriate placing of construction sites for the target remote.
+     * @param {RoomInfo} roomInfo The info object for the home room of the remote.
+     * @param {{}} remoteInfo An object containing relevant info about the remote.
+     * @param {Creep[]} builders An array of builders assigned to this remote.
+     * @returns An array of the current construction sites in the remote after new placement.
+     */
+    handleSites(roomInfo, remoteInfo, builders) {
 
         // Let's take a simple approach to making sure the inside our main room are built by simply placing all of them
         // Our aggressive base building allocation should take care of this quite easily
@@ -214,6 +234,71 @@ class RemoteManager {
                 sitePos.createConstructionSite(STRUCTURE_ROAD);
             }
         });
+
+        // We should ideally keep nBuilders + 1 sites active at a time
+        const room = Game.rooms[remoteInfo.room];
+        if (room) {
+            // Let's place the wanted site currently closest to an arbirary source
+            const source = room.find(FIND_SOURCES)[0];
+            const currentSites = room.find(FIND_CONSTRUCTION_SITES);
+            remoteInfo.roads.sort((a, b) => {
+                return source.pos.getRangeTo(b) - source.pos.getRangeTo(a);
+            });
+
+            let placed = 0;
+            while (currentSites.length + placed <= builders.length + 1 && remoteInfo.roads.length > 0) {
+                const next = remoteInfo.roads.pop();
+                const sitePos = new RoomPosition(next.x, next.y, next.roomName);
+                sitePos.createConstructionSite(STRUCTURE_ROAD);
+                placed++;
+            }
+            return currentSites;
+        }
+        return null;
+    }
+
+    /**
+     * Handles requesting a claimer for this remote if one does not yet exist.
+     * @param {RoomInfo} roomInfo The info object for the home room to pull miners from.
+     * @param {{}} remoteInfo An object containing relevant info about the remote.
+     */
+    handleClaimers(roomInfo, remoteInfo) {
+
+        // Make sure there isn't a claimer already assigned to this room
+        const claimer = roomInfo.claimers.find((claimer) => claimer.memory.controllerID === remoteInfo.controller.id);
+        if (claimer) {
+            return;
+        }
+
+        // Find an unused claimer
+        const unassignedClaimer = roomInfo.claimers.find((claimer) => !claimer.memory.controllerID);
+        if (unassignedClaimer) {
+            unassignedClaimer.memory.controllerID = roomInfo.controller.id;
+        }
+    }
+
+    /**
+     * Handles requesting miners for this room.
+     * @param {RoomInfo} roomInfo The info object for the home room to pull miners from.
+     * @param {{}} remoteInfo An object containing relevant info about the remote.
+     */
+    handleMiners(roomInfo, remoteInfo) {
+
+        // Find all unassigned sources in this room
+        const unassignedSources = Memory.rooms[remoteInfo.room].sources.filter((source) => {
+            return !roomInfo.remoteMiners.find((miner) => miner.memory.sourceID === source.id); 
+        });
+        // And all unassigned miners
+        const unassignedMiners = roomInfo.remoteMiners.filter((miner) => !miner.memory.sourceID);
+
+        // Pair them while unassigned of both exist
+        while (unassignedSources.length > 0 && unassignedMiners.length > 0) {
+            const miner = unassignedMiners.pop();
+            const source =  unassignedSources.pop();
+            if (miner && source) {
+                miner.memory.sourceID = source.id;
+            }
+        }
     }
 }
 

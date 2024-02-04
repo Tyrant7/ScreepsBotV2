@@ -17,6 +17,8 @@ class RoomInfo {
         this.haulers = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.hauler);
         this.scouts = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.scout);
         this.remoteBuilders = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.remoteBuilder);
+        this.remoteMiners = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.remoteMiner);
+        this.claimers = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.claimer);
 
         this.spawns = room.find(FIND_MY_SPAWNS);
 

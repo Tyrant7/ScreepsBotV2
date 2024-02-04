@@ -52,6 +52,7 @@ class RemotePlanner {
                     .map((road) => { return { pos: road.pos, range: 1 } });
                 const distOnePaths = this.getSourcePaths(roomInfo, distOne, goals);
                 const distOneRoadPositions = this.planRoads(distOnePaths);
+                const distOneContainerPositions = this.planContainers(distOne, distOnePaths);
                 const distOneHaulerPaths = this.getHaulerPaths(roomInfo, distOne, { pos: roomInfo.room.storage.pos, range: 1 }, distOneRoadPositions);
                 const scoreCost = this.scoreRemote(roomInfo, distOne, distOneHaulerPaths, distOneRoadPositions.length);
 
@@ -63,6 +64,7 @@ class RemotePlanner {
                         const goals = distOneRoadPositions.map(roadPos => { return { pos: roadPos, range: 1 } });
                         const distTwoPaths = this.getSourcePaths(roomInfo, distTwo, goals);
                         const distTwoRoadPositions = this.planRoads(distTwoPaths);
+                        const distTwoContainerPositions = this.planContainers(distTwo, distTwoPaths);
                         const distTwoHaulerPaths = this.getHaulerPaths(roomInfo, distTwo, 
                             { pos: roomInfo.room.storage.pos, range: 1 }, distTwoRoadPositions.concat(distOneRoadPositions));
                         const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoHaulerPaths, distTwoRoadPositions.length);
@@ -73,6 +75,7 @@ class RemotePlanner {
                             score: scoreCost.score,
                             cost: scoreCost.cost,
                             roads: distTwoRoadPositions,
+                            containers: distTwoContainerPositions,
                             haulerPaths: distTwoHaulerPaths,
                             children: [],
                         });
@@ -85,6 +88,7 @@ class RemotePlanner {
                     score: scoreCost.score,
                     cost: scoreCost.cost,
                     roads: distOneRoadPositions,
+                    containers: distOneContainerPositions,
                     haulerPaths: distOneHaulerPaths,
                     children: children,
                 });
@@ -96,8 +100,9 @@ class RemotePlanner {
     }
 
     /**
-     * Plans roads for a remote in the room matching roomName with a dependant.
-     * @param {[]} remotePaths Paths for this remote obtained using getSourcePaths()
+     * Plans roads for a remote given the paths to each source.
+     * @param {RoomPosition[][]} sourcePaths Paths for this remote obtained using getSourcePaths()
+     * @returns {RoomPosition[]} An array of RoomPositions for roads for this remote.
      */
     planRoads(sourcePaths) {
 
@@ -108,6 +113,29 @@ class RemotePlanner {
         });
 
         return allRoads;
+    }
+
+    /**
+     * Plans containers for a remote given the roads and room name.
+     * @param {string} targetName The name of the remote room.
+     * @param {RoomPosition[][]} remotePaths Paths for this remote obtained using getSourcePaths()
+     * @returns {RoomPosition[]} An array of RoomPositions for containers for this remote.
+     */
+    planContainers(targetName, sourcePaths) {
+        const remoteInfo = Memory.rooms[targetName];
+
+        // Look for spaces around each source where we can place a container
+        // Ideally we place them next to roads, but not directly on top of them
+        const containers = [];
+        remoteInfo.sources.forEach((source) => {
+
+            // Figure out which source path matches this source
+            const matchingPath = sourcePaths.find((path) => path[0].getRangeTo(source.pos.x, source.pos.y) <= 1);
+
+            // Push the first step of the path
+            containers.push(matchingPath[0]);
+        });
+        return containers;
     }
 
     /**

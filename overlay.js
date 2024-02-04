@@ -45,7 +45,7 @@ module.exports = {
             if (!visuals[pos.roomName]) {
                 visuals[pos.roomName] = new RoomVisual(pos.roomName);
             }
-            visuals[pos.roomName].rect(pos.x, pos.y, width, height, style);
+            visuals[pos.roomName].rect(pos.x - width / 2, pos.y - height / 2, width, height, style);
         });
     },
 
