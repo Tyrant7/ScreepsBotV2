@@ -84,8 +84,13 @@ class RemoteManager {
             }
         });
 
-        console.log("Wahoo!");
-        Object.keys(neededSpawns).forEach((key) => console.log(key + ": " + neededSpawns[key]));
+        // Let's track this spawn need now so that our SpawnHandler can read from it later
+        if (!Memory.bases[roomName].remoteSpawns) {
+            Memory.bases[roomName].remoteSpawns = {};
+        }
+        for (const role in neededSpawns) {
+            Memory.bases[roomName].remoteSpawns[role] = neededSpawns[role];
+        }
 
         // Overlays
         this.drawOverlays();
