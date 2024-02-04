@@ -31,6 +31,7 @@ const MinerTaskGenerator = require("minerTaskGenerator");
 const ScoutTaskGenerator = require("scoutTaskGenerator");
 
 const RemoteBuilderTaskGenerator = require("remoteBuilderTaskGenerator");
+const ReserverTaskGenerator = require("reserverTaskGenerator");
 
 const workerManager = new CreepManager(new WorkerTaskGenerator());
 const haulerManager = new CreepManager(new HaulerTaskGenerator());
@@ -38,6 +39,7 @@ const minerManager = new CreepManager(new MinerTaskGenerator());
 const scoutManager = new CreepManager(new ScoutTaskGenerator());
 
 const remoteBuilderManager = new CreepManager(new RemoteBuilderTaskGenerator());
+const reserverManager = new CreepManager(new ReserverTaskGenerator());
 
 // Mapping
 const creepRoleMap = {
@@ -46,6 +48,7 @@ const creepRoleMap = {
     [CONSTANTS.roles.miner]: minerManager,
     [CONSTANTS.roles.scout]: scoutManager,
     [CONSTANTS.roles.remoteBuilder]: remoteBuilderManager,
+    [CONSTANTS.roles.reserver]: reserverManager,
 };
 
 // Spawning

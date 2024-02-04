@@ -78,9 +78,10 @@ class RemoteManager {
             // Sum up the needed spawns of each role for all remotes
             for (const role in remoteSpawns) {
                 if (!neededSpawns[role]) {
-                    neededSpawns[role] = 0;
+                    neededSpawns[role] = { current: 0, ideal: 0 };
                 }
-                neededSpawns[role] += remoteSpawns[role];
+                neededSpawns[role].current += remoteSpawns[role].current;
+                neededSpawns[role].ideal += remoteSpawns[role].ideal;
             }
         });
 
@@ -188,7 +189,7 @@ class RemoteManager {
         // Handle some relevant things in this remote, and track needed spawns
         const neededSpawns = {};
         neededSpawns.builders = this.handleConstruction(roomInfo, remoteInfo);
-        neededSpawns.claimers = this.handleClaimers(roomInfo, remoteInfo);
+        neededSpawns.reservers = this.handleReservers(roomInfo, remoteInfo);
         neededSpawns.miners = this.handleMiners(roomInfo, remoteInfo);
         return neededSpawns;
     }
@@ -235,7 +236,7 @@ class RemoteManager {
      * Handles allocating more builders to this remote if under the ideal amount.
      * @param {RoomInfo} roomInfo The info object for the home room to pull builders from.
      * @param {{}} remoteInfo An object containing relevant info about the remote.
-     * @returns {number} The number of builders still needed by this remote.
+     * @returns {{}}} An object containing the number of builders still needed by this remote, and the total amount of builders this remote needs.
      */
     handleBuilderCount(roomInfo, remoteInfo, builders) {
 
@@ -249,7 +250,7 @@ class RemoteManager {
                 builders.push(unassigned);
             }
         }
-        return wantedBuilderCount - builders.length;
+        return { ideal: wantedBuilderCount, current: builders.length };
     }
 
     /**
@@ -308,9 +309,9 @@ class RemoteManager {
      * Handles requesting a claimer for this remote if one does not yet exist.
      * @param {RoomInfo} roomInfo The info object for the home room to pull miners from.
      * @param {{}} remoteInfo An object containing relevant info about the remote.
-     * @returns {number} The number of claimers still needed by this remote.
+     * @returns {{}}} An object containing the number of claimers still needed by this remote, and the total amount of claimers this remote needs.
      */
-    handleClaimers(roomInfo, remoteInfo) {
+    handleReservers(roomInfo, remoteInfo) {
 
         // Make sure there isn't a claimer already assigned to this room
         const claimer = roomInfo.claimers.find((claimer) => claimer.memory.controllerID === remoteInfo.controller.id);
@@ -322,21 +323,22 @@ class RemoteManager {
         const unassignedClaimer = roomInfo.claimers.find((claimer) => !claimer.memory.controllerID);
         if (unassignedClaimer) {
             unassignedClaimer.memory.controllerID = roomInfo.controller.id;
-            return 0;
+            return { ideal: 1, current: 1 };
         }
-        return 1;
+        return { ideal: 1, current: 0 };
     }
 
     /**
      * Handles requesting miners for this room.
      * @param {RoomInfo} roomInfo The info object for the home room to pull miners from.
      * @param {{}} remoteInfo An object containing relevant info about the remote.
-     * @returns {number} The number of miners still needed by this remote.
+     * @returns {{}}} An object containing the number of miners still needed by this remote, and the total amount of miners this remote needs.
      */
     handleMiners(roomInfo, remoteInfo) {
 
         // Find all unassigned sources in this room
-        const unassignedSources = Memory.rooms[remoteInfo.room].sources.filter((source) => {
+        const sources = Memory.rooms[remoteInfo.room].sources;
+        const unassignedSources = sources.filter((source) => {
             return !roomInfo.remoteMiners.find((miner) => miner.memory.sourceID === source.id); 
         });
         // And all unassigned miners
@@ -348,9 +350,15 @@ class RemoteManager {
             const source = unassignedSources.pop();
             if (miner && source) {
                 miner.memory.sourceID = source.id;
+                miner.memory.targetRoom = remoteInfo.room;
             }
         }
-        return unassignedSources.length;
+        return { ideal: sources.length, current: sources.length - unassignedSources.length };
+    }
+
+    handleHaulers(roomInfo, remoteInfo) {
+
+
     }
 }
 

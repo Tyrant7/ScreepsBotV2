@@ -165,7 +165,7 @@ class RemotePlanner {
         upkeep.structures = totalContainerUpkeep + totalRoadUpkeep;
 
         // Now for creeps spawn costs, total up energy and spawn time upkeeps
-        upkeep.creeps = remoteSpawnHandler.getUpkeepCosts(roomInfo, remoteInfo, haulerPaths);
+        upkeep.creeps = remoteSpawnHandler.getUpkeepEstimates(roomInfo, remoteInfo, haulerPaths);
 
         // Calculate net energy produced in this room
         const grossEnergy = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME * remoteInfo.sources.length;

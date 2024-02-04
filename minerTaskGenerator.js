@@ -8,6 +8,9 @@ class MinerTaskGenerator {
         const actionStack = [];
         actionStack.push(function(creep, target) {
 
+            // Mark this source as reserved
+            creep.memory.sourceID = target.id;
+
             // Once we get close enough to mine, start checking for containers to stand on
             if (creep.pos.getRangeTo(target) <= 1) {
 
@@ -64,7 +67,9 @@ class MinerTaskGenerator {
             // Always return false since miners can never finish their task
             return false;
         });
-        return [new Task(creep.memory.sourceID, "mine", actionStack)];
+
+        const unreserved = roomInfo.getUnreservedSources();
+        return [new Task(unreserved[0].id, "mine", actionStack)];
     }
 }
 

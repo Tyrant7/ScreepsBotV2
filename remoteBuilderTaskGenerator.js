@@ -1,5 +1,6 @@
 const Task = require("task");
 const harvest = require("harvest");
+const moveToRoom = require("moveToRoom");
 
 class RemoteBuilderTaskGenerator {
 
@@ -36,24 +37,11 @@ class RemoteBuilderTaskGenerator {
         // We're not in the room yet, let's get over there
         const actionStack = [];
         actionStack.push(function(creep, target) {
-
             // Wait to get reassigned
             if (!target) {
                 return true;
             }
-
-            // Don't reassign when standing on an exit
-            const leavingOrEntering = creep.pos.x >= 49 ||
-                                      creep.pos.x <= 0  ||
-                                      creep.pos.y >= 49 ||
-                                      creep.pos.y <= 0;
-
-            const moveTarget = Memory.rooms[target].controller.pos;
-            const pos = new RoomPosition(moveTarget.x, moveTarget.y, target);
-            if (creep.room.name === target && !leavingOrEntering) {
-                return true;
-            }
-            creep.moveTo(pos);
+            moveToRoom(creep, target);
         });
         return [new Task(creep.memory.targetRoom, "move", actionStack)];
     }

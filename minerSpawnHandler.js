@@ -5,7 +5,7 @@ class MinerSpawnHandler {
     getNextSpawn(roomInfo) {
         const sources = roomInfo.getUnreservedSources();
         for (const source of sources) {
-            return this.make(source, roomInfo.room.energyCapacityAvailable);
+            return this.make(roomInfo.room.energyCapacityAvailable);
         }
     }
 
@@ -13,14 +13,14 @@ class MinerSpawnHandler {
         const spawns = [];
         const sources = roomInfo.getSources();
         for (const source of sources) {
-            spawns.push(this.make(source, roomInfo.room.energyCapacityAvailable));
+            spawns.push(this.make(roomInfo.room.energyCapacityAvailable));
         }
         return spawns;
     }
 
-    make(source, maxCost) {
+    make(maxCost) {
         // Calculate an average energy produced for this source
-        const sourceEnergy = source.energyCapacity / ENERGY_REGEN_TIME;
+        const sourceEnergy = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME;
 
         // Figure out how many WORK parts it will take to harvest this source
         const workCount = (sourceEnergy / HARVEST_POWER) + 1;
@@ -39,8 +39,7 @@ class MinerSpawnHandler {
         }
         return { body: body, 
                  name: "Miner " + Game.time + " [" + lvl + "]",
-                 memory: { role: CONSTANTS.roles.miner,
-                           sourceID: source.id }};
+                 memory: { role: CONSTANTS.roles.miner }};
     }
 
     getTotalAvgSpawnTime(roomInfo) {

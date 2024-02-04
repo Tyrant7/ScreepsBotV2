@@ -6,30 +6,29 @@ const minerSpawnHandler = new MinerSpawnHandler();
 class RemoteSpawnHandler {
 
     getNextSpawn(roomInfo) {
-        const idealSpawns = this.getIdealSpawns(roomInfo);
-        if (roomInfo.remoteBuilders.length < idealSpawns.length) {
-            return idealSpawns[0];
+
+        const base = Memory.bases[roomInfo.room.name];
+        if (!base) {
+            return;
         }
-    }
-
-    getIdealSpawns(roomInfo) {
-        // Let's start by requesting builders for remotes that are in construction
-        const constructingRemotes = Memory.bases[roomInfo.room.name].remotes
-            .filter((remote) => remote.state === 0);
-
-        const sourceCounts = constructingRemotes.map((remote) => {
-            return { room: remote.room, count: Memory.rooms[remote.room].sources.length };
-        });
-
-        const spawns = [];
-        sourceCounts.forEach((remote) => {
-            for (let i = 0; i < remote.count; i++) {
-                const builder = this.makeBuilder(CONSTANTS.maxRemoteBuilderLevel, roomInfo.room.energyCapacityAvailable);
-                builder.memory.targetRoom = remote.room;
-                spawns.push(builder);
+        
+        for (const role in base.remoteSpawns) {
+            const demand = Math.max(base.remoteSpawns[role].ideal - base.remoteSpawns[role].current, 0);
+            if (demand > 0) {
+                if (role === "builders") {
+                    return this.makeBuilder(CONSTANTS.maxRemoteBuilderLevel, roomInfo.room.energyCapacityAvailable);
+                }
+                else if (role === "reservers") {
+                    return this.makeReserver();
+                }
+                else if (role === "miners") {
+                    return this.makeMiner(roomInfo.room.energyCapacityAvailable);
+                }
+                else if (role === "haulers") {
+                    return this.makeHauler(CONSTANTS.maxRemoteHaulerLevel, roomInfo.room.energyCapacityAvailable);
+                }
             }
-        });
-        return spawns;
+        }
     }
 
     makeBuilder(desiredLevel, maxCost) {
@@ -46,10 +45,19 @@ class RemoteSpawnHandler {
                  memory: { role: CONSTANTS.roles.remoteBuilder }};
     }
 
-    makeMiner(sourceInfo, maxCost) {
-        sourceInfo.energyCapacity = SOURCE_ENERGY_CAPACITY;
-        const miner = minerSpawnHandler.make(sourceInfo, maxCost);
-        return miner;
+    makeReserver() {
+        // Reservers will be made up of 2 CLAIM 2 MOVE bodies
+        // It's technically possible with 1 CLAIM 1 MOVE, but give it extra to account for 
+        // imperfections in pathing and spawning priorities
+        return {
+            body: [MOVE, MOVE, CLAIM, CLAIM],
+            name: "Reserver " + Game.time + " [2]",
+            memory: { role: CONSTANTS.roles.reserver },
+        };
+    }
+
+    makeMiner(maxCost) {
+        return minerSpawnHandler.make(maxCost);
     }
 
     makeHauler(carryParts, maxCost) {
@@ -70,7 +78,7 @@ class RemoteSpawnHandler {
                  memory: { role: CONSTANTS.roles.remoteHauler }};
     }
 
-    getUpkeepCosts(homeRoomInfo, remoteInfo, haulerPaths) {
+    getUpkeepEstimates(homeRoomInfo, remoteInfo, haulerPaths) {
 
         function calculateUpkeep(creeps, calculation) {
             return creeps.reduce((total, curr) => total + calculation(curr.body), 0) / CREEP_LIFE_TIME;
@@ -82,7 +90,7 @@ class RemoteSpawnHandler {
 
         // Start with miners
         const miners = remoteInfo.sources.map(
-            (source) => this.makeMiner(source, maxCost));
+            (source) => this.makeMiner(maxCost));
         upkeeps.energy += calculateUpkeep(miners, creepSpawnUtility.getCost);
         upkeeps.spawnTime += calculateUpkeep(miners, creepSpawnUtility.getSpawnTime);
 
@@ -104,10 +112,7 @@ class RemoteSpawnHandler {
         upkeeps.spawnTime += calculateUpkeep(haulers, creepSpawnUtility.getSpawnTime);
 
         // Finally, claimers
-        // Claimers will be made up of 2 CLAIM 2 MOVE bodies
-        // It's technically possible with 1 CLAIM 1 MOVE, but give it extra to account for 
-        // imperfections in pathing and spawning priorities
-        const claimerBody = [CLAIM, CLAIM, MOVE, MOVE];
+        const claimerBody = this.makeReserver().body;
         upkeeps.energy += creepSpawnUtility.getCost(claimerBody) / CREEP_CLAIM_LIFE_TIME;
         upkeeps.spawnTime += creepSpawnUtility.getSpawnTime(claimerBody) / CREEP_CLAIM_LIFE_TIME;
 

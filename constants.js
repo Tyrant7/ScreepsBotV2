@@ -7,10 +7,11 @@ module.exports = {
         remoteBuilder: "r_Builder",
         remoteHauler: "r_Hauler",
         remoteMiner: "r_Miner",
-        claimer: "claimer",
+        reserver: "reserver",
     },
     maxWorkerLevel: 8,
     maxHaulerLevel: 8,
     maxRemoteBuilderLevel: 4,
+    maxRemoteHaulerLevel: 8,
     maxBaseSpawnCapacity: 0.95,
 };

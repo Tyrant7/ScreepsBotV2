@@ -111,4 +111,4 @@ module.exports = function(creep, target) {
         creep.moveTo(harvest);
     }
     return false;
-}
+};
