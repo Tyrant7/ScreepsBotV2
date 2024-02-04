@@ -4,7 +4,7 @@ class MinerSpawnHandler {
 
     getNextSpawn(roomInfo) {
         const sources = roomInfo.getUnreservedSources();
-        for (const source of sources) {
+        if (sources.length > 0) {
             return this.make(roomInfo.room.energyCapacityAvailable);
         }
     }

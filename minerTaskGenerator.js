@@ -68,7 +68,19 @@ class MinerTaskGenerator {
             return false;
         });
 
+        // Don't reassign already assigned miners
+        if (creep.memory.sourceID) {
+            return [new Task(creep.memory.sourceID, "mine", actionStack)];
+        }
+
         const unreserved = roomInfo.getUnreservedSources();
+        if (unreserved.length === 0) {
+            // Wait for an opening
+            // TODO //
+            // Fix this so that early replacement can function
+            return null;
+        } 
+
         return [new Task(unreserved[0].id, "mine", actionStack)];
     }
 }
