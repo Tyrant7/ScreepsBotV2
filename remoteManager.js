@@ -204,29 +204,31 @@ class RemoteManager {
 
         // Handle builders for this remote if we have things left to build
         const room = Game.rooms[remoteInfo.room];
+        const builders = roomInfo.remoteBuilders.filter((builder) => builder.memory.targetRoom === remoteInfo.room);
         if ((room && room.find(FIND_CONSTRUCTION_SITES).length > 0) ||
             remoteInfo.roads.length) {
 
             // Allocate builders
-            const builders = roomInfo.remoteBuilders.filter((builder) => builder.memory.targetRoom === remoteInfo.room);
             const wantedBuilderCount = this.handleBuilderCount(roomInfo, remoteInfo, builders);
 
             // Manage sites
             const sites = this.handleSites(roomInfo, remoteInfo, builders);
 
-            // Must not have vision in the room
-            if (!builders || !sites) {
-                return wantedBuilderCount;
+            // Must have vision in the room
+            if (builders && sites) {
+                // When we have fewer things left to build than the number of builders assigned to this room, 
+                // even after creating more sites, it means that there is nothing left to build and we can mark the extra builders for reassignment
+                while (sites.length < builders.length) {
+                    const extra = builders.pop();
+                    delete extra.memory.targetRoom;
+                }
             }
-
-            // When we have fewer things left to build than the number of builders assigned to this room, 
-            // even after creating more sites, it means that there is nothing left to build and we can mark the extra builders for reassignment
-            while (sites.length < builders.length) {
-                const extra = builders.pop();
-                delete extra.memory.targetRoom;
-            }
+            return wantedBuilderCount;
         }
-        return wantedBuilderCount;
+
+        // If we can't see the room, let's just decide based on whether or not we have enough 
+        // builders to build the remaining planned roads or not
+        return (remoteInfo.roads.length > builders.length) ? 1 : 0;
     }
 
     /**
