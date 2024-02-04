@@ -15,7 +15,7 @@ class RemoteSpawnHandler {
     getIdealSpawns(roomInfo) {
         // Let's start by requesting builders for remotes that are in construction
         const constructingRemotes = Memory.bases[roomInfo.room.name].remotes
-            .filter((remote) => remote.state === CONSTANTS.remoteStates.constructing);
+            .filter((remote) => remote.state === 0);
 
         const sourceCounts = constructingRemotes.map((remote) => {
             return { room: remote.room, count: Memory.rooms[remote.room].sources.length };

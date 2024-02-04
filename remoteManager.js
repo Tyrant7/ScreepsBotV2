@@ -157,6 +157,17 @@ class RemoteManager {
             return roadSites.length === 0 && roads.length === 0;
         });
 
+        // Same thing with containers -> can only be built inside the remote room 
+        // whereas roads can be built anywhere along the route
+        const room = Game.rooms[remoteInfo.room];
+        if (room) {
+            remoteInfo.containers = remoteInfo.containers.filter((container) => {
+                const containerSites = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y);
+                const containers = room.lookForAt(LOOK_STRUCTURES, container.x, container.y, { filter: { structureType: STRUCTURE_CONTAINER } });
+                return containerSites.length === 0 && containers.length === 0;
+            });
+        }
+
         // Handle some relevant things in this remote
         this.handleConstruction(roomInfo, remoteInfo);
         this.handleClaimers(roomInfo, remoteInfo);
@@ -238,18 +249,30 @@ class RemoteManager {
         // We should ideally keep nBuilders + 1 sites active at a time
         const room = Game.rooms[remoteInfo.room];
         if (room) {
+
+            // Start with containers
+            const currentSites = room.find(FIND_CONSTRUCTION_SITES);
+            let placed = 0;
+            if (remoteInfo.containers.length > currentSites) {
+                const next = remoteInfo.containers.pop();
+                next.createConstructionSite(STRUCTURE_CONTAINER);
+                placed++;
+            }
+
+            // No need to event attempt placing roads
+            if (currentSites.length + placed > builders.length + 1) {
+                return currentSites;
+            }
+
             // Let's place the wanted site currently closest to an arbirary source
             const source = room.find(FIND_SOURCES)[0];
-            const currentSites = room.find(FIND_CONSTRUCTION_SITES);
             remoteInfo.roads.sort((a, b) => {
                 return source.pos.getRangeTo(b) - source.pos.getRangeTo(a);
             });
 
-            let placed = 0;
             while (currentSites.length + placed <= builders.length + 1 && remoteInfo.roads.length > 0) {
                 const next = remoteInfo.roads.pop();
-                const sitePos = new RoomPosition(next.x, next.y, next.roomName);
-                sitePos.createConstructionSite(STRUCTURE_ROAD);
+                next.createConstructionSite(STRUCTURE_ROAD);
                 placed++;
             }
             return currentSites;
