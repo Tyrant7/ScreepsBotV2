@@ -72,27 +72,24 @@ class RemoteManager {
 
         // Let's process each remote, we'll queue spawns for each one
         remoteSpawnHandler.clearQueues();
-        let neededCarry = 0;
+        let missingCarry = 0;
         plans.forEach((remote) => {
             const neededSpawns = this.processRemote(roomInfo, remote);
             for (const role in neededSpawns) {
                 remoteSpawnHandler.queueSpawn(roomInfo.room.name, role, neededSpawns[role]);
             }
-            neededCarry += remote.neededHaulerCarry;
+
+            // Don't create spawn queue requests directly for haulers
+            missingCarry += this.handleHaulers(roomInfo, remote);
         });
 
-        // Haulers are handled a little differently ->
-        // Instead of handling them per remote, we're going to total
-        // all of the CARRY parts we need and make a pool for all remotes belonging to this base
-        const exisitingCarry = roomInfo.remoteHaulers.reduce((total, curr) => {
-            return total + curr.body.filter((p) => p.type === CARRY).length;
-        }, 0);
-        const missingCarry = Math.max(neededCarry - exisitingCarry, 0);
+        // Instead, since haulers can be reassigned dynamically, 
+        // we'll make a pool of all the CARRY parts we need for all remotes belonging to this base
         remoteSpawnHandler.queueSpawn(roomInfo.room.name, CONSTANTS.roles.remoteHauler, missingCarry);
 
-        remoteSpawnHandler.spawnQueues[roomInfo.room.name].forEach((item) => {
-            console.log(Object.values(item));
-        });
+        remoteSpawnHandler.spawnQueues[roomInfo.room.name].forEach((c) => {
+            console.log(Object.values(c));
+        })
 
         // Overlays
         this.drawOverlays();
@@ -151,7 +148,7 @@ class RemoteManager {
 
             let i = 0;
             this.haulerPaths.forEach((path) => {
-                const pathFixed = path.map((point) => {
+                const pathFixed = path.path.map((point) => {
                     return { x: point.x, y: point.y, roomName: point.roomName };
                 });
                 overlay.circles(pathFixed, { fill: colours[i % colours.length], radius: 0.25, opacity: 0.3 });
@@ -362,23 +359,70 @@ class RemoteManager {
      * Handles requesting haulers for this room.
      * @param {RoomInfo} roomInfo The home room to request haulers from.
      * @param {{}} remoteInfo An object containing relevant info about the remote.
-     * @returns {number} The number of CARRY parts needed for haulers in this remote.
      */
     handleHaulers(roomInfo, remoteInfo) {
 
-        const unassignedHaulers = roomInfo.remoteHaulers.filter((h) => !h.memory.sourceID);
+        // We'll operate on a per-source basis
+        let totalMissingCarry = 0;
+        remoteInfo.haulerPaths.forEach((path) => {
 
+            // Figure out how much CARRY we're missing per path
+            const haulers = roomInfo.remoteHaulers.filter((h) => {
+                return h.memory.container.x === path.container.x &&
+                       h.memory.container.y === path.container.y &&
+                       h.memory.container.roomName === path.container.roomName;
+            });
+            const currentCarry = haulers.reduce((totalCarry, curr) => totalCarry + curr.body.filter((p) => p.type === CARRY).length, 0);       
+            const missingCarry = path.neededCarry - currentCarry;
 
-        /*
-        haulerPaths.forEach((path) => {
-            // Each source gives 10 energy per tick, and hauler is empty on the way back
-            // Therefore, 20 * distance / CARRY_CAPACITY
-            const neededCarry = Math.ceil(20 * path.length / CARRY_CAPACITY);
+            // If we have extra, and we can safely reallocate a hauler, let's do so
+            if (missingCarry < 0) {
+                // First, let's find the smallest hauler
+                const smallestHauler = haulers.reduce((smallest, curr) => {
+                    const currentCarry = curr.body.filter((p) => p.type === CARRY).length;
+                    return !smallest || currentCarry < smallest.carry 
+                        ? { carry: currentCarry, creep: curr }
+                        : smallest;
+                });
+
+                // Then let's check if reallocating it keeps us above our threshold
+                if (missingCarry + smallestHauler.carry <= 0) {
+                    // If yes, reallocate it
+                    delete smallestHauler.creep.memory.container;
+                    delete smallestHauler.creep.memory.targetRoom;
+                }
+            }
+            // If we're missing CARRY, let's look unassigned haulers
+            else if (missingCarry > 0) {
+
+                // Track unassigned haulers
+                const unassignedHaulers = roomInfo.remoteHaulers.filter((h) => !h.memory.container);
+
+                // Limit to assigning one new hauler per tick so they correctly rearrange themselves when a new one spawns
+                if (unassignedHaulers.length > 0) {
+
+                    // While we can assign more haulers, let's pick the best unassigned one for this job
+                    const bestCandidate = unassignedHaulers.reduce((best, curr) => {
+                        
+                        const currentCarry = curr.body.filter((p) => p.type === CARRY).length;
+                        
+                        // We're going to define "best" as most closely matching our ideal carry count
+                        return !best || Math.abs(currentCarry - missingCarry) < Math.abs(best.carry - missingCarry)
+                            ? { carry: currentCarry, creep: curr }
+                            : best;
+                    });
+
+                    // Assign our best candidate
+                    bestCandidate.creep.memory.container = path.container;
+                    bestCandidate.creep.memory.targetRoom = path.container.roomName;
+                    newCarry += bestCandidate.carry;
+                }
+            }
+
+            // Even include negatives since overspawned haulers should redistribute naturally
+            totalMissingCarry += missingCarry;
         });
-
-        */
-
-        return 0;
+        return totalMissingCarry;
     }
 }
 

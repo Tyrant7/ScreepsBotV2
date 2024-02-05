@@ -53,9 +53,10 @@ class RemotePlanner {
                 const distOnePaths = this.getSourcePaths(roomInfo, distOne, goals);
                 const distOneRoadPositions = this.planRoads(distOnePaths);
                 const distOneContainerPositions = this.planContainers(distOne, distOnePaths);
-                const distOneHaulerPaths = this.getHaulerPaths(roomInfo, distOne, { pos: roomInfo.room.storage.pos, range: 1 }, distOneRoadPositions);
-                const distOneNeededCarry = this.getNeededCarry(distOneHaulerPaths);
-                const scoreCost = this.scoreRemote(roomInfo, distOne, distOneNeededCarry, distOneRoadPositions.length);
+                const distOneHaulerPaths = this.getHaulerPaths(roomInfo, 
+                    { pos: roomInfo.room.storage.pos, range: 1 }, distOneRoadPositions, distOneContainerPositions);
+                const distOneNeededCarry = distOneHaulerPaths.reduce((total, curr) => total + curr.neededCarry, 0);
+                const scoreCost = this.scoreRemote(roomInfo, distOne, distOneNeededCarry, distOneRoadPositions.length, distOneContainerPositions.length);
 
                 // Then plan roads for each child one this remote
                 // Each distOne should have multiple distTwo depending remotes
@@ -66,10 +67,10 @@ class RemotePlanner {
                         const distTwoPaths = this.getSourcePaths(roomInfo, distTwo, goals);
                         const distTwoRoadPositions = this.planRoads(distTwoPaths);
                         const distTwoContainerPositions = this.planContainers(distTwo, distTwoPaths);
-                        const distTwoHaulerPaths = this.getHaulerPaths(roomInfo, distTwo, 
-                            { pos: roomInfo.room.storage.pos, range: 1 }, distTwoRoadPositions.concat(distOneRoadPositions));
-                        const distTwoNeededCarry = this.getNeededCarry(distTwoHaulerPaths);
-                        const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoNeededCarry, distTwoRoadPositions.length);
+                        const distTwoHaulerPaths = this.getHaulerPaths(roomInfo, 
+                            { pos: roomInfo.room.storage.pos, range: 1 }, distTwoRoadPositions.concat(distOneRoadPositions), distTwoContainerPositions);
+                        const distTwoNeededCarry = distTwoHaulerPaths.reduce((total, curr) => total + curr.neededCarry, 0);
+                        const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoNeededCarry, distTwoRoadPositions.length, distTwoContainerPositions.length);
 
                         // Score this remote
                         children.push({
@@ -143,29 +144,16 @@ class RemotePlanner {
     }
 
     /**
-     * Determines the exact amount of CARRY parts needed to transport the energy produced by this remote.
-     * @param {[]} haulerPaths An array of paths for haulers of this remote.
-     * @returns {number} A number of CARRY parts.
-     */
-    getNeededCarry(haulerPaths) {
-        return haulerPaths.reduce((totalCarry, path) => {
-
-            // Each source gives 10 energy per tick, and hauler is empty on the way back
-            // Therefore, 20 * distance / CARRY_CAPACITY
-            return totalCarry + Math.ceil(20 * path.length / CARRY_CAPACITY);
-        }, 0);
-    }
-
-    /**
      * Scores a potential remote for this room.
      * @param {RoomInfo} roomInfo The info object associated with the host room.
      * @param {string} targetName The name of the room to score a remote for. Must have been scouted previously.
      * @param {number} neededCarry The number of hauler parts for this remote to fully transport its produced energy.
      * @param {number} roadCount The number of roads needed to plan this remote. Should be the length of the array obtained by `planRoads()`.
+     * @param {number} containerCount The number of containers needed to plan this remote. Should be the length of the array obtained by `planContainers()`.
      * @returns An object with scoring information for this remotes. 
      * Contains a `score` property for energy output and a `cost` property for spawn time.
      */
-    scoreRemote(roomInfo, targetName, neededCarry, roadCount) {
+    scoreRemote(roomInfo, targetName, neededCarry, roadCount, containerCount) {
         const remoteInfo = Memory.rooms[targetName];
 
         // Let's calculate some upkeep costs using those newly created paths
@@ -173,7 +161,7 @@ class RemotePlanner {
 
         // Starting with containers, first
         const containerUpkeep = CONTAINER_DECAY / CONTAINER_DECAY_TIME / REPAIR_POWER;
-        const totalContainerUpkeep = containerUpkeep * remoteInfo.sources.length;
+        const totalContainerUpkeep = containerUpkeep * containerCount;
         
         // Then roads, for this we can combine all paths and remove duplicate path positions
         const roadUpkeep = ROAD_DECAY_AMOUNT / ROAD_DECAY_TIME / REPAIR_POWER;
@@ -289,12 +277,12 @@ class RemotePlanner {
     /**
      * Gets paths from remote sources to goals in the homeroom, only allowing planned roads as transport except in the home room.
      * @param {RoomInfo} roomInfo Info for the homeroom.
-     * @param {string} targetName Name of the remote to plan for.
      * @param {[]} goals An array of goals objects for the pathfinder to use. Should have pos and range attributes. 
      * @param {RoomPosition[]} plannedRoads An array of all planned roads in rooms we expect haulers to traverse through.
+     * @param {RoomPosition[]} containerPositions An array of all planned containers in the remote. Haulers will path from these.
      * @returns 
      */
-    getHaulerPaths(roomInfo, targetName, goals, plannedRoads) {
+    getHaulerPaths(roomInfo, goals, plannedRoads, containerPositions) {
 
         // Setup an unwalkable matrix for room we shouldn't go through
         const unwalkable = new PathFinder.CostMatrix();
@@ -331,12 +319,10 @@ class RemotePlanner {
             return unwalkable;
         }
 
-        // Simply path from source to goal, only allowing planned roads as transport, except in the home room
+        // Simply path from each container to the goal, only allowing planned roads as transport, except in the home room
         const haulerPaths = [];
-        const remoteInfo = Memory.rooms[targetName];
-        remoteInfo.sources.forEach((source) => {
-            const sourcePos = new RoomPosition(source.pos.x, source.pos.y, targetName);
-            const result = PathFinder.search(sourcePos, goals, {
+        containerPositions.forEach((container) => {
+            const result = PathFinder.search(container, goals, {
                 // These normally wouldn't be necessary, however we should include them for our home room
                 plainCost: 2,
                 swampCost: 10,
@@ -345,11 +331,17 @@ class RemotePlanner {
 
             // No path found!
             if (result.incomplete) {
-                console.log("No hauler path found in " + targetName);
+                console.log("No hauler path found in " + container.roomName);
                 return;
             }
 
-            haulerPaths.push(result.path);
+            haulerPaths.push({ 
+                container: container, 
+                path: result.path, 
+                // Each source gives 10 energy per tick, and hauler is empty on the way back
+                // Therefore, 20 * distance / CARRY_CAPACITY
+                neededCarry: Math.ceil(20 * result.path.length / CARRY_CAPACITY), 
+            });
         });
 
         return haulerPaths;

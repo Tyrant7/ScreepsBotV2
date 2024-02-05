@@ -19,6 +19,7 @@ class RemoteSpawnHandler {
         const next = queue.shift();
         switch (next.role) {
             case CONSTANTS.roles.remoteBuilder:
+                console.log(next.idealLevel);
                 return this.makeBuilder(next.idealLevel, roomInfo.room.energyCapacityAvailable);
             case CONSTANTS.roles.reserver:
                 return this.makeReserver();
