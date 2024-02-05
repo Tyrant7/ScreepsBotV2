@@ -170,9 +170,9 @@ class RemoteManager {
             if (!room) {
                 return true;
             }
-            const roadSites = room.lookForAt(LOOK_CONSTRUCTION_SITES, road.x, road.y);
-            const roads = room.lookForAt(LOOK_STRUCTURES, road.x, road.y, { filter: { structureType: STRUCTURE_ROAD } });
-            return roadSites.length === 0 && roads.length === 0;
+            const roadSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
+            const existingRoad = room.lookForAt(LOOK_STRUCTURES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
+            return !roadSite && !existingRoad;
         });
 
         // Same thing with containers -> can only be built inside the remote room 
@@ -180,9 +180,9 @@ class RemoteManager {
         const room = Game.rooms[remoteInfo.room];
         if (room) {
             remoteInfo.containers = remoteInfo.containers.filter((container) => {
-                const containerSites = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y);
-                const containers = room.lookForAt(LOOK_STRUCTURES, container.x, container.y, { filter: { structureType: STRUCTURE_CONTAINER } });
-                return containerSites.length === 0 && containers.length === 0;
+                const containerSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
+                const existingContainer = room.lookForAt(LOOK_STRUCTURES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
+                return !containerSite && !existingContainer;
             });
         }
 
@@ -207,7 +207,7 @@ class RemoteManager {
         const room = Game.rooms[remoteInfo.room];
         const builders = roomInfo.remoteBuilders.filter((builder) => builder.memory.targetRoom === remoteInfo.room);
         if ((room && room.find(FIND_CONSTRUCTION_SITES).length > 0) ||
-            remoteInfo.roads.length) {
+            remoteInfo.roads.length || remoteInfo.containers.length) {
 
             // Allocate builders
             const wantedBuilderCount = this.handleBuilderCount(roomInfo, remoteInfo, builders);
@@ -280,13 +280,13 @@ class RemoteManager {
             // Start with containers
             const currentSites = room.find(FIND_CONSTRUCTION_SITES);
             let placed = 0;
-            if (remoteInfo.containers.length > currentSites) {
+            if (remoteInfo.containers.length > 0) {
                 const next = remoteInfo.containers.pop();
                 next.createConstructionSite(STRUCTURE_CONTAINER);
                 placed++;
             }
 
-            // No need to event attempt placing roads
+            // No need to attempt placing roads
             if (currentSites.length + placed > builders.length + 1) {
                 return currentSites;
             }
