@@ -6,29 +6,38 @@ const minerSpawnHandler = new MinerSpawnHandler();
 class RemoteSpawnHandler {
 
     getNextSpawn(roomInfo) {
-
-        const base = Memory.bases[roomInfo.room.name];
-        if (!base) {
+        
+        // Make sure we have actual spawns for this base
+        if (!this.spawnQueues) {
             return;
         }
-        
-        for (const role in base.remoteSpawns) {
-            const demand = Math.max(base.remoteSpawns[role].ideal - base.remoteSpawns[role].current, 0);
-            if (demand > 0) {
-                if (role === "builders") {
-                    return this.makeBuilder(CONSTANTS.maxRemoteBuilderLevel, roomInfo.room.energyCapacityAvailable);
-                }
-                else if (role === "reservers") {
-                    return this.makeReserver();
-                }
-                else if (role === "miners") {
-                    return this.makeMiner(roomInfo.room.energyCapacityAvailable);
-                }
-                else if (role === "haulers") {
-                    return this.makeHauler(CONSTANTS.maxRemoteHaulerLevel, roomInfo.room.energyCapacityAvailable);
-                }
-            }
+        const queue = this.spawnQueues[roomInfo.room.name];
+        if (!queue || !queue.length) {
+            return;
         }
+
+        const next = queue.shift();
+        switch (next.role) {
+            case CONSTANTS.roles.remoteBuilder:
+                return this.makeBuilder(next.idealLevel, roomInfo.room.energyCapacityAvailable);
+            case CONSTANTS.roles.reserver:
+                return this.makeReserver();
+            case CONSTANTS.roles.remoteMiner:
+                return this.makeMiner(roomInfo.room.energyCapacityAvailable);
+            case CONSTANTS.roles.remoteHauler:
+                return this.makeHauler(next.idealLevel, roomInfo.room.energyCapacityAvailable);
+        }
+    }
+
+    clearQueues() {
+        this.spawnQueues = {};
+    }
+
+    queueSpawn(spawnRoomName, role, idealLevel) {
+        if (!this.spawnQueues[spawnRoomName]) {
+            this.spawnQueues[spawnRoomName] = [];
+        }
+        this.spawnQueues[spawnRoomName].push({ role: role, idealLevel: idealLevel });
     }
 
     makeBuilder(desiredLevel, maxCost) {
@@ -36,7 +45,7 @@ class RemoteSpawnHandler {
         let body = builderParts;
         let lvl = 1;
         const levelCost = creepSpawnUtility.getCost(body);
-        while (lvl < desiredLevel && (lvl + 1) * levelCost <= maxCost) {
+        while (lvl < Math.min(desiredLevel, CONSTANTS.maxRemoteBuilderLevel) && (lvl + 1) * levelCost <= maxCost) {
             lvl++;
             body = body.concat(builderParts);
         }
@@ -71,7 +80,7 @@ class RemoteSpawnHandler {
         for (let i = 0; i < carryParts; i++) {
             lvl = i + 1;
             body.push(MOVE, CARRY, CARRY);
-            if (creepSpawnUtility.getCost(body) > maxCost) {
+            if (creepSpawnUtility.getCost(body) > maxCost || lvl > CONSTANTS.maxRemoteHaulerLevel) {
                 body.pop();
                 body.pop();
                 body.pop();

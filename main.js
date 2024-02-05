@@ -119,25 +119,26 @@ module.exports.loop = function() {
         // Don't try to spawn in rooms that aren't ours
         if (info.spawns && info.spawns.length) {
 
+            // This represent the fraction of our total spawn capacity we sit at
+            // i.e. the amount of time we spend spawning / 1
+            const avgSustainCost = basicSpawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
+            overlay.text(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
+
             // Spawn handlers are passed in order of priority
             const currentSpawnHandlers = [
                 crashSpawnHandler,
                 ...basicSpawnHandlers,
             ];
             if (info.remoting) {
+                // Plan remotes for bases!
+                remoteManager.run(info, remoteSpawnHandler, CONSTANTS.maxBaseSpawnCapacity - avgSustainCost);
+
+                // Make sure we're spawning for remotes
                 currentSpawnHandlers.push(remoteSpawnHandler);
             }
 
             // Handle spawns
             spawnManager.run(info, currentSpawnHandlers);
-
-            // This represent the fraction of our total spawn capacity we sit at
-            // i.e. the amount of time we spend spawning / 1
-            const avgSustainCost = basicSpawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
-            overlay.text(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
-
-            // Plan remotes for bases!
-            remoteManager.run(info, CONSTANTS.maxBaseSpawnCapacity - avgSustainCost);
         }
 
         // Defense

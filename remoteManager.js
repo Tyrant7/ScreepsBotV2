@@ -9,7 +9,7 @@ class RemoteManager {
         this.remotePlans = {};
     }
 
-    run(roomInfo, remainingSpawnCapacity) {
+    run(roomInfo, remoteSpawnHandler, remainingSpawnCapacity) {
         
 
         // Responsiblity list:
@@ -70,28 +70,14 @@ class RemoteManager {
             }));
         }
 
-        // Let's process each remote
-        const neededSpawns = {};
+        // Let's process each remote, we'll queue spawns for each one
+        remoteSpawnHandler.clearQueues();
         plans.forEach((remote) => {
-            const remoteSpawns = this.processRemote(roomInfo, remote);
-
-            // Sum up the needed spawns of each role for all remotes
-            for (const role in remoteSpawns) {
-                if (!neededSpawns[role]) {
-                    neededSpawns[role] = { current: 0, ideal: 0 };
-                }
-                neededSpawns[role].current += remoteSpawns[role].current;
-                neededSpawns[role].ideal += remoteSpawns[role].ideal;
+            const neededSpawns = this.processRemote(roomInfo, remote);
+            for (const role in neededSpawns) {
+                remoteSpawnHandler.queueSpawn(remote.room, role, neededSpawns[role]);
             }
         });
-
-        // Let's track this spawn need now so that our SpawnHandler can read from it later
-        if (!Memory.bases[roomName].remoteSpawns) {
-            Memory.bases[roomName].remoteSpawns = {};
-        }
-        for (const role in neededSpawns) {
-            Memory.bases[roomName].remoteSpawns[role] = neededSpawns[role];
-        }
 
         // Overlays
         this.drawOverlays();
@@ -188,9 +174,9 @@ class RemoteManager {
 
         // Handle some relevant things in this remote, and track needed spawns
         const neededSpawns = {};
-        neededSpawns.builders = this.handleConstruction(roomInfo, remoteInfo);
-        neededSpawns.reservers = this.handleReservers(roomInfo, remoteInfo);
-        neededSpawns.miners = this.handleMiners(roomInfo, remoteInfo);
+        neededSpawns[CONSTANTS.roles.remoteBuilder] = this.handleConstruction(roomInfo, remoteInfo);
+        neededSpawns[CONSTANTS.roles.reserver] = this.handleReservers(roomInfo, remoteInfo);
+        neededSpawns[CONSTANTS.roles.remoteMiner] = this.handleMiners(roomInfo, remoteInfo);
         return neededSpawns;
     }
 
@@ -227,16 +213,15 @@ class RemoteManager {
             return wantedBuilderCount;
         }
 
-        // If we can't see the room, let's just decide based on whether or not we have enough 
-        // builders to build the remaining planned roads or not
-        return { ideal: Math.min(Memory.rooms[remoteInfo.room].sources.length, remoteInfo.roads.length), current: builders.length };
+        // If we can't see the room, let's just request builders equal to the number of sources
+        return Math.max(Memory.rooms[remoteInfo.room].sources.length - builders.length, 0);
     }
 
     /**
      * Handles allocating more builders to this remote if under the ideal amount.
      * @param {RoomInfo} roomInfo The info object for the home room to pull builders from.
      * @param {{}} remoteInfo An object containing relevant info about the remote.
-     * @returns {{}}} An object containing the number of builders still needed by this remote, and the total amount of builders this remote needs.
+     * @returns {number} The number of workers needed in this remote.
      */
     handleBuilderCount(roomInfo, remoteInfo, builders) {
 
@@ -249,8 +234,8 @@ class RemoteManager {
                 unassigned.memory.targetRoom = remoteInfo.room;
                 builders.push(unassigned);
             }
-        }
-        return { ideal: wantedBuilderCount, current: builders.length };
+        } 
+        return (wantedBuilderCount - builders.length) * CONSTANTS.maxRemoteBuilderLevel;
     }
 
     /**
@@ -311,30 +296,30 @@ class RemoteManager {
      * Handles requesting a claimer for this remote if one does not yet exist.
      * @param {RoomInfo} roomInfo The info object for the home room to pull miners from.
      * @param {{}} remoteInfo An object containing relevant info about the remote.
-     * @returns {{}}} An object containing the number of claimers still needed by this remote, and the total amount of claimers this remote needs.
+     * @returns {number} The number of reservers this remote currently needs.
      */
     handleReservers(roomInfo, remoteInfo) {
 
         // Make sure there isn't a claimer already assigned to this room
         const claimer = roomInfo.claimers.find((claimer) => claimer.memory.controllerID === remoteInfo.controller.id);
         if (claimer) {
-            return;
+            return 0;
         }
 
         // Find an unused claimer
         const unassignedClaimer = roomInfo.claimers.find((claimer) => !claimer.memory.controllerID);
         if (unassignedClaimer) {
             unassignedClaimer.memory.controllerID = roomInfo.controller.id;
-            return { ideal: 1, current: 1 };
+            return 0;
         }
-        return { ideal: 1, current: 0 };
+        return 1;
     }
 
     /**
      * Handles requesting miners for this room.
      * @param {RoomInfo} roomInfo The info object for the home room to pull miners from.
      * @param {{}} remoteInfo An object containing relevant info about the remote.
-     * @returns {{}}} An object containing the number of miners still needed by this remote, and the total amount of miners this remote needs.
+     * @returns {number} The number of miners needed in this remote.
      */
     handleMiners(roomInfo, remoteInfo) {
 
@@ -355,7 +340,7 @@ class RemoteManager {
                 miner.memory.targetRoom = remoteInfo.room;
             }
         }
-        return { ideal: sources.length, current: sources.length - unassignedSources.length };
+        return unassignedSources.length;
     }
 
     handleHaulers(roomInfo, remoteInfo) {
