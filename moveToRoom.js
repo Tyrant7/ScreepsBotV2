@@ -6,10 +6,10 @@ module.exports = function(creep, target) {
                               creep.pos.y >= 49 ||
                               creep.pos.y <= 0;
 
-    const moveTarget = Memory.rooms[target].controller.pos;
-    const pos = new RoomPosition(moveTarget.x, moveTarget.y, target);
     if (creep.room.name === target && !leavingOrEntering) {
         return true;
     }
+    const moveTarget = Memory.rooms[target].controller.pos;
+    const pos = new RoomPosition(moveTarget.x, moveTarget.y, target);
     creep.moveTo(pos);
 };

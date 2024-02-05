@@ -19,14 +19,14 @@ class RemoteSpawnHandler {
         const next = queue.shift();
         switch (next.role) {
             case CONSTANTS.roles.remoteBuilder:
-                console.log(next.idealLevel);
-                return this.makeBuilder(next.idealLevel, roomInfo.room.energyCapacityAvailable);
+                return this.makeBuilder(CONSTANTS.maxRemoteBuilderLevel, roomInfo.room.energyCapacityAvailable);
             case CONSTANTS.roles.reserver:
                 return this.makeReserver();
             case CONSTANTS.roles.remoteMiner:
                 return this.makeMiner(roomInfo.room.energyCapacityAvailable);
             case CONSTANTS.roles.remoteHauler:
-                return this.makeHauler(next.idealLevel, roomInfo.room.energyCapacityAvailable);
+                // Haulers are measured in part count, as opposed to creep numbers
+                return this.makeHauler(next.count, roomInfo.room.energyCapacityAvailable);
         }
     }
 
@@ -34,11 +34,11 @@ class RemoteSpawnHandler {
         this.spawnQueues = {};
     }
 
-    queueSpawn(spawnRoomName, role, idealLevel) {
+    queueSpawn(spawnRoomName, role, count) {
         if (!this.spawnQueues[spawnRoomName]) {
             this.spawnQueues[spawnRoomName] = [];
         }
-        this.spawnQueues[spawnRoomName].push({ role: role, idealLevel: idealLevel });
+        this.spawnQueues[spawnRoomName].push({ role: role, count: count });
     }
 
     makeBuilder(desiredLevel, maxCost) {

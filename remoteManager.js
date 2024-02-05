@@ -76,7 +76,9 @@ class RemoteManager {
         plans.forEach((remote) => {
             const neededSpawns = this.processRemote(roomInfo, remote);
             for (const role in neededSpawns) {
-                remoteSpawnHandler.queueSpawn(roomInfo.room.name, role, neededSpawns[role]);
+                if (neededSpawns[role] > 0) {
+                    remoteSpawnHandler.queueSpawn(roomInfo.room.name, role, neededSpawns[role]);
+                }
             }
 
             // Don't create spawn queue requests directly for haulers
@@ -187,8 +189,8 @@ class RemoteManager {
         // Handle some relevant things in this remote, and track needed spawns
         const neededSpawns = {};
         neededSpawns[CONSTANTS.roles.remoteBuilder] = this.handleConstruction(roomInfo, remoteInfo);
-        neededSpawns[CONSTANTS.roles.reserver] = this.handleReservers(roomInfo, remoteInfo);
         neededSpawns[CONSTANTS.roles.remoteMiner] = this.handleMiners(roomInfo, remoteInfo);
+        neededSpawns[CONSTANTS.roles.reserver] = this.handleReservers(roomInfo, remoteInfo);
         return neededSpawns;
     }
 
@@ -226,7 +228,10 @@ class RemoteManager {
         }
 
         // If we can't see the room, let's just request builders equal to the number of sources
-        return Math.max(Memory.rooms[remoteInfo.room].sources.length - builders.length, 0);
+        // but only if there's anything left to build
+        return remoteInfo.roads.length
+            ? Math.max(Memory.rooms[remoteInfo.room].sources.length - builders.length, 0)
+            : 0;
     }
 
     /**
@@ -305,23 +310,23 @@ class RemoteManager {
     }
 
     /**
-     * Handles requesting a claimer for this remote if one does not yet exist.
+     * Handles requesting a reserver for this remote if one does not yet exist.
      * @param {RoomInfo} roomInfo The info object for the home room to pull miners from.
      * @param {{}} remoteInfo An object containing relevant info about the remote.
      * @returns {number} The number of reservers this remote currently needs.
      */
     handleReservers(roomInfo, remoteInfo) {
 
-        // Make sure there isn't a claimer already assigned to this room
-        const claimer = roomInfo.claimers.find((claimer) => claimer.memory.controllerID === remoteInfo.controller.id);
-        if (claimer) {
+        // Make sure there isn't a reserver already assigned to this room
+        const reserver = roomInfo.reservers.find((reserver) => reserver.memory.targetRoom === remoteInfo.room);
+        if (reserver) {
             return 0;
         }
 
-        // Find an unused claimer
-        const unassignedClaimer = roomInfo.claimers.find((claimer) => !claimer.memory.controllerID);
-        if (unassignedClaimer) {
-            unassignedClaimer.memory.controllerID = roomInfo.controller.id;
+        // Find an unused reserver
+        const unassignedReserver = roomInfo.reservers.find((reserver) => !reserver.memory.targetRoom);
+        if (unassignedReserver) {
+            unassignedReserver.memory.targetRoom = remoteInfo.room;
             return 0;
         }
         return 1;
