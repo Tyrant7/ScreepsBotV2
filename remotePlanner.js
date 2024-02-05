@@ -54,7 +54,8 @@ class RemotePlanner {
                 const distOneRoadPositions = this.planRoads(distOnePaths);
                 const distOneContainerPositions = this.planContainers(distOne, distOnePaths);
                 const distOneHaulerPaths = this.getHaulerPaths(roomInfo, distOne, { pos: roomInfo.room.storage.pos, range: 1 }, distOneRoadPositions);
-                const scoreCost = this.scoreRemote(roomInfo, distOne, distOneHaulerPaths, distOneRoadPositions.length);
+                const distOneNeededCarry = this.getNeededCarry(distOneHaulerPaths);
+                const scoreCost = this.scoreRemote(roomInfo, distOne, distOneNeededCarry, distOneRoadPositions.length);
 
                 // Then plan roads for each child one this remote
                 // Each distOne should have multiple distTwo depending remotes
@@ -67,8 +68,9 @@ class RemotePlanner {
                         const distTwoContainerPositions = this.planContainers(distTwo, distTwoPaths);
                         const distTwoHaulerPaths = this.getHaulerPaths(roomInfo, distTwo, 
                             { pos: roomInfo.room.storage.pos, range: 1 }, distTwoRoadPositions.concat(distOneRoadPositions));
-                        const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoHaulerPaths, distTwoRoadPositions.length);
-    
+                        const distTwoNeededCarry = this.getNeededCarry(distTwoHaulerPaths);
+                        const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoNeededCarry, distTwoRoadPositions.length);
+
                         // Score this remote
                         children.push({
                             room: distTwo,
@@ -77,6 +79,7 @@ class RemotePlanner {
                             roads: distTwoRoadPositions,
                             containers: distTwoContainerPositions,
                             haulerPaths: distTwoHaulerPaths,
+                            neededHaulerCarry: distTwoNeededCarry,
                             children: [],
                         });
                     }
@@ -90,6 +93,7 @@ class RemotePlanner {
                     roads: distOneRoadPositions,
                     containers: distOneContainerPositions,
                     haulerPaths: distOneHaulerPaths,
+                    neededHaulerCarry: distOneNeededCarry,
                     children: children,
                 });
             }
@@ -139,15 +143,29 @@ class RemotePlanner {
     }
 
     /**
+     * Determines the exact amount of CARRY parts needed to transport the energy produced by this remote.
+     * @param {[]} haulerPaths An array of paths for haulers of this remote.
+     * @returns {number} A number of CARRY parts.
+     */
+    getNeededCarry(haulerPaths) {
+        return haulerPaths.reduce((totalCarry, path) => {
+
+            // Each source gives 10 energy per tick, and hauler is empty on the way back
+            // Therefore, 20 * distance / CARRY_CAPACITY
+            return totalCarry + Math.ceil(20 * path.length / CARRY_CAPACITY);
+        }, 0);
+    }
+
+    /**
      * Scores a potential remote for this room.
      * @param {RoomInfo} roomInfo The info object associated with the host room.
      * @param {string} targetName The name of the room to score a remote for. Must have been scouted previously.
-     * @param {[]} haulerPaths Haulers paths for this remote.
+     * @param {number} neededCarry The number of hauler parts for this remote to fully transport its produced energy.
      * @param {number} roadCount The number of roads needed to plan this remote. Should be the length of the array obtained by `planRoads()`.
      * @returns An object with scoring information for this remotes. 
      * Contains a `score` property for energy output and a `cost` property for spawn time.
      */
-    scoreRemote(roomInfo, targetName, haulerPaths, roadCount) {
+    scoreRemote(roomInfo, targetName, neededCarry, roadCount) {
         const remoteInfo = Memory.rooms[targetName];
 
         // Let's calculate some upkeep costs using those newly created paths
@@ -165,7 +183,7 @@ class RemotePlanner {
         upkeep.structures = totalContainerUpkeep + totalRoadUpkeep;
 
         // Now for creeps spawn costs, total up energy and spawn time upkeeps
-        upkeep.creeps = remoteSpawnHandler.getUpkeepEstimates(roomInfo, remoteInfo, haulerPaths);
+        upkeep.creeps = remoteSpawnHandler.getUpkeepEstimates(roomInfo, remoteInfo, neededCarry);
 
         // Calculate net energy produced in this room
         const grossEnergy = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME * remoteInfo.sources.length;

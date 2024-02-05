@@ -72,11 +72,26 @@ class RemoteManager {
 
         // Let's process each remote, we'll queue spawns for each one
         remoteSpawnHandler.clearQueues();
+        let neededCarry = 0;
         plans.forEach((remote) => {
             const neededSpawns = this.processRemote(roomInfo, remote);
             for (const role in neededSpawns) {
-                remoteSpawnHandler.queueSpawn(remote.room, role, neededSpawns[role]);
+                remoteSpawnHandler.queueSpawn(roomInfo.room.name, role, neededSpawns[role]);
             }
+            neededCarry += remote.neededHaulerCarry;
+        });
+
+        // Haulers are handled a little differently ->
+        // Instead of handling them per remote, we're going to total
+        // all of the CARRY parts we need and make a pool for all remotes belonging to this base
+        const exisitingCarry = roomInfo.remoteHaulers.reduce((total, curr) => {
+            return total + curr.body.filter((p) => p.type === CARRY).length;
+        }, 0);
+        const missingCarry = Math.max(neededCarry - exisitingCarry, 0);
+        remoteSpawnHandler.queueSpawn(roomInfo.room.name, CONSTANTS.roles.remoteHauler, missingCarry);
+
+        remoteSpawnHandler.spawnQueues[roomInfo.room.name].forEach((item) => {
+            console.log(Object.values(item));
         });
 
         // Overlays
@@ -234,7 +249,7 @@ class RemoteManager {
                 unassigned.memory.targetRoom = remoteInfo.room;
                 builders.push(unassigned);
             }
-        } 
+        }
         return (wantedBuilderCount - builders.length) * CONSTANTS.maxRemoteBuilderLevel;
     }
 
@@ -343,9 +358,27 @@ class RemoteManager {
         return unassignedSources.length;
     }
 
+    /**
+     * Handles requesting haulers for this room.
+     * @param {RoomInfo} roomInfo The home room to request haulers from.
+     * @param {{}} remoteInfo An object containing relevant info about the remote.
+     * @returns {number} The number of CARRY parts needed for haulers in this remote.
+     */
     handleHaulers(roomInfo, remoteInfo) {
 
+        const unassignedHaulers = roomInfo.remoteHaulers.filter((h) => !h.memory.sourceID);
 
+
+        /*
+        haulerPaths.forEach((path) => {
+            // Each source gives 10 energy per tick, and hauler is empty on the way back
+            // Therefore, 20 * distance / CARRY_CAPACITY
+            const neededCarry = Math.ceil(20 * path.length / CARRY_CAPACITY);
+        });
+
+        */
+
+        return 0;
     }
 }
 
