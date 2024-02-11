@@ -10,6 +10,11 @@ class RemotePlanner {
             plainCost: 2,
             swampCost: 10,
             roadCost: 1,
+
+            // This is the number of parts we give as a margin per E/t when planning a remote
+            // So for example, if a remote produces 8 E/t we'll give ourselves a margin of 
+            // 8 parts to use that energy in our base room
+            energyUsageMargin: 1,
         };
     }
 
@@ -82,6 +87,7 @@ class RemotePlanner {
                             room: distTwo,
                             score: scoreCost.score,
                             cost: scoreCost.cost,
+                            costMargin: scoreCost.costMargin,
                             roads: distTwoRoadPositions,
                             containers: distTwoContainerPositions,
                             haulerPaths: distTwoHaulerPaths,
@@ -96,6 +102,7 @@ class RemotePlanner {
                     room: distOne,
                     score: scoreCost.score,
                     cost: scoreCost.cost,
+                    costMargin: scoreCost.costMargin,
                     roads: distOneRoadPositions,
                     containers: distOneContainerPositions,
                     haulerPaths: distOneHaulerPaths,
@@ -184,13 +191,13 @@ class RemotePlanner {
 
         // We're going to allocate a little bit of extra cost to this remote for the energy in produces
         // This is for the home room to be able to use the energy we produce here
-        // We'll use a simple formula of the cost to spawn a single WORK part for each energy we produce each tick
-        upkeep.creeps.spawnTime += Math.floor(netEnergy) * CREEP_SPAWN_TIME / CREEP_LIFE_TIME;
+        const costMargin = Math.ceil(netEnergy * this.planningConstants.energyUsageMargin) * CREEP_SPAWN_TIME / CREEP_LIFE_TIME;
 
         // Here's the score and cost of this remote so we can calculate which are most important
         return {
             score: netEnergy,
             cost: upkeep.creeps.spawnTime,
+            costMargin: costMargin,
         };
     }
 
@@ -419,7 +426,7 @@ class RemotePlanner {
 
             // Pass children recusively
             const nextChoices = choices.filter((c) => c !== choice).concat(choice.children);
-            const result = this.traverseRecursively(nextChoices, remainingCost - choice.cost, score + choice.score);
+            const result = this.traverseRecursively(nextChoices, remainingCost - choice.cost - choice.costMargin, score + choice.score);
 
             // Adjust score to be correct for leaf nodes
             if (result.leafNode) {
