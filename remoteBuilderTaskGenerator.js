@@ -24,7 +24,7 @@ class RemoteBuilderTaskGenerator {
             for (const site of sites) {
 
                 // If there are no other builders already building this one, let's go for it
-                if (!activeTasks.find((task) => !task || task.target === site.id)) {
+                if (!activeTasks.find((task) => task && task.target === site.id)) {
                     return this.makeBuildTask(site);
                 }
             }
