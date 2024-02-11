@@ -418,8 +418,11 @@ class RemoteManager {
                             return !best || Math.abs(currentCarry - missingCarry) < Math.abs(best.carry - missingCarry)
                                 ? { carry: currentCarry, creep: curr }
                                 : best;
-                        }).creep 
-                    : unassignedHaulers[0];
+                        }) 
+                    : { 
+                        carry: unassignedHaulers[0].body.filter((p) => p.type === CARRY).length,
+                        creep: unassignedHaulers[0] 
+                    };
 
                     // Assign our best candidate
                     bestCandidate.memory.container = path.container;

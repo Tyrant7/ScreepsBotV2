@@ -1,7 +1,9 @@
 const creepSpawnUtility = require("creepSpawnUtility");
 const MinerSpawnHandler = require("minerSpawnHandler");
+const HaulerSpawnHandler = require("haulerSpawnHandler");
 
 const minerSpawnHandler = new MinerSpawnHandler();
+const haulerSpawnHandler = new HaulerSpawnHandler();
 
 class RemoteSpawnHandler {
 
@@ -76,20 +78,9 @@ class RemoteSpawnHandler {
     }
 
     makeHauler(carryParts, maxCost) {
-        let body = [MOVE, WORK, CARRY];
-        let lvl = 0;
-        for (let i = 0; i < carryParts; i++) {
-            lvl = i + 1;
-            body.push(MOVE, CARRY, CARRY);
-            if (creepSpawnUtility.getCost(body) > maxCost || lvl > CONSTANTS.maxRemoteHaulerLevel) {
-                body.pop();
-                body.pop();
-                body.pop();
-                break;
-            }
-        }
+        const body = haulerSpawnHandler.make(Math.ceil(carryParts / 2), maxCost).body;
         return { body: body, 
-                 name: "Remote Hauler " + Game.time + " [" + lvl + "]",
+                 name: "Remote Hauler " + Game.time + " [" + body.filter((p) => p === MOVE) + "]",
                  memory: { role: CONSTANTS.roles.remoteHauler }};
     }
 
