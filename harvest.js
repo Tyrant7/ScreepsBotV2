@@ -26,7 +26,7 @@ module.exports = function(creep, target) {
 
         // We can allow ourselves to target planted haulers
         sources.push(...creep.room.find(FIND_MY_CREEPS, { 
-            filter: (c) => c.memory.role === CONSTANTS.roles.hauler && c.memory.openPull && c.memory.planted
+            filter: (c) => c.memory.openPull && c.memory.planted
         }));
 
         // Storage
