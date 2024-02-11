@@ -13,7 +13,7 @@ class RemoteHaulerTaskGenerator {
     run(creep, roomInfo, activeTasks) {
 
         // Wait for a target before
-        if (!creep.memory.targetRoom) {
+        if (!creep.memory.container) {
             creep.say("No room!");
             return null;
         }
@@ -30,28 +30,35 @@ class RemoteHaulerTaskGenerator {
         actionStack.push(function(creep, containerPos) {
 
             // If we have view of the room, do our task like normal
-            if (Game.rooms[containerPos.roomName]) {
-                const container = containerPos.lookFor(LOOK_STRUCTURES, { filter: { structureType: STRUCTURE_CONTAINER } });
-                if (!container) {
-                    // Our container disappeared
-                    if (creep.room.name === containerPos.name) {
-                        return true;
-                    }
-    
-                    // We're probably not in the room yet, let's keep going
-                    creep.moveTo(containerPos);
-                }
-            }
-            else {
-                // Otherwise, we'll have to go there before we can tell
+            if (!Game.rooms[containerPos.roomName]) {
                 creep.moveTo(containerPos);
+                return creep.store.getFreeCapacity() === 0;
             }
 
-            // Let's simply go to our container
-            if (creep.withdraw(container, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-                creep.moveTo(containerPos);
+            const container = containerPos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER);
+            if (container) {
+
+                // Let's simply go to our container
+                if (creep.withdraw(container, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+                    creep.moveTo(container);
+                }
+                return creep.store.getFreeCapacity() === 0 || container.store[RESOURCE_ENERGY] === 0;
             }
-            return creep.store.getFreeCapacity() === 0;
+            else {
+                // Our container isn't built yet or was destroyed
+                // Let's simply pickup from the ground instead
+                const droppedEnergy = containerPos.lookFor(LOOK_RESOURCES).find((s) => s.resourceType === RESOURCE_ENERGY);
+                if (droppedEnergy) {
+                    if (creep.pickup(droppedEnergy) === ERR_NOT_IN_RANGE) {
+                        creep.moveTo(droppedEnergy);
+                    }
+                }
+                else {
+                    return true;
+                }
+
+                return creep.store.getFreeCapacity() === 0 || droppedEnergy.amount === 0;
+            }
         });
         
         const container = creep.memory.container;

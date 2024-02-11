@@ -81,10 +81,12 @@ class RemoteManager {
             }
         });
 
+        /*
         console.log("-----------------");
         remoteSpawnHandler.spawnQueues[roomInfo.room.name].forEach((c) => {
             console.log(Object.values(c));
         })
+        */
 
         // Overlays
         this.drawOverlays();
@@ -168,7 +170,7 @@ class RemoteManager {
                 const containerSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
                 const existingContainer = room.lookForAt(LOOK_STRUCTURES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
                 if (!containerSite && !existingContainer) {
-                    console.log("Unbuilt container at: " + container);
+                    // console.log("Unbuilt container at: " + container);
                     unbuilt.push({ pos: container, type: STRUCTURE_CONTAINER });
                 }
             });
@@ -272,6 +274,12 @@ class RemoteManager {
         // We should ideally keep nBuilders + 1 sites active at a time
         const room = Game.rooms[remoteInfo.room];
         if (room) {
+
+            /*
+            unbuilt.forEach((p) => {
+                console.log(Object.values(p));
+            });
+            */
 
             // Start with containers
             const currentSites = room.find(FIND_CONSTRUCTION_SITES);
@@ -394,7 +402,6 @@ class RemoteManager {
                 if (missingCarry + smallestHauler.carry <= 0) {
                     // If yes, reallocate it
                     delete smallestHauler.creep.memory.container;
-                    delete smallestHauler.creep.memory.targetRoom;
                     missingCarry += smallestHauler.carry;
                 }
             }
@@ -426,7 +433,6 @@ class RemoteManager {
 
                     // Assign our best candidate
                     bestCandidate.creep.memory.container = path.container;
-                    bestCandidate.creep.memory.targetRoom = path.container.roomName;
                     missingCarry -= bestCandidate.carry;
                 }
             }
