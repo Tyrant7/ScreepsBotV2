@@ -6,6 +6,7 @@ module.exports = {
         scout: "scout",
         remoteBuilder: "r_Builder",
         remoteHauler: "r_Hauler",
+        remoteMiner: "r_Miner",
         reserver: "reserver",
     },
     maxWorkerLevel: 8,
