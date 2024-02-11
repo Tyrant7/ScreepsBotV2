@@ -72,7 +72,6 @@ class RemoteManager {
 
         // Let's process each remote, we'll queue spawns for each one
         remoteSpawnHandler.clearQueues();
-        let missingCarry = 0;
         plans.forEach((remote) => {
             const neededSpawns = this.processRemote(roomInfo, remote);
             for (const role in neededSpawns) {
@@ -80,14 +79,7 @@ class RemoteManager {
                     remoteSpawnHandler.queueSpawn(roomInfo.room.name, role, neededSpawns[role]);
                 }
             }
-
-            // Don't create spawn queue requests directly for haulers
-            missingCarry += this.handleHaulers(roomInfo, remote);
         });
-
-        // Instead, since haulers can be reassigned dynamically, 
-        // we'll make a pool of all the CARRY parts we need for all remotes belonging to this base
-        remoteSpawnHandler.queueSpawn(roomInfo.room.name, CONSTANTS.roles.remoteHauler, missingCarry);
 
         remoteSpawnHandler.spawnQueues[roomInfo.room.name].forEach((c) => {
             console.log(Object.values(c));
@@ -191,6 +183,7 @@ class RemoteManager {
         neededSpawns[CONSTANTS.roles.remoteBuilder] = this.handleConstruction(roomInfo, remoteInfo);
         neededSpawns[CONSTANTS.roles.remoteMiner] = this.handleMiners(roomInfo, remoteInfo);
         neededSpawns[CONSTANTS.roles.reserver] = this.handleReservers(roomInfo, remoteInfo);
+        neededSpawns[CONSTANTS.roles.remoteHauler] = this.handleHaulers(roomInfo, remoteInfo);
         return neededSpawns;
     }
 
@@ -229,7 +222,7 @@ class RemoteManager {
 
         // If we can't see the room, let's just request builders equal to the number of sources
         // but only if there's anything left to build
-        return remoteInfo.roads.length
+        return remoteInfo.roads.length || remoteInfo.containers.length
             ? Math.max(Memory.rooms[remoteInfo.room].sources.length - builders.length, 0)
             : 0;
     }

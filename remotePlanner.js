@@ -48,9 +48,7 @@ class RemotePlanner {
             if (this.isValidRemote(distOne)) {
 
                 // Let's plan roads for our distOne first to home first
-                const goals = roomInfo.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } })
-                    .map((road) => { return { pos: road.pos, range: 1 } });
-                const distOnePaths = this.getSourcePaths(roomInfo, distOne, goals);
+                const distOnePaths = this.getSourcePaths(roomInfo, distOne, []);
                 const distOneRoadPositions = this.planRoads(distOnePaths);
                 const distOneContainerPositions = this.planContainers(distOne, distOnePaths);
                 const distOneHaulerPaths = this.getHaulerPaths(roomInfo, 
@@ -63,8 +61,7 @@ class RemotePlanner {
                 const children = [];
                 nearbyRooms[distOne].forEach((distTwo) => {
                     if (this.isValidRemote(distTwo)) {
-                        const goals = distOneRoadPositions.map(roadPos => { return { pos: roadPos, range: 1 } });
-                        const distTwoPaths = this.getSourcePaths(roomInfo, distTwo, goals);
+                        const distTwoPaths = this.getSourcePaths(roomInfo, distTwo, distOneRoadPositions);
                         const distTwoRoadPositions = this.planRoads(distTwoPaths);
                         const distTwoContainerPositions = this.planContainers(distTwo, distTwoPaths);
                         const distTwoHaulerPaths = this.getHaulerPaths(roomInfo, 
@@ -123,7 +120,7 @@ class RemotePlanner {
     /**
      * Plans containers for a remote given the roads and room name.
      * @param {string} targetName The name of the remote room.
-     * @param {RoomPosition[][]} remotePaths Paths for this remote obtained using getSourcePaths()
+     * @param {RoomPosition[][]} sourcePaths Paths for this remote obtained using getSourcePaths()
      * @returns {RoomPosition[]} An array of RoomPositions for containers for this remote.
      */
     planContainers(targetName, sourcePaths) {
@@ -227,39 +224,61 @@ class RemotePlanner {
      * Draws paths between a remote's sources and controllers and the nearest road in its host room.
      * @param {RoomInfo} roomInfo The info object associated with the host room.
      * @param {string} targetName The name of the room to remote.
-     * @param {{}[]} goals Goal objects for the pathfinder, these should be somewhere in the dependant room.
+     * @param {RoomPosition[]} plannedRoads If this remote is greater than distance one, 
+     * this will be the planned road array for the distance one remote this one relies on.
      * @returns An array of arrays of RoomPositions between each source and the nearest road in the host room.
      * Each element corresponds to a unique path.
      */
-    getSourcePaths(roomInfo, targetName, goals) {
+    getSourcePaths(roomInfo, targetName, plannedRoads) {
         const remoteInfo = Memory.rooms[targetName];
 
-        // Make our cost matrix, setting structures as unwalkable,
-        // We don't have to worry about roads since those are our targets
-        const costMatrix = new PathFinder.CostMatrix();
-        roomInfo.room.find(FIND_STRUCTURES).forEach(function(s) {
-            if (s.structureType !== STRUCTURE_CONTAINER &&
+        // Build cost matrices to include all of our planned roads
+        // These should only be from the dependant room
+        const matrices = { [roomInfo.room.name]: new PathFinder.CostMatrix(),
+                           [targetName]: new PathFinder.CostMatrix() };
+        plannedRoads.forEach((road) => {
+            if (!matrices[road.roomName]) {
+                matrices[road.roomName] = new PathFinder.CostMatrix();
+            }
+
+            // TODO //
+            // Include some way of tracking vestigal structures from previous owners 
+            // for planned rooms as well
+
+            matrices[road.roomName].set(road.x, road.y, 1);
+        });
+
+        // Make an ordinary matrix for our home room
+        roomInfo.room.find(FIND_STRUCTURES).forEach((s) => {
+            if (s.structureType === STRUCTURE_ROAD) {
+                matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, 1);
+            }
+            else if (s.structureType !== STRUCTURE_CONTAINER &&
                 (s.structureType !== STRUCTURE_RAMPART || !s.my)) {
-                costMatrix.set(s.pos.x, s.pos.y, 255);
+                matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, 255);
             }
         });
-        function getCostMatrix(roomName) {
-            if (roomName === roomInfo.room.name) {
-                return costMatrix;
-            }
-            // Since we can't actually see into the room we're planning for, we'll have to
-            // trust that there aren't any structures blocking our path
-            // TODO //
-            // Have scouts track structures as well and use those when drawing our path
-            return new PathFinder.CostMatrix();
-        }
+
+        // Our goals is to find roads in our starting room to connect into
+        const goals = roomInfo.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } }).map((road) => {
+            return { pos: road.pos, range: 1 };
+        });
 
         // Let's find paths to each source in the room
         const sourceResults = [];
         remoteInfo.sources.forEach(source => {
             const sourcePos = new RoomPosition(source.pos.x, source.pos.y, targetName);
             const result = PathFinder.search(sourcePos, goals, {
-                roomCallback: getCostMatrix,
+                // TODO //
+                // Constants for these elsewhere
+                plainCost: 2,
+                swampCost: 10,
+
+                // If we don't have planned roads for this room, 
+                // we don't want to walk in it and we'll get `undefined` back
+                roomCallback: function(roomName) {
+                    return matrices[roomName];
+                }
             });
 
             // If we're missing any paths this won't work, return early
