@@ -157,30 +157,36 @@ class RemoteManager {
     processRemote(roomInfo, remoteInfo) {
 
         // Let's remove all roads that have already been built or have a construction site from this plan
-        remoteInfo.roads = remoteInfo.roads.filter((road) => {
-            const room = Game.rooms[road.roomName];
-            if (!room) {
-                return true;
-            }
-            const roadSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
-            const existingRoad = room.lookForAt(LOOK_STRUCTURES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
-            return !roadSite && !existingRoad;
-        });
+        // Let's track all unbuilt structures for this remote
+        const unbuilt = [];
 
-        // Same thing with containers -> can only be built inside the remote room 
-        // whereas roads can be built anywhere along the route
+        // Containers first
         const room = Game.rooms[remoteInfo.room];
         if (room) {
-            remoteInfo.containers = remoteInfo.containers.filter((container) => {
+            remoteInfo.containers.forEach((container) => {
                 const containerSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
                 const existingContainer = room.lookForAt(LOOK_STRUCTURES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
-                return !containerSite && !existingContainer;
+                if (!containerSite && !existingContainer) {
+                    unbuilt.push({ pos: container, type: STRUCTURE_CONTAINER });
+                }
             });
         }
 
+        // Then roads
+        remoteInfo.roads.forEach((road) => {
+            const room = Game.rooms[road.roomName];
+            if (room) {
+                const roadSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
+                const existingRoad = room.lookForAt(LOOK_STRUCTURES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
+                if (!roadSite && !existingRoad) {
+                    unbuilt.push({ pos: road, type: STRUCTURE_ROAD });
+                }
+            }
+        });
+
         // Handle some relevant things in this remote, and track needed spawns
         const neededSpawns = {};
-        neededSpawns[CONSTANTS.roles.remoteBuilder] = this.handleConstruction(roomInfo, remoteInfo);
+        neededSpawns[CONSTANTS.roles.remoteBuilder] = this.handleConstruction(roomInfo, remoteInfo, unbuilt);
         neededSpawns[CONSTANTS.roles.remoteMiner] = this.handleMiners(roomInfo, remoteInfo);
         neededSpawns[CONSTANTS.roles.reserver] = this.handleReservers(roomInfo, remoteInfo);
         neededSpawns[CONSTANTS.roles.remoteHauler] = this.handleHaulers(roomInfo, remoteInfo);
@@ -194,19 +200,17 @@ class RemoteManager {
      * @param {{}} remoteInfo An object containing relevant info about the remote.
      * @returns {number} The number of builders wanted by this room.
      */
-    handleConstruction(roomInfo, remoteInfo) {
+    handleConstruction(roomInfo, remoteInfo, unbuiltStructures) {
 
         // Handle builders for this remote if we have things left to build
-        const room = Game.rooms[remoteInfo.room];
         const builders = roomInfo.remoteBuilders.filter((builder) => builder.memory.targetRoom === remoteInfo.room);
-        if ((room && room.find(FIND_CONSTRUCTION_SITES).length > 0) ||
-            remoteInfo.roads.length || remoteInfo.containers.length) {
-
+        if (unbuiltStructures.length) {
+            
             // Allocate builders
             const wantedBuilderCount = this.handleBuilderCount(roomInfo, remoteInfo, builders);
 
             // Manage sites
-            const sites = this.handleSites(roomInfo, remoteInfo, builders);
+            const sites = this.handleSites(roomInfo, remoteInfo, builders, unbuiltStructures);
 
             // Must have vision in the room
             if (builders && sites) {
@@ -220,11 +224,8 @@ class RemoteManager {
             return wantedBuilderCount;
         }
 
-        // If we can't see the room, let's just request builders equal to the number of sources
-        // but only if there's anything left to build
-        return remoteInfo.roads.length || remoteInfo.containers.length
-            ? Math.max(Memory.rooms[remoteInfo.room].sources.length - builders.length, 0)
-            : 0;
+        // If there's nothing left to build in this room, let's just request one builder to handle repairs
+        return Math.max(1 - builders.length, 0);
     }
 
     /**
@@ -255,7 +256,7 @@ class RemoteManager {
      * @param {Creep[]} builders An array of builders assigned to this remote.
      * @returns An array of the current construction sites in the remote after new placement.
      */
-    handleSites(roomInfo, remoteInfo, builders) {
+    handleSites(roomInfo, remoteInfo, builders, unbuilt) {
 
         // Let's take a simple approach to making sure the inside our main room are built by simply placing all of them
         // Our aggressive base building allocation should take care of this quite easily
@@ -273,9 +274,12 @@ class RemoteManager {
             // Start with containers
             const currentSites = room.find(FIND_CONSTRUCTION_SITES);
             let placed = 0;
-            if (remoteInfo.containers.length > 0) {
-                const next = remoteInfo.containers.pop();
-                next.createConstructionSite(STRUCTURE_CONTAINER);
+            while (currentSites.length + placed <= builders.length + 1 
+                && unbuilt.length > 0 
+                && unbuilt[0].type === STRUCTURE_CONTAINER) { 
+
+                const next = unbuilt.pop();
+                next.pos.createConstructionSite(next.type);
                 placed++;
             }
 
@@ -286,14 +290,14 @@ class RemoteManager {
 
             // Let's place the wanted site currently closest to an arbirary source
             const source = room.find(FIND_SOURCES)[0];
-            remoteInfo.roads.sort((a, b) => {
-                return source.pos.getRangeTo(b) - source.pos.getRangeTo(a);
+            unbuilt.sort((a, b) => {
+                return source.pos.getRangeTo(b.pos) - source.pos.getRangeTo(a.pos);
             });
 
-            while (currentSites.length + placed <= builders.length + 1 && remoteInfo.roads.length > 0) {
-                const next = remoteInfo.roads.pop();
-                if (Game.rooms[next.roomName]) {
-                    next.createConstructionSite(STRUCTURE_ROAD);
+            while (currentSites.length + placed <= builders.length + 1 && unbuilt.length > 0) {
+                const next = unbuilt.pop();
+                if (Game.rooms[next.pos.roomName]) {
+                    next.pos.createConstructionSite(next.type);
                     placed++;
                 }
             }
@@ -366,7 +370,8 @@ class RemoteManager {
 
             // Figure out how much CARRY we're missing per path
             const haulers = roomInfo.remoteHaulers.filter((h) => {
-                return h.memory.container.x === path.container.x &&
+                return h.memory.container &&
+                       h.memory.container.x === path.container.x &&
                        h.memory.container.y === path.container.y &&
                        h.memory.container.roomName === path.container.roomName;
             });
@@ -376,12 +381,15 @@ class RemoteManager {
             // If we have extra, and we can safely reallocate a hauler, let's do so
             if (missingCarry < 0) {
                 // First, let's find the smallest hauler
-                const smallestHauler = haulers.reduce((smallest, curr) => {
-                    const currentCarry = curr.body.filter((p) => p.type === CARRY).length;
-                    return !smallest || currentCarry < smallest.carry 
-                        ? { carry: currentCarry, creep: curr }
-                        : smallest;
-                });
+                const smallestHauler = 
+                haulers.length > 1 ?
+                    haulers.reduce((smallest, curr) => {
+                        const currentCarry = curr.body.filter((p) => p.type === CARRY).length;
+                        return !smallest || currentCarry < smallest.carry 
+                            ? { carry: currentCarry, creep: curr }
+                            : smallest;
+                    }).creep 
+                : haulers[0];
 
                 // Then let's check if reallocating it keeps us above our threshold
                 if (missingCarry + smallestHauler.carry <= 0) {
@@ -400,19 +408,22 @@ class RemoteManager {
                 if (unassignedHaulers.length > 0) {
 
                     // While we can assign more haulers, let's pick the best unassigned one for this job
-                    const bestCandidate = unassignedHaulers.reduce((best, curr) => {
-                        
-                        const currentCarry = curr.body.filter((p) => p.type === CARRY).length;
-                        
-                        // We're going to define "best" as most closely matching our ideal carry count
-                        return !best || Math.abs(currentCarry - missingCarry) < Math.abs(best.carry - missingCarry)
-                            ? { carry: currentCarry, creep: curr }
-                            : best;
-                    });
+                    const bestCandidate = 
+                    unassignedHaulers.length > 1 ?
+                        unassignedHaulers.reduce((best, curr) => {
+                            
+                            const currentCarry = curr.body.filter((p) => p.type === CARRY).length;
+
+                            // We're going to define "best" as most closely matching our ideal carry count
+                            return !best || Math.abs(currentCarry - missingCarry) < Math.abs(best.carry - missingCarry)
+                                ? { carry: currentCarry, creep: curr }
+                                : best;
+                        }).creep 
+                    : unassignedHaulers[0];
 
                     // Assign our best candidate
-                    bestCandidate.creep.memory.container = path.container;
-                    bestCandidate.creep.memory.targetRoom = path.container.roomName;
+                    bestCandidate.memory.container = path.container;
+                    bestCandidate.memory.targetRoom = path.container.roomName;
                     newCarry += bestCandidate.carry;
                 }
             }
