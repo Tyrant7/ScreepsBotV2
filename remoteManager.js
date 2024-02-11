@@ -282,10 +282,8 @@ class RemoteManager {
             */
 
             // Start with containers
-            const currentSites = room.find(FIND_CONSTRUCTION_SITES);
             let placed = 0;
-            while (currentSites.length + placed <= builders.length + 1 
-                && unbuilt.length > 0 
+            while (unbuilt.length > 0 
                 && unbuilt[0].type === STRUCTURE_CONTAINER) { 
 
                 const next = unbuilt.pop();
@@ -294,6 +292,7 @@ class RemoteManager {
             }
 
             // No need to attempt placing roads
+            const currentSites = room.find(FIND_CONSTRUCTION_SITES);
             if (currentSites.length + placed > builders.length + 1) {
                 return currentSites;
             }
