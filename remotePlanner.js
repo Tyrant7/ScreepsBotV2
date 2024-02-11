@@ -5,6 +5,14 @@ const scoutingUtility = require("scoutingUtility");
 
 class RemotePlanner {
 
+    constructor() {
+        this.planningConstants = {
+            plainCost: 2,
+            swampCost: 10,
+            roadCost: 1,
+        };
+    }
+
     /**
      * Plans remotes for a room. Returns early if not enough rooms have been scouted.
      * @param {RoomInfo} roomInfo The associated room info object.
@@ -240,18 +248,13 @@ class RemotePlanner {
             if (!matrices[road.roomName]) {
                 matrices[road.roomName] = new PathFinder.CostMatrix();
             }
-
-            // TODO //
-            // Include some way of tracking vestigal structures from previous owners 
-            // for planned rooms as well
-
-            matrices[road.roomName].set(road.x, road.y, 1);
+            matrices[road.roomName].set(road.x, road.y, this.planningConstants.roadCost);
         });
 
         // Make an ordinary matrix for our home room
         roomInfo.room.find(FIND_STRUCTURES).forEach((s) => {
             if (s.structureType === STRUCTURE_ROAD) {
-                matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, 1);
+                matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, this.planningConstants.roadCost);
             }
             else if (s.structureType !== STRUCTURE_CONTAINER &&
                 (s.structureType !== STRUCTURE_RAMPART || !s.my)) {
@@ -269,10 +272,8 @@ class RemotePlanner {
         remoteInfo.sources.forEach(source => {
             const sourcePos = new RoomPosition(source.pos.x, source.pos.y, targetName);
             const result = PathFinder.search(sourcePos, goals, {
-                // TODO //
-                // Constants for these elsewhere
-                plainCost: 2,
-                swampCost: 10,
+                plainCost: this.planningConstants.plainCost,
+                swampCost: this.planningConstants.swampCost,
 
                 // If we don't have planned roads for this room, 
                 // return false so we don't consider it
@@ -296,7 +297,7 @@ class RemotePlanner {
                 if (!matrices[point.roomName]) {
                     matrices[point.roomName] = new PathFinder.CostMatrix();
                 }    
-                matrices[point.roomName].set(point.x, point.y, 1);
+                matrices[point.roomName].set(point.x, point.y, this.planningConstants.roadCost);
             });
 
             // Store calculated path
@@ -330,13 +331,13 @@ class RemotePlanner {
             if (!matrices[road.roomName]) {
                 matrices[road.roomName] = unwalkable.clone();
             }
-            matrices[road.roomName].set(road.x, road.y, 1);
+            matrices[road.roomName].set(road.x, road.y, this.planningConstants.roadCost);
         });
 
         // Make an ordinary matrix for our home room
         roomInfo.room.find(FIND_STRUCTURES).forEach((s) => {
             if (s.structureType === STRUCTURE_ROAD) {
-                matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, 1);
+                matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, this.planningConstants.roadCost);
             }
             else if (s.structureType !== STRUCTURE_CONTAINER &&
                 (s.structureType !== STRUCTURE_RAMPART || !s.my)) {
@@ -349,8 +350,8 @@ class RemotePlanner {
         containerPositions.forEach((container) => {
             const result = PathFinder.search(container, goals, {
                 // These normally wouldn't be necessary, however we should include them for our home room
-                plainCost: 2,
-                swampCost: 10,
+                plainCost: this.planningConstants.plainCost,
+                swampCost: this.planningConstants.swampCost,
 
                 // Don't allow us to consider any rooms we don't have planned roads for
                 roomCallback: function(roomName) {
