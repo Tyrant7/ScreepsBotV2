@@ -132,6 +132,8 @@ module.exports.loop = function() {
             // This represent the fraction of our total spawn capacity we sit at
             // i.e. the amount of time we spend spawning / 1
             const avgSustainCost = basicSpawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
+            overlay.text(info.room.name, { [info.room.name]: "(" + avgSustainCost + ")" });
+
             let remoteSustainCost = 0;
 
             // Spawn handlers are passed in order of priority

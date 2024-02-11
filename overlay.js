@@ -22,8 +22,7 @@ module.exports = {
             visual = this.cachedVisual;
         }
         else {
-            visual = new RoomVisual(roomName).text(roomName, 0, offset, { align: "left" });
-            offset++;
+            visual = new RoomVisual(roomName);
         }
 
         // Draw a simple overlay
