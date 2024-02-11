@@ -1,6 +1,7 @@
 const Task = require("task");
 const harvest = require("harvest");
 const moveToRoom = require("moveToRoom");
+const remoteBuildUtility = require("remoteBuildUtility");
 
 class RemoteBuilderTaskGenerator {
 
@@ -23,6 +24,11 @@ class RemoteBuilderTaskGenerator {
             const sites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
             for (const site of sites) {
 
+                // Don't build sites that weren't planned
+                if (!remoteBuildUtility.isStructurePlanned(roomInfo.room.name, site.pos, site.structureType)) {
+                    continue;
+                }
+
                 // If there are no other builders already building this one, let's go for it
                 if (!activeTasks.find((task) => task && task.target === site.id)) {
                     return this.makeBuildTask(site);
@@ -31,9 +37,19 @@ class RemoteBuilderTaskGenerator {
 
             // Otherwise, nothing left to build 
             // -> Let's look for repair targets instead
-            const repairTargets = creep.room.find(FIND_STRUCTURES, { filter: (s) => s.hits < s.hitsMax });
+            const repairTargets = creep.room.find(FIND_STRUCTURES, { filter: (s) => {
+                return s.hits < s.hitsMax;
+            }});
             if (repairTargets.length) {
-                const bestTarget = repairTargets.reduce((best, curr) => curr.hits < best.hits ? curr : best);
+                const bestTarget = repairTargets.reduce((best, curr) => {
+
+                    // Don't allow us to repair structures that weren't planned
+                    if (!remoteBuildUtility.isStructurePlanned(roomInfo.room.name, curr.pos, curr.structureType)) {
+                        return best;
+                    }
+
+                    return curr.hits < best.hits ? curr : best;
+                });
                 return this.makeRepairTask(bestTarget);
             }
 
