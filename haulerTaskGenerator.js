@@ -8,34 +8,36 @@ class HaulerTaskGenerator {
         // Restock tasks
         // transport tasks between miner and storage
         // Deliver tasks from anywhere to the controller
-        const tasks = [];
 
-        // Starting with restock tasks
-        const restockables = roomInfo.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 });
-        for (const restock of restockables) {
+        // If there are more than 3 things to restock, let's just restock
+        const restockTasks = activeTasks.filter((task) => task.tag === taskType.restock);
+        if (restockTasks.length <= 3) {
+            const restockables = roomInfo.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 });
+            for (const restock of restockables) {
 
-            // These will be handled by other tasks
-            if (restock.structureType === STRUCTURE_CONTAINER ||
-                restock.structureType === STRUCTURE_STORAGE) {
-                continue;
+                // These will be handled by other tasks
+                if (restock.structureType === STRUCTURE_CONTAINER ||
+                    restock.structureType === STRUCTURE_STORAGE) {
+                    continue;
+                }
+
+                // No more than one restock task per object
+                const existingTasks = restockTasks.filter((task) => task.target === restock.id);
+                if (existingTasks.length) {
+                    continue;
+                }
+
+                // All that's left should be towers, spawn, and extensions
+                // Create a task comprised of harvesting and restocking
+                const actionStack = [];
+                actionStack.push(basicActions["harvest_loose"]);
+                actionStack.push(basicActions[taskType.restock]);
+                return [new Task(restock.id, taskType.restock, actionStack)];
             }
-
-            // No more than one restock task per object
-            const existingTasks = activeTasks.filter((task) => task.target === restock.id && task.tag === taskType.restock);
-            if (existingTasks.length) {
-                continue;
-            }
-
-            // All that's left should be towers, spawn, and extensions
-            // Create a task comprised of harvesting and restocking
-            const actionStack = [];
-            actionStack.push(basicActions["harvest_loose"]);
-            actionStack.push(basicActions[taskType.restock]);
-            tasks.push(new Task(restock.id, taskType.restock, actionStack));
         }
 
-        // Transfer tasks next
-        // For every source with a miner, dedicate a specific task to hauling its mined energy to the main storage
+        // For every source with a miner whose container is nearly full
+        // dedicate a specific task to hauling its mined energy to the main storage
         if (roomInfo.room.storage) {
             for (const miner of roomInfo.miners) {
 
@@ -44,36 +46,29 @@ class HaulerTaskGenerator {
                 if (existingTasks.length) {
                     continue;
                 }
-    
-                // Create a task to transfer the energy from this miner's position to the storage
-                tasks.push(new Task(miner.id, taskType.transport, [basicActions[taskType.transport]]));
+
+                // If this miner's container is within 200 of max capacity, let's empty it out
+                const container = roomInfo.room.lookForAt(LOOK_STRUCTURES, miner.pos).find((s) => s.structureType === STRUCTURE_CONTAINER);
+                if (container.store.getFreeCapacity() <= 200) {
+                    // Create a task to transfer the energy from this miner's position to the storage
+                    return [new Task(miner.id, taskType.transport, [basicActions[taskType.transport]])];
+                }
             }
         }
 
+
         // Deliver task for controller
-        const existingTasks = activeTasks.filter((task) => task.target === roomInfo.room.controller.id, taskType.deliver);
-        if (!existingTasks.length) {
-
-            // Create a new task to deliver energy to the controller
-
+        // Simply bring energy to controller if nothing else to do
+        
             // TODO //
             // For now this will just move to the controller and stop
             // We want to pass it something to transfer into
             // Likely a container near the controller where upgraders will sit
 
-            const actionStack = [];
-            actionStack.push(basicActions["harvest_strict"]);
-            actionStack.push(basicActions[taskType.deliver]);
-            tasks.push(new Task(roomInfo.room.controller.id, taskType.deliver, actionStack));
-        }
-
-        // Prioritise all of our tasks and return them
-        tasks.forEach((task) => task.priority = priorityMap[task.tag](task, roomInfo));
-
-        // Let's push a low-priority default task in case we're out of other tasks
-        tasks.push(new Task(roomInfo.room.controller.id, taskType.deliver, [basicActions[taskType.deliver]], -1000));
-
-        return tasks;
+        const actionStack = [];
+        actionStack.push(basicActions["harvest_strict"]);
+        actionStack.push(basicActions[taskType.deliver]);
+        return [new Task(roomInfo.room.controller.id, taskType.deliver, actionStack)];
     }
 }
 
@@ -297,37 +292,5 @@ function harvest(creep, target, strict) {
     }
     return false;
 }
-
-// Each of these should return a single number for priority
-const priorityMap = {
-    [taskType.transport]: function(task, info) {
-        // TODO //
-        return 1;
-    },
-    [taskType.deliver]: function(task, info) {
-        // TODO //
-        return 3;
-    },
-    [taskType.restock]: function(task, info) {
-
-        // Need workers urgently
-        if (info.workers.length <= 2) {
-            return 100;
-        }
-
-        // Give a bit of a threshold for both, hence the * 1.2
-        const eTier = Math.min(info.room.energyAvailable * 1.2 / info.room.energyCapacityAvailable, 1);
-        const workerUrgency = Math.min(info.workers.length / info.openSourceSpots, 1);
-        const need = 1 - (eTier * workerUrgency);
-
-        if (need >= 0.9) {
-            return 50;
-        }
-        else if (need >= 0.75) {
-            return 13;
-        }
-        return 5;
-    },
-};
 
 module.exports = HaulerTaskGenerator;
