@@ -132,7 +132,7 @@ module.exports.loop = function() {
             // This represent the fraction of our total spawn capacity we sit at
             // i.e. the amount of time we spend spawning / 1
             const avgSustainCost = basicSpawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
-            overlay.text(info.room, { "Spawn Capacity": avgSustainCost + " / 1" });
+            let remoteSustainCost = 0;
 
             // Spawn handlers are passed in order of priority
             const currentSpawnHandlers = [
@@ -141,7 +141,7 @@ module.exports.loop = function() {
             ];
             if (info.remoting) {
                 // Plan remotes for bases!
-                remoteManager.run(info, remoteSpawnHandler, CONSTANTS.maxBaseSpawnCapacity - avgSustainCost);
+                remoteSustainCost = remoteManager.run(info, remoteSpawnHandler, avgSustainCost);
 
                 // Make sure we're spawning for remotes
                 currentSpawnHandlers.push(remoteSpawnHandler);
@@ -149,6 +149,8 @@ module.exports.loop = function() {
             if (info.getEnemies().length) {
                 currentSpawnHandlers.push(defenderSpawnHandler);
             }
+
+            overlay.text(info.room.name, { "Spawn Capacity": (avgSustainCost + remoteSustainCost) + " / 1" });
 
             // Handle spawns
             spawnManager.run(info, currentSpawnHandlers);

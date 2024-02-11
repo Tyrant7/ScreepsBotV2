@@ -84,7 +84,7 @@ class RemoteSpawnHandler {
                  memory: { role: CONSTANTS.roles.remoteHauler }};
     }
 
-    getUpkeepEstimates(homeRoomInfo, remoteInfo, neededCarry) {
+    getUpkeepEstimates(homeRoomInfo, sourceCount, neededCarry) {
 
         function calculateUpkeep(creeps, calculation) {
             return creeps.reduce((total, curr) => total + calculation(curr.body), 0) / CREEP_LIFE_TIME;
@@ -95,8 +95,10 @@ class RemoteSpawnHandler {
         const maxCost = homeRoomInfo.room.energyCapacityAvailable;
 
         // Start with miners
-        const miners = remoteInfo.sources.map(
-            (source) => this.makeMiner(maxCost));
+        const miners = [];
+        for (let i = 0; i < sourceCount; i++) {
+            miners.push(this.makeMiner(maxCost));
+        }
         upkeeps.energy += calculateUpkeep(miners, creepSpawnUtility.getCost);
         upkeeps.spawnTime += calculateUpkeep(miners, creepSpawnUtility.getSpawnTime);
 

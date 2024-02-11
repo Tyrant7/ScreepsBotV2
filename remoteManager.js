@@ -9,13 +9,13 @@ class RemoteManager {
         this.remotePlans = {};
     }
 
-    run(roomInfo, remoteSpawnHandler, remainingSpawnCapacity) {
+    run(roomInfo, remoteSpawnHandler, baseRoomSpawnCost) {
         
         // Plan our remotes, if we haven't already
         const roomName = roomInfo.room.name;
         const reload = !this.remotePlans[roomName];
         if (reload) {
-            const unsortedPlans = this.getRemotePlans(roomInfo, remainingSpawnCapacity);
+            const unsortedPlans = this.getRemotePlans(roomInfo, baseRoomSpawnCost);
 
             // Sort plans by distance, then efficiency score to allow creeps to be assigned under a natural priority 
             // of more important (i.e. higher scoring and closer) remotes
@@ -44,14 +44,27 @@ class RemoteManager {
 
         // Let's process each remote, we'll queue spawns for each one
         remoteSpawnHandler.clearQueues();
-        plans.forEach((remote) => {
+        let spawnCosts = 0;
+        const activeRemotes = [];
+        for (const remote of plans) {
+
+            // Only spawn for this remote if our spawn capacity is below 100% while maintaining it
+            // Once we hit our cutoff, stop spawning for any remotes
+            const cost = remoteSpawnHandler.getUpkeepEstimates(roomInfo, remote.haulerPaths.length, remote.neededHaulerCarry).spawnTime;
+            spawnCosts += cost;
+            if (spawnCosts + baseRoomSpawnCost >= 1) {
+                break;
+            }
+
+            // If we're good, let's process this remote's spawns
             const neededSpawns = this.processRemote(roomInfo, remote);
             for (const role in neededSpawns) {
                 if (neededSpawns[role] > 0) {
                     remoteSpawnHandler.queueSpawn(roomInfo.room.name, role, neededSpawns[role]);
                 }
             }
-        });
+            activeRemotes.push({ remote: remote, cost: cost });
+        }
 
         /*
         console.log("-----------------");
@@ -60,18 +73,29 @@ class RemoteManager {
         })
         */
 
+        // Display our active remotes
+        const remoteDisplay = {};
+        plans.forEach((plan) => {
+            const foundRemote = activeRemotes.find((r) => r.remote === plan);
+            remoteDisplay[plan.room] = foundRemote ? "active (" + (Math.round(foundRemote.cost * 1000) / 1000) + ")" : "inactive";
+        });
+        overlay.text(roomInfo.room.name, remoteDisplay);
+
         // Overlays
-        this.drawOverlays();
+        this.drawOverlays(activeRemotes);
+
+        // For tracking
+        return spawnCosts;
     }
 
-    getRemotePlans(roomInfo, remainingSpawnCapacity) {
+    getRemotePlans(roomInfo, baseRoomSpawnCost) {
 
         const cpu = Game.cpu.getUsed();
 
         // Here's out best combination of remotes and the order they have to be built in
         // Keep in mind that distance 1's are interchangable, so we can use a greedy algorithm 
         // to easily pull the most efficient one
-        const bestBranch = remotePlanner.planRemotes(roomInfo, remainingSpawnCapacity);
+        const bestBranch = remotePlanner.planRemotes(roomInfo);
         if (!bestBranch) {
             return;
         }
@@ -98,7 +122,7 @@ class RemoteManager {
             console.log("Planned remotes with: " + (Game.cpu.getUsed() - cpu) + " cpu");
             bestBranch.forEach((b) => console.log("Room " + b.room + " with score: " + b.score + " and cost: " + b.cost));
             const totalCost = bestBranch.reduce((usage, node) => usage + node.cost, 0);
-            console.log("Total spawn usage after remotes: " + (CONSTANTS.maxBaseSpawnCapacity - remainingSpawnCapacity + totalCost));
+            console.log("Total spawn usage after remotes: " + (baseRoomSpawnCost + totalCost));
         }
 
         return bestBranch;

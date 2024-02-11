@@ -2,9 +2,13 @@ const defaultStyle = {
     fill: "#FFFFFF",
 }
 
+const defaultText = {
+    color: "#FFFFFF",
+}
+
 module.exports = {
     
-    text: function(room, importantFigures) {
+    text: function(roomName, importantFigures, style = defaultText) {
 
         if (!DEBUG.drawOverlay) {
             return;
@@ -18,7 +22,7 @@ module.exports = {
             visual = this.cachedVisual;
         }
         else {
-            visual = new RoomVisual(room.name).text(room.name, 0, offset, { align: "left" });
+            visual = new RoomVisual(roomName).text(roomName, 0, offset, { align: "left" });
             offset++;
         }
 

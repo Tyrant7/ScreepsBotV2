@@ -10,20 +10,14 @@ class RemotePlanner {
             plainCost: 2,
             swampCost: 10,
             roadCost: 1,
-
-            // This is the number of parts we give as a margin per E/t when planning a remote
-            // So for example, if a remote produces 8 E/t we'll give ourselves a margin of 
-            // 8 parts to use that energy in our base room
-            energyUsageMargin: 1,
         };
     }
 
     /**
      * Plans remotes for a room. Returns early if not enough rooms have been scouted.
      * @param {RoomInfo} roomInfo The associated room info object.
-     * @param {number} maxSpawnCapacity The maximum allowed spawn capacity of the room to plan remotes for. 
      */
-    planRemotes(roomInfo, maxSpawnCapacity) {
+    planRemotes(roomInfo) {
 
         // If we haven't even scouted our own room, we definitely shouldn't plan remotes
         if (!Memory.rooms[roomInfo.room.name]) {
@@ -87,7 +81,6 @@ class RemotePlanner {
                             room: distTwo,
                             score: scoreCost.score,
                             cost: scoreCost.cost,
-                            costMargin: scoreCost.costMargin,
                             roads: distTwoRoadPositions,
                             containers: distTwoContainerPositions,
                             haulerPaths: distTwoHaulerPaths,
@@ -102,7 +95,6 @@ class RemotePlanner {
                     room: distOne,
                     score: scoreCost.score,
                     cost: scoreCost.cost,
-                    costMargin: scoreCost.costMargin,
                     roads: distOneRoadPositions,
                     containers: distOneContainerPositions,
                     haulerPaths: distOneHaulerPaths,
@@ -113,7 +105,7 @@ class RemotePlanner {
         });
 
         // Get our combination of remotes with the highest score, algorithm explained below
-        return this.traverseRecursively(remotes, maxSpawnCapacity, 0).branch;
+        return this.traverseRecursively(remotes, CONSTANTS.maxBaseSpawnCapacity, 0).branch;
     }
 
     /**
@@ -183,21 +175,16 @@ class RemotePlanner {
         upkeep.structures = totalContainerUpkeep + totalRoadUpkeep;
 
         // Now for creeps spawn costs, total up energy and spawn time upkeeps
-        upkeep.creeps = remoteSpawnHandler.getUpkeepEstimates(roomInfo, remoteInfo, neededCarry);
+        upkeep.creeps = remoteSpawnHandler.getUpkeepEstimates(roomInfo, remoteInfo.sources.length, neededCarry);
 
         // Calculate net energy produced in this room
         const grossEnergy = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME * remoteInfo.sources.length;
         const netEnergy = grossEnergy - (upkeep.structures + upkeep.creeps.energy);
 
-        // We're going to allocate a little bit of extra cost to this remote for the energy in produces
-        // This is for the home room to be able to use the energy we produce here
-        const costMargin = Math.ceil(netEnergy * this.planningConstants.energyUsageMargin) * CREEP_SPAWN_TIME / CREEP_LIFE_TIME;
-
         // Here's the score and cost of this remote so we can calculate which are most important
         return {
             score: netEnergy,
             cost: upkeep.creeps.spawnTime,
-            costMargin: costMargin,
         };
     }
 
@@ -426,7 +413,7 @@ class RemotePlanner {
 
             // Pass children recusively
             const nextChoices = choices.filter((c) => c !== choice).concat(choice.children);
-            const result = this.traverseRecursively(nextChoices, remainingCost - choice.cost - choice.costMargin, score + choice.score);
+            const result = this.traverseRecursively(nextChoices, remainingCost - choice.cost, score + choice.score);
 
             // Adjust score to be correct for leaf nodes
             if (result.leafNode) {
