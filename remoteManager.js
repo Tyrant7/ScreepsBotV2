@@ -168,6 +168,7 @@ class RemoteManager {
                 const containerSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
                 const existingContainer = room.lookForAt(LOOK_STRUCTURES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
                 if (!containerSite && !existingContainer) {
+                    console.log("Unbuilt container at: " + container);
                     unbuilt.push({ pos: container, type: STRUCTURE_CONTAINER });
                 }
             });
@@ -377,26 +378,24 @@ class RemoteManager {
                        h.memory.container.roomName === path.container.roomName;
             });
             const currentCarry = haulers.reduce((totalCarry, curr) => totalCarry + curr.body.filter((p) => p.type === CARRY).length, 0);       
-            const missingCarry = path.neededCarry - currentCarry;
+            let missingCarry = path.neededCarry - currentCarry;
 
             // If we have extra, and we can safely reallocate a hauler, let's do so
-            if (missingCarry < 0) {
+            if (missingCarry < 0 && haulers.length > 1) {
                 // First, let's find the smallest hauler
-                const smallestHauler = 
-                haulers.length > 1 ?
-                    haulers.reduce((smallest, curr) => {
-                        const currentCarry = curr.body.filter((p) => p.type === CARRY).length;
-                        return !smallest || currentCarry < smallest.carry 
-                            ? { carry: currentCarry, creep: curr }
-                            : smallest;
-                    }).creep 
-                : haulers[0];
+                const smallestHauler = haulers.reduce((smallest, curr) => {
+                    const currentCarry = curr.body.filter((p) => p.type === CARRY).length;
+                    return !smallest || currentCarry < smallest.carry 
+                        ? { carry: currentCarry, creep: curr }
+                        : smallest;
+                });
 
                 // Then let's check if reallocating it keeps us above our threshold
                 if (missingCarry + smallestHauler.carry <= 0) {
                     // If yes, reallocate it
                     delete smallestHauler.creep.memory.container;
                     delete smallestHauler.creep.memory.targetRoom;
+                    missingCarry += smallestHauler.carry;
                 }
             }
             // If we're missing CARRY, let's look unassigned haulers
@@ -425,7 +424,7 @@ class RemoteManager {
                     // Assign our best candidate
                     bestCandidate.memory.container = path.container;
                     bestCandidate.memory.targetRoom = path.container.roomName;
-                    newCarry += bestCandidate.carry;
+                    missingCarry -= bestCandidate.carry;
                 }
             }
 
