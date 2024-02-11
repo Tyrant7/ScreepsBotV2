@@ -341,13 +341,6 @@ class RemotePlanner {
             }
         });
 
-        function getCostMatrix(roomName) {
-            if (matrices[roomName]) {
-                return matrices[roomName];
-            }
-            return unwalkable;
-        }
-
         // Simply path from each container to the goal, only allowing planned roads as transport, except in the home room
         const haulerPaths = [];
         containerPositions.forEach((container) => {
@@ -355,7 +348,12 @@ class RemotePlanner {
                 // These normally wouldn't be necessary, however we should include them for our home room
                 plainCost: 2,
                 swampCost: 10,
-                roomCallback: getCostMatrix,
+
+                // This will return `undefined` for rooms we don't have any planned roads in
+                // Which is conveniently exactly what we want!
+                roomCallback: function(roomName) {
+                    return matrices[roomName];
+                },
             });
 
             // No path found!
