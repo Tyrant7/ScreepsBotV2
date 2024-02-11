@@ -1,10 +1,11 @@
 const defaultStyle = {
     fill: "#FFFFFF",
-}
+};
 
 const defaultText = {
     color: "#FFFFFF",
-}
+    align: "left",
+};
 
 module.exports = {
     
@@ -27,7 +28,7 @@ module.exports = {
 
         // Draw a simple overlay
         for (const figure in importantFigures) {
-            visual.text(figure + ": " + importantFigures[figure], 0, offset, { align: "left" });
+            visual.text(figure + ": " + importantFigures[figure], 0, offset, defaultText);
             offset++;
         }
 

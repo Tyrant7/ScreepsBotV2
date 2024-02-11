@@ -51,10 +51,10 @@ class RemoteManager {
             // Only spawn for this remote if our spawn capacity is below 100% while maintaining it
             // Once we hit our cutoff, stop spawning for any remotes
             const cost = remoteSpawnHandler.getUpkeepEstimates(roomInfo, remote.haulerPaths.length, remote.neededHaulerCarry).spawnTime;
-            spawnCosts += cost;
-            if (spawnCosts + baseRoomSpawnCost >= 1) {
+            if (spawnCosts + cost + baseRoomSpawnCost >= 1) {
                 break;
             }
+            spawnCosts += cost;
 
             // If we're good, let's process this remote's spawns
             const neededSpawns = this.processRemote(roomInfo, remote);
