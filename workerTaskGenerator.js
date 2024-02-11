@@ -186,10 +186,12 @@ const basicWorkerActions = {
             return true;
         }
 
-        if (creep.build(buildTarget) === ERR_NOT_IN_RANGE) {
+        const intentResult = creep.build(buildTarget);
+        if (intentResult === ERR_NOT_IN_RANGE) {
             creep.moveTo(buildTarget);
         }
-        return creep.store[RESOURCE_ENERGY] === 0;
+        // INVALID_TARGET means that the target is now built and no longer a construction site
+        return creep.store[RESOURCE_ENERGY] === 0 || intentResult === ERR_INVALID_TARGET;
     },
     [taskType.repair]: function(creep, target) {
         if (creep.repair(target) === ERR_NOT_IN_RANGE) {
