@@ -22,6 +22,8 @@ class RoomInfo {
         this.remoteHaulers = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.remoteHauler);
         this.reservers = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.reserver);
 
+        this.defenders = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.defender);
+
         this.spawns = room.find(FIND_MY_SPAWNS);
 
         this.openSourceSpots = room.find(FIND_SOURCES).reduce(function(total, s) {
@@ -63,6 +65,29 @@ class RoomInfo {
     getGrossIncome() {
         const income = this.miners.reduce((total, curr) => total + curr.body.filter((part) => part.type === WORK).length * HARVEST_POWER, 0);
         return Math.min(income, this.getMaxIncome());
+    }
+
+    getEnemies() {
+        if (this.enemies) {
+            return this.enemies;
+        }
+        this.enemies = [];
+
+        const base = Memory.bases[this.room.name];
+        if (!base) {
+            return this.enemies;
+        }
+
+        const rooms = base.remotes.map((r) => r.room);
+        for (const roomName of rooms) {
+            const room = Game.rooms[roomName];
+            if (!room) {
+                continue;
+            }
+            const enemies = room.find(FIND_HOSTILE_CREEPS);
+            this.enemies.push(enemies);
+        }
+        return this.enemies;
     }
 }
 

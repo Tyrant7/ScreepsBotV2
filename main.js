@@ -35,6 +35,8 @@ const ReserverTaskGenerator = require("reserverTaskGenerator");
 const RemoteMinerTaskGenerator = require("remoteMinerTaskGenerator");
 const RemoteHaulerTaskGenerator = require("remoteHaulerTaskGenerator");
 
+const DefenderTaskGenerator = require("defenderTaskGenerator");
+
 const workerManager = new CreepManager(new WorkerTaskGenerator());
 const haulerManager = new CreepManager(new HaulerTaskGenerator());
 const minerManager = new CreepManager(new MinerTaskGenerator());
@@ -44,6 +46,8 @@ const remoteBuilderManager = new CreepManager(new RemoteBuilderTaskGenerator());
 const reserverManager = new CreepManager(new ReserverTaskGenerator());
 const remoteMinerManager = new CreepManager(new RemoteMinerTaskGenerator());
 const remoteHaulerManager = new CreepManager(new RemoteHaulerTaskGenerator());
+
+const defenderManager = new CreepManager(new DefenderTaskGenerator());
 
 // Mapping
 const creepRoleMap = {
@@ -55,6 +59,7 @@ const creepRoleMap = {
     [CONSTANTS.roles.reserver]: reserverManager,
     [CONSTANTS.roles.remoteMiner]: remoteMinerManager,
     [CONSTANTS.roles.remoteHauler]: remoteHaulerManager,
+    [CONSTANTS.roles.defender]: defenderManager,
 };
 
 // Spawning
@@ -67,6 +72,7 @@ const HaulerSpawnHandler = require("haulerSpawnHandler");
 const ScoutSpawnHandler = require("scoutSpawnHandler");
 
 const RemoteSpawnHandler = require("remoteSpawnHandler");
+const DefenderSpawnHandler = require("defenderSpawnHandler");
 
 const crashSpawnHandler = new CrashSpawnHandler();
 const workerSpawnHandler = new WorkerSpawnHandler();
@@ -75,6 +81,7 @@ const haulerSpawnHandler = new HaulerSpawnHandler();
 const scoutSpawnHandler = new ScoutSpawnHandler();
 
 const remoteSpawnHandler = new RemoteSpawnHandler();
+const defenderSpawnHandler = new DefenderSpawnHandler();
 
 // Only include economy based spawn handlers,
 // and do not include handlers that are not meant to regularly spawn in bases
@@ -138,6 +145,9 @@ module.exports.loop = function() {
 
                 // Make sure we're spawning for remotes
                 currentSpawnHandlers.push(remoteSpawnHandler);
+            }
+            if (info.getEnemies().length) {
+                currentSpawnHandlers.push(defenderSpawnHandler);
             }
 
             // Handle spawns

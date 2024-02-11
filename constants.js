@@ -8,6 +8,7 @@ module.exports = {
         remoteHauler: "r_Hauler",
         remoteMiner: "r_Miner",
         reserver: "reserver",
+        defender: "defender",
     },
     maxWorkerLevel: 8,
     maxHaulerLevel: 8,
