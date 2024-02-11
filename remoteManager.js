@@ -81,6 +81,7 @@ class RemoteManager {
             }
         });
 
+        console.log("-----------------");
         remoteSpawnHandler.spawnQueues[roomInfo.room.name].forEach((c) => {
             console.log(Object.values(c));
         })
