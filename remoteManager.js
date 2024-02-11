@@ -13,7 +13,7 @@ class RemoteManager {
         
         // Plan our remotes, if we haven't already
         const roomName = roomInfo.room.name;
-        let reload = !this.remotePlans[roomName];
+        const reload = !this.remotePlans[roomName];
         if (reload) {
             const unsortedPlans = this.getRemotePlans(roomInfo, remainingSpawnCapacity);
 
@@ -35,6 +35,10 @@ class RemoteManager {
             Memory.bases[roomName].remotes = [];
             plans.forEach((remote) => Memory.bases[roomName].remotes.push({ 
                 room: remote.room,
+                structures: {
+                    containers: remote.containers,
+                    roads: remote.roads,
+                },
             }));
         }
 
