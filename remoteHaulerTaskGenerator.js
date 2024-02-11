@@ -13,29 +13,37 @@ class RemoteHaulerTaskGenerator {
     run(creep, roomInfo, activeTasks) {
 
         // Wait for a target before
-        if (!creep.memory.containerID) {
+        if (!creep.memory.targetRoom) {
             creep.say("No room!");
             return null;
         }
 
         if (creep.store.getFreeCapacity()) {
-            return this.createGatherTask();
+            return this.createGatherTask(creep);
         }
         return this.createDepositTask(roomInfo);
     }
 
-    createGatherTask() {
+    createGatherTask(creep) {
+
         const actionStack = [];
         actionStack.push(function(creep, containerPos) {
 
-            const container = containerPos.lookFor(LOOK_STRUCTURES, { filter: { structureType: STRUCTURE_CONTAINER } });
-            if (!container) {
-                // Our container disappeared
-                if (creep.room.name === containerPos.name) {
-                    return true;
+            // If we have view of the room, do our task like normal
+            if (Game.rooms[containerPos.roomName]) {
+                const container = containerPos.lookFor(LOOK_STRUCTURES, { filter: { structureType: STRUCTURE_CONTAINER } });
+                if (!container) {
+                    // Our container disappeared
+                    if (creep.room.name === containerPos.name) {
+                        return true;
+                    }
+    
+                    // We're probably not in the room yet, let's keep going
+                    creep.moveTo(containerPos);
                 }
-
-                // We're probably not in the room yet, let's keep going
+            }
+            else {
+                // Otherwise, we'll have to go there before we can tell
                 creep.moveTo(containerPos);
             }
 
