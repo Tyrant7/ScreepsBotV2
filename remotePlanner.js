@@ -275,9 +275,12 @@ class RemotePlanner {
                 swampCost: 10,
 
                 // If we don't have planned roads for this room, 
-                // we don't want to walk in it and we'll get `undefined` back
+                // return false so we don't consider it
                 roomCallback: function(roomName) {
-                    return matrices[roomName];
+                    if (matrices[roomName]) {
+                        return matrices[roomName];
+                    }
+                    return false;
                 }
             });
 
@@ -349,11 +352,13 @@ class RemotePlanner {
                 plainCost: 2,
                 swampCost: 10,
 
-                // This will return `undefined` for rooms we don't have any planned roads in
-                // Which is conveniently exactly what we want!
+                // Don't allow us to consider any rooms we don't have planned roads for
                 roomCallback: function(roomName) {
-                    return matrices[roomName];
-                },
+                    if (matrices[roomName]) {
+                        return matrices[roomName];
+                    }
+                    return false;
+                }
             });
 
             // No path found!
