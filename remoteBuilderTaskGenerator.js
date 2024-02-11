@@ -30,7 +30,15 @@ class RemoteBuilderTaskGenerator {
             }
 
             // Otherwise, nothing left to build 
-            // -> let's wait to be reassigned or for more targets to be created
+            // -> Let's look for repair targets instead
+            const repairTargets = creep.room.find(FIND_STRUCTURES, { filter: (s) => s.hits < s.hitsMax });
+            if (repairTargets.length) {
+                const bestTarget = repairTargets.reduce((best, curr) => curr.hits < best.hits ? curr : best);
+                return this.makeRepairTask(bestTarget);
+            }
+
+            // Nothing to do
+            // -> let's wait to be reassigned or for more tasks to be created
             return null;
         }
 
@@ -73,6 +81,20 @@ class RemoteBuilderTaskGenerator {
         });
 
         return [new Task(site.id, "build", actionStack)];
+    }
+
+    makeRepairTask(structure) {
+
+        const actionStack = [];
+        actionStack.push(harvest);
+        actionStack.push(function(creep, target) {
+            if (creep.repair(target) === ERR_NOT_IN_RANGE) {
+                creep.moveTo(target);
+            }
+            return creep.store[RESOURCE_ENERGY] === 0 || !target || target.hits === target.hitsMax;
+        });
+
+        return [new Task(structure.id, "repair", actionStack)];
     }
 }
 
