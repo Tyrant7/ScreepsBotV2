@@ -11,38 +11,6 @@ class RemoteManager {
 
     run(roomInfo, remoteSpawnHandler, remainingSpawnCapacity) {
         
-
-        // Responsiblity list:
-        //
-        // 1. Planning remotes
-        // -> remote planner module will handle this part
-        //
-        // 2. Tracking remote efficiency and printing out an overlay in the base room
-        // -> printing remote name, gross energy production, net energy production, 
-        //    upkeep, spawn cost, and current creep vs ideal creep counts
-        //
-        // 3. Tracking states for each remote
-        // -> constructing: remote is in progress of being built
-        //    - requesting builders
-        //    - handling placement of construction sites in an efficient order
-        //    - ensuring that only one remote per base room is being constructed at a time for efficiency
-        //    - handling switching the state when remote is built enough to be efficient
-        // -> active: remote is healthy and producing
-        //    - handling maintenance if roads become too low or destroyed
-        //    - requesting additional haulers if containers overflow
-        //    - handle searching for threats in this remote or nearby
-        // -> contested: remote is under potential threat
-        //    - requesting defenders
-        //    - handling of setting certain flags for present miners and haulers to be aware 
-        //      and react appropriately by fleeing
-        //    - if contest goes on for too long or cost is too great abandon the remote
-        // -> abandoned: remote has been captured by an enemy or discarded due to lack of efficiency
-        //    - track reason for abandonement
-        //    - should handle flagging the room as dangerous and keeping track of the threat if that was the cause
-        //    - should also calculate if best course of action is to retake the room or to 
-        //      attempt to build a new remote somewhere else once threat has subsided for other rooms
-
-
         // Plan our remotes, if we haven't already
         const roomName = roomInfo.room.name;
         let reload = !this.remotePlans[roomName];
@@ -170,7 +138,6 @@ class RemoteManager {
                 const containerSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
                 const existingContainer = room.lookForAt(LOOK_STRUCTURES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
                 if (!containerSite && !existingContainer) {
-                    // console.log("Unbuilt container at: " + container);
                     unbuilt.push({ pos: container, type: STRUCTURE_CONTAINER });
                 }
             });
@@ -274,12 +241,6 @@ class RemoteManager {
         // We should ideally keep nBuilders + 1 sites active at a time
         const room = Game.rooms[remoteInfo.room];
         if (room) {
-
-            /*
-            unbuilt.forEach((p) => {
-                console.log(Object.values(p));
-            });
-            */
 
             // Start with containers
             let placed = 0;
