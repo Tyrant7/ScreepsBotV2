@@ -425,8 +425,8 @@ class RemoteManager {
                     };
 
                     // Assign our best candidate
-                    bestCandidate.memory.container = path.container;
-                    bestCandidate.memory.targetRoom = path.container.roomName;
+                    bestCandidate.creep.memory.container = path.container;
+                    bestCandidate.creep.memory.targetRoom = path.container.roomName;
                     missingCarry -= bestCandidate.carry;
                 }
             }
