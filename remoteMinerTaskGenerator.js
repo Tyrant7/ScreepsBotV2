@@ -4,10 +4,10 @@ const moveToRoom = require("moveToRoom");
 class RemoteMinerTaskGenerator {
 
     /**
-     * Generates a "reserve" task for this reserver.
+     * Generates a "harvest" task for this miner.
      * @param {Creep} creep The creep to create tasks for.
      * @param {RoomInfo} roomInfo The info object associated with the home room of the creep to generate tasks for.
-     * @param {Task[]} activeTasks List of current reserver tasks to take into consideration when finding a new task.
+     * @param {Task[]} activeTasks List of current miner tasks to take into consideration when finding a new task.
      * @returns {Task[]} An array of a single task object.
      */
     run(creep, roomInfo, activeTasks) {
