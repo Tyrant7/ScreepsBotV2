@@ -287,6 +287,16 @@ class RemotePlanner {
                 return;
             }
 
+            // Let's update our cost matrices with these new paths so that 
+            // they can be reused when pathing to other sources
+            result.path.forEach((point) => {
+                if (!matrices[point.roomName]) {
+                    matrices[point.roomName] = new PathFinder.CostMatrix();
+                }    
+                matrices[point.roomName].set(point.x, point.y, 1);
+            });
+
+            // Store calculated path
             sourceResults.push(result.path);
         });
 
