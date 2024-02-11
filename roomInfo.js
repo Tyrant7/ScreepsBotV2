@@ -15,6 +15,7 @@ class RoomInfo {
         this.workers = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.worker);
         this.miners = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.miner);
         this.haulers = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.hauler);
+        this.upgraders = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.upgrader);
         this.scouts = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.scout);
 
         this.remoteBuilders = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.remoteBuilder);

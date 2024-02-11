@@ -3,6 +3,7 @@ module.exports = {
         worker: "worker",
         miner: "miner",
         hauler: "hauler",
+        upgrader: "upgrader",
         scout: "scout",
         remoteBuilder: "r_Builder",
         remoteHauler: "r_Hauler",

@@ -12,23 +12,6 @@ class WorkerTaskGenerator {
      */
     run(creep, roomInfo, activeTasks) {
 
-        // Generate tasks to do with workers
-        const tasks = [];
-
-        // Start with construction tasks
-        const sites = roomInfo.room.find(FIND_MY_CONSTRUCTION_SITES);
-        for (const site of sites) {
-
-            // Don't allow more build tasks than each 10,000 energy needed to complete
-            const existingTasks = activeTasks.filter((task) => task.target === site.id);
-            if (existingTasks.length >= Math.ceil((site.progressTotal - site.progress) / 10000)) {
-                continue;
-            }
-
-            // Create a basic worker task for building
-            tasks.push(this.createBasicTask(site, taskType.build));
-        }
-        
         // Create some restock tasks if we don't have haulers or miners yet
         // Yes, duplicated code, I know :/
         if (!roomInfo.miners.length || !roomInfo.haulers.length) {
@@ -48,57 +31,74 @@ class WorkerTaskGenerator {
                 }
     
                 // All that's left should be towers, spawn, and extensions
-                tasks.push(this.createBasicTask(restock, taskType.restock));
+                return [this.createBasicTask(restock, taskType.restock)];
+            }
+        }
+
+        // Upgrade tasks -> ensure at least one at all times
+        if (!roomInfo.upgraders.length && roomInfo.room.controller.my) {
+            const existingTasks = activeTasks.filter((task) => task.target === roomInfo.room.controller.id && task.tag === taskType.upgrade);
+            if (!existingTasks.length) {
+                return [this.createBasicTask(roomInfo.room.controller, taskType.upgrade)];
+            }
+        }
+
+        // Construction tasks
+        const sites = roomInfo.room.find(FIND_MY_CONSTRUCTION_SITES);
+        if (sites.length) {
+
+            // Sort sites by priority
+            sites.sort((a, b) => {
+                return (buildPriorities[a.structureType] || 1) - (buildPriorities[b.structureType] || 1);
+            });
+
+            for (const site of sites) {
+                
+                // Don't allow more build tasks than each 5,000 energy needed to complete
+                const existingTasks = activeTasks.filter((task) => task.target === site.id);
+                if (existingTasks.length >= Math.ceil((site.progressTotal - site.progress) / 5000)) {
+                    continue;
+                }
+
+                // Create a basic worker task for building
+                return [this.createBasicTask(site, taskType.build)];
             }
         }
 
         // Repair tasks
-        const repairable = roomInfo.room.find(FIND_STRUCTURES, { filter: (s) => s.hits < s.hitsMax });
-        for (const target of repairable) {
+        const repairables = roomInfo.room.find(FIND_STRUCTURES, { filter: (s) => s.hits < s.hitsMax });
+        if (repairables.length) {
+
+            // Sort repairables by repair need
+            repairables.sort((a, b) => {
+
+                // Calculate which needs more repair by a simple fraction of their max, 
+                // factoring in a multiplier for certain structures like walls
+                const aRepairNeed = 1 - (a.hits / (a.hitsMax * (repairThresholds[a.structureType] || 1)));
+                const bRepairNeed = 1 - (b.hits / (b.hitsMax * (repairThresholds[b.structureType] || 1)));
+                return aRepairNeed - bRepairNeed;
+            });
+
+            for (const target of repairables) {
             
-            if (repairThresholds[target.structureType] &&
-                target.hits / target.hitsMax >= repairThresholds[target.structureType]) {
-                continue;
-            }
-
-            // One repair task per target for each 150k health missing, max one for walls and ramparts
-            const existingTasks = activeTasks.filter((task) => task.target === target.id && task.tag === taskType.repair);
-            if ((target.structureType === STRUCTURE_WALL ||
-                target.structureType === STRUCTURE_RAMPART) &&
-                existingTasks.length) {
-                continue;
-            }
-            else if (existingTasks.length >= Math.ceil((target.hitsMax - target.hits) / 150000)) {
-                continue;
-            }
-
-            // Create a basic worker task for repairing
-            tasks.push(this.createBasicTask(target, taskType.repair));
-        }
-
-        // Upgrade tasks -> ensure at least one at all times
-        if (roomInfo.room.controller.my) {
-            const existingTasks = activeTasks.filter((task) => task.target === roomInfo.room.controller.id && task.tag === taskType.upgrade);
-            if (!existingTasks.length) {
-                // Create a basic worker task for upgrading
-                tasks.push(this.createBasicTask(roomInfo.room.controller, taskType.upgrade));
+                if (repairThresholds[target.structureType] &&
+                    target.hits / target.hitsMax >= repairThresholds[target.structureType]) {
+                    continue;
+                }
+    
+                // One repair task per target
+                const existingTasks = activeTasks.filter((task) => task.target === target.id && task.tag === taskType.repair);
+                if (existingTasks.length) {
+                    continue;
+                }
+    
+                // Create a basic worker task for repairing
+                return [this.createBasicTask(target, taskType.repair)];
             }
         }
 
-        // Prioritise all of our tasks and return them
-        const distanceWeight = 0.35;
-        tasks.forEach((task) => task.priority = priorityMap[task.tag](task, roomInfo) +
-        // Apply weights to each task's priority based on distance to the requesting creep only if 
-        // the requesting creep has enough energy remaining to fill an extension
-            (creep.store[RESOURCE_ENERGY] >= EXTENSION_ENERGY_CAPACITY[roomInfo.room.controller.level] 
-            ? Math.ceil(creep.pos.getRangeTo(Game.getObjectById(task.target)) * distanceWeight) : 0));
-
-        // Let's push a default task in case we're out of other options
-        const defaulTask = this.createBasicTask(roomInfo.room.controller, taskType.upgrade);
-        defaulTask.priority = -1000;
-        tasks.push(defaulTask);
-
-        return tasks;
+        // Let's create a default upgrade task in case we're out of other options
+        return [this.createBasicTask(roomInfo.room.controller, taskType.upgrade)];
     }
 
     /**
@@ -124,6 +124,17 @@ const repairThresholds = {
     [STRUCTURE_RAMPART]: 0.005,
     [STRUCTURE_CONTAINER]: 0.5,
     [STRUCTURE_ROAD]: 0.65
+};
+
+const buildPriorities = {
+    [STRUCTURE_STORAGE]: 9,
+    [STRUCTURE_CONTAINER]: 8,
+    [STRUCTURE_TOWER]: 7,
+    [STRUCTURE_LINK]: 6,
+    [STRUCTURE_EXTENSION]: 5,
+    [STRUCTURE_RAMPART]: 4,
+    [STRUCTURE_ROAD]: 3,
+    [STRUCTURE_WALL]: 2,
 };
 
 const taskType = {
@@ -200,69 +211,6 @@ const basicWorkerActions = {
         return creep.store[RESOURCE_ENERGY] === 0 || !target || target.hits === target.hitsMax;
     },
     "harvest": harvest,
-};
-
-// Each of these should return a single number for priority
-const priorityMap = {
-    [taskType.upgrade]: function(task, info) {
-
-        // Big problem here -> emergency upgrade
-        if (info.room.controller.ticksToDowngrade <= 1000) {
-            return 50;
-        }
-
-        // Otherwise, default logic
-        // A base of 1 priority, plus an additional 1 priority for each 500 ticks below 5000
-        const downgrade = Math.min(Math.floor(info.room.controller.ticksToDowngrade / 500), 10);
-        return 11 - downgrade;
-    },
-    [taskType.restock]: function(task, info) {
-
-        // Need workers urgently
-        if (info.workers.length <= 2) {
-            return 100;
-        }
-
-        // Give a bit of a threshold for both, hence the * 1.2
-        const eTier = Math.min(info.room.energyAvailable * 1.2 / info.room.energyCapacityAvailable, 1);
-        const workerUrgency = Math.min(info.workers.length / info.openSourceSpots, 1);
-        const need = 1 - (eTier * workerUrgency);
-
-        if (need >= 0.9) {
-            return 50;
-        }
-        else if (need >= 0.75) {
-            return 13;
-        }
-        else if (need >= 0.5) {
-            return 5;
-        }
-        return 1;
-    },
-    [taskType.build]: function(task, info) {
-        
-        const target = Game.getObjectById(task.target);
-        const buildPriorities = {
-            [STRUCTURE_STORAGE]: 9,
-            [STRUCTURE_CONTAINER]: 5,
-            [STRUCTURE_EXTENSION]: 3,
-            [STRUCTURE_TOWER]: 3,
-            [STRUCTURE_LINK]: 2,
-            [STRUCTURE_RAMPART]: 2,
-            [STRUCTURE_ROAD]: 2,
-            [STRUCTURE_WALL]: 1
-        }
-        return buildPriorities[target.structureType] || 1;
-    },
-    [taskType.repair]: function(task, info) {
-
-        // A simple equation, which calculates their fraction of total hits, 
-        // factoring in a multiplier for special structures like walls and ramparts
-        const target = Game.getObjectById(task.target);
-        const multiplier = repairThresholds[target.structureType] || 1;
-        const repairNeed = 1 - (target.hits / (target.hitsMax * multiplier));
-        return repairNeed * 20;
-    },
 };
 
 module.exports = WorkerTaskGenerator;
