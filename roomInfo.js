@@ -12,18 +12,25 @@ class RoomInfo {
         // Find all creeps that this room is responsible for, not just ones in it
         this.creeps = Object.values(Game.creeps).filter((c) => c.memory.home === room.name);
 
-        this.workers = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.worker);
-        this.miners = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.miner);
-        this.haulers = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.hauler);
-        this.upgraders = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.upgrader);
-        this.scouts = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.scout);
+        // Dynamically intialize an array for each role
+        for (const role in CONSTANTS.roles) {
+            const propName = role + "s";
+            this[propName] = [];
+        }
 
-        this.remoteBuilders = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.remoteBuilder);
-        this.remoteMiners = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.remoteMiner);
-        this.remoteHaulers = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.remoteHauler);
-        this.reservers = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.reserver);
+        // Map each role's string name found on creeps to it's code name
+        const roleToArrayMap = {};
+        Object.keys(CONSTANTS.roles).forEach((roleName) => {
+            roleToArrayMap[CONSTANTS.roles[roleName]] = this[roleName + "s"];
+        });
 
-        this.defenders = this.creeps.filter((creep) => creep.memory.role === CONSTANTS.roles.defender);
+        // Push each creep to their matching array
+        this.creeps.forEach((creep) => {
+            const array = roleToArrayMap[creep.memory.role];
+            if (array) {
+                array.push(creep);
+            }
+        });
 
         this.spawns = room.find(FIND_MY_SPAWNS);
 
