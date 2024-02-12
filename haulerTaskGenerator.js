@@ -85,7 +85,7 @@ const basicActions = {
 
         // If there's no storage in this creep's home, we're done
         const storage = Game.rooms[creep.memory.home].storage;
-        if (!storage) {
+        if (!storage || !target) {
             delete creep.memory.openPull;
             return true;
         }
