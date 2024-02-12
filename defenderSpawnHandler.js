@@ -9,9 +9,12 @@ class DefenderSpawnHandler {
 
             // Find our strongest enemy
             const mostFightParts = enemies.reduce((strongest, curr) => {
+                if (!curr.body) {
+                    return strongest;
+                }
                 const fightParts = curr.body.filter((p) => p.type === RANGED_ATTACK || p.type === ATTACK || p.type === HEAL);
                 return fightParts > strongest ? fightParts : strongest;
-            });
+            }, 0);
 
             // Make an appropriately sized defender
             return this.makeMiniDefender(Math.ceil(mostFightParts / 4), roomInfo.room.energyCapacityAvailable);
