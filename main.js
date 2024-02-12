@@ -132,7 +132,7 @@ module.exports.loop = function() {
             // This represent the fraction of our total spawn capacity we sit at
             // i.e. the amount of time we spend spawning / 1
             const avgSustainCost = basicSpawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
-            overlay.text(info.room.name, { [info.room.name]: "(" + avgSustainCost + ")" });
+            overlay.addText(info.room.name, { [info.room.name]: "(" + avgSustainCost + ")" });
 
             let remoteSustainCost = 0;
 
@@ -152,7 +152,7 @@ module.exports.loop = function() {
                 currentSpawnHandlers.unshift(defenderSpawnHandler);
             }
 
-            overlay.text(info.room.name, { "Spawn Capacity": (avgSustainCost + remoteSustainCost) + " / 1" });
+            overlay.addText(info.room.name, { "Spawn Capacity": (avgSustainCost + remoteSustainCost) + " / 1" });
 
             // Handle spawns
             spawnManager.run(info, currentSpawnHandlers);
@@ -160,6 +160,9 @@ module.exports.loop = function() {
 
         // Defense
         towerManager.run(info);
+
+        // Draw our panel for this room
+        overlay.finalizePanels(info.room.name);
     }
 
     // Run creeps

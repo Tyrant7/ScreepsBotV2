@@ -7,35 +7,61 @@ const defaultText = {
     align: "left",
 };
 
+const panelStyle = {
+    fill: "#000000",
+    opacity: 0.35,
+    stroke: "#000000",
+    strokeWidth: 0.35,
+};
+
 module.exports = {
     
-    text: function(roomName, importantFigures, style = defaultText) {
-
+    addText: function(roomName, importantFigures) {
         if (!DEBUG.drawOverlay) {
             return;
         }
 
-        // If we've already drawn visuals this tick, don't overlap them
-        let offset = 0.5;
-        let visual;
-        if (this.cachedLastTick === Game.time) {
-            offset = this.cachedOffset;
-            visual = this.cachedVisual;
+        if (!this.panels) {
+            this.panels = {};
         }
-        else {
-            visual = new RoomVisual(roomName);
+        if (!this.panels[roomName] || this.panels[roomName].shouldRedraw) {
+            this.panels[roomName] = { shouldRedraw: false, elements: [] };
+        }
+        this.panels[roomName].elements.push(...Object.keys(importantFigures).map((fig) => {
+            return fig + ": " + importantFigures[fig];
+        }));
+    },
+
+    finalizePanels: function(roomName, anchor = "right") {
+        if (!DEBUG.drawOverlay) {
+            return;
         }
 
-        // Draw a simple overlay
-        for (const figure in importantFigures) {
-            visual.text(figure + ": " + importantFigures[figure], 0, offset, defaultText);
+        if (!this.panels) {
+            return;
+        }
+
+        const panel = this.panels[roomName];
+        if (!panel) {
+            return;
+        }
+
+        // Draw the panel itself first
+        const heightMultiplier = 1;
+        const panelHeight = (panel.elements.length * heightMultiplier) + 1;
+        const panelWidth = 10;
+        const x = anchor === "left" ? -0.5 + panelStyle.strokeWidth / 2: 49.5 - panelWidth - panelStyle.strokeWidth / 2;
+        const y = -0.5 + panelStyle.strokeWidth / 2;
+        const visual = new RoomVisual(roomName).rect(x, y, panelWidth, panelHeight, panelStyle);
+
+        // Add text to the panel for each element
+        let offset = 0.5 + panelStyle.strokeWidth / 2;
+        for (const element of panel.elements) {
+            visual.text(element, x + 0.5, offset, defaultText);
             offset++;
         }
 
-        // Save our offset and tick
-        this.cachedOffset = offset;
-        this.cachedLastTick = Game.time;
-        this.cachedVisual = visual;
+        panel.shouldRedraw = true;
     },
 
     rects: function(positions, width = 0.5, height = 0.5, style = defaultStyle) {
@@ -67,4 +93,4 @@ module.exports = {
             visuals[pos.roomName].circle(pos.x, pos.y, style);
         });
     },
-}
+};
