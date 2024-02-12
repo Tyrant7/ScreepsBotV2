@@ -49,7 +49,7 @@ class HaulerTaskGenerator {
 
                 // If this miner's container is within 200 of max capacity, let's empty it out
                 const container = roomInfo.room.lookForAt(LOOK_STRUCTURES, miner.pos).find((s) => s.structureType === STRUCTURE_CONTAINER);
-                if (container.store.getFreeCapacity() <= 200) {
+                if (container && container.store.getFreeCapacity() <= 200) {
                     // Create a task to transfer the energy from this miner's position to the storage
                     return [new Task(miner.id, taskType.transport, [basicActions[taskType.transport]])];
                 }
