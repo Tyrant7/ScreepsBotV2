@@ -78,7 +78,7 @@ class RemoteSpawnHandler {
     }
 
     makeHauler(carryParts, maxCost) {
-        const body = haulerSpawnHandler.make(Math.ceil(carryParts / 2), maxCost).body;
+        const body = haulerSpawnHandler.make(Math.min(Math.ceil(carryParts / 2), CONSTANTS.maxRemoteHaulerLevel), maxCost).body;
         return { body: body, 
                  name: "Remote Hauler " + Game.time + " [" + body.filter((p) => p === MOVE).length + "]",
                  memory: { role: CONSTANTS.roles.remoteHauler }};
