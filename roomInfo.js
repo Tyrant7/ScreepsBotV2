@@ -68,6 +68,10 @@ class RoomInfo {
         return Math.min(income, this.getMaxIncome());
     }
 
+    /**
+     * Finds enemies in remotes of this room and caches them.
+     * @returns {Creep[]} A list of enemy creeps in this room's remotes.
+     */
     getEnemies() {
         if (this.enemies) {
             return this.enemies;

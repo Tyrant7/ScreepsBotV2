@@ -149,7 +149,7 @@ module.exports.loop = function() {
                 currentSpawnHandlers.push(remoteSpawnHandler);
             }
             if (info.getEnemies().length) {
-                currentSpawnHandlers.push(defenderSpawnHandler);
+                currentSpawnHandlers.unshift(defenderSpawnHandler);
             }
 
             overlay.text(info.room.name, { "Spawn Capacity": (avgSustainCost + remoteSustainCost) + " / 1" });
