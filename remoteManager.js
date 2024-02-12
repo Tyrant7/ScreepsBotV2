@@ -118,7 +118,7 @@ class RemoteManager {
         }
 
         // CPU tracking
-        if (DEBUG.trackCPUUsage) {
+        if (DEBUG.logRemotePlanning) {
             console.log("Planned remotes with: " + (Game.cpu.getUsed() - cpu) + " cpu");
             bestBranch.forEach((b) => console.log("Room " + b.room + " with score: " + b.score + " and cost: " + b.cost));
             const totalCost = bestBranch.reduce((usage, node) => usage + node.cost, 0);

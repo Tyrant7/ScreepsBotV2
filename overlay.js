@@ -61,6 +61,7 @@ module.exports = {
             offset++;
         }
 
+        // Mark this panel to redraw
         panel.shouldRedraw = true;
     },
 

@@ -13,6 +13,7 @@ global.DEBUG = {
     drawPathOverlay: true,
     drawContainerOverlay: true,
     trackCPUUsage: true,
+    logRemotePlanning: true,
 };
 
 // Managers
@@ -101,6 +102,7 @@ const remoteManager = new RemoteManager();
 
 // Overlay
 const overlay = require("overlay");
+const trackCPU = require("trackCPU");
 
 module.exports.loop = function() {
 
@@ -160,9 +162,6 @@ module.exports.loop = function() {
 
         // Defense
         towerManager.run(info);
-
-        // Draw our panel for this room
-        overlay.finalizePanels(info.room.name);
     }
 
     // Run creeps
@@ -181,6 +180,18 @@ module.exports.loop = function() {
         else {
             creepDeath(name);
         }
+    }
+
+    // Profile CPU usage and finalize overlays
+    const rollingAverage = DEBUG.trackCPUUsage ? trackCPU() : 0;
+    for (const info of Object.values(roomInfos)) {
+        if (DEBUG.trackCPUUsage) {
+            overlay.addText(info.room.name, { 
+                "Average CPU": Math.round(rollingAverage * 1000) / 1000,
+                "Last CPU": Math.round(Game.cpu.getUsed() * 1000) / 1000,
+            });
+        }
+        overlay.finalizePanels(info.room.name);
     }
 }
 
