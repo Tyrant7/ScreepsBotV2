@@ -15,6 +15,10 @@ class WorkerSpawnHandler extends LeveledSpawnHandler {
         const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getMaxIncome() * incomeToPartRatio)
             : roomInfo.openSourceSpots + 1;
 
+        // Find the most expensive worker we can build in this room
+        const levelCost = creepSpawnUtility.getCost([WORK, CARRY, MOVE]);
+        const workerLevel = Math.min(roomInfo.room.energyCapacityAvailable / levelCost, CONSTANTS.maxWorkerLevel);
+
         // Let's adjust the number of workers we want depending on our upgraders
         const upgraderWorkParts = roomInfo.upgraders.reduce((total, upgrader) => {
             return total + upgrader.body.filter((p) => p.type === WORK);
@@ -22,11 +26,8 @@ class WorkerSpawnHandler extends LeveledSpawnHandler {
 
         // Subtract number of work parts we have in upgraders from our wanted work parts
         // Since they will use up a lot of energy more efficiently than us
-        const wantedWorkParts = maxWorkParts - upgraderWorkParts;
-
-        // Find the most expensive worker we can build in this room
-        const levelCost = creepSpawnUtility.getCost([WORK, CARRY, MOVE]);
-        const workerLevel = Math.min(roomInfo.room.energyCapacityAvailable / levelCost, CONSTANTS.maxWorkerLevel);
+        // Never fewer than one worker, however
+        const wantedWorkParts = Math.max(maxWorkParts - upgraderWorkParts, workerLevel);
 
         // Divide our desired part count to get our desired number of workers
         const workerCount = Math.floor(wantedWorkParts / workerLevel);
