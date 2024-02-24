@@ -96,8 +96,8 @@ const defenderSpawnHandler = new DefenderSpawnHandler();
 const basicSpawnHandlers = [
     minerSpawnHandler, // To not waste source energy
     haulerSpawnHandler, // To recover quickly
-    workerSpawnHandler, // To use the energy
     upgraderSpawnHandler, // To upgrade
+    workerSpawnHandler, // To keep structures and construction intact
     scoutSpawnHandler, // To expand
 ];
 
