@@ -18,11 +18,20 @@ class HaulerSpawnHandler extends LeveledSpawnHandler {
         const levelCost = creepSpawnUtility.getCost([MOVE, CARRY, CARRY]);
         const haulerLevel = Math.min(roomInfo.room.energyCapacityAvailable / levelCost, CONSTANTS.maxHaulerLevel);
 
+        // Let's adjust the number of haulers we want depending on our upgraders
+        const upgraderWorkParts = roomInfo.upgraders.reduce((total, upgrader) => {
+            return total + upgrader.body.filter((p) => p.type === WORK);
+        }, 0);
+
+        // If we have more upgrade parts, let's take more haulers since the energy will be used up quicker
+        const upgradeToCarryRatio = 4;
+        const wantedCarryParts = maxCarryParts + (upgraderWorkParts / upgradeToCarryRatio);
+
         // Divide our desired part count to get our desired number of haulers
-        const haulerCount = Math.floor(maxCarryParts / haulerLevel);
+        const haulerCount = Math.floor(wantedCarryParts / haulerLevel);
 
         // If we have leftover parts that didn't fit into a max size hauler, let's make a smaller one
-        const leftover = maxCarryParts % haulerLevel;
+        const leftover = wantedCarryParts % haulerLevel;
 
         // Add these desired haulers to the queue, pushing the leftover first
         const queue = [];
