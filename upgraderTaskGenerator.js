@@ -26,7 +26,7 @@ class UpgraderTaskGenerator {
                     return;
                 }
                 // We're within range of our container already!
-                if (creep.pos.getRangeTo(upgraderContainerPos) <= 1) {
+                if (creep.pos.getRangeTo(upgraderContainerPos) <= 0) {
                     // Pickup energy if we need it
                     const energyUsage = creep.body.filter((p) => p.type === WORK).length * UPGRADE_CONTROLLER_POWER;
                     if (creep.store.getFreeCapacity() >= energyUsage) {

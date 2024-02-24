@@ -59,16 +59,21 @@ class HaulerTaskGenerator {
 
         // Deliver task for controller
         // Simply bring energy to controller if nothing else to do
-        
-            // TODO //
-            // For now this will just move to the controller and stop
-            // We want to pass it something to transfer into
-            // Likely a container near the controller where upgraders will sit
+        // If we have an upgrader, let's bring energy to him instead of the controller
+        let target = roomInfo.room.controller.id;
+        if (roomInfo.upgraders.length) {
+            const containerPos = Memory.bases[roomInfo.room.name].upgraderContainer;
+            const container = roomInfo.room.lookForAt(LOOK_STRUCTURES, containerPos.x, containerPos.y).find(
+                (s) => s.structureType === STRUCTURE_CONTAINER);
+            if (container) {
+                target = container.id;
+            }
+        }
 
         const actionStack = [];
         actionStack.push(basicActions["harvest_strict"]);
         actionStack.push(basicActions[taskType.deliver]);
-        return [new Task(roomInfo.room.controller.id, taskType.deliver, actionStack)];
+        return [new Task(target, taskType.deliver, actionStack)];
     }
 }
 
