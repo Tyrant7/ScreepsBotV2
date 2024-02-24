@@ -22,11 +22,6 @@ class RemoteMinerTaskGenerator {
             const actionStack = [];
             actionStack.push(function(creep, target) {
 
-                // If at any point we lose vision of the room before getting there, we should reassign
-                if (!target) {
-                    return true;
-                }
-
                 if (creep.pos.getRangeTo(target) <= 1) {
 
                     // Look for a container on our tile before mining
