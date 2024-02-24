@@ -14,28 +14,34 @@ class UpgraderTaskGenerator {
         const actionStack = []
         actionStack.push(function(creep, target) {
 
-            const intentResult = creep.upgradeController(target);
-            if (intentResult === ERR_NOT_IN_RANGE) {
-                creep.moveTo(target);
-            }
-            else if (intentResult === OK) {
-                // Find our upgrader container
-                const base = Memory.bases[target.room.name];
-                const upgraderContainerPos = base.upgraderContainer;
-                if (!upgraderContainerPos) {
-                    return;
+            // Find our upgrader container
+            const base = Memory.bases[target.room.name];
+            const upgraderContainerPos = new RoomPosition(
+                base.upgraderContainer.x, base.upgraderContainer.y, base.upgraderContainer.roomName
+            );
+
+            // No container -> just stand near the controller
+            if (!upgraderContainerPos) {
+                if (creep.upgradeController(target) === ERR_NOT_IN_RANGE) {
+                    creep.moveTo(target);
                 }
-                // We're within range of our container already!
-                if (creep.pos.getRangeTo(upgraderContainerPos) <= 0) {
-                    // Pickup energy if we need it
-                    const energyUsage = creep.body.filter((p) => p.type === WORK).length * UPGRADE_CONTROLLER_POWER;
-                    if (creep.store.getFreeCapacity() >= energyUsage) {
-                        const container = creep.room.lookForAt(LOOK_STRUCTURES, upgraderContainerPos.x, upgraderContainerPos.y).find(
-                            (s) => s.structureType === STRUCTURE_CONTAINER);
+                return;
+            }
+
+            // We're within range of our container already!
+            if (creep.pos.getRangeTo(upgraderContainerPos) <= 0) {
+                // Pickup energy if we need it
+                const energyUsage = creep.body.filter((p) => p.type === WORK).length * UPGRADE_CONTROLLER_POWER;
+                if (creep.store.getFreeCapacity() >= energyUsage) {
+                    const container = creep.room.lookForAt(LOOK_STRUCTURES, upgraderContainerPos.x, upgraderContainerPos.y).find(
+                        (s) => s.structureType === STRUCTURE_CONTAINER);
+                    if (container.store[RESOURCE_ENERGY]) {
                         creep.withdraw(container, RESOURCE_ENERGY);
                     }
-                    return;
                 }
+                creep.upgradeController(target);
+            }
+            else {
                 creep.moveTo(upgraderContainerPos);
             }
         });
