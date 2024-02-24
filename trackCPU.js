@@ -1,10 +1,12 @@
+let reset = true;
 module.exports = function() {
     if (!Memory.stats) {
         Memory.stats = {};
     }
-    if (!Memory.stats.rollingAverage) {
+    if (!Memory.stats.rollingAverage || reset) {
         Memory.stats.rollingAverage = 0;
         Memory.stats.nSamples = 0;
+        reset = false;
     }
     const used = Game.cpu.getUsed();
     Memory.stats.nSamples++;
