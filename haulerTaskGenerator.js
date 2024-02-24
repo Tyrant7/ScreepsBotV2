@@ -62,9 +62,7 @@ class HaulerTaskGenerator {
         // If we have an upgrader, let's bring energy to him instead of the controller
         let target = roomInfo.room.controller.id;
         if (roomInfo.upgraders.length) {
-            const containerPos = Memory.bases[roomInfo.room.name].upgraderContainer;
-            const container = roomInfo.room.lookForAt(LOOK_STRUCTURES, containerPos.x, containerPos.y).find(
-                (s) => s.structureType === STRUCTURE_CONTAINER);
+            const container = roomInfo.getUpgraderContainer();
             if (container) {
                 target = container.id;
             }

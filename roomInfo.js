@@ -101,6 +101,12 @@ class RoomInfo {
         }
         return this.enemies;
     }
+
+    getUpgraderContainer() {
+        const containerPos = Memory.bases[this.room.name].upgraderContainer;
+        return this.room.lookForAt(LOOK_STRUCTURES, containerPos.x, containerPos.y).find(
+            (s) => s.structureType === STRUCTURE_CONTAINER);
+    }
 }
 
 module.exports = RoomInfo;

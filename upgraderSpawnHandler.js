@@ -4,7 +4,7 @@ class UpgraderSpawnHandler {
 
     getNextSpawn(roomInfo) {
         // Upgrader won't be able to do much without their container
-        if (!Memory.bases[roomInfo.room.name].upgraderContainer) {
+        if (!roomInfo.getUpgraderContainer()) {
             return;
         }
 
