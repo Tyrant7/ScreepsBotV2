@@ -13,6 +13,7 @@ module.exports = {
     },
     maxWorkerLevel: 8,
     maxHaulerLevel: 8,
+    maxUpgraderLevel: 6,
     maxRemoteBuilderLevel: 4,
     maxRemoteHaulerLevel: 12,
     maxBaseSpawnCapacity: 0.95,

@@ -21,6 +21,7 @@ const CreepManager = require("creepManager");
 const SpawnManager = require("spawnManager");
 const TowerManager = require("towerManager");
 const RemoteManager = require("remoteManager");
+const ColonyConstructionManager = require("colonyConstructionManager");
 
 // Data
 const RoomInfo = require("roomInfo");
@@ -29,6 +30,7 @@ const RoomInfo = require("roomInfo");
 const WorkerTaskGenerator = require("workerTaskGenerator");
 const HaulerTaskGenerator = require("haulerTaskGenerator");
 const MinerTaskGenerator = require("minerTaskGenerator");
+const UpgraderTaskGenerator = require("upgraderTaskGenerator");
 const ScoutTaskGenerator = require("scoutTaskGenerator");
 
 const RemoteBuilderTaskGenerator = require("remoteBuilderTaskGenerator");
@@ -41,6 +43,7 @@ const DefenderTaskGenerator = require("defenderTaskGenerator");
 const workerManager = new CreepManager(new WorkerTaskGenerator());
 const haulerManager = new CreepManager(new HaulerTaskGenerator());
 const minerManager = new CreepManager(new MinerTaskGenerator());
+const upgraderTaskGenerator = new CreepManager(new UpgraderTaskGenerator());
 const scoutManager = new CreepManager(new ScoutTaskGenerator());
 
 const remoteBuilderManager = new CreepManager(new RemoteBuilderTaskGenerator());
@@ -55,6 +58,7 @@ const creepRoleMap = {
     [CONSTANTS.roles.worker]: workerManager,
     [CONSTANTS.roles.hauler]: haulerManager,
     [CONSTANTS.roles.miner]: minerManager,
+    [CONSTANTS.roles.upgrader]: upgraderTaskGenerator,
     [CONSTANTS.roles.scout]: scoutManager,
     [CONSTANTS.roles.remoteBuilder]: remoteBuilderManager,
     [CONSTANTS.roles.reserver]: reserverManager,
@@ -70,6 +74,7 @@ const CrashSpawnHandler = require("crashSpawnHandler");
 const WorkerSpawnHandler = require("workerSpawnHandler");
 const MinerSpawnHandler = require("minerSpawnHandler");
 const HaulerSpawnHandler = require("haulerSpawnHandler");
+const UpgraderSpawnHandler = require("upgraderSpawnHandler");
 const ScoutSpawnHandler = require("scoutSpawnHandler");
 
 const RemoteSpawnHandler = require("remoteSpawnHandler");
@@ -79,6 +84,7 @@ const crashSpawnHandler = new CrashSpawnHandler();
 const workerSpawnHandler = new WorkerSpawnHandler();
 const minerSpawnHandler = new MinerSpawnHandler();
 const haulerSpawnHandler = new HaulerSpawnHandler();
+const upgraderSpawnHandler = new UpgraderSpawnHandler();
 const scoutSpawnHandler = new ScoutSpawnHandler();
 
 const remoteSpawnHandler = new RemoteSpawnHandler();
@@ -91,6 +97,7 @@ const basicSpawnHandlers = [
     minerSpawnHandler, // To not waste source energy
     haulerSpawnHandler, // To recover quickly
     workerSpawnHandler, // To use the energy
+    upgraderSpawnHandler, // To upgrade
     scoutSpawnHandler, // To expand
 ];
 
@@ -99,6 +106,9 @@ const towerManager = new TowerManager();
 
 // Remote
 const remoteManager = new RemoteManager();
+
+// Construction
+const constructionManager = new ColonyConstructionManager();
 
 // Overlay
 const overlay = require("overlay");
@@ -125,10 +135,14 @@ module.exports.loop = function() {
     // Initialize our info map
     const roomInfos = {};
     for (const room in Game.rooms) {
+        if (!Game.rooms[room].controller || !Game.rooms[room].controller.my) {
+            continue;
+        }
+
         roomInfos[room] = new RoomInfo(Game.rooms[room]);
         const info = roomInfos[room];
 
-        // Don't try to spawn in rooms that aren't ours
+        // Don't try to spawn in rooms that can't
         if (info.spawns && info.spawns.length) {
 
             // This represent the fraction of our total spawn capacity we sit at
@@ -158,6 +172,9 @@ module.exports.loop = function() {
 
             // Handle spawns
             spawnManager.run(info, currentSpawnHandlers);
+
+            // Handle construction
+            constructionManager.run(info);
         }
 
         // Defense
