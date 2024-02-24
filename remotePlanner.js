@@ -7,6 +7,8 @@ class RemotePlanner {
 
     constructor() {
         this.planningConstants = {
+            planningPlainCost: 5,
+            planningSwampCost: 6,
             plainCost: 2,
             swampCost: 10,
             roadCost: 1,
@@ -61,7 +63,7 @@ class RemotePlanner {
                 const distOneHaulerPaths = this.getHaulerPaths(roomInfo, 
                     { pos: roomInfo.room.storage.pos, range: 1 }, distOneRoadPositions, distOneContainerPositions);
                 const distOneNeededCarry = distOneHaulerPaths.reduce((total, curr) => total + curr.neededCarry, 0);
-                const scoreCost = this.scoreRemote(roomInfo, distOne, distOneNeededCarry, distOneRoadPositions.length, distOneContainerPositions.length);
+                const scoreCost = this.scoreRemote(roomInfo, distOne, distOneNeededCarry, distOneRoadPositions, distOneContainerPositions.length);
 
                 // Then plan roads for each child one this remote
                 // Each distOne should have multiple distTwo depending remotes
@@ -74,7 +76,7 @@ class RemotePlanner {
                         const distTwoHaulerPaths = this.getHaulerPaths(roomInfo, 
                             { pos: roomInfo.room.storage.pos, range: 1 }, distTwoRoadPositions.concat(distOneRoadPositions), distTwoContainerPositions);
                         const distTwoNeededCarry = distTwoHaulerPaths.reduce((total, curr) => total + curr.neededCarry, 0);
-                        const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoNeededCarry, distTwoRoadPositions.length, distTwoContainerPositions.length);
+                        const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoNeededCarry, distTwoRoadPositions, distTwoContainerPositions.length);
 
                         // Score this remote
                         children.push({
@@ -152,12 +154,12 @@ class RemotePlanner {
      * @param {RoomInfo} roomInfo The info object associated with the host room.
      * @param {string} targetName The name of the room to score a remote for. Must have been scouted previously.
      * @param {number} neededCarry The number of hauler parts for this remote to fully transport its produced energy.
-     * @param {number} roadCount The number of roads needed to plan this remote. Should be the length of the array obtained by `planRoads()`.
+     * @param {RoomPosition[]} roads The locations of all roads needed to plan this remote. Should be the array obtained by `planRoads()`.
      * @param {number} containerCount The number of containers needed to plan this remote. Should be the length of the array obtained by `planContainers()`.
      * @returns An object with scoring information for this remotes. 
      * Contains a `score` property for energy output and a `cost` property for spawn time.
      */
-    scoreRemote(roomInfo, targetName, neededCarry, roadCount, containerCount) {
+    scoreRemote(roomInfo, targetName, neededCarry, roads, containerCount) {
         const remoteInfo = Memory.rooms[targetName];
 
         // Let's calculate some upkeep costs using those newly created paths
@@ -167,9 +169,13 @@ class RemotePlanner {
         const containerUpkeep = CONTAINER_DECAY / CONTAINER_DECAY_TIME / REPAIR_POWER;
         const totalContainerUpkeep = containerUpkeep * containerCount;
         
-        // Then roads, for this we can combine all paths and remove duplicate path positions
+        // Then roads, remember that roads built on swamps cost 5x more
         const roadUpkeep = ROAD_DECAY_AMOUNT / ROAD_DECAY_TIME / REPAIR_POWER;
-        const totalRoadUpkeep = roadUpkeep * roadCount;
+        let totalRoadUpkeep = 0;
+        roads.forEach((road) => {
+            const terrain = Game.map.getRoomTerrain(road.roomName).get(road.x, road.y);
+            totalRoadUpkeep += roadUpkeep * (terrain === TERRAIN_MASK_SWAMP ? CONSTRUCTION_COST_ROAD_SWAMP_RATIO : 1);
+        });
 
         // Total energy upkeep for structures in this room
         upkeep.structures = totalContainerUpkeep + totalRoadUpkeep;
@@ -266,8 +272,8 @@ class RemotePlanner {
         remoteInfo.sources.forEach(source => {
             const sourcePos = new RoomPosition(source.pos.x, source.pos.y, targetName);
             const result = PathFinder.search(sourcePos, goals, {
-                plainCost: this.planningConstants.plainCost,
-                swampCost: this.planningConstants.swampCost,
+                plainCost: this.planningConstants.planningPlainCost,
+                swampCost: this.planningConstants.planningSwampCost,
 
                 // If we don't have planned roads for this room, 
                 // return false so we don't consider it
