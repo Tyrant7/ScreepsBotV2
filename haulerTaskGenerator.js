@@ -242,7 +242,9 @@ function harvest(creep, target, strict) {
         // Containers, don't allow taking energy from the upgrader container
         let sources = creep.room.find(FIND_STRUCTURES, { filter: (s) => {
             const base = Memory.bases[creep.room.name];
-            if (base && base.upgraderContainer && s.pos.isEqualTo(base.upgraderContainer)) {
+            if (base && base.upgraderContainer && s.pos.isEqualTo(new RoomPosition(
+                base.upgraderContainer.x, base.upgraderContainer.y, base.upgraderContainer.roomName
+            ))) {
                 return false;
             }
             return s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0;
