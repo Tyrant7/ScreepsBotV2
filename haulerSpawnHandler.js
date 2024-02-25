@@ -20,7 +20,7 @@ class HaulerSpawnHandler extends LeveledSpawnHandler {
 
         // Let's adjust the number of haulers we want depending on our upgraders
         const upgraderWorkParts = roomInfo.upgraders.reduce((total, upgrader) => {
-            return total + upgrader.body.filter((p) => p.type === WORK);
+            return total + upgrader.body.filter((p) => p.type === WORK).length;
         }, 0);
 
         // If we have more upgrade parts, let's take more haulers since the energy will be used up quicker

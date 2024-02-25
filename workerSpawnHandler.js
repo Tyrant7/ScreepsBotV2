@@ -21,7 +21,7 @@ class WorkerSpawnHandler extends LeveledSpawnHandler {
 
         // Let's adjust the number of workers we want depending on our upgraders
         const upgraderWorkParts = roomInfo.upgraders.reduce((total, upgrader) => {
-            return total + upgrader.body.filter((p) => p.type === WORK);
+            return total + upgrader.body.filter((p) => p.type === WORK).length;
         }, 0);
 
         // Subtract number of work parts we have in upgraders from our wanted work parts
