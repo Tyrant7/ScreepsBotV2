@@ -12,7 +12,7 @@ module.exports = {
         defender: "defender",
     },
     maxWorkerLevel: 8,
-    maxHaulerLevel: 8,
+    maxHaulerLevel: 10,
     maxUpgraderLevel: 6,
     maxRemoteBuilderLevel: 4,
     maxRemoteHaulerLevel: 12,
