@@ -32,6 +32,20 @@ module.exports = {
         }));
     },
 
+    addHeading: function(roomName, title) {
+        if (!DEBUG.drawOverlay) {
+            return;
+        }
+
+        if (!this.panels) {
+            this.panels = {};
+        }
+        if (!this.panels[roomName] || this.panels[roomName].shouldRedraw) {
+            this.panels[roomName] = { shouldRedraw: false, elements: [] };
+        }
+        this.panels[roomName].elements.push(title);
+    },
+
     finalizePanels: function(roomName, anchor = "right") {
         if (!DEBUG.drawOverlay) {
             return;

@@ -144,6 +144,7 @@ module.exports.loop = function() {
 
         // Don't try to spawn in rooms that can't
         if (info.spawns && info.spawns.length) {
+            overlay.addHeading(info.room.name, "- Spawns -");
 
             // This represent the fraction of our total spawn capacity we sit at
             // i.e. the amount of time we spend spawning / 1
@@ -172,10 +173,12 @@ module.exports.loop = function() {
             overlay.addText(info.room.name, { "Spawn Capacity": (Math.round((avgSustainCost + remoteSustainCost) * 1000) / 1000).toFixed(3) + " / 1" });
 
             // Track RCL progress
+            overlay.addHeading(info.room.name, "- RCL -");
             const averageRCL = trackStats.trackRCL(info.room.name);
             overlay.addText(info.room.name, { "RCL Per Tick": (Math.round(averageRCL * 1000) / 1000).toFixed(3) });
             const neededEnergyToNextRCL = info.room.controller.progressTotal - info.room.controller.progress;
-            overlay.addText(info.room.name, { "Next RCL In": (Math.floor(neededEnergyToNextRCL / averageRCL))})
+            const ticksUntilNextRCL = Math.floor(neededEnergyToNextRCL / averageRCL);
+            overlay.addText(info.room.name, { "Next RCL In": ticksUntilNextRCL});
 
             // Handle spawns
             spawnManager.run(info, currentSpawnHandlers);
@@ -206,15 +209,20 @@ module.exports.loop = function() {
         }
     }
 
-    // Profile CPU usage and finalize overlays
-    const rollingAverage = DEBUG.trackCPUUsage ? trackStats.trackCPU() : 0;
-    for (const info of Object.values(roomInfos)) {
-        if (DEBUG.trackCPUUsage) {
+    // Track CPU usage
+    if (DEBUG.trackCPUUsage) {
+        const rollingAverage = trackStats.trackCPU();
+        for (const info of Object.values(roomInfos)) {
+            overlay.addHeading(info.room.name, "- CPU Usage -");
             overlay.addText(info.room.name, { 
                 "Average CPU": (Math.round(rollingAverage * 1000) / 1000).toFixed(3),
                 "Last CPU": (Math.round(Game.cpu.getUsed() * 1000) / 1000).toFixed(3),
             });
         }
+    }
+
+    // Finalize overlays
+    for (const info of Object.values(roomInfos)) {
         overlay.finalizePanels(info.room.name);
     }
 }
