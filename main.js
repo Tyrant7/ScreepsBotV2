@@ -12,7 +12,9 @@ global.DEBUG = {
     drawRoadOverlay: true,
     drawPathOverlay: true,
     drawContainerOverlay: true,
+    trackSpawnUsage: true,
     trackCPUUsage: true,
+    trackRCLProgress: true,
     logRemotePlanning: true,
 };
 
@@ -144,12 +146,14 @@ module.exports.loop = function() {
 
         // Don't try to spawn in rooms that can't
         if (info.spawns && info.spawns.length) {
-            overlay.addHeading(info.room.name, "- Spawns -");
 
             // This represent the fraction of our total spawn capacity we sit at
             // i.e. the amount of time we spend spawning / 1
             const avgSustainCost = basicSpawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
-            overlay.addText(info.room.name, { [info.room.name]: "(" + (Math.round(avgSustainCost * 1000) / 1000).toFixed(3) + ")" });
+            if (DEBUG.trackSpawnUsage) {
+                overlay.addHeading(info.room.name, "- Spawns -");
+                overlay.addText(info.room.name, { [info.room.name]: "(" + (Math.round(avgSustainCost * 1000) / 1000).toFixed(3) + ")" });
+            }
 
             let remoteSustainCost = 0;
 
@@ -170,15 +174,19 @@ module.exports.loop = function() {
             }
 
             // Spawn progress
-            overlay.addText(info.room.name, { "Spawn Capacity": (Math.round((avgSustainCost + remoteSustainCost) * 1000) / 1000).toFixed(3) + " / 1" });
+            if (DEBUG.trackSpawnUsage) {
+                overlay.addText(info.room.name, { "Spawn Capacity": (Math.round((avgSustainCost + remoteSustainCost) * 1000) / 1000).toFixed(3) + " / 1" });
+            }
 
             // Track RCL progress
-            overlay.addHeading(info.room.name, "- RCL -");
-            const averageRCL = trackStats.trackRCL(info.room.name);
-            overlay.addText(info.room.name, { "RCL Per Tick": (Math.round(averageRCL * 1000) / 1000).toFixed(3) });
-            const neededEnergyToNextRCL = info.room.controller.progressTotal - info.room.controller.progress;
-            const ticksUntilNextRCL = Math.floor(neededEnergyToNextRCL / averageRCL);
-            overlay.addText(info.room.name, { "Next RCL In": ticksUntilNextRCL});
+            if (DEBUG.trackRCLProgress) {
+                overlay.addHeading(info.room.name, "- RCL -");
+                const averageRCL = trackStats.trackRCL(info.room.name);
+                overlay.addText(info.room.name, { "RCL Per Tick": (Math.round(averageRCL * 1000) / 1000).toFixed(3) });
+                const neededEnergyToNextRCL = info.room.controller.progressTotal - info.room.controller.progress;
+                const ticksUntilNextRCL = Math.floor(neededEnergyToNextRCL / averageRCL);
+                overlay.addText(info.room.name, { "Next RCL In": ticksUntilNextRCL});
+            }
 
             // Handle spawns
             spawnManager.run(info, currentSpawnHandlers);

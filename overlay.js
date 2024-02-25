@@ -28,7 +28,11 @@ module.exports = {
             this.panels[roomName] = { shouldRedraw: false, elements: [] };
         }
         this.panels[roomName].elements.push(...Object.keys(importantFigures).map((fig) => {
-            return fig + ": " + importantFigures[fig];
+            return {
+                content: fig + ": " + importantFigures[fig],
+                style: defaultText,
+                spacing: 1,
+            };
         }));
     },
 
@@ -43,7 +47,11 @@ module.exports = {
         if (!this.panels[roomName] || this.panels[roomName].shouldRedraw) {
             this.panels[roomName] = { shouldRedraw: false, elements: [] };
         }
-        this.panels[roomName].elements.push(title);
+        this.panels[roomName].elements.push({
+            content: title,
+            style: defaultText,
+            spacing: 1.5,
+        });
     },
 
     finalizePanels: function(roomName, anchor = "right") {
@@ -61,8 +69,7 @@ module.exports = {
         }
 
         // Draw the panel itself first
-        const heightMultiplier = 1;
-        const panelHeight = (panel.elements.length * heightMultiplier) + 1;
+        const panelHeight = (panel.elements.reduce((total, curr) => total + curr.spacing, 0)) + 0.5;
         const panelWidth = 10;
         const x = anchor === "left" ? -0.5 + panelStyle.strokeWidth / 2: 49.5 - panelWidth - panelStyle.strokeWidth / 2;
         const y = -0.5 + panelStyle.strokeWidth / 2;
@@ -71,8 +78,10 @@ module.exports = {
         // Add text to the panel for each element
         let offset = 0.5 + panelStyle.strokeWidth / 2;
         for (const element of panel.elements) {
-            visual.text(element, x + 0.5, offset, defaultText);
-            offset++;
+            if (element !== panel.elements[0]) {
+                offset += element.spacing;
+            }
+            visual.text(element.content, x + 0.5, offset, element.style);
         }
 
         // Mark this panel to redraw
