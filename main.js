@@ -148,7 +148,7 @@ module.exports.loop = function() {
             // This represent the fraction of our total spawn capacity we sit at
             // i.e. the amount of time we spend spawning / 1
             const avgSustainCost = basicSpawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
-            overlay.addText(info.room.name, { [info.room.name]: "(" + avgSustainCost + ")" });
+            overlay.addText(info.room.name, { [info.room.name]: "(" + (Math.round(avgSustainCost * 1000) / 1000).toFixed(3) + ")" });
 
             let remoteSustainCost = 0;
 
@@ -168,7 +168,7 @@ module.exports.loop = function() {
                 currentSpawnHandlers.unshift(defenderSpawnHandler);
             }
 
-            overlay.addText(info.room.name, { "Spawn Capacity": (avgSustainCost + remoteSustainCost) + " / 1" });
+            overlay.addText(info.room.name, { "Spawn Capacity": (Math.round((avgSustainCost + remoteSustainCost) * 1000) / 1000).toFixed(3) + " / 1" });
 
             // Handle spawns
             spawnManager.run(info, currentSpawnHandlers);
@@ -204,8 +204,8 @@ module.exports.loop = function() {
     for (const info of Object.values(roomInfos)) {
         if (DEBUG.trackCPUUsage) {
             overlay.addText(info.room.name, { 
-                "Average CPU": Math.round(rollingAverage * 1000) / 1000,
-                "Last CPU": Math.round(Game.cpu.getUsed() * 1000) / 1000,
+                "Average CPU": (Math.round(rollingAverage * 1000) / 1000).toFixed(3),
+                "Last CPU": (Math.round(Game.cpu.getUsed() * 1000) / 1000).toFixed(3),
             });
         }
         overlay.finalizePanels(info.room.name);

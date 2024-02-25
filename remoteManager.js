@@ -77,7 +77,7 @@ class RemoteManager {
         const remoteDisplay = {};
         plans.forEach((plan) => {
             const foundRemote = activeRemotes.find((r) => r.remote === plan);
-            remoteDisplay[plan.room] = foundRemote ? "active (" + (Math.round(foundRemote.cost * 1000) / 1000) + ")" : "inactive";
+            remoteDisplay[plan.room] = foundRemote ? "active (" + (Math.round(foundRemote.cost * 1000) / 1000).toFixed(3) + ")" : "inactive";
         });
         overlay.addText(roomInfo.room.name, remoteDisplay);
 

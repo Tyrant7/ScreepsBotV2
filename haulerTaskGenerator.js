@@ -239,8 +239,14 @@ function harvest(creep, target, strict) {
     const energy = !harvest ? 0 : harvest instanceof Resource ? harvest.amount : 
                                   harvest.store[RESOURCE_ENERGY];
     if (energy === 0) {
-        // Containers
-        let sources = creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0 });
+        // Containers, don't allow taking energy from the upgrader container
+        let sources = creep.room.find(FIND_STRUCTURES, { filter: (s) => {
+            const base = Memory.bases[creep.room.name];
+            if (base && base.upgraderContainer && s.pos.isEqualTo(base.upgraderContainer)) {
+                return false;
+            }
+            return s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0;
+        }});
 
         // Add dropped resources that are on containers or container sites to account for miners who don't have their containers built yet and overflows
         sources.push(...creep.room.find(FIND_DROPPED_RESOURCES, { 
