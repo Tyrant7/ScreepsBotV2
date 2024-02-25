@@ -110,9 +110,9 @@ const remoteManager = new RemoteManager();
 // Construction
 const constructionManager = new ColonyConstructionManager();
 
-// Overlay
+// Stats
 const overlay = require("overlay");
-const trackCPU = require("trackCPU");
+const trackStats = require("trackStats");
 
 module.exports.loop = function() {
 
@@ -168,7 +168,14 @@ module.exports.loop = function() {
                 currentSpawnHandlers.unshift(defenderSpawnHandler);
             }
 
+            // Spawn progress
             overlay.addText(info.room.name, { "Spawn Capacity": (Math.round((avgSustainCost + remoteSustainCost) * 1000) / 1000).toFixed(3) + " / 1" });
+
+            // Track RCL progress
+            const averageRCL = trackStats.trackRCL(info.room.name);
+            overlay.addText(info.room.name, { "RCL Per Tick": (Math.round(averageRCL * 1000) / 1000).toFixed(3) });
+            const neededEnergyToNextRCL = info.room.controller.progressTotal - info.room.controller.progress;
+            overlay.addText(info.room.name, { "Next RCL In": (Math.floor(neededEnergyToNextRCL / averageRCL))})
 
             // Handle spawns
             spawnManager.run(info, currentSpawnHandlers);
@@ -200,7 +207,7 @@ module.exports.loop = function() {
     }
 
     // Profile CPU usage and finalize overlays
-    const rollingAverage = DEBUG.trackCPUUsage ? trackCPU() : 0;
+    const rollingAverage = DEBUG.trackCPUUsage ? trackStats.trackCPU() : 0;
     for (const info of Object.values(roomInfos)) {
         if (DEBUG.trackCPUUsage) {
             overlay.addText(info.room.name, { 
