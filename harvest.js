@@ -19,10 +19,13 @@ module.exports = function(creep, data) {
         let sources = creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0 });
 
         // Add dropped resources that are on containers or container sites to account for miners who don't have their containers built yet and overflows
+        // Also include resource piles that are more than our inventory in size
         sources.push(...creep.room.find(FIND_DROPPED_RESOURCES, { 
             filter: (r) => r.resourceType === RESOURCE_ENERGY 
             && (r.pos.lookFor(LOOK_CONSTRUCTION_SITES).find((s) => s.structureType === STRUCTURE_CONTAINER)
-            || r.pos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER)) }));
+            || r.pos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER)) 
+            || r.amount >= creep.store.getCapacity()
+        }));
 
         // We can allow ourselves to target planted haulers
         sources.push(...creep.room.find(FIND_MY_CREEPS, { 
