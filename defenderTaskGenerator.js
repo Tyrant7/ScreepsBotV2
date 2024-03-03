@@ -23,9 +23,10 @@ class DefenderTaskGenerator {
         : enemies[0];
 
         const actionStack = [];
-        actionStack.push(function(creep, target) {
+        actionStack.push(function(creep, data) {
 
             // Our target died or fleed
+            const target = Game.getObjectById(data.targetID);
             if (!target) {
                 return true;
             }
@@ -48,7 +49,7 @@ class DefenderTaskGenerator {
             return target.hits <= 0;
         });
 
-        return [new Task(strongestEnemy, "kill", actionStack)];
+        return new Task({ targetID: strongestEnemy.id }, "kill", actionStack);
     }
 }
 

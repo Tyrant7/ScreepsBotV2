@@ -12,7 +12,7 @@ class ScoutTaskGenerator {
             // Make this better
             || Object.values(Game.map.describeExits(creep.room.name))[0];
         const actionStack = [];
-        actionStack.push(function(creep, target) {
+        actionStack.push(function(creep, data) {
 
             // We should only update data when leaving or entering a room to be efficient with CPU
             const leavingOrEntering = creep.pos.x >= 49 ||
@@ -21,12 +21,12 @@ class ScoutTaskGenerator {
                                       creep.pos.y <= 0;
 
             // We've hit our target room -> we can request a new task!
-            if (creep.room.name === target && !leavingOrEntering) {
+            if (creep.room.name === data.roomName && !leavingOrEntering) {
                 return true;
             }
             else {
                 // Simpler to pathfind to the direct centre of our target
-                creep.moveTo(new RoomPosition(25, 25, target));
+                creep.moveTo(new RoomPosition(25, 25, data.roomName));
                 creep.say("🔭", true);
             }
 
@@ -100,7 +100,7 @@ class ScoutTaskGenerator {
             }
         });
 
-        return [new Task(targetName, "explore", actionStack)];
+        return new Task({ roomName: targetName }, "explore", actionStack);
     }
 }
 

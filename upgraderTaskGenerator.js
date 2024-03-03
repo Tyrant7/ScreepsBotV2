@@ -7,12 +7,14 @@ class UpgraderTaskGenerator {
      * @param {Creep} creep The creep to create tasks for.
      * @param {RoomInfo} roomInfo The info object associated with the home room of the creep to generate tasks for.
      * @param {Task[]} activeTasks List of current reserver tasks to take into consideration when finding a new task.
-     * @returns {Task[]} An array of a single task object.
+     * @returns An upgrade task.
      */
     run(creep, roomInfo, activeTasks) {
 
         const actionStack = []
-        actionStack.push(function(creep, target) {
+        actionStack.push(function(creep, data) {
+
+            const target = Game.getObjectById(data.controllerID);
 
             // Find our upgrader container
             const base = Memory.bases[target.room.name];
@@ -45,7 +47,7 @@ class UpgraderTaskGenerator {
                 creep.moveTo(upgraderContainerPos);
             }
         });
-        return [new Task(roomInfo.room.controller.id, "upgrade", actionStack)];
+        return new Task({ controllerID: roomInfo.room.controller.id }, "upgrade", actionStack);
     }
 }
 

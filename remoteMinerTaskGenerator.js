@@ -8,7 +8,7 @@ class RemoteMinerTaskGenerator {
      * @param {Creep} creep The creep to create tasks for.
      * @param {RoomInfo} roomInfo The info object associated with the home room of the creep to generate tasks for.
      * @param {Task[]} activeTasks List of current miner tasks to take into consideration when finding a new task.
-     * @returns {Task[]} An array of a single task object.
+     * @returns The best fitting task for this creep.
      */
     run(creep, roomInfo, activeTasks) {
 
@@ -17,12 +17,13 @@ class RemoteMinerTaskGenerator {
             return null;
         }
 
-        // If we're in the room, let's perpetually reserve until we die
+        // If we're in the room, let's perpetually mine until we die
         if (Game.rooms[creep.memory.targetRoom]) {
             const actionStack = [];
-            actionStack.push(function(creep, target) {
+            actionStack.push(function(creep, data) {
 
-                if (creep.pos.getRangeTo(target) <= 1) {
+                const source = Game.getObjectById(data.sourceID);
+                if (creep.pos.getRangeTo(source) <= 1) {
 
                     // Look for a container on our tile before mining
                     const tile = creep.pos.lookFor(LOOK_STRUCTURES);
@@ -31,7 +32,7 @@ class RemoteMinerTaskGenerator {
                     if (!container) {
 
                         // No container, let's look around us for one
-                        const p = target.pos;
+                        const p = source.pos;
                         const containers = creep.room.lookForAtArea(LOOK_STRUCTURES, p.y-1, p.x-1, p.y+1, p.x+1, true).filter(
                             (s) => s.structure.structureType === STRUCTURE_CONTAINER);
 
@@ -41,18 +42,18 @@ class RemoteMinerTaskGenerator {
                     }
 
                     // Mine!
-                    creep.harvest(target);
+                    creep.harvest(source);
                 }
                 else {
-                    creep.moveTo(target);
+                    creep.moveTo(source);
                 }
             });
-            return [new Task(creep.memory.sourceID, "mine", actionStack)];
+            return new Task({ sourceID: creep.memory.sourceID }, "mine", actionStack);
         }
 
         // If we're not in the room yet, let's get over there
         const actionStack = [moveToRoom];
-        return [new Task(creep.memory.targetRoom, "move", actionStack)];
+        return new Task({ roomName: creep.memory.targetRoom }, "move", actionStack);
     }
 }
 

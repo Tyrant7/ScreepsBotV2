@@ -10,7 +10,7 @@ class RemoteBuilderTaskGenerator {
      * @param {Creep} creep The creep to create tasks for.
      * @param {RoomInfo} roomInfo The info object associated with the home room of the creep to generate tasks for.
      * @param {Task[]} activeTasks List of current remote builder tasks to take into consideration when finding a new task.
-     * @returns {Task[]} An array of a single task object.
+     * @returns The best fitting task for this creep.
      */
     run(creep, roomInfo, activeTasks) {
 
@@ -28,11 +28,7 @@ class RemoteBuilderTaskGenerator {
                 if (!remoteBuildUtility.isStructurePlanned(roomInfo.room.name, site.pos, site.structureType)) {
                     continue;
                 }
-
-                // If there are no other builders already building this one, let's go for it
-                if (!activeTasks.find((task) => task && task.target === site.id)) {
-                    return this.makeBuildTask(site);
-                }
+                return this.makeBuildTask();
             }
 
             // Otherwise, nothing left to build 
@@ -60,58 +56,49 @@ class RemoteBuilderTaskGenerator {
 
         // We're not in the room yet, let's get over there
         const actionStack = [];
-        actionStack.push(function(creep, target) {
-            // Wait to get reassigned
-            if (!target) {
-                return true;
-            }
-            moveToRoom(creep, target);
-        });
-        return [new Task(creep.memory.targetRoom, "move", actionStack)];
+        actionStack.push(moveToRoom);
+        return new Task({ roomName: creep.memory.targetRoom }, "move", actionStack);
     }
 
     makeBuildTask(site) {
 
         const actionStack = [];
         actionStack.push(harvest);
-        actionStack.push(function(creep, target) {
+        actionStack.push(function(creep, data) {
 
-            // We should have a target, if not just request a new build task
-            if (!target) {
-                return true;
-            }
-
-            // It's a remote, there won't be anything too expensive to build in it
+            // It's a remote, so there won't be anything too expensive to build in it
             // Just pick whatever's closest
-            const buildTarget = creep.room.find(FIND_MY_CONSTRUCTION_SITES)
-                .reduce((closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, target);
-            if (!buildTarget) {
+            const sites = creep.room.find(FIND_MY_CONSTRUCTION_SITES).filter((site) => {
+                return remoteBuildUtility.isStructurePlanned(creep.room.name, site.pos, site.structureType);
+            });
+            if (!sites.length) {
                 return true;
             }
-
+            const buildTarget = sites.reduce((closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, sites[0]);
             const intentResult = creep.build(buildTarget);
             if (intentResult === ERR_NOT_IN_RANGE) {
                 creep.moveTo(buildTarget);
             }
-            // INVALID_TARGET means that the target is now built and no longer a construction site
-            return creep.store[RESOURCE_ENERGY] === 0 || intentResult === ERR_INVALID_TARGET;
+            return creep.store[RESOURCE_ENERGY] === 0;
         });
 
-        return [new Task(site.id, "build", actionStack)];
+        // No data necessary for this task
+        return new Task(null, "build", actionStack);
     }
 
     makeRepairTask(structure) {
 
         const actionStack = [];
         actionStack.push(harvest);
-        actionStack.push(function(creep, target) {
+        actionStack.push(function(creep, data) {
+            const target = Game.getObjectById(data.repairID);
             if (creep.repair(target) === ERR_NOT_IN_RANGE) {
                 creep.moveTo(target);
             }
             return creep.store[RESOURCE_ENERGY] === 0 || !target || target.hits === target.hitsMax;
         });
 
-        return [new Task(structure.id, "repair", actionStack)];
+        return new Task({ repairID: structure.id }, "repair", actionStack);
     }
 }
 

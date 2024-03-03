@@ -32,7 +32,11 @@ class HaulerTaskGenerator {
                 const actionStack = [];
                 actionStack.push(basicActions["harvest_loose"]);
                 actionStack.push(basicActions[taskType.restock]);
-                return [new Task(restock.id, taskType.restock, actionStack)];
+                const taskData = restock.structureType === STRUCTURE_TOWER 
+                    ? { restockID: restock.id }
+                    // Since restocking any extension or spawn is effectively the same, we can just mark restock types instead
+                    : { structureTypes: [STRUCTURE_SPAWN, STRUCTURE_EXTENSION] };
+                return new Task(taskData, taskType.restock, actionStack);
             }
         }
 
@@ -50,8 +54,8 @@ class HaulerTaskGenerator {
                 // If this miner's container is within 200 of max capacity, let's empty it out
                 const container = roomInfo.room.lookForAt(LOOK_STRUCTURES, miner.pos).find((s) => s.structureType === STRUCTURE_CONTAINER);
                 if (container && container.store.getFreeCapacity() <= 200) {
-                    // Create a task to transfer the energy from this miner's position to the storage
-                    return [new Task(miner.id, taskType.transport, [basicActions[taskType.transport]])];
+                    // Create a task to transfer the energy from this miner's container to the storage
+                    return new Task({ containerID: container.id }, taskType.transport, [basicActions[taskType.transport]]);
                 }
             }
         }
@@ -60,18 +64,18 @@ class HaulerTaskGenerator {
         // Deliver task for controller
         // Simply bring energy to controller if nothing else to do
         // If we have an upgrader, let's bring energy to him instead of the controller
-        let target = roomInfo.room.controller.id;
+        let targetID = roomInfo.room.controller.id;
         if (roomInfo.upgraders.length) {
             const container = roomInfo.getUpgraderContainer();
             if (container) {
-                target = container.id;
+                targetID = container.id;
             }
         }
 
         const actionStack = [];
         actionStack.push(basicActions["harvest_strict"]);
         actionStack.push(basicActions[taskType.deliver]);
-        return [new Task(target, taskType.deliver, actionStack)];
+        return new Task({ deliverID: targetID }, taskType.deliver, actionStack);
     }
 }
 
@@ -84,11 +88,14 @@ const taskType = {
 
 const basicActions = {
     // Transports energy from 'target' to the room's storage
-    [taskType.transport]: function(creep, target) {
+    [taskType.transport]: function(creep, data) {
+
+        // Get our miner
+        const container = Game.getObjectById(data.containerID);
 
         // If there's no storage in this creep's home, we're done
         const storage = Game.rooms[creep.memory.home].storage;
-        if (!storage || !target) {
+        if (!storage || !container) {
             delete creep.memory.openPull;
             return true;
         }
@@ -112,8 +119,7 @@ const basicActions = {
         }
 
         // Otherwise, let's go get it
-        let harvest = creep.room.lookForAt(LOOK_STRUCTURES, target).find((s) => s.structureType === STRUCTURE_CONTAINER);
-        if (creep.pos.getRangeTo(harvest) <= 1) {
+        if (creep.pos.getRangeTo(container) <= 1) {
 
             // We've some energy and we've gone all the way there, let's flag ourselves to start going back
             if (creep.store[RESOURCE_ENERGY]) {
@@ -140,7 +146,9 @@ const basicActions = {
         return false;
     },
     // Delivers the creep's current inventory to target
-    [taskType.deliver]: function(creep, target) {
+    [taskType.deliver]: function(creep, data) {
+
+        const deliverTarget = Game.getObjectById(data.targetID);
 
         // Let workers know that this hauler is open to pull energy off of if needed
         creep.memory.openPull = true;
@@ -152,10 +160,9 @@ const basicActions = {
             return true;
         }
 
-        const transferResult = creep.transfer(target, RESOURCE_ENERGY);
-        if (target.id === creep.room.controller.id) {
-            if (creep.pos.getRangeTo(target) > 2) {
-                creep.moveTo(target);
+        if (deliverTarget === creep.room.controller) {
+            if (creep.pos.getRangeTo(deliverTarget) > 2) {
+                creep.moveTo(deliverTarget);
             }
             else {
                 // Let other creeps know that they can target this one when harvesting
@@ -163,44 +170,52 @@ const basicActions = {
             }
             return false;
         }
-
-        if (transferResult === ERR_NOT_IN_RANGE) {
-            creep.moveTo(target);
-        }
-        else if (transferResult === OK) {
-            delete creep.memory.openPull;
-            return true;
+        else {
+            const transferResult = creep.transfer(deliverTarget, RESOURCE_ENERGY);
+            if (transferResult === ERR_NOT_IN_RANGE) {
+                creep.moveTo(deliverTarget);
+            }
+            else if (transferResult === OK) {
+                delete creep.memory.openPull;
+                return true;
+            }
         }
         return false;
     },
     // Restocks an extensions or spawn in the creep's room
-    [taskType.restock]: function(creep, target) {
+    [taskType.restock]: function(creep, data) {
 
-        // Since refilling any extension or spawn is essentially the same, just find the closest one
-        // If it's a tower then we must refill the appropriate one
-        let restock = target;
-        if (target instanceof StructureExtension || target instanceof StructureSpawn) {
-            const extensions = creep.room.find(FIND_MY_STRUCTURES, { filter: 
-                (s) => (s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN) 
-                && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 });
-
-            // Find closest extension or spawn
-            restock = extensions ?
-                extensions.reduce((closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, target) :
-                target;
+        let target = null;
+        // Restocking a particular ID takes precedence over a type of structure
+        if (data.restockID) {
+            target = Game.getObjectById(data.restockID);
+            if (target.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
+                return true;
+            }
+        }
+        else {
+            // Find closest structure matching the types to restock
+            const restocks = creep.room.find(FIND_MY_STRUCTURES, { filter: 
+                (s) => data.structureTypes.includes(s.structureType) && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 
+            });
+            if (restocks.length === 0) {
+                return true;
+            }
+            target = restocks.reduce(
+                (closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, restocks[0]);
         }
 
-        if (creep.transfer(restock, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-            creep.moveTo(restock);
+        if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(target);
         }
-        return restock.store.getFreeCapacity(RESOURCE_ENERGY) === 0 || creep.store[RESOURCE_ENERGY] === 0;
+        return creep.store[RESOURCE_ENERGY] === 0;
     },
     // Harvests from whatever target is closest in the creep's room
-    "harvest_strict": function(creep, target) {
-        return harvest(creep, target, true);
+    "harvest_strict": function(creep, data) {
+        return harvest(creep, data, true);
     },
-    "harvest_loose": function(creep, target) {
-        return harvest(creep, target, false);
+    "harvest_loose": function(creep, data) {
+        return harvest(creep, data, false);
     }
 };
 
@@ -209,11 +224,11 @@ const basicActions = {
  * Strict harvesting means that we must be full before continuing, non-strict harvesting means
  * that we need at least enough to fill an extension in our homeroom.
  * @param {Creep} creep The creep to run harvesting logic for.
- * @param {*} target The target of the task.
+ * @param {*} data The data object of the task.
  * @param {boolean} strict Whether or not the creep should fill up if it already has energy.
  * @returns 
  */
-function harvest(creep, target, strict) {
+function harvest(creep, data, strict) {
 
     // We're done when we can't hold anymore energy
     // Relinquish our current harvest target and complete this task

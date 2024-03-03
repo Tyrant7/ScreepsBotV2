@@ -6,13 +6,15 @@ class MinerTaskGenerator {
 
         // Generate default miner behaviour -> miners only behave in one specific way
         const actionStack = [];
-        actionStack.push(function(creep, target) {
+        actionStack.push(function(creep, data) {
+
+            const source = Game.getObjectById(data.sourceID);
 
             // Mark this source as reserved
-            creep.memory.sourceID = target.id;
+            creep.memory.sourceID = source.id;
 
             // Once we get close enough to mine, start checking for containers to stand on
-            if (creep.pos.getRangeTo(target) <= 1) {
+            if (creep.pos.getRangeTo(source) <= 1) {
 
                 // Look for a container on our tile first
                 const tile = creep.pos.lookFor(LOOK_STRUCTURES);
@@ -25,12 +27,12 @@ class MinerTaskGenerator {
 
                 // We're standing on a container and can mine
                 if (container) {
-                    creep.harvest(target);
+                    creep.harvest(source);
                 }
                 else {
 
                     // Otherwise, let's search around our source
-                    const p = target.pos;
+                    const p = source.pos;
                     const containers = creep.room.lookForAtArea(LOOK_STRUCTURES, p.y-1, p.x-1, p.y+1, p.x+1, true).filter(
                         (s) => s.structure.structureType === STRUCTURE_CONTAINER);
 
@@ -50,7 +52,7 @@ class MinerTaskGenerator {
                             }
                             else {
                                 // We should harvest while waiting for our containers to not waste time
-                                creep.harvest(target);
+                                creep.harvest(source);
                             }
                         }
                     }
@@ -61,16 +63,15 @@ class MinerTaskGenerator {
                 }
             }
             else {
-                creep.moveTo(target);
+                creep.moveTo(source);
             }
 
             // Always return false since miners can never finish their task
             return false;
         });
 
-        // Don't reassign already assigned miners
         if (creep.memory.sourceID) {
-            return [new Task(creep.memory.sourceID, "mine", actionStack)];
+            return new Task({ sourceID: creep.memory.sourceID }, "mine", actionStack);
         }
 
         const unreserved = roomInfo.getUnreservedSources();
@@ -81,7 +82,7 @@ class MinerTaskGenerator {
             return null;
         } 
 
-        return [new Task(unreserved[0].id, "mine", actionStack)];
+        return new Task({ sourceID: unreserved[0].id }, "mine", actionStack);
     }
 }
 

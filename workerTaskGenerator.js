@@ -8,7 +8,7 @@ class WorkerTaskGenerator {
      * @param {Creep} creep The creep to create tasks for.
      * @param {RoomInfo} roomInfo The info object associated with the room to generate tasks for.
      * @param {Task[]} activeTasks List of current worker tasks to take into consideration when finding a new task.
-     * @returns {Task[]} An array of tasks.
+     * @returns The best fitting task object for this creep.
      */
     run(creep, roomInfo, activeTasks) {
 
@@ -31,7 +31,7 @@ class WorkerTaskGenerator {
                 }
     
                 // All that's left should be towers, spawn, and extensions
-                return [this.createBasicTask(restock, taskType.restock)];
+                return this.createBasicTask(restock, taskType.restock);
             }
         }
 
@@ -39,7 +39,7 @@ class WorkerTaskGenerator {
         if (!roomInfo.upgraders.length && roomInfo.room.controller.my) {
             const existingTasks = activeTasks.filter((task) => task.target === roomInfo.room.controller.id && task.tag === taskType.upgrade);
             if (!existingTasks.length) {
-                return [this.createBasicTask(roomInfo.room.controller, taskType.upgrade)];
+                return this.createBasicTask(roomInfo.room.controller, taskType.upgrade);
             }
         }
 
@@ -61,7 +61,7 @@ class WorkerTaskGenerator {
                 }
 
                 // Create a basic worker task for building
-                return [this.createBasicTask(site, taskType.build)];
+                return this.createBasicTask(site, taskType.build);
             }
         }
 
@@ -93,12 +93,12 @@ class WorkerTaskGenerator {
                 }
     
                 // Create a basic worker task for repairing
-                return [this.createBasicTask(target, taskType.repair)];
+                return this.createBasicTask(target, taskType.repair);
             }
         }
 
         // Let's create a default upgrade task in case we're out of other options
-        return [this.createBasicTask(roomInfo.room.controller, taskType.upgrade)];
+        return this.createBasicTask(roomInfo.room.controller, taskType.upgrade);
     }
 
     /**
@@ -114,7 +114,19 @@ class WorkerTaskGenerator {
         actionStack.push(basicWorkerActions["harvest"]);
         actionStack.push(basicWorkerActions[taskType]);
 
-        return new Task(target.id, taskType, actionStack);
+        const taskData = {};
+        if (taskType === taskType.restock &&
+            (target.structureType === STRUCTURE_SPAWN || target.structureType === STRUCTURE_EXTENSION)) {
+            taskData.restockType = target.structureType;
+        }
+        else if (taskType === taskType.build) {
+            taskData.buildType = target.structureType;
+        }
+        else {
+            taskData.targetID = target.id;
+        }
+
+        return new Task(taskData, taskType, actionStack);
     }
 }
 
@@ -145,66 +157,58 @@ const taskType = {
 };
 
 const basicWorkerActions = {
-    [taskType.upgrade]: function(creep, target) {
+    [taskType.upgrade]: function(creep, data) {
+        const target = Game.getObjectById(data.targetID);
         if (creep.upgradeController(target) === ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
         }
         return creep.store[RESOURCE_ENERGY] === 0 || !target.my;
     },
-    [taskType.restock]: function(creep, target) {
+    [taskType.restock]: function(creep, data) {
 
-        // Our target got destroyed for some reason, so comparisons against its type will no longer work
-        // -> let's get a new task
-        if (!target) {
-            return true;
+        let target = null;
+        // Restocking a particular ID takes precedence over a type of structure
+        if (data.targetID) {
+            target = Game.getObjectById(data.targetID);
+            if (target.store.getFreeCapacity(RESOURCE_ENERGY) === 0) {
+                return true;
+            }
+        }
+        else {
+            // Find closest structure matching the types to restock
+            const restocks = creep.room.find(FIND_MY_STRUCTURES, { filter: 
+                (s) => data.structureTypes.includes(s.structureType) && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 
+            });
+            if (restocks.length === 0) {
+                return true;
+            }
+            target = restocks.reduce(
+                (closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, restocks[0]);
         }
 
-        // Since refilling any extension or spawn is essentially the same, just find the closest one
-        // If it's a tower then we must refill the appropriate one
-        let restock = target;
-        if (target instanceof StructureExtension || target instanceof StructureSpawn) {
-            const extensions = creep.room.find(FIND_MY_STRUCTURES, { filter: 
-                (s) => (s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN) 
-                && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 });
-
-            // Find closest extension or spawn
-            restock = extensions ?
-                extensions.reduce((closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, target) :
-                target;
+        if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
+            creep.moveTo(target);
         }
-
-        if (creep.transfer(restock, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-            creep.moveTo(restock);
-        }
-        return restock.store.getFreeCapacity(RESOURCE_ENERGY) === 0 || creep.store[RESOURCE_ENERGY] === 0;
+        return creep.store[RESOURCE_ENERGY] === 0;
     },
-    [taskType.build]: function(creep, target) {
+    [taskType.build]: function(creep, data) {
 
-        // Our target has been built so we won't be able to make proper comparison to it
-        // We can request a new task, and if there are any build tasks remaining it's likely
-        // that we'll receive one for the structureType we were trying to build anyway
-        if (!target) {
+        const home = Game.rooms[creep.memory.home];          
+        const buildTargets = home.find(FIND_CONSTRUCTION_SITES, { filter: (site) => site.structureType === data.buildType })
+        if (buildTargets.length === 0) {
             return true;
         }
+        const target = buildTargets.reduce(
+            (closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, buildTargets[0]);
 
-        // Find the closest site in the creep's homeroom matching its target sturctureType
-        // Do this so that all roads or extensions will be built in order of distance instead of all at once
-        const home = Game.rooms[creep.memory.home];
-        const buildTarget = home.find(FIND_CONSTRUCTION_SITES, { 
-            filter: (site) => site.structureType === target.structureType })
-            .reduce((closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, target);
-        if (!buildTarget) {
-            return true;
-        }
-
-        const intentResult = creep.build(buildTarget);
+        const intentResult = creep.build(target);
         if (intentResult === ERR_NOT_IN_RANGE) {
-            creep.moveTo(buildTarget);
+            creep.moveTo(target);
         }
-        // INVALID_TARGET means that the target is now built and no longer a construction site
-        return creep.store[RESOURCE_ENERGY] === 0 || intentResult === ERR_INVALID_TARGET;
+        return creep.store[RESOURCE_ENERGY] === 0;
     },
-    [taskType.repair]: function(creep, target) {
+    [taskType.repair]: function(creep, data) {
+        const target = Game.getObjectById(data.targetID);
         if (creep.repair(target) === ERR_NOT_IN_RANGE) {
             creep.moveTo(target);
         }

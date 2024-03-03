@@ -1,5 +1,4 @@
 const Task = require("task");
-const moveToRoom = require("moveToRoom");
 
 class RemoteHaulerTaskGenerator {
 
@@ -8,7 +7,7 @@ class RemoteHaulerTaskGenerator {
      * @param {Creep} creep The creep to create tasks for.
      * @param {RoomInfo} roomInfo The info object associated with the home room of the creep to generate tasks for.
      * @param {Task[]} activeTasks List of current remote hauler tasks to take into consideration when finding a new task.
-     * @returns {Task[]} An array of a single task object.
+     * @returns The best fitting task for this creep.
      */
     run(creep, roomInfo, activeTasks) {
 
@@ -27,15 +26,16 @@ class RemoteHaulerTaskGenerator {
     createGatherTask(creep) {
 
         const actionStack = [];
-        actionStack.push(function(creep, containerPos) {
+        actionStack.push(function(creep, data) {
 
             // If we have view of the room, do our task like normal
-            if (!Game.rooms[containerPos.roomName]) {
-                creep.moveTo(containerPos);
+            const pickupPos = data.pickupPos;
+            if (!Game.rooms[pickupPos.roomName]) {
+                creep.moveTo(pickupPos);
                 return creep.store.getFreeCapacity() === 0;
             }
 
-            const container = containerPos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER);
+            const container = pickupPos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER);
             if (container) {
 
                 // Let's simply go to our container
@@ -47,7 +47,7 @@ class RemoteHaulerTaskGenerator {
             else {
                 // Our container isn't built yet or was destroyed
                 // Let's simply pickup from the ground instead
-                const droppedEnergy = containerPos.lookFor(LOOK_RESOURCES).find((s) => s.resourceType === RESOURCE_ENERGY);
+                const droppedEnergy = pickupPos.lookFor(LOOK_RESOURCES).find((s) => s.resourceType === RESOURCE_ENERGY);
                 if (droppedEnergy) {
                     if (creep.pickup(droppedEnergy) === ERR_NOT_IN_RANGE) {
                         creep.moveTo(droppedEnergy);
@@ -62,20 +62,21 @@ class RemoteHaulerTaskGenerator {
         });
         
         const container = creep.memory.container;
-        return [new Task(new RoomPosition(container.x, container.y, container.roomName), "gather", actionStack)];
+        return new Task({ pickupPos: new RoomPosition(container.x, container.y, container.roomName) }, "gather", actionStack);
     }
 
     createDepositTask(roomInfo) {
         const actionStack = [];
-        actionStack.push(function(creep, storage) {
+        actionStack.push(function(creep, data) {
 
             // We're returning back to the room's storage
+            const storage = Game.getObjectById(data.storageID);
             if (creep.transfer(storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
                 creep.moveTo(storage);
             }
             return creep.store[RESOURCE_ENERGY] === 0;
         });
-        return [new Task(roomInfo.room.storage.id, "gather", actionStack)];
+        return new Task({ storageID: roomInfo.room.storage.id }, "gather", actionStack);
     }
 }
 
