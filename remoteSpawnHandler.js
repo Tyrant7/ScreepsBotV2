@@ -113,6 +113,12 @@ class RemoteSpawnHandler {
         upkeeps.energy += calculateUpkeep(haulers, creepSpawnUtility.getCost);
         upkeeps.spawnTime += calculateUpkeep(haulers, creepSpawnUtility.getSpawnTime);
 
+        // Builders -> just one for repairs
+        const builders = [];
+        builders.push(this.makeBuilder(CONSTANTS.maxRemoteBuilderLevel, maxCost));
+        upkeeps.energy += calculateUpkeep(builders, creepSpawnUtility.getCost);
+        upkeeps.spawnTime += calculateUpkeep(builders, creepSpawnUtility.getSpawnTime);
+
         // Finally, claimers
         const claimerBody = this.makeReserver().body;
         upkeeps.energy += creepSpawnUtility.getCost(claimerBody) / CREEP_CLAIM_LIFE_TIME;
