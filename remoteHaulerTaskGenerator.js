@@ -69,12 +69,20 @@ class RemoteHaulerTaskGenerator {
         const actionStack = [];
         actionStack.push(function(creep, data) {
 
+            // Allow creeps like builders to pull energy off of us if needed
+            creep.memory.openPull = true;
+
             // We're returning back to the room's storage
             const storage = Game.getObjectById(data.storageID);
             if (creep.transfer(storage, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
                 creep.moveTo(storage);
             }
-            return creep.store[RESOURCE_ENERGY] === 0;
+
+            if (creep.store[RESOURCE_ENERGY] === 0) {
+                delete creep.memory.openPull;
+                return true;
+            }
+            return false;
         });
         return new Task({ storageID: roomInfo.room.storage.id }, "gather", actionStack);
     }

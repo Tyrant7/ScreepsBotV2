@@ -69,14 +69,13 @@ class RemoteBuilderTaskGenerator {
             // It's a remote, so there won't be anything too expensive to build in it
             // Just pick whatever's closest
             const sites = creep.room.find(FIND_MY_CONSTRUCTION_SITES).filter((site) => {
-                return remoteBuildUtility.isStructurePlanned(creep.room.name, site.pos, site.structureType);
+                return remoteBuildUtility.isStructurePlanned(creep.memory.home, site.pos, site.structureType);
             });
             if (!sites.length) {
                 return true;
             }
             const buildTarget = sites.reduce((closest, curr) => creep.pos.getRangeTo(curr) < creep.pos.getRangeTo(closest) ? curr : closest, sites[0]);
-            const intentResult = creep.build(buildTarget);
-            if (intentResult === ERR_NOT_IN_RANGE) {
+            if (creep.build(buildTarget) === ERR_NOT_IN_RANGE) {
                 creep.moveTo(buildTarget);
             }
             return creep.store[RESOURCE_ENERGY] === 0;

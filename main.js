@@ -16,7 +16,7 @@ global.DEBUG = {
     trackCPUUsage: true,
     trackRCLProgress: true,
     logRemotePlanning: false,
-    runProfiler: true,
+    runProfiler: false,
 };
 
 // Managers

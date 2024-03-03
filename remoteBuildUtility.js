@@ -15,7 +15,7 @@ module.exports = {
         }
 
         // Make sure it's a valid remote
-        const remote = !Memory.bases[baseName].remotes.find((r) => r.room === pos.roomName);
+        const remote = Memory.bases[baseName].remotes.find((r) => r.room === pos.roomName);
         if (!remote) {
             return false;
         }
