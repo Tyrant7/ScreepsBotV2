@@ -15,7 +15,8 @@ global.DEBUG = {
     trackSpawnUsage: true,
     trackCPUUsage: true,
     trackRCLProgress: true,
-    logRemotePlanning: true,
+    logRemotePlanning: false,
+    runProfiler: true,
 };
 
 // Managers
@@ -112,9 +113,10 @@ const remoteManager = new RemoteManager();
 // Construction
 const constructionManager = new ColonyConstructionManager();
 
-// Stats
+// Stats and Debug
 const overlay = require("overlay");
 const trackStats = require("trackStats");
+const profiler = require("profiler");
 
 module.exports.loop = function() {
 
@@ -228,6 +230,7 @@ module.exports.loop = function() {
             });
         }
     }
+    profiler.printout();
 
     // Finalize overlays
     for (const info of Object.values(roomInfos)) {
