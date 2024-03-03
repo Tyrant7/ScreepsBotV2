@@ -2,6 +2,7 @@ const RemotePlanner = require("remotePlanner");
 const remotePlanner = new RemotePlanner();
 
 const overlay = require("overlay");
+const profiler = require("profiler");
 
 class RemoteManager {
 
@@ -43,6 +44,8 @@ class RemoteManager {
         }
 
         // Let's process each remote, we'll queue spawns for each one
+        profiler.startSample("Plan Remotes " + roomInfo.room.name);
+
         remoteSpawnHandler.clearQueues();
         let spawnCosts = 0;
         const activeRemotes = [];
@@ -56,22 +59,23 @@ class RemoteManager {
             }
             spawnCosts += cost;
 
+            profiler.startSample("Remote Spawns " + remote.room);
+
             // If we're good, let's process this remote's spawns
+            profiler.startSample("Process " + remote.room);
             const neededSpawns = this.processRemote(roomInfo, remote);
+            profiler.endSample("Process " + remote.room);
             for (const role in neededSpawns) {
                 if (neededSpawns[role] > 0) {
                     remoteSpawnHandler.queueSpawn(roomInfo.room.name, role, neededSpawns[role]);
                 }
             }
             activeRemotes.push({ remote: remote, cost: cost });
+
+            profiler.endSample("Remote Spawns " + remote.room);
         }
 
-        /*
-        console.log("-----------------");
-        remoteSpawnHandler.spawnQueues[roomInfo.room.name].forEach((c) => {
-            console.log(Object.values(c));
-        })
-        */
+        profiler.endSample("Plan Remotes " + roomInfo.room.name);
 
         // Display our active remotes
         if (DEBUG.trackSpawnUsage) {
@@ -161,19 +165,7 @@ class RemoteManager {
         // Let's track all unbuilt structures for this remote
         const unbuilt = [];
 
-        // Containers first
-        const room = Game.rooms[remoteInfo.room];
-        if (room) {
-            remoteInfo.containers.forEach((container) => {
-                const containerSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
-                const existingContainer = room.lookForAt(LOOK_STRUCTURES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
-                if (!containerSite && !existingContainer) {
-                    unbuilt.push({ pos: container, type: STRUCTURE_CONTAINER });
-                }
-            });
-        }
-
-        // Then roads
+        // Roads
         remoteInfo.roads.forEach((road) => {
             const room = Game.rooms[road.roomName];
             if (room) {
@@ -185,12 +177,35 @@ class RemoteManager {
             }
         });
 
+        // Then containers so they're popped first
+        const room = Game.rooms[remoteInfo.room];
+        if (room) {
+            remoteInfo.containers.forEach((container) => {
+                const containerSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
+                const existingContainer = room.lookForAt(LOOK_STRUCTURES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
+                if (!containerSite && !existingContainer) {
+                    unbuilt.push({ pos: container, type: STRUCTURE_CONTAINER });
+                }
+            });
+        }
+
         // Handle some relevant things in this remote, and track needed spawns
         const neededSpawns = {};
+        profiler.startSample("Spawns [build] " + remoteInfo.room);
         neededSpawns[CONSTANTS.roles.remoteBuilder] = this.handleConstruction(roomInfo, remoteInfo, unbuilt);
+        profiler.endSample("Spawns [build] " + remoteInfo.room);
+
+        profiler.startSample("Spawns [miner] " + remoteInfo.room);
         neededSpawns[CONSTANTS.roles.remoteMiner] = this.handleMiners(roomInfo, remoteInfo);
+        profiler.endSample("Spawns [miner] " + remoteInfo.room);
+
+        profiler.startSample("Spawns [reserver] " + remoteInfo.room);
         neededSpawns[CONSTANTS.roles.reserver] = this.handleReservers(roomInfo, remoteInfo);
+        profiler.endSample("Spawns [reserver] " + remoteInfo.room);
+
+        profiler.startSample("Spawns [hauler] " + remoteInfo.room);
         neededSpawns[CONSTANTS.roles.remoteHauler] = this.handleHaulers(roomInfo, remoteInfo);
+        profiler.endSample("Spawns [hauler] " + remoteInfo.room);
         return neededSpawns;
     }
 
@@ -277,7 +292,7 @@ class RemoteManager {
             while (unbuilt.length > 0 
                 && unbuilt[0].type === STRUCTURE_CONTAINER) { 
 
-                const next = unbuilt.pop();
+                const next = unbuilt.shift();
                 next.pos.createConstructionSite(next.type);
                 placed++;
             }
@@ -295,7 +310,7 @@ class RemoteManager {
             });
 
             while (currentSites.length + placed <= builders.length + 1 && unbuilt.length > 0) {
-                const next = unbuilt.pop();
+                const next = unbuilt.shift();
                 if (Game.rooms[next.pos.roomName]) {
                     next.pos.createConstructionSite(next.type);
                     placed++;

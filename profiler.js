@@ -9,17 +9,29 @@ class Profiler {
         this.indentLevel = 0;
     }
 
-    track(label, func) {
+    startSample(label) {
+        if (!DEBUG.runProfiler) {
+            return;
+        }
         const before = Game.cpu.getUsed();
+        this.records.push({ label: label, cpu: -before, indent: this.indentLevel });
         this.indentLevel++;
-        const returnValue = func();
+    }
+
+    endSample(label) {
+        if (!DEBUG.runProfiler) {
+            return;
+        }
         const after = Game.cpu.getUsed();
+        const record = this.records.find((record) => record.label === label);
+        record.cpu += after;
         this.indentLevel--;
-        this.records.push({ label: label, cpu: (after - before), indent: this.indentLevel });
-        return returnValue;
     }
 
     printout() {
+        if (!DEBUG.runProfiler) {
+            return;
+        }
         for (const record of this.records) {
             console.log("\t".repeat(record.indent) + record.label + ": " + record.cpu);
         }
