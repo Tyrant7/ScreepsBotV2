@@ -16,7 +16,7 @@ global.DEBUG = {
     trackCPUUsage: true,
     trackRCLProgress: true,
     logRemotePlanning: false,
-    runProfiler: false,
+    runProfiler: true,
 };
 
 // Managers
@@ -165,8 +165,11 @@ module.exports.loop = function() {
                 ...basicSpawnHandlers,
             ];
             if (info.remoting) {
+
                 // Plan remotes for bases!
+                profiler.startSample("Remotes " + room);
                 remoteSustainCost = remoteManager.run(info, remoteSpawnHandler, avgSustainCost);
+                profiler.endSample("Remotes " + room);
 
                 // Make sure we're spawning for remotes
                 currentSpawnHandlers.push(remoteSpawnHandler);
@@ -191,10 +194,14 @@ module.exports.loop = function() {
             }
 
             // Handle spawns
+            profiler.startSample("Spawns " + room);
             spawnManager.run(info, currentSpawnHandlers);
+            profiler.endSample("Spawns " + room);
 
             // Handle construction
+            profiler.startSample("Construction " + room);
             constructionManager.run(info);
+            profiler.endSample("Construction " + room);
         }
 
         // Defense
@@ -202,6 +209,7 @@ module.exports.loop = function() {
     }
 
     // Run creeps
+    profiler.startSample("Creeps");
     for (const name in Memory.creeps) {
         const creep = Game.creeps[name];
         if (creep) {
@@ -218,6 +226,7 @@ module.exports.loop = function() {
             creepDeath(name);
         }
     }
+    profiler.endSample("Creeps");
 
     // Track CPU usage
     if (DEBUG.trackCPUUsage) {

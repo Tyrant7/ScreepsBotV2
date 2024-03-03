@@ -28,6 +28,7 @@ class RemoteManager {
         }
         const plans = this.remotePlans[roomName];
 
+        profiler.startSample("Parsing " + roomInfo.room.name);
         if (!Memory.bases[roomName]) {
             Memory.bases[roomName] = {};
         }
@@ -42,10 +43,9 @@ class RemoteManager {
                 },
             }));
         }
+        profiler.endSample("Parsing " + roomInfo.room.name);
 
         // Let's process each remote, we'll queue spawns for each one
-        profiler.startSample("Plan Remotes " + roomInfo.room.name);
-
         remoteSpawnHandler.clearQueues();
         let spawnCosts = 0;
         const activeRemotes = [];
@@ -53,7 +53,9 @@ class RemoteManager {
 
             // Only spawn for this remote if our spawn capacity is below 100% while maintaining it
             // Once we hit our cutoff, stop spawning for any remotes
+            profiler.startSample("Remote Upkeep " + remote.room);
             const cost = remoteSpawnHandler.getUpkeepEstimates(roomInfo, remote.haulerPaths.length, remote.neededHaulerCarry).spawnTime;
+            profiler.endSample("Remote Upkeep " + remote.room);
             if (spawnCosts + cost + baseRoomSpawnCost >= 1) {
                 break;
             }
@@ -74,8 +76,6 @@ class RemoteManager {
 
             profiler.endSample("Remote Spawns " + remote.room);
         }
-
-        profiler.endSample("Plan Remotes " + roomInfo.room.name);
 
         // Display our active remotes
         if (DEBUG.trackSpawnUsage) {
@@ -166,6 +166,8 @@ class RemoteManager {
         const unbuilt = [];
 
         // Roads
+        profiler.startSample("Structures " + remoteInfo.room);
+        profiler.startSample("Roads " + remoteInfo.room);
         remoteInfo.roads.forEach((road) => {
             const room = Game.rooms[road.roomName];
             if (room) {
@@ -176,8 +178,10 @@ class RemoteManager {
                 }
             }
         });
+        profiler.endSample("Roads " + remoteInfo.room);
 
-        // Then containers so they're popped first
+        // Then containers so they're shifted out first during construction
+        profiler.startSample("Containers " + remoteInfo.room);
         const room = Game.rooms[remoteInfo.room];
         if (room) {
             remoteInfo.containers.forEach((container) => {
@@ -188,6 +192,8 @@ class RemoteManager {
                 }
             });
         }
+        profiler.endSample("Containers " + remoteInfo.room);
+        profiler.endSample("Structures " + remoteInfo.room);
 
         // Handle some relevant things in this remote, and track needed spawns
         const neededSpawns = {};

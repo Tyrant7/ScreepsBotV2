@@ -32,8 +32,33 @@ class Profiler {
         if (!DEBUG.runProfiler) {
             return;
         }
+        const MAX_MESSAGE_LENGTH = 40;
+        let parentIndent = 0;
+        console.log("-".repeat(15) + " Profiler Results " + "-".repeat(15));
         for (const record of this.records) {
-            console.log("\t".repeat(record.indent) + record.label + ": " + record.cpu);
+            const symbols = {
+                0: "🟢",
+                0.35: "🟡",
+                1: "🟠",
+                2: "🔴",
+            };
+            const prefix = symbols[Object.keys(symbols).sort((a, b) => b - a).find((key) => record.cpu >= key)];
+            let guidelines = "";
+            let indent = record.indent - parentIndent;
+            if (indent > 1) {
+                guidelines += "|  ".repeat(indent - 1);
+            }
+            if (indent > 0) {
+                guidelines += "|--";
+                indent--;
+            }
+            parentIndent = Math.min(record.indent, parentIndent);
+
+            let message = "[" + prefix + "] " + guidelines + record.label;
+            if (message.length > MAX_MESSAGE_LENGTH) {
+                message = message.substring(0, MAX_MESSAGE_LENGTH);
+            }
+            console.log(message + " ".repeat(MAX_MESSAGE_LENGTH - message.length) + guidelines + record.cpu.toFixed(5));
         }
         this.clearRecords();
     }
