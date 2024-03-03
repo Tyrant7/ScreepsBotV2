@@ -232,13 +232,15 @@ class RemoteManager {
             const wantedBuilderCount = this.handleBuilderCount(roomInfo, remoteInfo, builders);
 
             // Manage sites
-            const sites = this.handleSites(roomInfo, remoteInfo, builders, unbuiltStructures);
+            profiler.startSample("Sites " + remoteInfo.room);
+            const siteCount = this.handleSites(roomInfo, remoteInfo, builders, unbuiltStructures);
+            profiler.endSample("Sites " + remoteInfo.room);
 
             // Must have vision in the room
-            if (builders && sites) {
+            if (builders) {
                 // When we have fewer things left to build than the number of builders assigned to this room, 
                 // even after creating more sites, it means that there is nothing left to build and we can mark the extra builders for reassignment
-                while (sites.length < builders.length) {
+                while (siteCount + 1 < builders.length) {
                     const extra = builders.pop();
                     delete extra.memory.targetRoom;
                 }
@@ -276,7 +278,7 @@ class RemoteManager {
      * @param {RoomInfo} roomInfo The info object for the home room of the remote.
      * @param {{}} remoteInfo An object containing relevant info about the remote.
      * @param {Creep[]} builders An array of builders assigned to this remote.
-     * @returns An array of the current construction sites in the remote after new placement.
+     * @returns The number of construction sites in the remote after placement.
      */
     handleSites(roomInfo, remoteInfo, builders, unbuilt) {
 
@@ -294,37 +296,45 @@ class RemoteManager {
         if (room) {
 
             // Start with containers
-            let placed = 0;
+            profiler.startSample("Container Sites " + remoteInfo.room);
+            let siteCount = 0;
             while (unbuilt.length > 0 
                 && unbuilt[0].type === STRUCTURE_CONTAINER) { 
 
                 const next = unbuilt.shift();
                 next.pos.createConstructionSite(next.type);
-                placed++;
+                siteCount++;
             }
+            profiler.endSample("Container Sites " + remoteInfo.room);
 
             // No need to attempt placing roads
-            const currentSites = room.find(FIND_CONSTRUCTION_SITES);
-            if (currentSites.length + placed > builders.length + 1) {
-                return currentSites;
+            siteCount += room.find(FIND_CONSTRUCTION_SITES).length;
+            if (siteCount > builders.length + 1) {
+                return siteCount;
             }
 
             // Let's place the wanted site currently closest to an arbirary source
+            profiler.startSample("Road Sites " + remoteInfo.room);
             const source = room.find(FIND_SOURCES)[0];
             unbuilt.sort((a, b) => {
                 return source.pos.getRangeTo(b.pos) - source.pos.getRangeTo(a.pos);
             });
 
-            while (currentSites.length + placed <= builders.length + 1 && unbuilt.length > 0) {
+            while (siteCount <= builders.length + 1 && unbuilt.length > 0) {
                 const next = unbuilt.shift();
                 if (Game.rooms[next.pos.roomName]) {
                     next.pos.createConstructionSite(next.type);
-                    placed++;
+                    siteCount++;
+                }
+                else {
+                    unbuilt.push(next);
                 }
             }
-            return currentSites;
+            profiler.endSample("Road Sites " + remoteInfo.room);
+
+            return siteCount;
         }
-        return null;
+        return 0;
     }
 
     /**
