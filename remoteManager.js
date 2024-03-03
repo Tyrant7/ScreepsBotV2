@@ -165,22 +165,8 @@ class RemoteManager {
         // Let's track all unbuilt structures for this remote
         const unbuilt = [];
 
-        // Roads
+        // Start with containers so that they're built first
         profiler.startSample("Structures " + remoteInfo.room);
-        profiler.startSample("Roads " + remoteInfo.room);
-        remoteInfo.roads.forEach((road) => {
-            const room = Game.rooms[road.roomName];
-            if (room) {
-                const roadSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
-                const existingRoad = room.lookForAt(LOOK_STRUCTURES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
-                if (!roadSite && !existingRoad) {
-                    unbuilt.push({ pos: road, type: STRUCTURE_ROAD });
-                }
-            }
-        });
-        profiler.endSample("Roads " + remoteInfo.room);
-
-        // Then containers so they're shifted out first during construction
         profiler.startSample("Containers " + remoteInfo.room);
         const room = Game.rooms[remoteInfo.room];
         if (room) {
@@ -193,6 +179,20 @@ class RemoteManager {
             });
         }
         profiler.endSample("Containers " + remoteInfo.room);
+
+        // Then roads
+        profiler.startSample("Roads " + remoteInfo.room);
+        remoteInfo.roads.forEach((road) => {
+            const room = Game.rooms[road.roomName];
+            if (room) {
+                const roadSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
+                const existingRoad = room.lookForAt(LOOK_STRUCTURES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
+                if (!roadSite && !existingRoad) {
+                    unbuilt.push({ pos: road, type: STRUCTURE_ROAD });
+                }
+            }
+        });
+        profiler.endSample("Roads " + remoteInfo.room); 
         profiler.endSample("Structures " + remoteInfo.room);
 
         // Handle some relevant things in this remote, and track needed spawns

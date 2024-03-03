@@ -28,13 +28,14 @@ class RemoteMinerTaskGenerator {
                     // Look for a container on our tile before mining
                     const tile = creep.pos.lookFor(LOOK_STRUCTURES);
                     const container = tile.find((s) => s.structureType === STRUCTURE_CONTAINER);
-
                     if (!container) {
 
                         // No container, let's look around us for one
                         const p = source.pos;
                         const containers = creep.room.lookForAtArea(LOOK_STRUCTURES, p.y-1, p.x-1, p.y+1, p.x+1, true).filter(
                             (s) => s.structure.structureType === STRUCTURE_CONTAINER);
+                        containers.push(...creep.room.lookForAtArea(LOOK_CONSTRUCTION_SITES, p.y-1, p.x-1, p.y+1, p.x+1, true).filter(
+                            (s) => s.constructionSite.structureType === STRUCTURE_CONTAINER));
 
                         if (containers.length > 0) {
                             creep.moveTo(containers[0]);
