@@ -33,6 +33,8 @@ class Profiler {
             return;
         }
         const MAX_MESSAGE_LENGTH = 40;
+        const DECIMAL_PLACES = 5; 
+
         let parentIndent = 0;
         console.log("-".repeat(15) + " Profiler Results " + "-".repeat(15));
         for (const record of this.records) {
@@ -58,7 +60,7 @@ class Profiler {
             if (message.length > MAX_MESSAGE_LENGTH) {
                 message = message.substring(0, MAX_MESSAGE_LENGTH);
             }
-            console.log(message + " ".repeat(MAX_MESSAGE_LENGTH - message.length) + guidelines + record.cpu.toFixed(5));
+            console.log(message + " ".repeat(MAX_MESSAGE_LENGTH - message.length) + guidelines + record.cpu.toFixed(DECIMAL_PLACES));
         }
         this.clearRecords();
     }
