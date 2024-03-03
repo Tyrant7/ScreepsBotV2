@@ -104,29 +104,29 @@ class WorkerTaskGenerator {
     /**
      * Creates a basic worker task that consists of a harvest step, and an action step. 
      * @param {*} target The target of the action step of the task.
-     * @param {number} taskType One of the taskType constants to use as a tag for the created task.
+     * @param {number} type One of the taskType constants to use as a tag for the created task.
      * @returns {Task} A new task object with the appropriate actions, target, and tag.
      */
-    createBasicTask(target, taskType) {
+    createBasicTask(target, type) {
 
         // Initialize our action stack with a default harvest, plus an action matching the task type
         const actionStack = [];
         actionStack.push(basicWorkerActions["harvest"]);
-        actionStack.push(basicWorkerActions[taskType]);
+        actionStack.push(basicWorkerActions[type]);
 
         const taskData = {};
-        if (taskType === taskType.restock &&
+        if (type === taskType.restock &&
             (target.structureType === STRUCTURE_SPAWN || target.structureType === STRUCTURE_EXTENSION)) {
             taskData.restockType = target.structureType;
         }
-        else if (taskType === taskType.build) {
+        else if (type === taskType.build) {
             taskData.buildType = target.structureType;
         }
         else {
             taskData.targetID = target.id;
         }
 
-        return new Task(taskData, taskType, actionStack);
+        return new Task(taskData, type, actionStack);
     }
 }
 
