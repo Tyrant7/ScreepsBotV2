@@ -58,16 +58,12 @@ module.exports = function(creep, data) {
     }
 
     // Determine if it's worth gathering ->
-    // If we're above a baseline energy threshold and are closer to our target than our refill with a margin, 
+    // If we're above a baseline energy threshold
     // skip refilling and go directly to our target instead
-    /*
     const optionalRefillThreshold = 50;
-    const refillDistanceThreshold = 2;
-    if (creep.store[RESOURCE_ENERGY] >= optionalRefillThreshold &&
-        creep.pos.getRangeTo(target) <= creep.pos.getRangeTo(harvest) + refillDistanceThreshold) {
+    if (creep.store[RESOURCE_ENERGY] >= optionalRefillThreshold) {
         return true;
     }
-    */
 
     if (creep.store[RESOURCE_ENERGY] > 0 && creep.pos.getRangeTo(harvest) > 1) {
         // Creep is going to refill, might as well use any remaining energy to repair roads

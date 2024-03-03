@@ -36,7 +36,6 @@ class CreepManager {
         // Debug
         if (DEBUG.logTasks) {
             creep.memory.taskKey = task.tag;
-            creep.memory.taskTarget = task.target;
         }
 
         // Check if current action is completed, if so, we can advance to the next action

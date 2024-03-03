@@ -40,27 +40,6 @@ class HaulerTaskGenerator {
             }
         }
 
-        // For every source with a miner whose container is nearly full
-        // dedicate a specific task to hauling its mined energy to the main storage
-        if (roomInfo.room.storage) {
-            for (const miner of roomInfo.miners) {
-
-                // No more than one hauler per miner
-                const existingTasks = activeTasks.filter((task) => task.target === miner.id && task.tag === taskType.transport);
-                if (existingTasks.length) {
-                    continue;
-                }
-
-                // If this miner's container is within 200 of max capacity, let's empty it out
-                const container = roomInfo.room.lookForAt(LOOK_STRUCTURES, miner.pos).find((s) => s.structureType === STRUCTURE_CONTAINER);
-                if (container && container.store.getFreeCapacity() <= 200) {
-                    // Create a task to transfer the energy from this miner's container to the storage
-                    return new Task({ containerID: container.id }, taskType.transport, [basicActions[taskType.transport]]);
-                }
-            }
-        }
-
-
         // Deliver task for controller
         // Simply bring energy to controller if nothing else to do
         // If we have an upgrader, let's bring energy to him instead of the controller
@@ -81,74 +60,15 @@ class HaulerTaskGenerator {
 
 
 const taskType = {
-    transport: "transport",
     deliver: "deliver",
     restock: "restock",
 };
 
 const basicActions = {
-    // Transports energy from 'target' to the room's storage
-    [taskType.transport]: function(creep, data) {
-
-        // Get our miner
-        const container = Game.getObjectById(data.containerID);
-
-        // If there's no storage in this creep's home, we're done
-        const storage = Game.rooms[creep.memory.home].storage;
-        if (!storage || !container) {
-            delete creep.memory.openPull;
-            return true;
-        }
-
-        // If we've already grabbed our energy and still have some, let's transport
-        if (creep.memory.visitedTarget && creep.store[RESOURCE_ENERGY]) {
-            const transferResult = creep.transfer(storage, RESOURCE_ENERGY);
-            if (transferResult === ERR_NOT_IN_RANGE) {
-                creep.moveTo(storage);
-
-                // Let workers know that they can pull energy off of this hauler if need be
-                creep.memory.openPull = true;
-            }
-            else if (transferResult === OK) {
-                // We're done!
-                delete creep.memory.visitedTarget;
-                delete creep.memory.openPull;
-                return true;
-            }
-            return false;
-        }
-
-        // Otherwise, let's go get it
-        if (creep.pos.getRangeTo(container) <= 1) {
-
-            // We've some energy and we've gone all the way there, let's flag ourselves to start going back
-            if (creep.store[RESOURCE_ENERGY]) {
-                creep.memory.visitedTarget = true;
-            }
-        }
-
-        // Search the floor near us for energy -> this will also handle cleaning up overflowing energy from containers
-        const p = creep.pos;
-        if (p.x !== 0 && p.x !== 49 && p.y !== 0 && p.y !== 49) {
-            const nearby = creep.room.lookAtArea(p.y-1, p.x-1, p.y+1, p.x+1, true).find((item) => 
-                (item.type === LOOK_RESOURCES && item.resource.resourceType === RESOURCE_ENERGY) 
-             || (item.type === LOOK_TOMBSTONES && item.tombstone.store[RESOURCE_ENERGY] > 0) 
-             || (item.type === LOOK_RUINS && item.ruin.store[RESOURCE_ENERGY] > 0))
-            if (nearby) {
-                harvest = nearby;
-            }
-        }
-
-        const intentResult = harvest instanceof Resource ? creep.pickup(harvest) : creep.withdraw(harvest, RESOURCE_ENERGY);
-        if (intentResult === ERR_NOT_IN_RANGE) {
-            creep.moveTo(harvest);
-        }
-        return false;
-    },
     // Delivers the creep's current inventory to target
     [taskType.deliver]: function(creep, data) {
 
-        const deliverTarget = Game.getObjectById(data.targetID);
+        const deliverTarget = Game.getObjectById(data.deliverID);
 
         // Let workers know that this hauler is open to pull energy off of if needed
         creep.memory.openPull = true;
@@ -160,7 +80,7 @@ const basicActions = {
             return true;
         }
 
-        if (deliverTarget === creep.room.controller) {
+        if (deliverTarget.id === creep.room.controller.id) {
             if (creep.pos.getRangeTo(deliverTarget) > 2) {
                 creep.moveTo(deliverTarget);
             }
