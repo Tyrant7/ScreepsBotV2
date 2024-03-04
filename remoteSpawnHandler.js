@@ -16,48 +16,76 @@ class RemoteSpawnHandler {
         // Get a prioritized list of remotes
         const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
 
+        // Let's how much from each remote we've already spawned so we can easily track our demand
+        const existingSpawns = {};
+        for (const creep of roomInfo.creeps) {
+            if (creep.memory.isRemote) {
+                if (!existingSpawns[creep.role]) {
+                    existingSpawns[creep.role] = 0;
+                }
+                existingSpawns[creep.role]++;
+            }
+        }
+        
+        // Rather inelegant, but it'll do
+        // Haulers are measured in CARRY part count instead of creep count
+        existingSpawns[CONSTANTS.roles.hauler] = existingSpawns[CONSTANTS.roles.hauler].reduce((totalCarry, curr) => {
+            return totalCarry + curr.body.filter((p) => p.type === CARRY).length;
+        }, 0);
+
         // Iterate through each until we find one under its spawn requirements
         for (const remote of remotes) {
-            const spawn = this.getBestSpawn(roomInfo.room.energyCapacityAvailable, remote.haulerPaths.length, remote.neededHaulerCarry);
+            const spawn = this.getBestSpawn(roomInfo.room.energyCapacityAvailable, remote.haulerPaths.length, remote.neededHaulerCarry, existingSpawns);
             if (spawn) {
+
+                // Tag this creep so we know it came from remote spawning and can count it against 
+                // our spawns here next time we attempt spawning
+                spawn.isRemote = true;
                 return spawn;
             }
         }
     }
 
-    getBestSpawn(maxCost, sourceCount, neededCarry) {
+    getBestSpawn(maxCost, sourceCount, neededCarry, existingSpawns) {
 
-        // Compare ideal with actual
-        // Need some way of knowing how many have already been spawned
+        // Compare ideal with actual for each role
+        // If we have already spawned more than we need, 
+        // let's subtract the amount we have and let it propagate to the next remote
 
         // Start with miners
-        const miners = [];
-        for (let i = 0; i < sourceCount; i++) {
-            miners.push(this.makeMiner(maxCost));
+        const wantedMiners = sourceCount - existingSpawns[CONSTANTS.roles.miner];
+        if (wantedMiners > 0) {
+            return this.makeMiner(maxCost);
         }
+        existingSpawns[CONSTANTS.roles.miner] -= sourceCount;
 
         // Haulers next
         // Keep making haulers until we have enough to transport all energy we'll mine
-        const haulers = [];
-        while (neededCarry > 0) {
-            const hauler = this.makeHauler(neededCarry, maxCost);
-            neededCarry -= hauler.body.filter((p) => p === CARRY).length;
-            haulers.push(hauler);
+        const wantedCarryParts = neededCarry - existingSpawns[CONSTANTS.roles.hauler];
+        if (wantedCarryParts > 0) {
+            return this.makeHauler(wantedCarryParts, maxCost);
         }
+        existingSpawns[CONSTANTS.roles.hauler] -= neededCarry;
 
-        // Workers -> just one for repairs
-        const workers = [];
-        workers.push(this.makeWorker(CONSTANTS.maxRemoteBuilderLevel, maxCost));
+        // Workers -> just one per remote for repairs
+        const wantedWorkers = 1 - existingSpawns[CONSTANTS.roles.worker];
+        if (wantedWorkers > 0) {
+            return this.makeWorker(CONSTANTS.maxRemoteBuilderLevel, maxCost);
+        }
+        existingSpawns[CONSTANTS.roles.worker] -= 1;
 
-        // Finally, claimers -> just one per remote
-        const claimerBody = this.makeReserver().body;
+        const wantedClaimers = 1 - existingSpawns[CONSTANTS.roles.claimer];
+        if (wantedClaimers > 0) {
+            return this.makeClaimer();
+        }
+        existingSpawns[COSNTANTS.roles.claimer] -= 1;
     }
 
     makeWorker(desiredLevel, maxCost) {
         return workerSpawnHandler.make(desiredLevel, maxCost);
     }
 
-    makeReserver() {
+    makeClaimer() {
         // Reservers will be made up of 2 CLAIM 2 MOVE bodies
         // It's technically possible with 1 CLAIM 1 MOVE, but give it extra to account for 
         // imperfections in pathing and spawning priorities
