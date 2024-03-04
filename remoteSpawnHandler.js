@@ -73,7 +73,7 @@ class RemoteSpawnHandler {
         // Workers -> just one per remote for repairs
         const wantedWorkers = 1 - existingSpawns[CONSTANTS.roles.worker];
         if (wantedWorkers > 0) {
-            return this.makeWorker(CONSTANTS.maxRemoteBuilderLevel, maxCost);
+            return this.makeWorker(CONSTANTS.maxWorkerLevel, maxCost);
         }
         existingSpawns[CONSTANTS.roles.worker] -= 1;
 
@@ -104,7 +104,7 @@ class RemoteSpawnHandler {
     }
 
     makeHauler(carryParts, maxCost) {
-        return haulerSpawnHandler.make(Math.min(Math.ceil(carryParts / 2), CONSTANTS.maxRemoteHaulerLevel), maxCost);
+        return haulerSpawnHandler.make(Math.min(Math.ceil(carryParts / 2), CONSTANTS.maxHaulerLevel), maxCost);
     }
 
     getUpkeepEstimates(homeRoomInfo, sourceCount, neededCarry) {
@@ -136,11 +136,11 @@ class RemoteSpawnHandler {
         upkeeps.energy += calculateUpkeep(haulers, creepSpawnUtility.getCost);
         upkeeps.spawnTime += calculateUpkeep(haulers, creepSpawnUtility.getSpawnTime);
 
-        // Builders -> just one for repairs
-        const builders = [];
-        builders.push(this.makeWorker(CONSTANTS.maxRemoteBuilderLevel, maxCost));
-        upkeeps.energy += calculateUpkeep(builders, creepSpawnUtility.getCost);
-        upkeeps.spawnTime += calculateUpkeep(builders, creepSpawnUtility.getSpawnTime);
+        // Workers -> just one for repairs
+        const workers = [];
+        workers.push(this.makeWorker(CONSTANTS.maxWorkerLevel, maxCost));
+        upkeeps.energy += calculateUpkeep(workers, creepSpawnUtility.getCost);
+        upkeeps.spawnTime += calculateUpkeep(workers, creepSpawnUtility.getSpawnTime);
 
         // Finally, claimers
         const claimerBody = this.makeClaimer().body;

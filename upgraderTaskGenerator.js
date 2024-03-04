@@ -22,14 +22,6 @@ class UpgraderTaskGenerator {
                 base.upgraderContainer.x, base.upgraderContainer.y, base.upgraderContainer.roomName
             );
 
-            // No container -> just stand near the controller
-            if (!upgraderContainerPos) {
-                if (creep.upgradeController(target) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
-                }
-                return;
-            }
-
             // We're within range of our container already!
             if (creep.pos.getRangeTo(upgraderContainerPos) <= 0) {
                 // Pickup energy if we need it

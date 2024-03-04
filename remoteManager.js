@@ -6,8 +6,6 @@ const utility = require("remoteUtility");
 const overlay = require("overlay");
 const profiler = require("profiler");
 
-delete Memory.bases;
-
 class RemoteManager {
 
     run(roomInfo, baseRoomSpawnCost) {
