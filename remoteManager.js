@@ -1,3 +1,8 @@
+// Some safety stuff up here to make sure our Memory is initialized
+if (!Memory.bases[roomName]) {
+    Memory.bases[roomName] = { remotes: [] };
+}
+
 const RemotePlanner = require("remotePlanner");
 const remotePlanner = new RemotePlanner();
 
@@ -6,83 +11,45 @@ const profiler = require("profiler");
 
 class RemoteManager {
 
-    constructor() {
-        this.remotePlans = {};
+    getRemotePlans(baseName) {
+        return Memory.bases[baseName].remotes;
     }
 
-    run(roomInfo, remoteSpawnHandler, baseRoomSpawnCost) {
+    setRemotePlans(baseName, plansArray) {
+        Memory.bases[baseName].remotes = plansArray;
+    }
+
+    run(roomInfo, baseRoomSpawnCost) {
         
-        // Plan our remotes, if we haven't already
-        const roomName = roomInfo.room.name;
-        const reload = !this.remotePlans[roomName];
-        if (reload) {
-            const unsortedPlans = this.getRemotePlans(roomInfo, baseRoomSpawnCost);
-
-            // Sort plans by distance, then efficiency score to allow creeps to be assigned under a natural priority 
-            // of more important (i.e. higher scoring and closer) remotes
-            this.remotePlans[roomName] = unsortedPlans.sort((a, b) => {
-                const aScore = (a.children.length ? 100000 : 0) + a.score;
-                const bScore = (b.children.length ? 100000 : 0) + b.score;
-                return bScore - aScore;
-            });
-        }
-        const plans = this.remotePlans[roomName];
-
-        profiler.startSample("Parsing " + roomInfo.room.name);
-        if (!Memory.bases[roomName]) {
-            Memory.bases[roomName] = {};
+        // Get our plans
+        const remotePlans = this.ensurePlansExist(roomInfo, baseRoomSpawnCost);
+        if (!remotePlans) {
+            return 0;
         }
 
-        if (!Memory.bases[roomName].remotes || reload) {
-            Memory.bases[roomName].remotes = [];
-            plans.forEach((remote) => Memory.bases[roomName].remotes.push({ 
-                room: remote.room,
-                structures: {
-                    containers: remote.containers,
-                    roads: remote.roads,
-                },
-            }));
-        }
-        profiler.endSample("Parsing " + roomInfo.room.name);
-
-        // Let's process each remote, we'll queue spawns for each one
-        remoteSpawnHandler.clearQueues();
+        // Process each planned remote, cutting off when the spawns go above our threshold
         let spawnCosts = 0;
-        const activeRemotes = [];
-        for (const remote of plans) {
+        let passedThreshold = false;
+        for (const remote of remotePlans) {
 
-            // Only spawn for this remote if our spawn capacity is below 100% while maintaining it
-            // Once we hit our cutoff, stop spawning for any remotes
-            profiler.startSample("Remote Upkeep " + remote.room);
-            const cost = remoteSpawnHandler.getUpkeepEstimates(roomInfo, remote.haulerPaths.length, remote.neededHaulerCarry).spawnTime;
-            profiler.endSample("Remote Upkeep " + remote.room);
-            if (spawnCosts + cost + baseRoomSpawnCost >= 1) {
-                break;
+            // Once we hit our cutoff, mark all remaining remotes as inactive
+            if (passedThreshold || spawnCosts + remote.cost + baseRoomSpawnCost >= 1) {
+                passedThreshold = true;
+                remote.active = false;
+                continue;
             }
-            spawnCosts += cost;
 
-            profiler.startSample("Remote Spawns " + remote.room);
-
-            // If we're good, let's process this remote's spawns
-            profiler.startSample("Process " + remote.room);
-            const neededSpawns = this.processRemote(roomInfo, remote);
-            profiler.endSample("Process " + remote.room);
-            for (const role in neededSpawns) {
-                if (neededSpawns[role] > 0) {
-                    remoteSpawnHandler.queueSpawn(roomInfo.room.name, role, neededSpawns[role]);
-                }
-            }
-            activeRemotes.push({ remote: remote, cost: cost });
-
-            profiler.endSample("Remote Spawns " + remote.room);
+            // Mark this remote as active and process it
+            remote.active = true;
+            spawnCosts += remote.spawnCost;
+            this.processRemote(roomInfo, remote);
         }
 
         // Display our active remotes
         if (DEBUG.trackSpawnUsage) {
             const remoteDisplay = {};
-            plans.forEach((plan) => {
-                const foundRemote = activeRemotes.find((r) => r.remote === plan);
-                remoteDisplay[plan.room] = foundRemote ? "active (" + (Math.round(foundRemote.cost * 1000) / 1000).toFixed(3) + ")" : "inactive";
+            remotePlans.forEach((remote) => {
+                remoteDisplay[remote.room] = remote.active ? "active (" + (Math.round(remote.cost * 1000) / 1000).toFixed(3) + ")" : "inactive";
             });
             overlay.addText(roomInfo.room.name, remoteDisplay);
         }
@@ -94,11 +61,33 @@ class RemoteManager {
         return spawnCosts;
     }
 
-    getRemotePlans(roomInfo, baseRoomSpawnCost) {
+    /**
+     * Plan our remotes, if we haven't already.
+     * @param {RoomInfo} roomInfo Info object for the room to plan remotes for.
+     * @param {number} baseRoomSpawnCost Spawn capacity for that room.
+     * @returns The active plans for remotes for this room.
+     */
+    ensurePlansExist(roomInfo, baseRoomSpawnCost) {
+        if (!this.getRemotePlans(roomInfo.room.name)) {
+            const unsortedPlans = this.planRemotes(roomInfo, baseRoomSpawnCost);
+
+            // Sort plans by distance, then efficiency score to allow creeps to be assigned under a natural priority 
+            // of more important (i.e. higher scoring and closer) remotes
+            const sortedPlans = unsortedPlans.sort((a, b) => {
+                const aScore = (a.children.length ? 100000 : 0) + a.score;
+                const bScore = (b.children.length ? 100000 : 0) + b.score;
+                return bScore - aScore;
+            });
+            this.setRemotePlans(roomInfo.room.name, sortedPlans);
+        }
+        return this.getRemotePlans(roomInfo.room.name);
+    }
+
+    planRemotes(roomInfo, baseRoomSpawnCost) {
 
         const cpu = Game.cpu.getUsed();
 
-        // Here's out best combination of remotes and the order they have to be built in
+        // Here's best combination of remotes and the order they have to be built in
         // Keep in mind that distance 1's are interchangable, so we can use a greedy algorithm 
         // to easily pull the most efficient one
         const bestBranch = remotePlanner.planRemotes(roomInfo);
@@ -195,90 +184,21 @@ class RemoteManager {
         profiler.endSample("Roads " + remoteInfo.room); 
         profiler.endSample("Structures " + remoteInfo.room);
 
-        // Handle some relevant things in this remote, and track needed spawns
-        const neededSpawns = {};
-        profiler.startSample("Spawns [build] " + remoteInfo.room);
-        neededSpawns[CONSTANTS.roles.remoteBuilder] = this.handleConstruction(roomInfo, remoteInfo, unbuilt);
-        profiler.endSample("Spawns [build] " + remoteInfo.room);
-
-        profiler.startSample("Spawns [miner] " + remoteInfo.room);
-        neededSpawns[CONSTANTS.roles.remoteMiner] = this.handleMiners(roomInfo, remoteInfo);
-        profiler.endSample("Spawns [miner] " + remoteInfo.room);
-
-        profiler.startSample("Spawns [reserver] " + remoteInfo.room);
-        neededSpawns[CONSTANTS.roles.reserver] = this.handleReservers(roomInfo, remoteInfo);
-        profiler.endSample("Spawns [reserver] " + remoteInfo.room);
-
-        profiler.startSample("Spawns [hauler] " + remoteInfo.room);
-        neededSpawns[CONSTANTS.roles.remoteHauler] = this.handleHaulers(roomInfo, remoteInfo);
-        profiler.endSample("Spawns [hauler] " + remoteInfo.room);
-        return neededSpawns;
+        // Handle placing construction sites for this remote
+        profiler.startSample("Construction " + remoteInfo.room);
+        const builders = roomInfo.workers.filter((worker) => worker.pos.roomName === remoteInfo.room);
+        if (unbuiltStructures.length) { 
+            this.handleSites(roomInfo, remoteInfo, builders, unbuiltStructures);
+        }
+        profiler.endSample("Construction " + remoteInfo.room);
     }
 
     
-    /**
-     * Handles requesting builders and placing sites in this remote if needed.
-     * @param {RoomInfo} roomInfo The info object associated with the home room of this remote.
-     * @param {{}} remoteInfo An object containing relevant info about the remote.
-     * @returns {number} The number of builders wanted by this room.
-     */
-    handleConstruction(roomInfo, remoteInfo, unbuiltStructures) {
-
-        // Handle builders for this remote if we have things left to build
-        const builders = roomInfo.remoteBuilders.filter((builder) => builder.memory.targetRoom === remoteInfo.room);
-        if (unbuiltStructures.length) {
-            
-            // Allocate builders
-            const wantedBuilderCount = this.handleBuilderCount(roomInfo, remoteInfo, builders);
-
-            // Manage sites
-            profiler.startSample("Sites " + remoteInfo.room);
-            const siteCount = this.handleSites(roomInfo, remoteInfo, builders, unbuiltStructures);
-            profiler.endSample("Sites " + remoteInfo.room);
-
-            // Must have vision in the room
-            if (builders) {
-                // When we have fewer things left to build than the number of builders assigned to this room, 
-                // even after creating more sites, it means that there is nothing left to build and we can mark the extra builders for reassignment
-                while (siteCount + 1 < builders.length) {
-                    const extra = builders.pop();
-                    delete extra.memory.targetRoom;
-                }
-            }
-            return wantedBuilderCount;
-        }
-
-        // If there's nothing left to build in this room, let's just request one builder to handle repairs
-        return Math.max(1 - builders.length, 0);
-    }
-
-    /**
-     * Handles allocating more builders to this remote if under the ideal amount.
-     * @param {RoomInfo} roomInfo The info object for the home room to pull builders from.
-     * @param {{}} remoteInfo An object containing relevant info about the remote.
-     * @returns {number} The number of workers needed in this remote.
-     */
-    handleBuilderCount(roomInfo, remoteInfo, builders) {
-
-        // Request a builder while we have fewer than the number of sources in this room
-        const unassignedBuilders = roomInfo.remoteBuilders.filter((builder) => !builder.memory.targetRoom);
-        const wantedBuilderCount = Math.max(Memory.rooms[remoteInfo.room].sources.length, 0);
-        while (wantedBuilderCount > builders.length && unassignedBuilders.length > 0) {
-            const unassigned = unassignedBuilders.pop();
-            if (unassigned) {
-                unassigned.memory.targetRoom = remoteInfo.room;
-                builders.push(unassigned);
-            }
-        }
-        return (wantedBuilderCount - builders.length) * CONSTANTS.maxRemoteBuilderLevel;
-    }
-
     /**
      * Handles the appropriate placing of construction sites for the target remote.
      * @param {RoomInfo} roomInfo The info object for the home room of the remote.
      * @param {{}} remoteInfo An object containing relevant info about the remote.
      * @param {Creep[]} builders An array of builders assigned to this remote.
-     * @returns The number of construction sites in the remote after placement.
      */
     handleSites(roomInfo, remoteInfo, builders, unbuilt) {
 
@@ -310,7 +230,7 @@ class RemoteManager {
             // No need to attempt placing roads
             siteCount += room.find(FIND_CONSTRUCTION_SITES).length;
             if (siteCount > builders.length + 1) {
-                return siteCount;
+                return;
             }
 
             // Let's place the wanted site currently closest to an arbirary source
@@ -331,137 +251,7 @@ class RemoteManager {
                 }
             }
             profiler.endSample("Road Sites " + remoteInfo.room);
-
-            return siteCount;
         }
-        return 0;
-    }
-
-    /**
-     * Handles requesting a reserver for this remote if one does not yet exist.
-     * @param {RoomInfo} roomInfo The info object for the home room to pull miners from.
-     * @param {{}} remoteInfo An object containing relevant info about the remote.
-     * @returns {number} The number of reservers this remote currently needs.
-     */
-    handleReservers(roomInfo, remoteInfo) {
-
-        // Make sure there isn't a reserver already assigned to this room
-        const reserver = roomInfo.reservers.find((reserver) => reserver.memory.targetRoom === remoteInfo.room);
-        if (reserver) {
-            return 0;
-        }
-
-        // Find an unused reserver
-        const unassignedReserver = roomInfo.reservers.find((reserver) => !reserver.memory.targetRoom);
-        if (unassignedReserver) {
-            unassignedReserver.memory.targetRoom = remoteInfo.room;
-            return 0;
-        }
-        return 1;
-    }
-
-    /**
-     * Handles requesting miners for this room.
-     * @param {RoomInfo} roomInfo The info object for the home room to pull miners from.
-     * @param {{}} remoteInfo An object containing relevant info about the remote.
-     * @returns {number} The number of miners needed in this remote.
-     */
-    handleMiners(roomInfo, remoteInfo) {
-
-        // Find all unassigned sources in this room
-        const sources = Memory.rooms[remoteInfo.room].sources;
-        const unassignedSources = sources.filter((source) => {
-            return !roomInfo.remoteMiners.find((miner) => miner.memory.sourceID === source.id); 
-        });
-        // And all unassigned miners
-        const unassignedMiners = roomInfo.remoteMiners.filter((miner) => !miner.memory.sourceID);
-
-        // Pair them while unassigned of both exist
-        while (unassignedSources.length > 0 && unassignedMiners.length > 0) {
-            const miner = unassignedMiners.pop();
-            const source = unassignedSources.pop();
-            if (miner && source) {
-                miner.memory.sourceID = source.id;
-                miner.memory.targetRoom = remoteInfo.room;
-            }
-        }
-        return unassignedSources.length;
-    }
-
-    /**
-     * Handles requesting haulers for this room.
-     * @param {RoomInfo} roomInfo The home room to request haulers from.
-     * @param {{}} remoteInfo An object containing relevant info about the remote.
-     */
-    handleHaulers(roomInfo, remoteInfo) {
-
-        // We'll operate on a per-source basis
-        let totalMissingCarry = 0;
-        remoteInfo.haulerPaths.forEach((path) => {
-
-            // Figure out how much CARRY we're missing per path
-            const haulers = roomInfo.remoteHaulers.filter((h) => {
-                return h.memory.container &&
-                       h.memory.container.x === path.container.x &&
-                       h.memory.container.y === path.container.y &&
-                       h.memory.container.roomName === path.container.roomName;
-            });
-            const currentCarry = haulers.reduce((totalCarry, curr) => totalCarry + curr.body.filter((p) => p.type === CARRY).length, 0);       
-            let missingCarry = path.neededCarry - currentCarry;
-
-            // If we have extra, and we can safely reallocate a hauler, let's do so
-            if (missingCarry < 0 && haulers.length > 1) {
-                // First, let's find the smallest hauler
-                const smallestHauler = haulers.reduce((smallest, curr) => {
-                    const currentCarry = curr.body.filter((p) => p.type === CARRY).length;
-                    return !smallest || currentCarry < smallest.carry 
-                        ? { carry: currentCarry, creep: curr }
-                        : smallest;
-                });
-
-                // Then let's check if reallocating it keeps us above our threshold
-                if (missingCarry + smallestHauler.carry <= 0) {
-                    // If yes, reallocate it
-                    delete smallestHauler.creep.memory.container;
-                    missingCarry += smallestHauler.carry;
-                }
-            }
-            // If we're missing CARRY, let's look unassigned haulers
-            else if (missingCarry > 0) {
-
-                // Track unassigned haulers
-                const unassignedHaulers = roomInfo.remoteHaulers.filter((h) => !h.memory.container);
-
-                // Limit to assigning one new hauler per tick so they correctly rearrange themselves when a new one spawns
-                if (unassignedHaulers.length > 0) {
-
-                    // While we can assign more haulers, let's pick the best unassigned one for this job
-                    const bestCandidate = 
-                    unassignedHaulers.length > 1 ?
-                        unassignedHaulers.reduce((best, curr) => {
-                            
-                            const currentCarry = curr.body.filter((p) => p.type === CARRY).length;
-
-                            // We're going to define "best" as most closely matching our ideal carry count
-                            return !best || Math.abs(currentCarry - missingCarry) < Math.abs(best.carry - missingCarry)
-                                ? { carry: currentCarry, creep: curr }
-                                : best;
-                        }) 
-                    : { 
-                        carry: unassignedHaulers[0].body.filter((p) => p.type === CARRY).length,
-                        creep: unassignedHaulers[0] 
-                    };
-
-                    // Assign our best candidate
-                    bestCandidate.creep.memory.container = path.container;
-                    missingCarry -= bestCandidate.carry;
-                }
-            }
-
-            // Even include negatives since overspawned haulers should redistribute naturally
-            totalMissingCarry += missingCarry;
-        });
-        return totalMissingCarry;
     }
 }
 

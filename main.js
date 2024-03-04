@@ -36,11 +36,7 @@ const MinerTaskGenerator = require("minerTaskGenerator");
 const UpgraderTaskGenerator = require("upgraderTaskGenerator");
 const ScoutTaskGenerator = require("scoutTaskGenerator");
 
-const RemoteBuilderTaskGenerator = require("remoteBuilderTaskGenerator");
 const ReserverTaskGenerator = require("reserverTaskGenerator");
-const RemoteMinerTaskGenerator = require("remoteMinerTaskGenerator");
-const RemoteHaulerTaskGenerator = require("remoteHaulerTaskGenerator");
-
 const DefenderTaskGenerator = require("defenderTaskGenerator");
 
 const workerManager = new CreepManager(new WorkerTaskGenerator());
@@ -49,11 +45,7 @@ const minerManager = new CreepManager(new MinerTaskGenerator());
 const upgraderTaskGenerator = new CreepManager(new UpgraderTaskGenerator());
 const scoutManager = new CreepManager(new ScoutTaskGenerator());
 
-const remoteBuilderManager = new CreepManager(new RemoteBuilderTaskGenerator());
 const reserverManager = new CreepManager(new ReserverTaskGenerator());
-const remoteMinerManager = new CreepManager(new RemoteMinerTaskGenerator());
-const remoteHaulerManager = new CreepManager(new RemoteHaulerTaskGenerator());
-
 const defenderManager = new CreepManager(new DefenderTaskGenerator());
 
 // Mapping
@@ -63,10 +55,7 @@ const creepRoleMap = {
     [CONSTANTS.roles.miner]: minerManager,
     [CONSTANTS.roles.upgrader]: upgraderTaskGenerator,
     [CONSTANTS.roles.scout]: scoutManager,
-    [CONSTANTS.roles.remoteBuilder]: remoteBuilderManager,
     [CONSTANTS.roles.reserver]: reserverManager,
-    [CONSTANTS.roles.remoteMiner]: remoteMinerManager,
-    [CONSTANTS.roles.remoteHauler]: remoteHaulerManager,
     [CONSTANTS.roles.defender]: defenderManager,
 };
 
@@ -168,7 +157,7 @@ module.exports.loop = function() {
 
                 // Plan remotes for bases!
                 profiler.startSample("Remotes " + room);
-                remoteSustainCost = remoteManager.run(info, remoteSpawnHandler, avgSustainCost);
+                remoteSustainCost = remoteManager.run(info, avgSustainCost);
                 profiler.endSample("Remotes " + room);
 
                 // Make sure we're spawning for remotes

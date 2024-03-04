@@ -1,60 +1,45 @@
 const creepSpawnUtility = require("creepSpawnUtility");
 const MinerSpawnHandler = require("minerSpawnHandler");
 const HaulerSpawnHandler = require("haulerSpawnHandler");
+const WorkerSpawnHandler = require("workerSpawnHandler");
 
 const minerSpawnHandler = new MinerSpawnHandler();
 const haulerSpawnHandler = new HaulerSpawnHandler();
+const workerSpawnHandler = new WorkerSpawnHandler();
 
 class RemoteSpawnHandler {
 
     getNextSpawn(roomInfo) {
-        
-        // Make sure we have actual spawns for this base
-        if (!this.spawnQueues) {
-            return;
-        }
-        const queue = this.spawnQueues[roomInfo.room.name];
-        if (!queue || !queue.length) {
-            return;
+
+        const maxCost = roomInfo.room.energyCapacityAvailable;
+        const sourceCount = -11; 
+        const neededCarry = -11;
+
+        // Start with miners
+        const miners = [];
+        for (let i = 0; i < sourceCount; i++) {
+            miners.push(this.makeMiner(maxCost));
         }
 
-        const next = queue.shift();
-        switch (next.role) {
-            case CONSTANTS.roles.remoteBuilder:
-                return this.makeBuilder(CONSTANTS.maxRemoteBuilderLevel, roomInfo.room.energyCapacityAvailable);
-            case CONSTANTS.roles.reserver:
-                return this.makeReserver();
-            case CONSTANTS.roles.remoteMiner:
-                return this.makeMiner(roomInfo.room.energyCapacityAvailable);
-            case CONSTANTS.roles.remoteHauler:
-                // Haulers are measured in part count, as opposed to creep numbers
-                return this.makeHauler(next.count, roomInfo.room.energyCapacityAvailable);
+        // Haulers next
+        // Keep making haulers until we have enough to transport all energy we'll mine
+        const haulers = [];
+        while (neededCarry > 0) {
+            const hauler = this.makeHauler(neededCarry, maxCost);
+            neededCarry -= hauler.body.filter((p) => p === CARRY).length;
+            haulers.push(hauler);
         }
+
+        // Workers -> just one for repairs
+        const workers = [];
+        workers.push(this.makeWorker(CONSTANTS.maxRemoteBuilderLevel, maxCost));
+
+        // Finally, claimers -> just one per remote
+        const claimerBody = this.makeReserver().body;
     }
 
-    clearQueues() {
-        this.spawnQueues = {};
-    }
-
-    queueSpawn(spawnRoomName, role, count) {
-        if (!this.spawnQueues[spawnRoomName]) {
-            this.spawnQueues[spawnRoomName] = [];
-        }
-        this.spawnQueues[spawnRoomName].push({ role: role, count: count });
-    }
-
-    makeBuilder(desiredLevel, maxCost) {
-        const builderParts = [WORK, CARRY, MOVE];
-        let body = builderParts;
-        let lvl = 1;
-        const levelCost = creepSpawnUtility.getCost(body);
-        while (lvl < Math.min(desiredLevel, CONSTANTS.maxRemoteBuilderLevel) && (lvl + 1) * levelCost <= maxCost) {
-            lvl++;
-            body = body.concat(builderParts);
-        }
-        return { body: body, 
-                 name: "Remote Builder " + Game.time + " [" + lvl.toString() + "]",
-                 memory: { role: CONSTANTS.roles.remoteBuilder }};
+    makeWorker(desiredLevel, maxCost) {
+        return workerSpawnHandler.make(desiredLevel, maxCost);
     }
 
     makeReserver() {
@@ -69,19 +54,11 @@ class RemoteSpawnHandler {
     }
 
     makeMiner(maxCost) {
-        const body = minerSpawnHandler.make(maxCost).body;
-        return {
-            body: body,
-            name: "Remote Miner " + Game.time + " [" + body.filter((p) => p === WORK).length + "]",
-            memory: { role: CONSTANTS.roles.remoteMiner }, 
-        };
+        return minerSpawnHandler.make(maxCost);
     }
 
     makeHauler(carryParts, maxCost) {
-        const body = haulerSpawnHandler.make(Math.min(Math.ceil(carryParts / 2), CONSTANTS.maxRemoteHaulerLevel), maxCost).body;
-        return { body: body, 
-                 name: "Remote Hauler " + Game.time + " [" + body.filter((p) => p === MOVE).length + "]",
-                 memory: { role: CONSTANTS.roles.remoteHauler }};
+        return haulerSpawnHandler.make(Math.min(Math.ceil(carryParts / 2), CONSTANTS.maxRemoteHaulerLevel), maxCost);
     }
 
     getUpkeepEstimates(homeRoomInfo, sourceCount, neededCarry) {
