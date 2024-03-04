@@ -6,18 +6,12 @@ if (!Memory.bases[roomName]) {
 const RemotePlanner = require("remotePlanner");
 const remotePlanner = new RemotePlanner();
 
+const utility = require("remoteUtility");
+
 const overlay = require("overlay");
 const profiler = require("profiler");
 
 class RemoteManager {
-
-    getRemotePlans(baseName) {
-        return Memory.bases[baseName].remotes;
-    }
-
-    setRemotePlans(baseName, plansArray) {
-        Memory.bases[baseName].remotes = plansArray;
-    }
 
     run(roomInfo, baseRoomSpawnCost) {
         
@@ -68,7 +62,7 @@ class RemoteManager {
      * @returns The active plans for remotes for this room.
      */
     ensurePlansExist(roomInfo, baseRoomSpawnCost) {
-        if (!this.getRemotePlans(roomInfo.room.name)) {
+        if (!utility.getRemotePlans(roomInfo.room.name)) {
             const unsortedPlans = this.planRemotes(roomInfo, baseRoomSpawnCost);
 
             // Sort plans by distance, then efficiency score to allow creeps to be assigned under a natural priority 
@@ -78,9 +72,9 @@ class RemoteManager {
                 const bScore = (b.children.length ? 100000 : 0) + b.score;
                 return bScore - aScore;
             });
-            this.setRemotePlans(roomInfo.room.name, sortedPlans);
+            utility.setRemotePlans(roomInfo.room.name, sortedPlans);
         }
-        return this.getRemotePlans(roomInfo.room.name);
+        return utility.getRemotePlans(roomInfo.room.name);
     }
 
     planRemotes(roomInfo, baseRoomSpawnCost) {

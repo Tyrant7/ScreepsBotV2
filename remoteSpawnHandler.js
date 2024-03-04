@@ -1,4 +1,6 @@
+const remoteUtility = require("remoteUtility");
 const creepSpawnUtility = require("creepSpawnUtility");
+
 const MinerSpawnHandler = require("minerSpawnHandler");
 const HaulerSpawnHandler = require("haulerSpawnHandler");
 const WorkerSpawnHandler = require("workerSpawnHandler");
@@ -11,9 +13,22 @@ class RemoteSpawnHandler {
 
     getNextSpawn(roomInfo) {
 
-        const maxCost = roomInfo.room.energyCapacityAvailable;
-        const sourceCount = -11; 
-        const neededCarry = -11;
+        // Get a prioritized list of remotes
+        const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
+
+        // Iterate through each until we find one under its spawn requirements
+        for (const remote of remotes) {
+            const spawn = this.getBestSpawn(roomInfo.room.energyCapacityAvailable, remote.haulerPaths.length, remote.neededHaulerCarry);
+            if (spawn) {
+                return spawn;
+            }
+        }
+    }
+
+    getBestSpawn(maxCost, sourceCount, neededCarry) {
+
+        // Compare ideal with actual
+        // Need some way of knowing how many have already been spawned
 
         // Start with miners
         const miners = [];

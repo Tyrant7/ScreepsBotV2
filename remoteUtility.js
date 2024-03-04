@@ -1,4 +1,13 @@
 module.exports = {
+
+    getRemotePlans: function(baseName) {
+        return Memory.bases[baseName].remotes;
+    },
+
+    setRemotePlans: function(baseName, plansArray) {
+        Memory.bases[baseName].remotes = plansArray;
+    },
+
     /**
      * Returns true or false depending on whether or not a structure of this 
      * type has been planned at this position by this home room
@@ -10,22 +19,22 @@ module.exports = {
     isStructurePlanned: function(baseName, pos, type) {
 
         // Make sure this base exists
-        if (!Memory.bases || !Memory.bases[baseName]) {
+        if (!Memory.bases[baseName]) {
             return false;
         }
 
         // Make sure it's a valid remote
-        const remote = Memory.bases[baseName].remotes.find((r) => r.room === pos.roomName);
+        const remote = this.getRemotePlans(baseName).remotes[pos.roomName];
         if (!remote) {
             return false;
         }
 
         let searchCollection;
         if (type === STRUCTURE_ROAD) {
-            searchCollection = remote.structures.roads;
+            searchCollection = remote.roads;
         }
         else if (type === STRUCTURE_CONTAINER) {
-            searchCollection = remote.structures.containers;
+            searchCollection = remote.containers;
         }
 
         if (!searchCollection) {
