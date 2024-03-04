@@ -1,11 +1,17 @@
 module.exports = {
 
     getRemotePlans: function(baseName) {
+        if (!Memory.bases[baseName]) {
+            Memory.bases[baseName] = {};
+        }
         return Memory.bases[baseName].remotes;
     },
 
-    setRemotePlans: function(baseName, plansArray) {
-        Memory.bases[baseName].remotes = plansArray;
+    setRemotePlans: function(baseName, plansObject) {
+        if (!Memory.bases[baseName]) {
+            Memory.bases[baseName] = {};
+        }
+        Memory.bases[baseName].remotes = plansObject;
     },
 
     /**

@@ -12,7 +12,7 @@ class ColonyConstructionManager {
         if (!base) {
             return;
         }
-        const pos = base.upgraderContainer;
+        let pos = base.upgraderContainer;
         if (!pos) {
             // Generate a placement position
             // By looking for the most accessible position within range 3 of the controller
@@ -48,10 +48,9 @@ class ColonyConstructionManager {
                 return currRoads > bestRoads ? curr : best;
             }, null);
 
-            console.log(bestPos);
-
             bestPos.createConstructionSite(STRUCTURE_CONTAINER);
             Memory.bases[roomInfo.room.name].upgraderContainer = bestPos;
+            pos = bestPos;
         }
         const container = roomInfo.room.lookForAt(LOOK_STRUCTURES, pos.x, pos.y);
         if (!container) {

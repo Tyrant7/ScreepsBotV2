@@ -17,25 +17,28 @@ class RemoteSpawnHandler {
         const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
 
         // Let's how much from each remote we've already spawned so we can easily track our demand
-        const existingSpawns = {};
+        const existingSpawns = Object.values(CONSTANTS.roles).map((key) => {
+            return { 
+                [key]: 0 
+            };
+        });
         for (const creep of roomInfo.creeps) {
             if (creep.memory.isRemote) {
-                if (!existingSpawns[creep.role]) {
-                    existingSpawns[creep.role] = 0;
+                // Rather inelegant, but it'll do
+                // Haulers are measured in CARRY part count instead of creep count
+                if (creep.memory.role === CONSTANTS.roles.hauler) {
+                    existingSpawns[creep.memory.role] += creep.body.filter((p) => p.type === CARRY).length;
+                    continue;
                 }
-                existingSpawns[creep.role]++;
+                existingSpawns[creep.memory.role]++;
             }
         }
         
-        // Rather inelegant, but it'll do
-        // Haulers are measured in CARRY part count instead of creep count
-        existingSpawns[CONSTANTS.roles.hauler] = existingSpawns[CONSTANTS.roles.hauler].reduce((totalCarry, curr) => {
-            return totalCarry + curr.body.filter((p) => p.type === CARRY).length;
-        }, 0);
-
         // Iterate through each until we find one under its spawn requirements
-        for (const remote of remotes) {
-            const spawn = this.getBestSpawn(roomInfo.room.energyCapacityAvailable, remote.haulerPaths.length, remote.neededHaulerCarry, existingSpawns);
+        for (const remoteRoom in remotes) {
+            const remote = remotes[remoteRoom];
+            const sourceCount = remote.haulerPaths.length;
+            const spawn = this.getBestSpawn(roomInfo.room.energyCapacityAvailable, sourceCount, remote.neededHaulerCarry, existingSpawns);
             if (spawn) {
 
                 // Tag this creep so we know it came from remote spawning and can count it against 
@@ -78,7 +81,7 @@ class RemoteSpawnHandler {
         if (wantedClaimers > 0) {
             return this.makeClaimer();
         }
-        existingSpawns[COSNTANTS.roles.claimer] -= 1;
+        existingSpawns[CONSTANTS.roles.claimer] -= 1;
     }
 
     makeWorker(desiredLevel, maxCost) {
@@ -135,12 +138,12 @@ class RemoteSpawnHandler {
 
         // Builders -> just one for repairs
         const builders = [];
-        builders.push(this.makeBuilder(CONSTANTS.maxRemoteBuilderLevel, maxCost));
+        builders.push(this.makeWorker(CONSTANTS.maxRemoteBuilderLevel, maxCost));
         upkeeps.energy += calculateUpkeep(builders, creepSpawnUtility.getCost);
         upkeeps.spawnTime += calculateUpkeep(builders, creepSpawnUtility.getSpawnTime);
 
         // Finally, claimers
-        const claimerBody = this.makeReserver().body;
+        const claimerBody = this.makeClaimer().body;
         upkeeps.energy += creepSpawnUtility.getCost(claimerBody) / CREEP_CLAIM_LIFE_TIME;
         upkeeps.spawnTime += creepSpawnUtility.getSpawnTime(claimerBody) / CREEP_CLAIM_LIFE_TIME;
 

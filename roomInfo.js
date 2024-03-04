@@ -1,9 +1,3 @@
-// TODO //
-// Consider:
-// This class is clunky to pass around everywhere
-// What about just extending the base Room prototype to include all of these things?
-
-
 class RoomInfo {
 
     constructor(room) {
@@ -90,7 +84,7 @@ class RoomInfo {
             return this.enemies;
         }
 
-        const rooms = base.remotes.map((r) => r.room);
+        const rooms = Object.keys(base.remotes);
         for (const roomName of rooms) {
             const room = Game.rooms[roomName];
             if (!room) {

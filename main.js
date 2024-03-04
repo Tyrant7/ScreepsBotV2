@@ -138,6 +138,11 @@ module.exports.loop = function() {
         // Don't try to spawn in rooms that can't
         if (info.spawns && info.spawns.length) {
 
+            // Handle construction
+            profiler.startSample("Construction " + room);
+            constructionManager.run(info);
+            profiler.endSample("Construction " + room);
+
             // This represent the fraction of our total spawn capacity we sit at
             // i.e. the amount of time we spend spawning / 1
             const avgSustainCost = basicSpawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
@@ -186,11 +191,6 @@ module.exports.loop = function() {
             profiler.startSample("Spawns " + room);
             spawnManager.run(info, currentSpawnHandlers);
             profiler.endSample("Spawns " + room);
-
-            // Handle construction
-            profiler.startSample("Construction " + room);
-            constructionManager.run(info);
-            profiler.endSample("Construction " + room);
         }
 
         // Defense

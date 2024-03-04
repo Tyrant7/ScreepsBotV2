@@ -1,8 +1,3 @@
-// Some safety stuff up here to make sure our Memory is initialized
-if (!Memory.bases[roomName]) {
-    Memory.bases[roomName] = { remotes: [] };
-}
-
 const RemotePlanner = require("remotePlanner");
 const remotePlanner = new RemotePlanner();
 
@@ -10,6 +5,8 @@ const utility = require("remoteUtility");
 
 const overlay = require("overlay");
 const profiler = require("profiler");
+
+delete Memory.bases;
 
 class RemoteManager {
 
@@ -24,7 +21,8 @@ class RemoteManager {
         // Process each planned remote, cutting off when the spawns go above our threshold
         let spawnCosts = 0;
         let passedThreshold = false;
-        for (const remote of remotePlans) {
+        for (const remoteRoom in remotePlans) {
+            const remote = remotePlans[remoteRoom];
 
             // Once we hit our cutoff, mark all remaining remotes as inactive
             if (passedThreshold || spawnCosts + remote.cost + baseRoomSpawnCost >= 1) {
@@ -35,21 +33,23 @@ class RemoteManager {
 
             // Mark this remote as active and process it
             remote.active = true;
-            spawnCosts += remote.spawnCost;
+            spawnCosts += remote.cost;
             this.processRemote(roomInfo, remote);
         }
 
         // Display our active remotes
         if (DEBUG.trackSpawnUsage) {
             const remoteDisplay = {};
-            remotePlans.forEach((remote) => {
-                remoteDisplay[remote.room] = remote.active ? "active (" + (Math.round(remote.cost * 1000) / 1000).toFixed(3) + ")" : "inactive";
+            Object.keys(remotePlans).forEach((remoteRoom) => {
+                remoteDisplay[remoteRoom] = remotePlans[remoteRoom].active 
+                    ? "active (" + (Math.round(remotePlans[remoteRoom].cost * 1000) / 1000).toFixed(3) + ")" 
+                    : "inactive";
             });
             overlay.addText(roomInfo.room.name, remoteDisplay);
         }
 
         // Overlays
-        this.drawOverlays(activeRemotes);
+        this.drawOverlays();
 
         // For tracking
         return spawnCosts;
@@ -72,7 +72,16 @@ class RemoteManager {
                 const bScore = (b.children.length ? 100000 : 0) + b.score;
                 return bScore - aScore;
             });
-            utility.setRemotePlans(roomInfo.room.name, sortedPlans);
+
+            // Simplify the plan objects and map the roomName as a key
+            const finalPlans = {};
+            for (const plan of sortedPlans) {
+                const roomName = plan.room;
+                delete plan.room;
+                delete plan.children;
+                finalPlans[roomName] = plan;
+            }
+            utility.setRemotePlans(roomInfo.room.name, finalPlans);
         }
         return utility.getRemotePlans(roomInfo.room.name);
     }
@@ -181,8 +190,8 @@ class RemoteManager {
         // Handle placing construction sites for this remote
         profiler.startSample("Construction " + remoteInfo.room);
         const builders = roomInfo.workers.filter((worker) => worker.pos.roomName === remoteInfo.room);
-        if (unbuiltStructures.length) { 
-            this.handleSites(roomInfo, remoteInfo, builders, unbuiltStructures);
+        if (unbuilt.length) { 
+            this.handleSites(roomInfo, remoteInfo, builders, unbuilt);
         }
         profiler.endSample("Construction " + remoteInfo.room);
     }
