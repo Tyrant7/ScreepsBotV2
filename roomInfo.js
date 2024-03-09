@@ -1,3 +1,5 @@
+const remoteUtility = require("remoteUtility");
+
 class RoomInfo {
 
     constructor(room) {
@@ -100,6 +102,131 @@ class RoomInfo {
         const containerPos = Memory.bases[this.room.name].upgraderContainer;
         return this.room.lookForAt(LOOK_STRUCTURES, containerPos.x, containerPos.y).find(
             (s) => s.structureType === STRUCTURE_CONTAINER);
+    }
+
+    //
+    // Remote Management Logic Below
+    //
+
+
+
+    /**
+     * Gets an array of all mining sites for this room, including in remotes.
+     * @returns An array of objects, each containing some data about the mining site:
+     * - The position of the mining site (place to stand).
+     * - The ID of the source to mine.
+     */
+    getMiningSites() {
+        if (this.cachedMiningSpots) {
+            return this.cachedMiningSpots;
+        }
+
+        const miningSpots = [];
+
+
+        const remotePlans = remoteUtility.getRemotePlans(this.room.name);
+
+    }
+
+    /**
+     * Gets an array of all energy pickup points for this room, including in remotes.
+     * Does not include storage as that will only be used under special conditions defined by creep roles individually.
+     * @returns An array of objects, each containing some data about the pickup point:
+     * - The position of the pickup point.
+     * - The amount of energy.
+     * - The ID of the pickup object.
+     */
+    getEnergyPickupPoints() {
+        if (this.cachedEnergyPickupPoints) {
+            return this.cachedEnergyPickupPoints;
+        }
+
+        // Declare a reusable function that adds all containers and dropped energy in a particular room that we can see
+        const pickupPoints = [];
+        function addPickupPoints(room) {
+            room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_CONTAINER }}).forEach((container) => {
+
+                // Don't allow to withdraw from the upgrader's container
+                if (!container.isEqualTo(this.getUpgraderContainer().pos)) {
+                    pickupPoints.push({
+                        pos: container.pos,
+                        amount: container.store[RESOURCE_ENERGY],
+                        id: container.id,
+                    });
+                }
+            });
+            room.find(FIND_DROPPED_RESOURCES, { filter: { resourceType: RESOURCE_ENERGY }}).forEach((drop) => {
+                pickupPoints.push({
+                    pos: drop.pos,
+                    amount: drop.amount,
+                    id: drop.id,
+                });
+            });
+        }
+
+        // Start out with this room only
+        addPickupPoints(this.room);
+
+        // Verify that we have remotes
+        const remotePlans = remoteUtility.getRemotePlans(this.room.name);
+        if (!remotePlans) {
+            return pickupPoints;
+        }
+
+        // Now let's iterate over each remote and add pickup points in them too as long as we can see the room
+        for (const key in remotePlans) {
+            const remote = Game.rooms[key];
+            if (!remote) {
+                continue;
+            }
+            addPickupPoints(remote);
+        }
+
+        // Cache in case of multiple requests this tick
+        this.cachedEnergyPickupPoints = pickupPoints;
+        return pickupPoints;
+    }
+
+    /**
+     * Gets an array of all energy dropoff points for this room, including in remotes.
+     * @returns An array of objects, each containing some data about the dropoff point:
+     * - The position of the dropoff point.
+     * - The amount of energy needed.
+     * - The ID of the dropoff object.
+     */
+    getEnergyDropoffPoints() {
+        if (this.cachedEnergyDropoffPoints) {
+            return this.cachedEnergyDropoffPoints;
+        }
+
+        const dropoffPoints = [];
+
+        // Add all extensions, spawns, and towers
+        this.room.find(FIND_MY_STRUCTURES, { filter: (s) => {
+            return s.structureType == STRUCTURE_EXTENSION || 
+                   s.structureType == STRUCTURE_SPAWN || 
+                   s.structureType == STRUCTURE_TOWER;
+        }}).forEach((structure) => {
+            dropoffPoints.push({
+                pos: structure.pos,
+                amount: structure.store.getFreeCapacity(RESOURCE_ENERGY),
+                id: structure.id,
+            });
+        });
+
+        // Also add the upgrader's container, if one exists
+        const upgraderContainer = this.getUpgraderContainer();
+        if (upgraderContainer) {
+            dropoffPoints.push({
+                pos: upgraderContainer.pos,
+                amount: upgraderContainer.store.getFreeCapacity(),
+                id: upgraderContainer.id,
+            });
+        }
+
+        // Cache in case of multiple requests this tick
+        this.cachedEnergyDropoffPoints = dropoffPoints;
+        return dropoffPoints;
     }
 }
 
