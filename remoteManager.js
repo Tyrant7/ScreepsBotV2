@@ -108,7 +108,7 @@ class RemoteManager {
                 this.haulerPaths = allHaulerPaths;
             }
             if (DEBUG.drawContainerOverlay) {
-                const allContainerPositions = bestBranch.reduce((containers, node) => containers.concat(node.containers), []);
+                const allContainerPositions = bestBranch.reduce((containers, node) => containers.concat(node.miningSites.map((site) => site.pos)), []);
                 this.containerPositions = allContainerPositions;
             }
         }
@@ -160,7 +160,8 @@ class RemoteManager {
         profiler.startSample("Containers " + remoteInfo.room);
         const room = Game.rooms[remoteInfo.room];
         if (room) {
-            remoteInfo.containers.forEach((container) => {
+            remoteInfo.miningSites.forEach((miningSite) => {
+                const container = miningSite.pos;
                 const containerSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
                 const existingContainer = room.lookForAt(LOOK_STRUCTURES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
                 if (!containerSite && !existingContainer) {

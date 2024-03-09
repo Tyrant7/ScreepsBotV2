@@ -58,6 +58,80 @@ class ColonyConstructionManager {
             pos.createConstructionSite(STRUCTURE_CONTAINER);
         }
     }
+
+    placeMinerContainer(source) {
+
+        // Find the position adjacent to this source that's also adjacent to the most walls,
+        // while still being walkable in order to keep miners out of the way
+
+        function getAdjacentPositions(pos) {
+            const positions = [];
+            for (let x = -1; x < 1; x++) {
+                for (let y = -1; y < 1; y++) {
+                    const realX = sourcePos.x + x;
+                    const realY = sourcePos.y + y;
+                    if (realX <= 0 || realX >= 49 || realY <= 0 || realY >= 49) {
+                        continue;
+                    }
+                    positions.push(new RoomPosition(realX, realY, sourcePos.roomName));
+                }
+            }
+        }
+
+        const sourcePos = source.pos;
+
+        // Get all adjacent positions to the source
+        const positions = getAdjacentPositions(sourcePos);
+
+        // If we already have a container here, let's exit early, no need to plan
+        for (const pos of positions) {
+
+            const sites = pos.lookFor(LOOK_CONSTRUCTION_SITES);
+            if (sites.length && sites[0].structureType === STRUCTURE_CONTAINER) {
+                return;
+            }
+            const containers = pos.lookFor(LOOK_STRUCTURES);
+            if (containers.length) {
+                return;
+            }
+        }
+
+        // Now we'll look for the best position by ranking each one based on how many walls are next to it
+        const terrain = Game.map.getRoomTerrain(sourcePos.roomName);
+        const bestPosition = positions.reduce((best, curr) => {
+            if (terrain.get(curr.x, curr.y) === TERRAIN_MASK_WALL) {
+                return best;
+            }
+            if (!best) {
+                return curr;
+            }
+
+            // Count all adjacent walls to the current position
+            const currAdjacent = getAdjacentPositions(curr).reduce((total, p) => {
+                total + (terrain.get(p.x, p.y) === TERRAIN_MASK_WALL ? 1 : 0);
+            }, 0);
+
+            // Count all adjacent walls to the best position
+            const bestAdjacent = getAdjacentPositions(best).reduce((total, p) => {
+                total + (terrain.get(p.x, p.y) === TERRAIN_MASK_WALL ? 1 : 0);
+            }, 0);
+
+            return currAdjacent > bestAdjacent ? currAdjacent : bestAdjacent;
+        }, null);
+
+        if (!bestPosition) {
+            return;
+        }
+        bestPosition.createConstructionSite(STRUCTURE_CONTAINER);
+
+        // Let's record the container in memory
+        if (Memory.bases[sourcePos.roomName]) {
+            if (Memory.bases[sourcePos.roomName].minerContainers) {
+                Memory.bases[sourcePos.roomName].minerContainers = {};
+            }
+            Memory.bases[sourcePos.roomName].minerContainers[source.id] = bestPosition;
+        }
+    }
 }
 
 module.exports = ColonyConstructionManager;

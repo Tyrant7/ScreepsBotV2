@@ -123,9 +123,27 @@ class RoomInfo {
 
         const miningSpots = [];
 
+        // Get the mining sites for this room
+        const base = Memory.bases[this.room.name];
+        for (const key in base.minerContainers) {
+            miningSpots.push({
+                pos: base.minerContainers[key],
+                sourceID: key,
+            });
+        }
 
+        // Get the mining sites for remote rooms
         const remotePlans = remoteUtility.getRemotePlans(this.room.name);
+        for (const miningSite of remotePlans.miningSites) {
+            miningSpots.push({
+                pos: miningSite.pos,
+                sourceID: miningSite.sourceID,
+            });
+        }
 
+        // Cache in case of multiple requests this tick
+        this.cachedMiningSpots = miningSpots;
+        return miningSpots;
     }
 
     /**

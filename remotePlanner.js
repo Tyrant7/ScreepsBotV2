@@ -59,11 +59,11 @@ class RemotePlanner {
                 // Let's plan roads for our distOne first to home first
                 const distOnePaths = this.getSourcePaths(roomInfo, distOne, []);
                 const distOneRoadPositions = this.planRoads(distOnePaths);
-                const distOneContainerPositions = this.planContainers(distOne, distOnePaths);
+                const distOneMiningSites = this.planMiningSites(distOne, distOnePaths);
                 const distOneHaulerPaths = this.getHaulerPaths(roomInfo, 
-                    { pos: roomInfo.room.storage.pos, range: 1 }, distOneRoadPositions, distOneContainerPositions);
+                    { pos: roomInfo.room.storage.pos, range: 1 }, distOneRoadPositions, distOneMiningSites);
                 const distOneNeededCarry = distOneHaulerPaths.reduce((total, curr) => total + curr.neededCarry, 0);
-                const scoreCost = this.scoreRemote(roomInfo, distOne, distOneNeededCarry, distOneRoadPositions, distOneContainerPositions.length);
+                const scoreCost = this.scoreRemote(roomInfo, distOne, distOneNeededCarry, distOneRoadPositions, distOneMiningSites.length);
 
                 // Then plan roads for each child one this remote
                 // Each distOne should have multiple distTwo depending remotes
@@ -72,11 +72,11 @@ class RemotePlanner {
                     if (this.isValidRemote(distTwo)) {
                         const distTwoPaths = this.getSourcePaths(roomInfo, distTwo, distOneRoadPositions);
                         const distTwoRoadPositions = this.planRoads(distTwoPaths);
-                        const distTwoContainerPositions = this.planContainers(distTwo, distTwoPaths);
+                        const distTwoMiningSites = this.planMiningSites(distTwo, distTwoPaths);
                         const distTwoHaulerPaths = this.getHaulerPaths(roomInfo, 
-                            { pos: roomInfo.room.storage.pos, range: 1 }, distTwoRoadPositions.concat(distOneRoadPositions), distTwoContainerPositions);
+                            { pos: roomInfo.room.storage.pos, range: 1 }, distTwoRoadPositions.concat(distOneRoadPositions), distTwoMiningSites);
                         const distTwoNeededCarry = distTwoHaulerPaths.reduce((total, curr) => total + curr.neededCarry, 0);
-                        const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoNeededCarry, distTwoRoadPositions, distTwoContainerPositions.length);
+                        const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoNeededCarry, distTwoRoadPositions, distTwoMiningSites.length);
 
                         // Score this remote
                         children.push({
@@ -85,7 +85,7 @@ class RemotePlanner {
                             cost: scoreCost.cost,
                             active: false,
                             roads: distTwoRoadPositions,
-                            containers: distTwoContainerPositions,
+                            miningSites: distTwoMiningSites,
                             haulerPaths: distTwoHaulerPaths,
                             neededHaulerCarry: distTwoNeededCarry,
                             children: [],
@@ -100,7 +100,7 @@ class RemotePlanner {
                     cost: scoreCost.cost,
                     active: false,
                     roads: distOneRoadPositions,
-                    containers: distOneContainerPositions,
+                    miningSites: distOneMiningSites,
                     haulerPaths: distOneHaulerPaths,
                     neededHaulerCarry: distOneNeededCarry,
                     children: children,
@@ -134,7 +134,7 @@ class RemotePlanner {
      * @param {RoomPosition[][]} sourcePaths Paths for this remote obtained using getSourcePaths()
      * @returns {RoomPosition[]} An array of RoomPositions for containers for this remote.
      */
-    planContainers(targetName, sourcePaths) {
+    planMiningSites(targetName, sourcePaths) {
         const remoteInfo = Memory.rooms[targetName];
 
         // Look for spaces around each source where we can place a container
@@ -146,7 +146,10 @@ class RemotePlanner {
             const matchingPath = sourcePaths.find((path) => path[0].getRangeTo(source.pos.x, source.pos.y) <= 1);
 
             // Push the first step of the path
-            containers.push(matchingPath[0]);
+            containers.push({
+                pos: matchingPath[0],
+                sourceID: source.id,
+            });
         });
         return containers;
     }
@@ -157,7 +160,7 @@ class RemotePlanner {
      * @param {string} targetName The name of the room to score a remote for. Must have been scouted previously.
      * @param {number} neededCarry The number of hauler parts for this remote to fully transport its produced energy.
      * @param {RoomPosition[]} roads The locations of all roads needed to plan this remote. Should be the array obtained by `planRoads()`.
-     * @param {number} containerCount The number of containers needed to plan this remote. Should be the length of the array obtained by `planContainers()`.
+     * @param {number} containerCount The number of containers needed to plan this remote. Should be the length of the array obtained by `planMiningSites()`.
      * @returns An object with scoring information for this remotes. 
      * Contains a `score` property for energy output and a `cost` property for spawn time.
      */
