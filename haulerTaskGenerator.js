@@ -8,20 +8,20 @@ class HaulerTaskGenerator {
         // Tasks are quite simple: pickup and dropoff
 
         if (creep.store[RESOURCE_ENERGY]) {
-            return this.generateDropoffTask(creep, roomInfo, activeTasks);
+            return this.dropoffTaskLogistics(creep, roomInfo, activeTasks);
         }
-        return this.generatePickupTask(creep, roomInfo, activeTasks);
+        return this.pickupTaskLogistics(creep, roomInfo, activeTasks);
     }
 
-    generatePickupTask(creep, roomInfo, activeTasks) {
+    pickupTaskLogistics(creep, roomInfo, activeTasks) {
         /*
-            Let's sort each point by some priority amount.
-            For now, priority will be calculated using a simple formula of:
+        Let's sort each point by some priority amount.
+        For now, priority will be calculated using a simple formula of:
 
-                p = energy + (fillrate * Math.max(ticksUntilIGetThere - ticksUntilBeginFilling, 0))
-
-            Where fillrate is defined as the speed at which the container gains energy.
-            MiningSites have a positive fillrate, and dropped energy has a negative fillrate since it decays.
+            p = energy + (fillrate * Math.max(ticksUntilIGetThere - ticksUntilBeginFilling, 0))
+        
+        Where fillrate is defined as the speed at which the container gains energy.
+        MiningSites have a positive fillrate, and dropped energy has a negative fillrate since it decays.
         */
 
         const pickupPoints = roomInfo.getEnergyPickupPoints();
@@ -29,18 +29,62 @@ class HaulerTaskGenerator {
             return point.amount + (point.fillrate * Math.max(myDistance - point.ticksUntilBeginFilling, 0));
         }
         pickupPoints.sort((a, b) => {
-            return getPriority(a) - getPriority(b);
+            return getPriority(b) - getPriority(a);
         });
 
         // Now that we have our sorted pickup points
 
-        
 
     }
 
-    generateDropoffTask(creep, roomInfo, activeTasks) {
-        const dropoffPoints = roomInfo.getEnergyDropoffPoints();
+    generatePickupTask(target) {
 
+    }
+
+    dropoffTaskLogistics(creep, roomInfo, activeTasks) {
+        
+        // Filter out points that can't take anymore energy
+        const dropoffPoints = roomInfo.getEnergyDropoffPoints().filter((point) => {
+            const structure = Game.getObjectById(point.id);
+            return structure && structure.getFreeCapacity();
+        });
+
+        // If we don't have any points, attempt to dropoff at the storage
+        if (dropoffPoints.length === 0) {
+            if (roomInfo.room.storage && roomInfo.room.storage.store.getFreeCapacity()) {
+                return this.generateDropoffTask(roomInfo.room.storage);
+            }
+
+            // Storage doesn't exist or is full; nowhere to dropoff
+            return null;
+        }
+
+        // Sort all of our dropoff points by priority
+        function getPriority(point) {
+
+            // Priority is very rough for dropoff tasks
+            const structureType =  Game.getObjectById(point.id).structureType;
+            if (structureType === STRUCTURE_EXTENSION ||
+                structureType === STRUCTURE_SPAWN) {
+                return 1000 + creep.pos.getRangeTo(point.pos);
+            }
+            else if (structureType === STRUCTURE_TOWER) {
+                return 500 + creep.pos.getRangeTo(point.pos);
+            }
+            else if (structureType === STRUCTURE_CONTAINER) {
+                return 100 + creep.pos.getRangeTo(point.pos);
+            }
+        }
+        pickupPoints.sort((a, b) => {
+            return getPriority(b) - getPriority(a);
+        });
+
+        // Now that we have our sorted dropoff points
+
+        
+    }
+
+    generateDropoffTask(target) {
 
     }
 }
