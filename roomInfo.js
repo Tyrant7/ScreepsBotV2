@@ -147,6 +147,20 @@ class RoomInfo {
     }
 
     /**
+     * Gets the first unreserved mining site.
+     * @returns An object containing some data about the mining site:
+     * - The position of the mining site (place to stand).
+     * - The ID of the source to mine.
+     */
+    getFirstUnreservedMiningSite() {
+        // Sites are conveniently already ordered by priority
+        const sites = this.getMiningSites();
+
+        // Find the first site where no miner has reserved
+        return sites.find((site) => !this.miners.find((m) => m.memory.miningSite.sourceID === site.sourceID));
+    }
+
+    /**
      * Gets an array of all energy pickup points for this room, including in remotes.
      * Does not include storage as that will only be used under special conditions defined by creep roles individually.
      * @returns An array of objects, each containing some data about the pickup point:
