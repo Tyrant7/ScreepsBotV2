@@ -166,6 +166,9 @@ class RoomInfo {
      * @returns An array of objects, each containing some data about the pickup point:
      * - The position of the pickup point.
      * - The amount of energy.
+     * - The fillrate of the pickup, positive for containers, negative for dropped energy.
+     * - The ticks until this pickup point will be affected by the fillrate.
+     *   Used when a miner has been assigned to a container but hasn't yet reached the mining site.
      * - The ID of the pickup object.
      */
     getEnergyPickupPoints() {
@@ -173,31 +176,51 @@ class RoomInfo {
             return this.cachedEnergyPickupPoints;
         }
 
-        // Declare a reusable function that adds all containers and dropped energy in a particular room that we can see
+        // Declare a reusable function that adds all dropped energy in a particular room that we can see
         const pickupPoints = [];
-        function addPickupPoints(room) {
-            room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_CONTAINER }}).forEach((container) => {
-
-                // Don't allow to withdraw from the upgrader's container
-                if (!container.isEqualTo(this.getUpgraderContainer().pos)) {
-                    pickupPoints.push({
-                        pos: container.pos,
-                        amount: container.store[RESOURCE_ENERGY],
-                        id: container.id,
-                    });
-                }
-            });
+        function addDroppedPoints(room) {
             room.find(FIND_DROPPED_RESOURCES, { filter: { resourceType: RESOURCE_ENERGY }}).forEach((drop) => {
                 pickupPoints.push({
                     pos: drop.pos,
                     amount: drop.amount,
+                    fillrate: -Math.ceil(amount / ENERGY_DECAY),
+                    ticksUntilBeginFilling: 0, 
                     id: drop.id,
                 });
             });
         }
 
+        // Add all mining sites as valid pickup points
+        for (const site of this.getMiningSites()) {
+            const room = Game.rooms[site.pos.roomName];
+            if (!room) {
+                continue;
+            }
+            const container = room.lookForAt(LOOK_STRUCTURES, site.pos.x, site.pos.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
+            if (!container) {
+                continue;
+            }
+
+            // Calculate the fillrate of this container
+            const assignedMiner = this.miners.find((miner) => miner.memory.miningSite.sourceID === site.sourceID);
+            const fillrate = assignedMiner
+                ? (SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME)
+                // Container won't fill if we don't have a miner assigned to it
+                : 0;
+
+            pickupPoints.push({
+                pos: site.pos,
+                amount: container.store[RESOURCE_ENERGY],
+                fillrate: fillrate,
+                ticksUntilBeginFilling: assignedMiner.pos.getRangeTo(site.pos),
+                id: container.id,
+            });
+        }
+
+
+
         // Start out with this room only
-        addPickupPoints(this.room);
+        addDroppedPoints(this.room);
 
         // Verify that we have remotes
         const remotePlans = remoteUtility.getRemotePlans(this.room.name);
@@ -211,7 +234,7 @@ class RoomInfo {
             if (!remote) {
                 continue;
             }
-            addPickupPoints(remote);
+            addDroppedPoints(remote);
         }
 
         // Cache in case of multiple requests this tick

@@ -4,57 +4,44 @@ class HaulerTaskGenerator {
 
     run(creep, roomInfo, activeTasks) {
 
-        // Generate some tasks for haulers, namely:
-        // Restock tasks
-        // transport tasks between miner and storage
-        // Deliver tasks from anywhere to the controller
+        // Generate some tasks for haulers
+        // Tasks are quite simple: pickup and dropoff
 
-        // If there are more than 3 things to restock, let's just restock
-        const restockTasks = activeTasks.filter((task) => task.tag === taskType.restock);
-        if (restockTasks.length <= 3) {
-            const restockables = roomInfo.room.find(FIND_MY_STRUCTURES, { filter: (s) => s.store && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 });
-            for (const restock of restockables) {
-
-                // These will be handled by other tasks
-                if (restock.structureType === STRUCTURE_CONTAINER ||
-                    restock.structureType === STRUCTURE_STORAGE) {
-                    continue;
-                }
-
-                // No more than one restock task per object
-                const existingTasks = restockTasks.filter((task) => task.target === restock.id);
-                if (existingTasks.length) {
-                    continue;
-                }
-
-                // All that's left should be towers, spawn, and extensions
-                // Create a task comprised of harvesting and restocking
-                const actionStack = [];
-                actionStack.push(basicActions["harvest_loose"]);
-                actionStack.push(basicActions[taskType.restock]);
-                const taskData = restock.structureType === STRUCTURE_TOWER 
-                    ? { restockID: restock.id }
-                    // Since restocking any extension or spawn is effectively the same, we can just mark restock types instead
-                    : { structureTypes: [STRUCTURE_SPAWN, STRUCTURE_EXTENSION] };
-                return new Task(taskData, taskType.restock, actionStack);
-            }
+        if (creep.store[RESOURCE_ENERGY]) {
+            return this.generateDropoffTask(creep, roomInfo, activeTasks);
         }
+        return this.generatePickupTask(creep, roomInfo, activeTasks);
+    }
 
-        // Deliver task for controller
-        // Simply bring energy to controller if nothing else to do
-        // If we have an upgrader, let's bring energy to him instead of the controller
-        let targetID = roomInfo.room.controller.id;
-        if (roomInfo.upgraders.length) {
-            const container = roomInfo.getUpgraderContainer();
-            if (container) {
-                targetID = container.id;
-            }
+    generatePickupTask(creep, roomInfo, activeTasks) {
+        /*
+            Let's sort each point by some priority amount.
+            For now, priority will be calculated using a simple formula of:
+
+                p = energy + (fillrate * Math.max(ticksUntilIGetThere - ticksUntilBeginFilling, 0))
+
+            Where fillrate is defined as the speed at which the container gains energy.
+            MiningSites have a positive fillrate, and dropped energy has a negative fillrate since it decays.
+        */
+
+        const pickupPoints = roomInfo.getEnergyPickupPoints();
+        function getPriority(point) {
+            return point.amount + (point.fillrate * Math.max(myDistance - point.ticksUntilBeginFilling, 0));
         }
+        pickupPoints.sort((a, b) => {
+            return getPriority(a) - getPriority(b);
+        });
 
-        const actionStack = [];
-        actionStack.push(basicActions["harvest_strict"]);
-        actionStack.push(basicActions[taskType.deliver]);
-        return new Task({ deliverID: targetID }, taskType.deliver, actionStack);
+        // Now that we have our sorted pickup points
+
+        
+
+    }
+
+    generateDropoffTask(creep, roomInfo, activeTasks) {
+        const dropoffPoints = roomInfo.getEnergyDropoffPoints();
+
+
     }
 }
 
