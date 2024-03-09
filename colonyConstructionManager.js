@@ -51,6 +51,7 @@ class ColonyConstructionManager {
             bestPos.createConstructionSite(STRUCTURE_CONTAINER);
             Memory.bases[roomInfo.room.name].upgraderContainer = bestPos;
             pos = bestPos;
+            return;
         }
         const container = roomInfo.room.lookForAt(LOOK_STRUCTURES, pos.x, pos.y);
         if (!container) {
