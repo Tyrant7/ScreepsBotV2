@@ -12,4 +12,5 @@ module.exports = {
     maxHaulerLevel: 12,
     maxUpgraderLevel: 6,
     maxBaseSpawnCapacity: 0.95,
+    minEnergyStored: 5000,
 };

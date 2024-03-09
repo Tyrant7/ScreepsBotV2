@@ -217,24 +217,31 @@ class RoomInfo {
             });
         }
 
-
-
-        // Start out with this room only
-        addDroppedPoints(this.room);
-
-        // Verify that we have remotes
-        const remotePlans = remoteUtility.getRemotePlans(this.room.name);
-        if (!remotePlans) {
-            return pickupPoints;
+        // Add the storage, but keep its capacity above our minimum threshold
+        const storage = this.room.storage;
+        if (storage) {
+            pickupPoints.push({
+                pos: storage.pos,
+                amount: Math.min(0, storage.store[RESOURCE_ENERGY] - CONSTANTS.minEnergyStored),
+                fillrate: 0,
+                ticksUntilBeginFilling: 0,
+                id: storage.id,
+            });
         }
 
+        // Add dropped energy
+        addDroppedPoints(this.room);
+
         // Now let's iterate over each remote and add pickup points in them too as long as we can see the room
-        for (const key in remotePlans) {
-            const remote = Game.rooms[key];
-            if (!remote) {
-                continue;
+        const remotePlans = remoteUtility.getRemotePlans(this.room.name);
+        if (remotePlans) {
+            for (const key in remotePlans) {
+                const remote = Game.rooms[key];
+                if (!remote) {
+                    continue;
+                }
+                addDroppedPoints(remote);
             }
-            addDroppedPoints(remote);
         }
 
         // Cache in case of multiple requests this tick
@@ -276,6 +283,16 @@ class RoomInfo {
                 pos: upgraderContainer.pos,
                 amount: upgraderContainer.store.getFreeCapacity(),
                 id: upgraderContainer.id,
+            });
+        }
+
+        // Finally, add the storage, if one exists
+        const storage = this.room.storage;
+        if (storage) {
+            dropoffPoints.push({
+                pos: storage.pos,
+                amount: storage.store.getFreeCapacity(),
+                id: storage.id,
             });
         }
 
