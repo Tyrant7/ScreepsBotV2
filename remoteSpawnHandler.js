@@ -38,7 +38,7 @@ class RemoteSpawnHandler {
         for (const remoteRoom in remotes) {
             const remote = remotes[remoteRoom];
             const sourceCount = remote.haulerPaths.length;
-            const spawn = this.getBestSpawn(roomInfo.room.energyCapacityAvailable, sourceCount, remote.neededHaulerCarry, existingSpawns);
+            const spawn = this.getBestSpawn(roomInfo.room.energyCapacityAvailable, sourceCount, remote.neededHaulerCarry, existingSpawns, remoteRoom);
             if (spawn) {
                 // Tag this creep so we know it came from remote spawning and can count it against 
                 // our spawns here next time we attempt spawning
@@ -48,7 +48,7 @@ class RemoteSpawnHandler {
         }
     }
 
-    getBestSpawn(maxCost, sourceCount, neededCarry, existingSpawns) {
+    getBestSpawn(maxCost, sourceCount, neededCarry, existingSpawns, remoteRoomName) {
 
         // Compare ideal with actual for each role
         // If we have already spawned more than we need, 
@@ -79,7 +79,7 @@ class RemoteSpawnHandler {
         // Reservers -> just one per remote
         const wantedReservers = 1 - existingSpawns[CONSTANTS.roles.reserver];
         if (wantedReservers > 0) {
-            return this.makeClaimer();
+            return this.makeClaimer(remoteRoomName);
         }
         existingSpawns[CONSTANTS.roles.reserver] -= 1;
     }
@@ -88,14 +88,15 @@ class RemoteSpawnHandler {
         return workerSpawnHandler.make(desiredLevel, maxCost);
     }
 
-    makeClaimer() {
+    makeClaimer(targetRoom) {
         // Reservers will be made up of 2 CLAIM 2 MOVE bodies
         // It's technically possible with 1 CLAIM 1 MOVE, but give it extra to account for 
         // imperfections in pathing and spawning priorities
         return {
             body: [MOVE, MOVE, CLAIM, CLAIM],
             name: "Reserver " + Game.time + " [2]",
-            memory: { role: CONSTANTS.roles.reserver },
+            memory: { role: CONSTANTS.roles.reserver,
+                      targetRoom: targetRoom },
         };
     }
 

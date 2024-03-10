@@ -12,11 +12,6 @@ class ReserverTaskGenerator {
      */
     run(creep, roomInfo, activeTasks) {
 
-        // Wait for a target before
-        if (!creep.memory.targetRoom) {
-            return null;
-        }
-
         // If we're in the room, let's perpetually reserve until we die
         if (creep.room.name === creep.memory.targetRoom) {
             const controller = creep.room.controller;

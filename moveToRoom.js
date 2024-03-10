@@ -6,7 +6,7 @@ module.exports = function(creep, data) {
                               creep.pos.y >= 49 ||
                               creep.pos.y <= 0;
 
-    if (!Memory.rooms[data.roomName] || creep.room.name === data.roomName && !leavingOrEntering) {
+    if (!Memory.rooms[data.roomName] || (creep.room.name === data.roomName && !leavingOrEntering)) {
         return true;
     }
 
