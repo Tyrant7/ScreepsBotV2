@@ -1,5 +1,33 @@
 const Task = require("task");
 
+// Function to convert room name to coords taken from Screeps Engine
+function roomNameToXY(name) {
+    let xx = parseInt(name.substr(1), 10);
+    let verticalPos = 2;
+    if (xx >= 100) {
+        verticalPos = 4;
+    } else if (xx >= 10) {
+        verticalPos = 3;
+    }
+    let yy = parseInt(name.substr(verticalPos + 1), 10);
+    let horizontalDir = name.charAt(0);
+    let verticalDir = name.charAt(verticalPos);
+    if (horizontalDir === 'W' || horizontalDir === 'w') {
+        xx = -xx - 1;
+    }
+    if (verticalDir === 'N' || verticalDir === 'n') {
+        yy = -yy - 1;
+    }
+    return [xx, yy];
+};
+
+// Range can't easily be calculated between rooms, unfortunately, so we'll just estimate
+function estimateTravelTime(creep, pos) {
+    const creepRoomPos = roomNameToXY(creep.pos.roomName);
+    const posRoomPos = roomNameToXY(pos.roomName);
+    return Math.max(Math.abs(creepRoomPos.x - posRoomPos.x) * 50, Math.abs(creepRoomPos.y - posRoomPos.y) * 50);
+}
+
 class HaulerTaskGenerator {
 
     run(creep, roomInfo, activeTasks) {
@@ -45,11 +73,11 @@ class HaulerTaskGenerator {
         function getPriority(point) {
             const myDistance = creep.pos.roomName === point.pos.roomName
                 ? creep.pos.getRangeTo(point.pos)
-                // Pathing is needed since range can't easily be calculated between rooms
-                : creep.pos.findPathTo(point.pos).length;
+                : estimateTravelTime(creep, point.pos);
 
             return point.amount + (point.fillrate * Math.max(myDistance - point.ticksUntilBeginFilling, 0));
         }
+
         pickupPoints.sort((a, b) => {
             return getPriority(b) - getPriority(a);
         });
