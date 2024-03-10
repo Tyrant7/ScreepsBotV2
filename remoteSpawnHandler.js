@@ -40,9 +40,6 @@ class RemoteSpawnHandler {
             const sourceCount = remote.haulerPaths.length;
             const spawn = this.getBestSpawn(roomInfo.room.energyCapacityAvailable, sourceCount, remote.neededHaulerCarry, existingSpawns);
             if (spawn) {
-
-                // console.log(Object.values(spawn));
-
                 // Tag this creep so we know it came from remote spawning and can count it against 
                 // our spawns here next time we attempt spawning
                 spawn.memory.isRemote = true;

@@ -43,7 +43,11 @@ class HaulerTaskGenerator {
         });
 
         function getPriority(point) {
-            const myDistance = creep.pos.getRangeTo(point.pos);
+            const myDistance = creep.pos.roomName === point.pos.roomName
+                ? creep.pos.getRangeTo(point.pos)
+                // Pathing is needed since range can't easily be calculated between rooms
+                : creep.pos.findPathTo(point.pos).length;
+
             return point.amount + (point.fillrate * Math.max(myDistance - point.ticksUntilBeginFilling, 0));
         }
         pickupPoints.sort((a, b) => {
