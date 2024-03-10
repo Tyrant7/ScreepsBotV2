@@ -45,7 +45,7 @@ class RemoteSpawnHandler {
 
                 // Tag this creep so we know it came from remote spawning and can count it against 
                 // our spawns here next time we attempt spawning
-                spawn.isRemote = true;
+                spawn.memory.isRemote = true;
                 return spawn;
             }
         }
