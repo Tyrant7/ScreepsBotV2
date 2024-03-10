@@ -26,7 +26,9 @@ class ScoutTaskGenerator {
             }
             else {
                 // Simpler to pathfind to the direct centre of our target
-                creep.moveTo(new RoomPosition(25, 25, data.roomName));
+                creep.moveTo(new RoomPosition(25, 25, data.roomName), {
+                    reusePath: 50,
+                });
                 creep.say("🔭", true);
             }
 
