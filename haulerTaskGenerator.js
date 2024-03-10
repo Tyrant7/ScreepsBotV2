@@ -7,6 +7,8 @@ class HaulerTaskGenerator {
         // Generate some tasks for haulers
         // Tasks are quite simple: pickup and dropoff
 
+        console.log(creep.name);
+
         if (creep.store[RESOURCE_ENERGY]) {
             return this.dropoffTaskLogistics(creep, roomInfo, activeTasks);
         }
@@ -64,6 +66,10 @@ class HaulerTaskGenerator {
                 break;
             }
         }
+
+        console.log(creep.name);
+        reserved.forEach((r) => console.log(r.amount));
+
         return this.generatePickupTask(creep, reserved);
     }
 
@@ -106,6 +112,10 @@ class HaulerTaskGenerator {
         }];
 
         creep.memory.reservedPickups = reservedPickups;
+
+        console.log(creep.memory.reservedPickups);
+
+
         return new Task(reservedPickups, "pickup", actionStack);
     }
 

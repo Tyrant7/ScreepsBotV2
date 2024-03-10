@@ -209,12 +209,15 @@ class RoomInfo {
                 ? (SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME)
                 // Container won't fill if we don't have a miner assigned to it
                 : 0;
+            const ticksUntil = assignedMiner 
+                ? assignedMiner.pos.getRangeTo(site.pos) 
+                : 0;
 
             pickupPoints.push({
                 pos: site.pos,
                 amount: container.store[RESOURCE_ENERGY],
                 fillrate: fillrate,
-                ticksUntilBeginFilling: assignedMiner.pos.getRangeTo(site.pos),
+                ticksUntilBeginFilling: ticksUntil,
                 id: container.id,
             });
         }
@@ -224,7 +227,7 @@ class RoomInfo {
         if (storage) {
             pickupPoints.push({
                 pos: storage.pos,
-                amount: Math.min(0, storage.store[RESOURCE_ENERGY] - CONSTANTS.minEnergyStored),
+                amount: Math.max(0, storage.store[RESOURCE_ENERGY] - CONSTANTS.minEnergyStored),
                 fillrate: 0,
                 ticksUntilBeginFilling: 0,
                 id: storage.id,

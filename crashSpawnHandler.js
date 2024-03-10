@@ -48,8 +48,8 @@ class CrashSpawnHandler {
 
     makeMiniMiner(roomInfo, energy) {
 
-        const sources = roomInfo.getUnreservedSources();
-        if (!sources || !sources[0]) {
+        const site = roomInfo.getFirstUnreservedMiningSite(true);
+        if (!site) {
             return;
         }
 
@@ -66,8 +66,7 @@ class CrashSpawnHandler {
         }
         return { body: body, 
                  name: "Recovery Miner " + Game.time + " [" + lvl + "]",
-                 memory: { role: CONSTANTS.roles.miner,
-                           sourceID: sources[0].id }};
+                 memory: { role: CONSTANTS.roles.miner }};
     }
 }
 
