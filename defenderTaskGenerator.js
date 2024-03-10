@@ -47,7 +47,7 @@ class DefenderTaskGenerator {
             }
 
             // Follow and attack our target!
-            creep.say("🛡️")
+            creep.say("🛡️", true);
             creep.attack(target);
             creep.moveTo(target);
             return target.hits <= 0;
