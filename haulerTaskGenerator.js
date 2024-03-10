@@ -7,8 +7,6 @@ class HaulerTaskGenerator {
         // Generate some tasks for haulers
         // Tasks are quite simple: pickup and dropoff
 
-        console.log(creep.name);
-
         if (creep.store[RESOURCE_ENERGY]) {
             return this.dropoffTaskLogistics(creep, roomInfo, activeTasks);
         }
@@ -83,7 +81,7 @@ class HaulerTaskGenerator {
             // Get the next valid pickup point
             let pickup = reservedPickups[0].point;
             let pickupObject = Game.getObjectById(pickup.id);
-            while (!pickupObject || !pickupObject.store || pickupObject.store[RESOURCE_ENERGY] === 0) {
+            while (!pickupObject || (pickupObject instanceof Structure && pickupObject.store[RESOURCE_ENERGY] === 0)) {
                 if (reservedPickups.length === 0) {
                     delete creep.memory.reservedPickups;
                     return true;
@@ -91,14 +89,12 @@ class HaulerTaskGenerator {
                 pickup = reservedPickups.shift();
                 pickupObject = Game.getObjectById(pickup.id);
             }
-      
-            // Figure out what intent type to use
-            const intent = pickup instanceof Resource 
-                ? creep.pickup
-                : creep.withdraw;
 
             // Move and pickup the current pickup point
-            const intentResult = intent(pickupObject);
+            const intentResult = pickupObject instanceof Resource 
+                ? creep.pickup(pickupObject)
+                : creep.withdraw(pickupObject, RESOURCE_ENERGY);
+
             if (intentResult === OK) {
                 reservedPickups.shift();
             }
@@ -112,10 +108,6 @@ class HaulerTaskGenerator {
         }];
 
         creep.memory.reservedPickups = reservedPickups;
-
-        console.log(creep.memory.reservedPickups);
-
-
         return new Task(reservedPickups, "pickup", actionStack);
     }
 
@@ -129,7 +121,7 @@ class HaulerTaskGenerator {
         // Filter out points that can't take anymore energy
         const dropoffPoints = roomInfo.getEnergyDropoffPoints().filter((point) => {
             const structure = Game.getObjectById(point.id);
-            return structure && structure.store.getFreeCapacity();
+            return structure && structure.store.getFreeCapacity(RESOURCE_ENERGY);
         });
 
         // Lower the value of already reserved dropoff points 
@@ -154,16 +146,16 @@ class HaulerTaskGenerator {
             const structureType = Game.getObjectById(point.id).structureType;
             if (structureType === STRUCTURE_EXTENSION ||
                 structureType === STRUCTURE_SPAWN) {
-                return 1000 + creep.pos.getRangeTo(point.pos);
+                return 10000 - creep.pos.getRangeTo(point.pos);
             }
             else if (structureType === STRUCTURE_TOWER) {
-                return 500 + creep.pos.getRangeTo(point.pos);
+                return 5000 - creep.pos.getRangeTo(point.pos);
             }
             else if (structureType === STRUCTURE_CONTAINER) {
-                return 100 + creep.pos.getRangeTo(point.pos);
+                return 1000 - creep.pos.getRangeTo(point.pos);
             }
             else if (structureType === STRUCTURE_STORAGE) {
-                return -1000 + creep.pos.getRangeTo(point.pos);
+                return -1000 - creep.pos.getRangeTo(point.pos);
             }
             return 0;
         }
