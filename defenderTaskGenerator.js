@@ -36,7 +36,10 @@ class DefenderTaskGenerator {
                 const p = creep.pos;
                 let lowest = creep;
                 if (p.x !== 0 && p.x !== 49 && p.y !== 0 && p.y !== 49) {
-                    lowest = creep.room.lookForAtArea(LOOK_MY_CREEPS, p.y-1, p.x-1, p.y+1, p.x+1, true).reduce((lowest, curr) => {
+                    lowest = creep.room.lookForAtArea(LOOK_CREEPS, p.y-1, p.x-1, p.y+1, p.x+1, true).reduce((lowest, curr) => {
+                        if (!curr.my) {
+                            return lowest;
+                        }
                         return curr.hits < lowest.hits ? curr : lowest;
                     }, creep);
                 }
@@ -44,6 +47,7 @@ class DefenderTaskGenerator {
             }
 
             // Follow and attack our target!
+            creep.say("🛡️")
             creep.attack(target);
             creep.moveTo(target);
             return target.hits <= 0;

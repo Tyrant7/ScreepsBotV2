@@ -75,14 +75,13 @@ class RoomInfo {
             return this.enemies;
         }
 
-        const rooms = Object.keys(base.remotes);
-        for (const roomName of rooms) {
+        for (const roomName in base.remotes) {
             const room = Game.rooms[roomName];
             if (!room) {
                 continue;
             }
             const enemies = room.find(FIND_HOSTILE_CREEPS);
-            this.enemies.push(enemies);
+            this.enemies.push(...enemies);
         }
         return this.enemies;
     }
