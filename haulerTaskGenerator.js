@@ -17,7 +17,7 @@ class HaulerTaskGenerator {
 
         // Persist through global resets
         if (creep.memory.reservedPickups) {
-            // return this.generatePickupTask(creep, creep.memory.reservedPickups);
+            return this.generatePickupTask(creep, creep.memory.reservedPickups);
         }
 
         /*
@@ -115,7 +115,7 @@ class HaulerTaskGenerator {
         
         // Persist through global resets
         if (creep.memory.reservedDropoffs) {
-            // return this.generateDropoffTask(creep, creep.memory.reservedDropoffs);
+            return this.generateDropoffTask(creep, creep.memory.reservedDropoffs);
         }
 
         // Filter out points that can't take anymore energy
