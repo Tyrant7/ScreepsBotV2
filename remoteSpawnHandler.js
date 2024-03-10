@@ -76,11 +76,12 @@ class RemoteSpawnHandler {
         }
         existingSpawns[CONSTANTS.roles.worker] -= 1;
 
-        const wantedClaimers = 1 - existingSpawns[CONSTANTS.roles.claimer];
-        if (wantedClaimers > 0) {
+        // Reservers -> just one per remote
+        const wantedReservers = 1 - existingSpawns[CONSTANTS.roles.reserver];
+        if (wantedReservers > 0) {
             return this.makeClaimer();
         }
-        existingSpawns[CONSTANTS.roles.claimer] -= 1;
+        existingSpawns[CONSTANTS.roles.reserver] -= 1;
     }
 
     makeWorker(desiredLevel, maxCost) {
