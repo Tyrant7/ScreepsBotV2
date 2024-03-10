@@ -204,7 +204,7 @@ class RoomInfo {
             }
 
             // Calculate the fillrate of this container
-            const assignedMiner = this.miners.find((miner) => miner.memory.miningSite.sourceID === site.sourceID);
+            const assignedMiner = this.miners.find((m) => m.memory.miningSite && m.memory.miningSite.sourceID === site.sourceID);
             const fillrate = assignedMiner
                 ? (SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME)
                 // Container won't fill if we don't have a miner assigned to it

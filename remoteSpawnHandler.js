@@ -17,11 +17,11 @@ class RemoteSpawnHandler {
         const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
 
         // Let's how much from each remote we've already spawned so we can easily track our demand
-        const existingSpawns = Object.values(CONSTANTS.roles).map((key) => {
-            return { 
-                [key]: 0 
-            };
+        const existingSpawns = {};
+        Object.values(CONSTANTS.roles).forEach((key) => {
+            existingSpawns[key] = 0;
         });
+
         for (const creep of roomInfo.creeps) {
             if (creep.memory.isRemote) {
                 // Rather inelegant, but it'll do
@@ -40,6 +40,8 @@ class RemoteSpawnHandler {
             const sourceCount = remote.haulerPaths.length;
             const spawn = this.getBestSpawn(roomInfo.room.energyCapacityAvailable, sourceCount, remote.neededHaulerCarry, existingSpawns);
             if (spawn) {
+
+                console.log(Object.values(spawn));
 
                 // Tag this creep so we know it came from remote spawning and can count it against 
                 // our spawns here next time we attempt spawning

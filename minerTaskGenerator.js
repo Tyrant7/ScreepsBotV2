@@ -31,7 +31,7 @@ class MinerTaskGenerator {
         }
 
         const unreserved = roomInfo.getFirstUnreservedMiningSite();
-        if (unreserved.length === 0) {
+        if (!unreserved) {
             // Wait for an opening
             // TODO //
             // Fix this so that early replacement can function
