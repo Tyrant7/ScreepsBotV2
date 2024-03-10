@@ -26,7 +26,7 @@ class UpgraderTaskGenerator {
             if (creep.pos.getRangeTo(upgraderContainerPos) <= 0) {
                 // Pickup energy if we need it
                 const energyUsage = creep.body.filter((p) => p.type === WORK).length * UPGRADE_CONTROLLER_POWER;
-                if (creep.store.getFreeCapacity() >= energyUsage) {
+                if (creep.store[RESOURCE_ENERGY] < energyUsage * 2) {
                     const container = creep.room.lookForAt(LOOK_STRUCTURES, upgraderContainerPos.x, upgraderContainerPos.y).find(
                         (s) => s.structureType === STRUCTURE_CONTAINER);
                     if (container.store[RESOURCE_ENERGY]) {
