@@ -109,7 +109,6 @@ class RoomInfo {
     //
 
 
-
     /**
      * Gets an array of all mining sites for this room, including in remotes.
      * @returns An array of objects, each containing some data about the mining site:
@@ -134,7 +133,15 @@ class RoomInfo {
 
         // Get the mining sites for remote rooms
         const remotePlans = remoteUtility.getRemotePlans(this.room.name);
-        for (const miningSite of remotePlans.miningSites) {
+        const allMiningSites = [];
+        if (remotePlans) {
+            for (const remote in remotePlans) {
+                allMiningSites.push(...remotePlans[remote].miningSites);
+            }
+        }
+
+        // Add 'em
+        for (const miningSite of allMiningSites) {
             miningSpots.push({
                 pos: miningSite.pos,
                 sourceID: miningSite.sourceID,
@@ -157,7 +164,7 @@ class RoomInfo {
         const sites = this.getMiningSites();
 
         // Find the first site where no miner has reserved
-        return sites.find((site) => !this.miners.find((m) => m.memory.miningSite.sourceID === site.sourceID));
+        return sites.find((site) => !this.miners.find((m) => m.memory.miningSite && m.memory.miningSite.sourceID === site.sourceID));
     }
 
     /**

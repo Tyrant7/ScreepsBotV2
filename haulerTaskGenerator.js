@@ -17,7 +17,7 @@ class HaulerTaskGenerator {
 
         // Persist through global resets
         if (creep.memory.reservedPickups) {
-            return this.generatePickupTask(creep.memory.reservedPickups);
+            // return this.generatePickupTask(creep, creep.memory.reservedPickups);
         }
 
         /*
@@ -33,13 +33,16 @@ class HaulerTaskGenerator {
         // Factor in the amount we've already reserved from each pickup point
         const pickupPoints = roomInfo.getEnergyPickupPoints();
         pickupPoints.forEach((point) => {
-            const amountReserved = activeTasks.reduce((total, curr) => {
-                return total + (curr.point.id === point.id ? curr.amount : 0);
+            const amountReserved = activeTasks.reduce((total, task) => {
+                return total + task.data.reduce((totalTask, pickup) => {
+                    return totalTask + (pickup.point.id === point.id ? pickup.amount : 0);
+                }, 0);
             }, 0);
             point.amount -= amountReserved;
         });
 
         function getPriority(point) {
+            const myDistance = creep.pos.getRangeTo(point.pos);
             return point.amount + (point.fillrate * Math.max(myDistance - point.ticksUntilBeginFilling, 0));
         }
         pickupPoints.sort((a, b) => {
@@ -67,6 +70,7 @@ class HaulerTaskGenerator {
     generatePickupTask(creep, reservedPickups) {
         const actionStack = [function(creep, reservedPickups) {
             if (reservedPickups.length === 0) {
+                delete creep.memory.reservedPickups;
                 return true;
             }
 
@@ -75,6 +79,7 @@ class HaulerTaskGenerator {
             let pickupObject = Game.getObjectById(pickup.id);
             while (!pickupObject || !pickupObject.store || pickupObject.store[RESOURCE_ENERGY] === 0) {
                 if (reservedPickups.length === 0) {
+                    delete creep.memory.reservedPickups;
                     return true;
                 }
                 pickup = reservedPickups.shift();
@@ -108,19 +113,21 @@ class HaulerTaskGenerator {
         
         // Persist through global resets
         if (creep.memory.reservedDropoffs) {
-            return this.generateDropoffTask(creep.memory.reservedDropoffs);
+            // return this.generateDropoffTask(creep, creep.memory.reservedDropoffs);
         }
 
         // Filter out points that can't take anymore energy
         const dropoffPoints = roomInfo.getEnergyDropoffPoints().filter((point) => {
             const structure = Game.getObjectById(point.id);
-            return structure && structure.getFreeCapacity();
+            return structure && structure.store.getFreeCapacity();
         });
 
         // Lower the value of already reserved dropoff points 
         dropoffPoints.forEach((point) => {
-            const amountReserved = activeTasks.reduce((total, curr) => {
-                return total + (curr.point.id === point.id ? curr.amount : 0);
+            const amountReserved = activeTasks.reduce((total, task) => {
+                return total + task.data.reduce((totalTask, dropoff) => {
+                    return totalTask + (dropoff.point.id === point.id ? dropoff.amount : 0);
+                }, 0);
             }, 0);
             point.amount -= amountReserved;
         });
@@ -175,6 +182,7 @@ class HaulerTaskGenerator {
     generateDropoffTask(creep, reservedDropoffs) {
         const actionStack = [function(creep, reservedDropoffs) {
             if (reservedDropoffs.length === 0) {
+                delete creep.memory.reservedDropoffs;
                 return true;
             }
             
@@ -183,6 +191,7 @@ class HaulerTaskGenerator {
             let dropoffObject = Game.getObjectById(dropoff.id);
             while (!dropoffObject || !dropoffObject.store || dropoffObject.store.getFreeCapacity() === 0) {
                 if (reservedDropoffs.length === 0) {
+                    delete creep.memory.reservedDropoffs;
                     return true;
                 }
                 dropoff = reservedDropoffs.shift();
@@ -190,7 +199,7 @@ class HaulerTaskGenerator {
             }
                  
             // Move and transfer to current dropoff point
-            const intentResult = creep.transfer(dropoffObject);
+            const intentResult = creep.transfer(dropoffObject, RESOURCE_ENERGY);
             if (intentResult === OK) {
                 reservedDropoffs.shift();
             }

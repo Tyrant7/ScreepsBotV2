@@ -11,13 +11,13 @@ class MinerTaskGenerator {
             // Extremely simple here
 
             // Move to mining site
-            if (creep.getRangeTo(miningSite.pos) > 0) {
+            if (creep.pos.getRangeTo(miningSite.pos) > 0) {
                 creep.moveTo(miningSite.pos);
             }
 
             // Mine our source
-            const source = Game.getObjectById(data.sourceID);
-            if (creep.get.getRangeTo(source) <= 1) {
+            const source = Game.getObjectById(miningSite.sourceID);
+            if (creep.pos.getRangeTo(source) <= 1) {
                 creep.harvest(source);
             }
 

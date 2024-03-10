@@ -4,6 +4,10 @@ class ColonyConstructionManager {
         if (roomInfo.room.controller.level >= 2) {
             this.placeUpgraderContainer(roomInfo);
         }
+
+        roomInfo.getSources().forEach((source) => {
+            this.placeMinerContainer(source);
+        });
     }
 
     placeUpgraderContainer(roomInfo) {
@@ -68,37 +72,48 @@ class ColonyConstructionManager {
             const positions = [];
             for (let x = -1; x < 1; x++) {
                 for (let y = -1; y < 1; y++) {
-                    const realX = sourcePos.x + x;
-                    const realY = sourcePos.y + y;
+                    const realX = pos.x + x;
+                    const realY = pos.y + y;
                     if (realX <= 0 || realX >= 49 || realY <= 0 || realY >= 49) {
                         continue;
                     }
-                    positions.push(new RoomPosition(realX, realY, sourcePos.roomName));
+                    positions.push(new RoomPosition(realX, realY, pos.roomName));
                 }
+            }
+            return positions;
+        }
+
+        function logPositionToMemory(pos) {
+            if (Memory.bases[sourcePos.roomName]) {
+                if (!Memory.bases[sourcePos.roomName].minerContainers) {
+                    Memory.bases[sourcePos.roomName].minerContainers = {};
+                }
+                Memory.bases[sourcePos.roomName].minerContainers[source.id] = pos;
             }
         }
 
         const sourcePos = source.pos;
 
         // Get all adjacent positions to the source
-        const positions = getAdjacentPositions(sourcePos);
+        const adjacent = getAdjacentPositions(sourcePos);
 
         // If we already have a container here, let's exit early, no need to plan
-        for (const pos of positions) {
-
+        for (const pos of adjacent) {
             const sites = pos.lookFor(LOOK_CONSTRUCTION_SITES);
             if (sites.length && sites[0].structureType === STRUCTURE_CONTAINER) {
+                logPositionToMemory(pos);
                 return;
             }
-            const containers = pos.lookFor(LOOK_STRUCTURES);
+            const containers = pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_CONTAINER);
             if (containers.length) {
+                logPositionToMemory(pos);
                 return;
             }
         }
 
         // Now we'll look for the best position by ranking each one based on how many walls are next to it
         const terrain = Game.map.getRoomTerrain(sourcePos.roomName);
-        const bestPosition = positions.reduce((best, curr) => {
+        const bestPosition = adjacent.reduce((best, curr) => {
             if (terrain.get(curr.x, curr.y) === TERRAIN_MASK_WALL) {
                 return best;
             }
@@ -116,21 +131,16 @@ class ColonyConstructionManager {
                 total + (terrain.get(p.x, p.y) === TERRAIN_MASK_WALL ? 1 : 0);
             }, 0);
 
-            return currAdjacent > bestAdjacent ? currAdjacent : bestAdjacent;
+            return currAdjacent > bestAdjacent ? curr : best;
         }, null);
 
         if (!bestPosition) {
             return;
         }
-        bestPosition.createConstructionSite(STRUCTURE_CONTAINER);
 
-        // Let's record the container in memory
-        if (Memory.bases[sourcePos.roomName]) {
-            if (Memory.bases[sourcePos.roomName].minerContainers) {
-                Memory.bases[sourcePos.roomName].minerContainers = {};
-            }
-            Memory.bases[sourcePos.roomName].minerContainers[source.id] = bestPosition;
-        }
+        // Let's record the container in memory and create the construction site
+        logPositionToMemory(bestPosition);
+        bestPosition.createConstructionSite(STRUCTURE_CONTAINER);
     }
 }
 

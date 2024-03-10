@@ -61,7 +61,7 @@ class RemotePlanner {
                 const distOneRoadPositions = this.planRoads(distOnePaths);
                 const distOneMiningSites = this.planMiningSites(distOne, distOnePaths);
                 const distOneHaulerPaths = this.getHaulerPaths(roomInfo, 
-                    { pos: roomInfo.room.storage.pos, range: 1 }, distOneRoadPositions, distOneMiningSites);
+                    { pos: roomInfo.room.storage.pos, range: 1 }, distOneRoadPositions, distOneMiningSites.map((site) => site.pos));
                 const distOneNeededCarry = distOneHaulerPaths.reduce((total, curr) => total + curr.neededCarry, 0);
                 const scoreCost = this.scoreRemote(roomInfo, distOne, distOneNeededCarry, distOneRoadPositions, distOneMiningSites.length);
 
@@ -74,7 +74,7 @@ class RemotePlanner {
                         const distTwoRoadPositions = this.planRoads(distTwoPaths);
                         const distTwoMiningSites = this.planMiningSites(distTwo, distTwoPaths);
                         const distTwoHaulerPaths = this.getHaulerPaths(roomInfo, 
-                            { pos: roomInfo.room.storage.pos, range: 1 }, distTwoRoadPositions.concat(distOneRoadPositions), distTwoMiningSites);
+                            { pos: roomInfo.room.storage.pos, range: 1 }, distTwoRoadPositions.concat(distOneRoadPositions), distTwoMiningSites.map((site) => site.pos));
                         const distTwoNeededCarry = distTwoHaulerPaths.reduce((total, curr) => total + curr.neededCarry, 0);
                         const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoNeededCarry, distTwoRoadPositions, distTwoMiningSites.length);
 

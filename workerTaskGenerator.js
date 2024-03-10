@@ -117,7 +117,7 @@ class WorkerTaskGenerator {
         const taskData = {};
         if (type === taskType.restock &&
             (target.structureType === STRUCTURE_SPAWN || target.structureType === STRUCTURE_EXTENSION)) {
-            taskData.restockType = target.structureType;
+            taskData.restockType = [STRUCTURE_SPAWN, STRUCTURE_EXTENSION];
         }
         else if (type === taskType.build) {
             taskData.buildType = target.structureType;
@@ -177,7 +177,7 @@ const basicWorkerActions = {
         else {
             // Find closest structure matching the types to restock
             const restocks = creep.room.find(FIND_MY_STRUCTURES, { filter: 
-                (s) => data.structureTypes.includes(s.structureType) && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 
+                (s) => data.restockType.includes(s.structureType) && s.store.getFreeCapacity(RESOURCE_ENERGY) > 0 
             });
             if (restocks.length === 0) {
                 return true;
