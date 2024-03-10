@@ -57,9 +57,12 @@ class HaulerTaskGenerator {
     generatePickupTask(creep, reserved) {
         const actionStack = [function(creep, reserved) {
 
-            // Ensure our pickup point still exists
+            // Ensure our pickup point still exists and has energy to pickup
             const pickupObject = Game.getObjectById(reserved.id);
-            if (!pickupObject || !pickupObject.store[RESOURCE_ENERGY]) {
+            const invalid = !pickupObject || 
+                (pickupObject instanceof Resource && pickupObject.amount + pickupObject.fillrate <= 0) ||
+                (pickupObject instanceof Structure && !pickupObject.store[RESOURCE_ENERGY]);
+            if (invalid) {
                 delete creep.memory.reservedPickup;
                 return true;
             }
