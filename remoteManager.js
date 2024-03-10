@@ -60,7 +60,7 @@ class RemoteManager {
      * @returns The active plans for remotes for this room.
      */
     ensurePlansExist(roomInfo, baseRoomSpawnCost) {
-        if (!utility.getRemotePlans(roomInfo.room.name)) {
+        if (!utility.getRemotePlans(roomInfo.room.name) || (RELOAD && DEBUG.replanRemotesOnReload)) {
             const unsortedPlans = this.planRemotes(roomInfo, baseRoomSpawnCost);
 
             // Sort plans by distance, then efficiency score to allow creeps to be assigned under a natural priority 
@@ -100,16 +100,16 @@ class RemoteManager {
         if (DEBUG.drawOverlay) {
             if (DEBUG.drawRoadOverlay) {
                 const allRoads = bestBranch.reduce((roads, node) => roads.concat(node.roads), []);     
-                this.roadVisuals = allRoads;
+                Memory.temp.roadVisuals = allRoads;
             }
             if (DEBUG.drawPathOverlay) {
                 const allHaulerPaths = [];
                 bestBranch.forEach((node) => allHaulerPaths.push(...node.haulerPaths));
-                this.haulerPaths = allHaulerPaths;
+                Memory.temp.haulerPaths = allHaulerPaths;
             }
             if (DEBUG.drawContainerOverlay) {
                 const allContainerPositions = bestBranch.reduce((containers, node) => containers.concat(node.miningSites.map((site) => site.pos)), []);
-                this.containerPositions = allContainerPositions;
+                Memory.temp.containerPositions = allContainerPositions;
             }
         }
 
@@ -125,10 +125,10 @@ class RemoteManager {
     }
 
     drawOverlays() {
-        if (DEBUG.drawRoadOverlay && this.roadVisuals) {
-            overlay.circles(this.roadVisuals);
+        if (DEBUG.drawRoadOverlay && Memory.temp.roadVisuals) {
+            overlay.circles(Memory.temp.roadVisuals);
         }
-        if (DEBUG.drawPathOverlay && this.haulerPaths) {
+        if (DEBUG.drawPathOverlay && Memory.temp.haulerPaths) {
             const colours = [
                 "#FF0000",
                 "#00FF00",
@@ -136,7 +136,7 @@ class RemoteManager {
             ];
 
             let i = 0;
-            this.haulerPaths.forEach((path) => {
+            Memory.temp.haulerPaths.forEach((path) => {
                 const pathFixed = path.path.map((point) => {
                     return { x: point.x, y: point.y, roomName: point.roomName };
                 });
@@ -144,8 +144,8 @@ class RemoteManager {
                 i++;
             });
         }
-        if (DEBUG.drawContainerOverlay && this.containerPositions) {
-            overlay.rects(this.containerPositions);
+        if (DEBUG.drawContainerOverlay && Memory.temp.containerPositions) {
+            overlay.rects(Memory.temp.containerPositions);
         }
     }
 

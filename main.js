@@ -16,8 +16,10 @@ global.DEBUG = {
     trackCPUUsage: true,
     trackRCLProgress: true,
     logRemotePlanning: false,
+    replanRemotesOnReload: false,
     runProfiler: false,
 };
+global.RELOAD = true;
 
 // Managers
 const CreepManager = require("creepManager");
@@ -236,6 +238,9 @@ module.exports.loop = function() {
     for (const info of Object.values(roomInfos)) {
         overlay.finalizePanels(info.room.name);
     }
+
+    // If we reloaded
+    global.RELOAD = false;
 }
 
 /**

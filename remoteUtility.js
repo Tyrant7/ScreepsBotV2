@@ -14,6 +14,12 @@ module.exports = {
         Memory.bases[baseName].remotes = plansObject;
     },
 
+    clearRemotePlans: function() {
+        for (const base in Memory.bases) {
+            delete Memory.bases[base].remotes;
+        }
+    },
+
     /**
      * Returns true or false depending on whether or not a structure of this 
      * type has been planned at this position by this home room

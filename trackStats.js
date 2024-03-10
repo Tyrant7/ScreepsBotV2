@@ -1,6 +1,5 @@
-let reset = true;
 function initializeStats() {
-    if (!Memory.stats || reset) {
+    if (!Memory.stats || RELOAD) {
         Memory.stats = { 
             cpu: {
                 rollingAverage: 0,
@@ -8,7 +7,6 @@ function initializeStats() {
             },
             rcl: {},
         };
-        reset = false;
     }
 }
 
