@@ -25,7 +25,9 @@ function roomNameToXY(name) {
 function estimateTravelTime(creep, pos) {
     const creepRoomPos = roomNameToXY(creep.pos.roomName);
     const posRoomPos = roomNameToXY(pos.roomName);
-    return Math.max(Math.abs(creepRoomPos.x - posRoomPos.x) * 50, Math.abs(creepRoomPos.y - posRoomPos.y) * 50);
+    const diffX = (Math.abs(creepRoomPos[0] - posRoomPos[0]) * 50) - 25;
+    const diffY = (Math.abs(creepRoomPos[1] - posRoomPos[1]) * 50) - 25;
+    return Math.max(diffX, diffY);
 }
 
 class HaulerTaskGenerator {
