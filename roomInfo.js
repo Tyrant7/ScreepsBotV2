@@ -51,17 +51,6 @@ class RoomInfo {
         return this.room.find(FIND_SOURCES);
     }
 
-    /**
-     * Finds all sources in this room that have not yet been reserved by miners.
-     * @returns An array of Source objects.
-     */
-    getUnreservedSources() {
-        const reservedIDs = this.miners.map((miner) => miner.memory.sourceID);
-        return this.getSources().filter((source) => {
-            return !reservedIDs.includes(source.id);
-        });
-    }
-
     getMaxIncome() {
         return this.getSources().reduce((total, source) => total + (source.energyCapacity / ENERGY_REGEN_TIME), 0);
     }
@@ -110,12 +99,13 @@ class RoomInfo {
 
 
     /**
-     * Gets an array of all mining sites for this room, including in remotes.
+     * Gets an array of all mining sites for this room.
+     * @param {boolean} onlyLocal Should this consider remote mining sites as well?
      * @returns An array of objects, each containing some data about the mining site:
      * - The position of the mining site (place to stand).
      * - The ID of the source to mine.
      */
-    getMiningSites() {
+    getMiningSites(onlyLocal) {
         if (this.cachedMiningSpots) {
             return this.cachedMiningSpots;
         }
@@ -129,6 +119,10 @@ class RoomInfo {
                 pos: base.minerContainers[key],
                 sourceID: key,
             });
+        }
+
+        if (onlyLocal) {
+            return miningSpots;
         }
 
         // Get the mining sites for remote rooms
@@ -155,13 +149,14 @@ class RoomInfo {
 
     /**
      * Gets the first unreserved mining site.
+     * @param {boolean} onlyLocal Should this consider remote mining sites as well?
      * @returns An object containing some data about the mining site:
      * - The position of the mining site (place to stand).
      * - The ID of the source to mine.
      */
-    getFirstUnreservedMiningSite() {
+    getFirstUnreservedMiningSite(onlyLocal) {
         // Sites are conveniently already ordered by priority
-        const sites = this.getMiningSites();
+        const sites = this.getMiningSites(onlyLocal);
 
         // Find the first site where no miner has reserved
         return sites.find((site) => !this.miners.find((m) => m.memory.miningSite && m.memory.miningSite.sourceID === site.sourceID));
@@ -190,7 +185,7 @@ class RoomInfo {
                 pickupPoints.push({
                     pos: drop.pos,
                     amount: drop.amount,
-                    fillrate: -Math.ceil(amount / ENERGY_DECAY),
+                    fillrate: -Math.ceil(drop.amount / ENERGY_DECAY),
                     ticksUntilBeginFilling: 0, 
                     id: drop.id,
                 });

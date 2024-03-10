@@ -3,8 +3,8 @@ const creepSpawnUtility = require("creepSpawnUtility");
 class MinerSpawnHandler {
 
     getNextSpawn(roomInfo) {
-        const sources = roomInfo.getUnreservedSources();
-        if (sources.length > 0) {
+        const site = roomInfo.getFirstUnreservedMiningSite(true);
+        if (site) {
             return this.make(roomInfo.room.energyCapacityAvailable);
         }
     }
