@@ -205,7 +205,9 @@ module.exports.loop = function() {
 
             // Map the creep's role to its appropriate manager and run behaviour
             if (creepRoleMap[creep.memory.role]) {
+                profiler.startSample(creep.name);
                 creepRoleMap[creep.memory.role].processCreep(creep, roomInfos[creep.memory.home]);
+                profiler.endSample(creep.name);
             }
             else {
                 creep.say("Missing");

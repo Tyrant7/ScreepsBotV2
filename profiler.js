@@ -39,6 +39,7 @@ class Profiler {
         console.log("-".repeat(15) + " Profiler Results " + "-".repeat(15));
         for (const record of this.records) {
             const symbols = {
+                [-1000]: "⚪️",
                 0: "🟢",
                 0.35: "🟡",
                 1: "🟠",
