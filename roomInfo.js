@@ -105,7 +105,7 @@ class RoomInfo {
      * - The position of the mining site (place to stand).
      * - The ID of the source to mine.
      */
-    getMiningSites(onlyLocal) {
+    getMiningSites(onlyLocal = false) {
         if (this.cachedMiningSpots) {
             return this.cachedMiningSpots;
         }
@@ -154,7 +154,7 @@ class RoomInfo {
      * - The position of the mining site (place to stand).
      * - The ID of the source to mine.
      */
-    getFirstUnreservedMiningSite(onlyLocal) {
+    getFirstUnreservedMiningSite(onlyLocal = false) {
         // Sites are conveniently already ordered by priority
         const sites = this.getMiningSites(onlyLocal);
 
