@@ -11,8 +11,9 @@ class MinerTaskGenerator {
             // Extremely simple here
 
             // Move to mining site
-            if (creep.pos.getRangeTo(miningSite.pos) > 0) {
-                creep.moveTo(miningSite.pos);
+            const sitePos = new RoomPosition(miningSite.pos.x, miningSite.pos.y, miningSite.pos.roomName);
+            if (creep.pos.getRangeTo(sitePos) > 0) {
+                creep.moveTo(sitePos);
             }
 
             // Mine our source
