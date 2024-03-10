@@ -5,6 +5,7 @@ const defaultStyle = {
 const defaultText = {
     color: "#FFFFFF",
     align: "left",
+    font: "0.7 monospace",
 };
 
 const panelStyle = {
@@ -70,7 +71,7 @@ module.exports = {
 
         // Draw the panel itself first
         const panelHeight = (panel.elements.reduce((total, curr) => total + curr.spacing, 0)) + 0.5;
-        const panelWidth = 10;
+        const panelWidth = 11;
         const x = anchor === "left" ? -0.5 + panelStyle.strokeWidth / 2: 49.5 - panelWidth - panelStyle.strokeWidth / 2;
         const y = -0.5 + panelStyle.strokeWidth / 2;
         const visual = new RoomVisual(roomName).rect(x, y, panelWidth, panelHeight, panelStyle);
