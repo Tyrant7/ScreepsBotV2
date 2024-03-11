@@ -36,7 +36,9 @@ class UpgraderTaskGenerator {
                 creep.upgradeController(target);
             }
             else {
-                creep.moveTo(upgraderContainerPos);
+                creep.moveTo(upgraderContainerPos, {
+                    reusePath: 1000,
+                });
             }
         });
         return new Task({ controllerID: roomInfo.room.controller.id }, "upgrade", actionStack);

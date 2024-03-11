@@ -111,7 +111,10 @@ class HaulerTaskGenerator {
                 return true;
             }
             else if (intentResult === ERR_NOT_IN_RANGE) {
-                creep.moveTo(pickupObject);
+                creep.moveTo(pickupObject, {
+                    reusePath: 30,
+                    range: 1,
+                });
             }
             return false;
         }];
@@ -211,7 +214,10 @@ class HaulerTaskGenerator {
                 return true;
             }
             else if (intentResult === ERR_NOT_IN_RANGE) {
-                creep.moveTo(target);
+                creep.moveTo(target, {
+                    reusePath: 30,
+                    range: 1,
+                });
             }
             return false;
         }];

@@ -160,7 +160,10 @@ const basicWorkerActions = {
     [taskType.upgrade]: function(creep, data) {
         const target = Game.getObjectById(data.targetID);
         if (creep.upgradeController(target) === ERR_NOT_IN_RANGE) {
-            creep.moveTo(target);
+            creep.moveTo(target, {
+                reusePath: 30,
+                range: 3,
+            });
         }
         return creep.store[RESOURCE_ENERGY] === 0 || !target.my;
     },
@@ -187,7 +190,10 @@ const basicWorkerActions = {
         }
 
         if (creep.transfer(target, RESOURCE_ENERGY) === ERR_NOT_IN_RANGE) {
-            creep.moveTo(target);
+            creep.moveTo(target, {
+                reusePath: 30,
+                range: 1,
+            });
         }
         return creep.store[RESOURCE_ENERGY] === 0;
     },
@@ -203,14 +209,20 @@ const basicWorkerActions = {
 
         const intentResult = creep.build(target);
         if (intentResult === ERR_NOT_IN_RANGE) {
-            creep.moveTo(target);
+            creep.moveTo(target, {
+                reusePath: 30,
+                range: 1,
+            });
         }
         return creep.store[RESOURCE_ENERGY] === 0;
     },
     [taskType.repair]: function(creep, data) {
         const target = Game.getObjectById(data.targetID);
         if (creep.repair(target) === ERR_NOT_IN_RANGE) {
-            creep.moveTo(target);
+            creep.moveTo(target, {
+                reusePath: 30,
+                range: 1,
+            });
         }
         return creep.store[RESOURCE_ENERGY] === 0 || !target || target.hits === target.hitsMax;
     },

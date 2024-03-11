@@ -10,7 +10,12 @@ module.exports = function(creep, data) {
         return true;
     }
 
-    const moveTarget = Memory.rooms[data.roomName].controller.pos;
+    const controller = Memory.rooms[data.roomName].controller;
+    const moveTarget = controller ? controller : { x: 25, y: 25 };
     const pos = new RoomPosition(moveTarget.x, moveTarget.y, data.roomName);
-    creep.moveTo(pos);
+    creep.moveTo(pos, {
+        // The target will never change
+        reusePath: 10000,
+        maxRooms: data.maxRooms ? data.maxRooms : 16,
+    });
 };

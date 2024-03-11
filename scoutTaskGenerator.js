@@ -1,4 +1,5 @@
 const Task = require("task");
+const moveToRoom = require("moveToRoom");
 const scoutingUtility = require("scoutingUtility");
 
 class ScoutTaskGenerator {
@@ -25,12 +26,8 @@ class ScoutTaskGenerator {
                 return true;
             }
             else {
-                // Simpler to pathfind to the direct centre of our target
-                creep.moveTo(new RoomPosition(25, 25, data.roomName), {
-                    // We don't ever need to change our path once we have it
-                    reusePath: 10000,
-                    maxRooms: 3,
-                });
+                data.maxRooms = 3;
+                moveToRoom(creep, data);
                 creep.say("🔭", true);
             }
 
