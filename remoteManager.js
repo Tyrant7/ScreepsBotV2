@@ -75,7 +75,6 @@ class RemoteManager {
             const finalPlans = {};
             for (const plan of sortedPlans) {
                 const roomName = plan.room;
-                delete plan.room;
                 delete plan.children;
                 finalPlans[roomName] = plan;
             }
