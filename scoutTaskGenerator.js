@@ -6,7 +6,7 @@ class ScoutTaskGenerator {
     run(creep, roomInfo, activeTasks) {
 
         // Let's generate a new 'explore' task for the closest room within an arbitrary range to the creep's current room
-        const targetName = scoutingUtility.searchForUnexploredRoomsNearby(creep.room.name, 6) 
+        const targetName = scoutingUtility.searchForUnexploredRoomsNearby(creep.room.name, 3) 
             // If we've explored all directions, just go somewhere random
             // TODO //
             // Make this better
@@ -27,7 +27,9 @@ class ScoutTaskGenerator {
             else {
                 // Simpler to pathfind to the direct centre of our target
                 creep.moveTo(new RoomPosition(25, 25, data.roomName), {
-                    reusePath: 50,
+                    // We don't ever need to change our path once we have it
+                    reusePath: 10000,
+                    maxRooms: 3,
                 });
                 creep.say("🔭", true);
             }
@@ -35,7 +37,9 @@ class ScoutTaskGenerator {
 
             // Update room data if needed
             let roomData = Memory.rooms[creep.room.name];
-            if (!roomData || leavingOrEntering) {
+
+            // These things only need to be recorded once since they never change
+            if (!roomData) {
                 roomData = { lastVisit: Game.time };
 
                 // The controller position
@@ -44,13 +48,6 @@ class ScoutTaskGenerator {
                     roomData.controller = {};
                     roomData.controller.pos = { x: controller.pos.x, y: controller.pos.y };
                     roomData.controller.id = controller.id;
-
-                    // If this room is owned by somebody else,
-                    // Record the owner's username and controller level
-                    if (controller.owner && !controller.my) {
-                        roomData.controller.owner = controller.owner.username;
-                        roomData.controller.level = controller.level;
-                    }
                 }
 
                 // Source positions
@@ -63,6 +60,25 @@ class ScoutTaskGenerator {
                 const minerals = creep.room.find(FIND_MINERALS);
                 minerals.forEach((mineral) => roomData.minerals.push(
                     { pos: { x: mineral.pos.x, y: mineral.pos.y }, density: mineral.density, type: mineral.mineralType, id: mineral.id }));
+            }
+
+            // These things change, so let's record them every time
+            if (leavingOrEntering) {
+                roomData.lastVisit = Game.time;
+
+                // Update controller information
+                if (roomData.controller) {
+                    const controllerObject = Game.getObjectById(roomData.controller.id);
+                    roomData.controller.owner = controllerObject.owner.username;
+                    roomData.controller.level = controllerObject.level;
+                }
+
+                // Update minerals
+                roomData.minerals.forEach((mineral) => {
+                    const gameObject = Game.getObjectById(miner.id);
+                    mineral.density = gameObject.density;
+                    mineral.type = gameObject.type;
+                });
 
                 // If there are invaders in this room, record the amount and current tick
                 const hostiles = creep.room.find(FIND_HOSTILE_CREEPS);

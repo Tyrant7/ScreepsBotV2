@@ -9,15 +9,15 @@ global.CONSTANTS = require("constants");
 global.DEBUG = {
     logTasks: true,
     drawOverlay: true,
-    drawRoadOverlay: true,
-    drawPathOverlay: true,
-    drawContainerOverlay: true,
+    drawRoadOverlay: false,
+    drawPathOverlay: false,
+    drawContainerOverlay: false,
     trackSpawnUsage: true,
     trackCPUUsage: true,
     trackRCLProgress: true,
     logRemotePlanning: false,
     replanRemotesOnReload: false,
-    runProfiler: false,
+    runProfiler: true,
 };
 global.RELOAD = true;
 
