@@ -244,7 +244,7 @@ class RemoteManager {
             while (siteCount <= builders.length + 1 && unbuilt.length > 0) {
                 const next = unbuilt.shift();
                 if (Game.rooms[next.pos.roomName]) {
-                    const realPos = new RoomPosition(next.x, next.y, next.roomName);
+                    const realPos = new RoomPosition(next.pos.x, next.pos.y, next.pos.roomName);
                     realPos.createConstructionSite(next.type);
                     siteCount++;
                 }
