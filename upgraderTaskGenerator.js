@@ -38,6 +38,7 @@ class UpgraderTaskGenerator {
             else {
                 creep.moveTo(upgraderContainerPos, {
                     reusePath: 1000,
+                    maxRooms: 1,
                 });
             }
         });
