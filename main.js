@@ -70,6 +70,7 @@ const MinerSpawnHandler = require("minerSpawnHandler");
 const HaulerSpawnHandler = require("haulerSpawnHandler");
 const UpgraderSpawnHandler = require("upgraderSpawnHandler");
 const ScoutSpawnHandler = require("scoutSpawnHandler");
+const RepairerSpawnHandler = require("repairerSpawnHandler");
 
 const RemoteSpawnHandler = require("remoteSpawnHandler");
 const DefenderSpawnHandler = require("defenderSpawnHandler");
@@ -80,6 +81,7 @@ const minerSpawnHandler = new MinerSpawnHandler();
 const haulerSpawnHandler = new HaulerSpawnHandler();
 const upgraderSpawnHandler = new UpgraderSpawnHandler();
 const scoutSpawnHandler = new ScoutSpawnHandler();
+const repairerSpawnHandler = new RepairerSpawnHandler();
 
 const remoteSpawnHandler = new RemoteSpawnHandler();
 const defenderSpawnHandler = new DefenderSpawnHandler();
@@ -169,6 +171,10 @@ module.exports.loop = function() {
 
                 // Make sure we're spawning for remotes
                 currentSpawnHandlers.push(remoteSpawnHandler);
+            }
+            // Since this is kind of expensive, let's only check for repairers every so often
+            if (Game.time % CONSTANTS.repairerInterval === 0) {
+                currentSpawnHandlers.unshift(repairerSpawnHandler);
             }
             if (info.getEnemies().length) {
                 currentSpawnHandlers.unshift(defenderSpawnHandler);

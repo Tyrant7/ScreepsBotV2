@@ -29,14 +29,6 @@ class RoomInfo {
         });
 
         this.spawns = room.find(FIND_MY_SPAWNS);
-
-        this.openSourceSpots = room.find(FIND_SOURCES).reduce(function(total, s) {
-            const p = s.pos;
-                                                           // No constant that I could find for this terrain type, unfortunately vv
-            const lookResults = room.lookForAtArea(LOOK_TERRAIN, p.y-1, p.x-1, p.y+1, p.x+1, true).filter((t) => t.terrain === "wall");
-            return total + (9 - lookResults.length);
-        }, 0);
-
         this.remoting = room.controller && room.controller.my && room.controller.level >= 4;
     }
 
@@ -90,6 +82,29 @@ class RoomInfo {
         const containerPos = Memory.bases[this.room.name].upgraderContainer;
         return this.room.lookForAt(LOOK_STRUCTURES, containerPos.x, containerPos.y).find(
             (s) => s.structureType === STRUCTURE_CONTAINER);
+    }
+
+    /**
+     * Finds all structures wanted by this room, including remotes.
+     * @returns An array of all planned structures currently visible and wanted by this room.
+     */
+    getWantedStructures() {
+        if (this.wantedStructures) {
+            return this.wantedStructures;
+        }
+
+        const structures = this.room.find(FIND_STRUCTURES);
+        const remotePlans = remoteUtility.getRemotePlans(this.room.name);
+        for (const roomName in remotePlans) {
+            if (Game.rooms[roomName]) {
+                structures.push(...Game.rooms[roomName].find(FIND_STRUCTURES, { 
+                    filter: (s) => remoteUtility.isStructurePlanned(s)
+                }));
+            }
+        }
+
+        this.wantedStructures = structures;
+        return structures;
     }
 
     //

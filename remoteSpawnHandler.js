@@ -3,11 +3,9 @@ const creepSpawnUtility = require("creepSpawnUtility");
 
 const MinerSpawnHandler = require("minerSpawnHandler");
 const HaulerSpawnHandler = require("haulerSpawnHandler");
-const WorkerSpawnHandler = require("workerSpawnHandler");
 
 const minerSpawnHandler = new MinerSpawnHandler();
 const haulerSpawnHandler = new HaulerSpawnHandler();
-const workerSpawnHandler = new WorkerSpawnHandler();
 
 class RemoteSpawnHandler {
 
@@ -69,23 +67,12 @@ class RemoteSpawnHandler {
         }
         existingSpawns[CONSTANTS.roles.hauler] -= neededCarry;
 
-        // Workers -> just one per remote for repairs
-        const wantedWorkers = 1 - existingSpawns[CONSTANTS.roles.worker];
-        if (wantedWorkers > 0) {
-            return this.makeWorker(CONSTANTS.maxWorkerLevel, maxCost);
-        }
-        existingSpawns[CONSTANTS.roles.worker] -= 1;
-
         // Reservers -> just one per remote
         const wantedReservers = 1 - existingSpawns[CONSTANTS.roles.reserver];
         if (wantedReservers > 0) {
             return this.makeClaimer(remoteRoomName);
         }
         existingSpawns[CONSTANTS.roles.reserver] -= 1;
-    }
-
-    makeWorker(desiredLevel, maxCost) {
-        return workerSpawnHandler.make(desiredLevel, maxCost);
     }
 
     makeClaimer(targetRoom) {
@@ -136,12 +123,6 @@ class RemoteSpawnHandler {
         }
         upkeeps.energy += calculateUpkeep(haulers, creepSpawnUtility.getCost);
         upkeeps.spawnTime += calculateUpkeep(haulers, creepSpawnUtility.getSpawnTime);
-
-        // Workers -> just one for repairs
-        const workers = [];
-        workers.push(this.makeWorker(CONSTANTS.maxWorkerLevel, maxCost));
-        upkeeps.energy += calculateUpkeep(workers, creepSpawnUtility.getCost);
-        upkeeps.spawnTime += calculateUpkeep(workers, creepSpawnUtility.getSpawnTime);
 
         // Finally, claimers
         const claimerBody = this.makeClaimer().body;

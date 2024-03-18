@@ -13,7 +13,7 @@ class WorkerSpawnHandler extends LeveledSpawnHandler {
         // Figure out how many WORK parts we ideally want
         const incomeToPartRatio = 1.2;
         const maxWorkParts = roomInfo.miners.length ? Math.ceil(roomInfo.getMaxIncome() * incomeToPartRatio)
-            : roomInfo.openSourceSpots + 1;
+            : 1;
 
         // Find the most expensive worker we can build in this room
         const levelCost = creepSpawnUtility.getCost([WORK, CARRY, MOVE]);
