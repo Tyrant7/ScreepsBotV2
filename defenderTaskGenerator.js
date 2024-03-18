@@ -1,4 +1,5 @@
 const Task = require("task");
+const moveToRoom = require("moveToRoom");
 
 class DefenderTaskGenerator {
 
@@ -7,7 +8,7 @@ class DefenderTaskGenerator {
         // Find our enemies
         const enemies = roomInfo.getEnemies();
         if (enemies.length === 0) {
-            creep.say("Done");
+            creep.suicide();
             return null;
         }
 
