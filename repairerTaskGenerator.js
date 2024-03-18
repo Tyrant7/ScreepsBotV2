@@ -21,14 +21,16 @@ class RepairerTaskGenerator {
                 const currRepairNeed = estimateTravelTime(creep, curr.pos) * (curr.hits / (curr.hitsMax * (repairThresholds[curr.structureType] || 1)));
                 return currRepairNeed < bestRepairNeed ? curr : best;
             }, neededRepairs[0]);
-            return this.createBasicTask(bestFit);
+            return this.createRepairTask(bestFit);
         }
     }
 
     createRepairTask(target) {
         const actionStack = [harvest];
         actionStack.push(function(creep, data) {
-            const target = Game.getObjectById(data.targetID);
+            const target = creep.pos.roomName === data.pos.roomName
+                ? Game.getObjectById(data.targetID)
+                : data.pos;
             if (!target) {
                 return true;
             }
@@ -36,12 +38,12 @@ class RepairerTaskGenerator {
             if (creep.repair(target) === ERR_NOT_IN_RANGE) {
                 creep.moveTo(target, {
                     reusePath: 30,
-                    range: 2,
+                    range: 3,
                 });
             }
             return creep.store[RESOURCE_ENERGY] === 0 || target.hits === target.hitsMax;
         });
-        return new Task({ target: target.id }, "repair", actionStack);
+        return new Task({ targetID: target.id, pos: target.pos }, "repair", actionStack);
     }
 }
 

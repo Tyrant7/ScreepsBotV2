@@ -9,7 +9,8 @@ class RepairerSpawnHandler {
 
         // Look for any structure below its repair threshold
         const repairStructure = roomInfo.getWantedStructures().find((s) => {
-            return structure.hits / structure.hitsMax <= (repairThresholds[s.structureType] || 1);
+            const threshold = repairThresholds[s.structureType] || 1;
+            return s.hits / s.hitsMax <= threshold;
         });
         if (repairStructure) {
             return this.make(roomInfo.room.energyCapacityAvailable);

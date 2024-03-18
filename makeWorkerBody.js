@@ -1,3 +1,5 @@
+const creepSpawnUtility = require("creepSpawnUtility");
+
 module.exports = function make(desiredLevel, energy) {
     const workerParts = [WORK, CARRY, MOVE];
     let body = workerParts;
