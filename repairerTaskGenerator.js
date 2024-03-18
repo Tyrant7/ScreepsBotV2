@@ -20,7 +20,7 @@ class RepairerTaskGenerator {
                 // Don't bother will ramparts or walls since it will suck up so much energy to repair them
                 if ((curr.structureType === STRUCTURE_WALL ||
                     curr.structureType === STRUCTURE_RAMPART) &&
-                    curr.hits / curr.hitsMax <= repairThresholds[curr.structureType]) {
+                    curr.hits / curr.hitsMax >= repairThresholds[curr.structureType]) {
                     return best;
                 }
 
