@@ -129,6 +129,9 @@ class RoomInfo {
         const remotes = remoteUtility.getRemotePlans(this.room.name);
         for (const roomName in remotes) {
             const remote = remotes[roomName];
+            if (!remote.active) {
+                continue;
+            }
 
             // Start with containers
             const room = Game.rooms[roomName];
