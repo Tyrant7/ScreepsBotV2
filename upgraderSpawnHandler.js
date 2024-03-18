@@ -20,7 +20,7 @@ class UpgraderSpawnHandler {
 
     make(maxCost) {
         // Make the biggest upgrader we can for this room
-        let body = [CARRY];
+        let body = [CARRY, CARRY];
         let lvl = 0;
         while (lvl < CONSTANTS.maxUpgraderLevel) {
             lvl++;
