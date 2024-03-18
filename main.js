@@ -37,6 +37,7 @@ const MinerTaskGenerator = require("minerTaskGenerator");
 const UpgraderTaskGenerator = require("upgraderTaskGenerator");
 const ScoutTaskGenerator = require("scoutTaskGenerator");
 const RepairerTaskGenerator = require("repairerTaskGenerator");
+const BuilderTaskGenerator = require("builderTaskGenerator");
 
 const ReserverTaskGenerator = require("reserverTaskGenerator");
 const DefenderTaskGenerator = require("defenderTaskGenerator");
@@ -45,7 +46,8 @@ const haulerManager = new CreepManager(new HaulerTaskGenerator());
 const minerManager = new CreepManager(new MinerTaskGenerator());
 const upgraderManager = new CreepManager(new UpgraderTaskGenerator());
 const scoutManager = new CreepManager(new ScoutTaskGenerator());
-const repairerManager = new CreepManager(new  RepairerTaskGenerator());
+const repairerManager = new CreepManager(new RepairerTaskGenerator());
+const builderManager = new CreepManager(new BuilderTaskGenerator());
 
 const reserverManager = new CreepManager(new ReserverTaskGenerator());
 const defenderManager = new CreepManager(new DefenderTaskGenerator());
@@ -57,6 +59,7 @@ const creepRoleMap = {
     [CONSTANTS.roles.upgrader]: upgraderManager,
     [CONSTANTS.roles.scout]: scoutManager,
     [CONSTANTS.roles.repairer]: repairerManager,
+    [CONSTANTS.roles.builder]: builderManager,
     [CONSTANTS.roles.reserver]: reserverManager,
     [CONSTANTS.roles.defender]: defenderManager,
 };
@@ -70,6 +73,7 @@ const HaulerSpawnHandler = require("haulerSpawnHandler");
 const UpgraderSpawnHandler = require("upgraderSpawnHandler");
 const ScoutSpawnHandler = require("scoutSpawnHandler");
 const RepairerSpawnHandler = require("repairerSpawnHandler");
+const BuilderSpawnHandler = require("builderSpawnHandler");
 
 const RemoteSpawnHandler = require("remoteSpawnHandler");
 const DefenderSpawnHandler = require("defenderSpawnHandler");
@@ -80,6 +84,7 @@ const haulerSpawnHandler = new HaulerSpawnHandler();
 const upgraderSpawnHandler = new UpgraderSpawnHandler();
 const scoutSpawnHandler = new ScoutSpawnHandler();
 const repairerSpawnHandler = new RepairerSpawnHandler();
+const builderSpawnHandler = new BuilderSpawnHandler();
 
 const remoteSpawnHandler = new RemoteSpawnHandler();
 const defenderSpawnHandler = new DefenderSpawnHandler();
@@ -169,10 +174,16 @@ module.exports.loop = function() {
                 // Make sure we're spawning for remotes
                 currentSpawnHandlers.push(remoteSpawnHandler);
             }
+
             // Since this is kind of expensive, let's only check for repairers every so often
             if (Game.time % CONSTANTS.repairerInterval === 0) {
                 currentSpawnHandlers.unshift(repairerSpawnHandler);
             }
+            // Same idea with builders
+            else if (Game.time % CONSTANTS.repairerInterval === 1) {
+                currentSpawnHandlers.unshift(builderSpawnHandler);
+            }
+
             if (info.getEnemies().length) {
                 currentSpawnHandlers.unshift(defenderSpawnHandler);
             }
