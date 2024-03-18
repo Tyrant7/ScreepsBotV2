@@ -4,6 +4,11 @@ class BuilderSpawnHandler {
 
     getNextSpawn(roomInfo) {
 
+        // Don't allow us to exceed a hard max of builders
+        if (roomInfo.builders.length >= CONSTANTS.maxBuilderCount) {
+            return;
+        }
+
         // First figure out how much energy it will take to build our desired structures
         const energyForThisRoom = roomInfo.constructionSites.reduce((total, curr) => {
             return total + (curr.progressTotal - curr.progress);
@@ -18,8 +23,8 @@ class BuilderSpawnHandler {
         }, 0);
 
         // Finally, let's allocate an arbitrary amount of WORK using this formula
-        // N WORK = Math.ceil(totalEnergyToBuild / 1500)
-        const wantedWork = Math.max(Math.ceil((energyForThisRoom + energyForRemotes) / 1500) - existingWork, 0);
+        // N WORK = Math.ceil(totalEnergyToBuild / 1000)
+        const wantedWork = Math.max(Math.ceil((energyForThisRoom + energyForRemotes) / 1000) - existingWork, 0);
         if (wantedWork > 0) {
             return this.make(wantedWork, roomInfo.room.energyCapacityAvailable);
         }

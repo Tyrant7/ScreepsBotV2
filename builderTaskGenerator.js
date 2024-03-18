@@ -3,8 +3,6 @@ const harvest = require("harvest");
 const estimateTravelTime = require("estimateTravelTime");
 const moveToRoom = require("moveToRoom");
 
-const profiler = require("profiler");
-
 class BuilderTaskGenerator {
 
     /**
@@ -42,7 +40,7 @@ class BuilderTaskGenerator {
             // Create a new site and instruct the creep to move to that room
             const realPos = new RoomPosition(bestSite.pos.x, bestSite.pos.y, bestSite.pos.roomName);
             realPos.createConstructionSite(bestSite.type);
-            
+
             // Otherwise we'll have to wait until next tick when the site is created to find it
             if (bestSite.pos.roomName !== creep.pos.roomName) {
                 return new Task({ roomName: realPos.roomName }, "move", [moveToRoom]);
