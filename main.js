@@ -17,7 +17,7 @@ global.DEBUG = {
     trackRCLProgress: true,
     logRemotePlanning: false,
     replanRemotesOnReload: false,
-    runProfiler: true,
+    runProfiler: false,
 };
 global.RELOAD = true;
 

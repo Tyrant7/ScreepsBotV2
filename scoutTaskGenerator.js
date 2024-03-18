@@ -64,7 +64,7 @@ class ScoutTaskGenerator {
                 roomData.lastVisit = Game.time;
 
                 // Update controller information
-                if (roomData.controller) {
+                if (roomData.controller && roomData.controller.owner) {
                     const controllerObject = Game.getObjectById(roomData.controller.id);
                     roomData.controller.owner = controllerObject.owner.username;
                     roomData.controller.level = controllerObject.level;
