@@ -70,10 +70,12 @@ class RemoteManager {
             });
 
             // Simplify the plan objects and map the roomName as a key
+            // Also filter out construction sites on invalid locations
             const finalPlans = {};
             for (const plan of sortedPlans) {
                 const roomName = plan.room;
                 delete plan.children;
+                plan.roads = plan.roads.filter((r) => r.x > 0 && r.x < 49 && r.y > 0 && r.y < 49);
                 finalPlans[roomName] = plan;
             }
             utility.setRemotePlans(roomInfo.room.name, finalPlans);

@@ -10,7 +10,7 @@ global.DEBUG = {
     logTasks: true,
     drawOverlay: true,
     drawRoadOverlay: false,
-    drawPathOverlay: false,
+    drawPathOverlay: true,
     drawContainerOverlay: false,
     trackSpawnUsage: true,
     trackCPUUsage: true,
