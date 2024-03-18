@@ -23,7 +23,7 @@ class UpgraderTaskGenerator {
             );
 
             // We're within range of our container already!
-            if (creep.pos.getRangeTo(upgraderContainerPos) <= 0) {
+            if (creep.pos.getRangeTo(upgraderContainerPos) <= data.range) {
                 // Pickup energy if we need it
                 const energyUsage = creep.body.filter((p) => p.type === WORK).length * UPGRADE_CONTROLLER_POWER;
                 if (creep.store[RESOURCE_ENERGY] <= energyUsage) {
@@ -42,7 +42,11 @@ class UpgraderTaskGenerator {
                 });
             }
         });
-        return new Task({ controllerID: roomInfo.room.controller.id }, "upgrade", actionStack);
+        
+        // Multiple upgraders should clump up, but not fight for the spot
+        const range = activeTasks.length ? 1 : 0;
+        return new Task({ controllerID: roomInfo.room.controller.id,
+                          range: range }, "upgrade", actionStack);
     }
 }
 
