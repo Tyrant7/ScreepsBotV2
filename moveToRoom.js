@@ -11,7 +11,7 @@ module.exports = function(creep, data) {
     }
 
     const controller = Memory.rooms[data.roomName].controller;
-    const moveTarget = controller ? controller : { x: 25, y: 25 };
+    const moveTarget = controller ? controller.pos : { x: 25, y: 25 };
     const pos = new RoomPosition(moveTarget.x, moveTarget.y, data.roomName);
     creep.moveTo(pos, {
         // The target will never change
