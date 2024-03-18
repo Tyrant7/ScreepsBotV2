@@ -1,6 +1,5 @@
 module.exports = {
     roles: {
-        worker: "worker",
         miner: "miner",
         hauler: "hauler",
         upgrader: "upgrader",
@@ -9,7 +8,6 @@ module.exports = {
         reserver: "reserver",
         defender: "defender",
     },
-    maxWorkerLevel: 8,
     maxHaulerLevel: 12,
     maxUpgraderLevel: 6,
     maxRepairerLevel: 8,

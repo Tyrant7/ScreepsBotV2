@@ -1,5 +1,4 @@
-const WorkerSpawnHandler = require("workerSpawnHandler");
-const workerSpawnHandler = new WorkerSpawnHandler();
+const makeWorkerBody = require("makeWorkerBody");
 
 class RepairerSpawnHandler {
 
@@ -18,7 +17,7 @@ class RepairerSpawnHandler {
     }
 
     make(energy) {
-        const body = workerSpawnHandler.make(CONSTANTS.maxRepairerLevel, energy).body;
+        const body = makeWorkerBody(CONSTANTS.maxRepairerLevel, energy);
         const level = body.filter((p) => p === WORK).length;
         return { body: body, 
                  name: "Repairer " + Game.time + " [" + level + "]",

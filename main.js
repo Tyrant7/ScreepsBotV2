@@ -32,31 +32,31 @@ const ColonyConstructionManager = require("colonyConstructionManager");
 const RoomInfo = require("roomInfo");
 
 // Tasks
-const WorkerTaskGenerator = require("workerTaskGenerator");
 const HaulerTaskGenerator = require("haulerTaskGenerator");
 const MinerTaskGenerator = require("minerTaskGenerator");
 const UpgraderTaskGenerator = require("upgraderTaskGenerator");
 const ScoutTaskGenerator = require("scoutTaskGenerator");
+const RepairerTaskGenerator = require("repairerTaskGenerator");
 
 const ReserverTaskGenerator = require("reserverTaskGenerator");
 const DefenderTaskGenerator = require("defenderTaskGenerator");
 
-const workerManager = new CreepManager(new WorkerTaskGenerator());
 const haulerManager = new CreepManager(new HaulerTaskGenerator());
 const minerManager = new CreepManager(new MinerTaskGenerator());
-const upgraderTaskGenerator = new CreepManager(new UpgraderTaskGenerator());
+const upgraderManager = new CreepManager(new UpgraderTaskGenerator());
 const scoutManager = new CreepManager(new ScoutTaskGenerator());
+const repairerManager = new CreepManager(new  RepairerTaskGenerator());
 
 const reserverManager = new CreepManager(new ReserverTaskGenerator());
 const defenderManager = new CreepManager(new DefenderTaskGenerator());
 
 // Mapping
 const creepRoleMap = {
-    [CONSTANTS.roles.worker]: workerManager,
     [CONSTANTS.roles.hauler]: haulerManager,
     [CONSTANTS.roles.miner]: minerManager,
-    [CONSTANTS.roles.upgrader]: upgraderTaskGenerator,
+    [CONSTANTS.roles.upgrader]: upgraderManager,
     [CONSTANTS.roles.scout]: scoutManager,
+    [CONSTANTS.roles.repairer]: repairerManager,
     [CONSTANTS.roles.reserver]: reserverManager,
     [CONSTANTS.roles.defender]: defenderManager,
 };
@@ -65,7 +65,6 @@ const creepRoleMap = {
 const spawnManager = new SpawnManager();
 
 const CrashSpawnHandler = require("crashSpawnHandler");
-const WorkerSpawnHandler = require("workerSpawnHandler");
 const MinerSpawnHandler = require("minerSpawnHandler");
 const HaulerSpawnHandler = require("haulerSpawnHandler");
 const UpgraderSpawnHandler = require("upgraderSpawnHandler");
@@ -76,7 +75,6 @@ const RemoteSpawnHandler = require("remoteSpawnHandler");
 const DefenderSpawnHandler = require("defenderSpawnHandler");
 
 const crashSpawnHandler = new CrashSpawnHandler();
-const workerSpawnHandler = new WorkerSpawnHandler();
 const minerSpawnHandler = new MinerSpawnHandler();
 const haulerSpawnHandler = new HaulerSpawnHandler();
 const upgraderSpawnHandler = new UpgraderSpawnHandler();
@@ -93,7 +91,6 @@ const basicSpawnHandlers = [
     minerSpawnHandler, // To not waste source energy
     haulerSpawnHandler, // To recover quickly
     upgraderSpawnHandler, // To upgrade
-    workerSpawnHandler, // To keep structures and construction intact
     scoutSpawnHandler, // To expand
 ];
 

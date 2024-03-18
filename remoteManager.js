@@ -187,7 +187,12 @@ class RemoteManager {
 
         // Handle placing construction sites for this remote
         profiler.startSample("Construction " + remoteInfo.room);
-        const builders = roomInfo.workers.filter((worker) => worker.pos.roomName === remoteInfo.room);
+
+
+        // TODO //
+        // DEDICATED BUILDERS
+
+        const builders = roomInfo.workers ? roomInfo.workers.filter((worker) => worker.pos.roomName === remoteInfo.room) : [];
         if (unbuilt.length) { 
             this.handleSites(roomInfo, remoteInfo, builders, unbuilt);
         }

@@ -65,38 +65,6 @@ class WorkerTaskGenerator {
             }
         }
 
-        // Repair tasks
-        const repairables = roomInfo.room.find(FIND_STRUCTURES, { filter: (s) => s.hits < s.hitsMax });
-        if (repairables.length) {
-
-            // Sort repairables by repair need
-            repairables.sort((a, b) => {
-
-                // Calculate which needs more repair by a simple fraction of their max, 
-                // factoring in a multiplier for certain structures like walls
-                const aRepairNeed = 1 - (a.hits / (a.hitsMax * (repairThresholds[a.structureType] || 1)));
-                const bRepairNeed = 1 - (b.hits / (b.hitsMax * (repairThresholds[b.structureType] || 1)));
-                return aRepairNeed - bRepairNeed;
-            });
-
-            for (const target of repairables) {
-            
-                if (repairThresholds[target.structureType] &&
-                    target.hits / target.hitsMax >= repairThresholds[target.structureType]) {
-                    continue;
-                }
-    
-                // One repair task per target
-                const existingTasks = activeTasks.filter((task) => task.target === target.id && task.tag === taskType.repair);
-                if (existingTasks.length) {
-                    continue;
-                }
-    
-                // Create a basic worker task for repairing
-                return this.createBasicTask(target, taskType.repair);
-            }
-        }
-
         // Let's create a default upgrade task in case we're out of other options
         return this.createBasicTask(roomInfo.room.controller, taskType.upgrade);
     }
@@ -130,14 +98,6 @@ class WorkerTaskGenerator {
     }
 }
 
-// Don't repair these structures too much
-const repairThresholds = {
-    [STRUCTURE_WALL]: 0.002,
-    [STRUCTURE_RAMPART]: 0.005,
-    [STRUCTURE_CONTAINER]: 0.5,
-    [STRUCTURE_ROAD]: 0.65
-};
-
 const buildPriorities = {
     [STRUCTURE_STORAGE]: 9,
     [STRUCTURE_CONTAINER]: 8,
@@ -153,7 +113,6 @@ const taskType = {
     upgrade: "upgrade",
     restock: "restock",
     build: "build",
-    repair: "repair",
 };
 
 const basicWorkerActions = {
@@ -215,16 +174,6 @@ const basicWorkerActions = {
             });
         }
         return creep.store[RESOURCE_ENERGY] === 0;
-    },
-    [taskType.repair]: function(creep, data) {
-        const target = Game.getObjectById(data.targetID);
-        if (creep.repair(target) === ERR_NOT_IN_RANGE) {
-            creep.moveTo(target, {
-                reusePath: 30,
-                range: 1,
-            });
-        }
-        return creep.store[RESOURCE_ENERGY] === 0 || !target || target.hits === target.hitsMax;
     },
     "harvest": harvest,
 };

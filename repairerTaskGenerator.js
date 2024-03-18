@@ -8,7 +8,7 @@ class RepairerTaskGenerator {
      * Creates a new best-fitting task for this creep.
      * @param {Creep} creep The creep to create tasks for.
      * @param {RoomInfo} roomInfo The info object associated with the room to generate tasks for.
-     * @param {Task[]} activeTasks List of current worker tasks to take into consideration when finding a new task.
+     * @param {Task[]} activeTasks List of current repairer tasks to take into consideration when finding a new task.
      * @returns The best fitting task object for this creep.
      */
     run(creep, roomInfo, activeTasks) {
