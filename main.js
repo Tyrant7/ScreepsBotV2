@@ -159,6 +159,8 @@ module.exports.loop = function() {
 
             let remoteSustainCost = 0;
 
+            builderSpawnHandler.getNextSpawn(info);
+
             // Spawn handlers are passed in order of priority
             const currentSpawnHandlers = [
                 crashSpawnHandler,

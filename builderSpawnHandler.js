@@ -15,12 +15,12 @@ class BuilderSpawnHandler {
 
         // Figure out how much WORK we already have
         const existingWork = roomInfo.builders.reduce((total, curr) => {
-            total + curr.body.filter((p) => p.type === WORK).length;
+            return total + curr.body.filter((p) => p.type === WORK).length;
         }, 0);
 
         // Finally, let's allocate an arbitrary amount of WORK using this formula
-        // N WORK = Math.ceil(totalEnergyToBuild / 500)
-        const wantedWork = Math.max(Math.ceil((energyForThisRoom + energyForRemotes) / 500) - existingWork, 0);
+        // N WORK = Math.ceil(totalEnergyToBuild / 1500)
+        const wantedWork = Math.max(Math.ceil((energyForThisRoom + energyForRemotes) / 1500) - existingWork, 0);
         if (wantedWork > 0) {
             return this.make(wantedWork, roomInfo.room.energyCapacityAvailable);
         }
