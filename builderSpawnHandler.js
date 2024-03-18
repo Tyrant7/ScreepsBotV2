@@ -1,5 +1,4 @@
-const makeWorkerBody = require("makeWorkerBody");
-const remoteUtility = require("remoteUtility");
+const creepSpawnUtility = require("creepSpawnUtility");
 
 class BuilderSpawnHandler {
 
@@ -27,9 +26,16 @@ class BuilderSpawnHandler {
     }
 
     make(desiredLevel, energy) {
-        const worker = makeWorkerBody(Math.min(desiredLevel, CONSTANTS.maxBuilderLevel), energy);
-        return { body: worker.body, 
-                 name: "Builder " + Game.time + " [" + worker.level + "]",
+        const builderParts = [WORK, CARRY, MOVE];
+        let body = builderParts;
+        let lvl = 1;
+        const levelCost = creepSpawnUtility.getCost(body);
+        while (lvl < desiredLevel && (lvl + 1) * levelCost <= energy) {
+            lvl++;
+            body = body.concat(builderParts);
+        }
+        return { body: body,
+                 name: "Builder " + Game.time + " [" + lvl + "]",
                  memory: { role: CONSTANTS.roles.builder }};
     }
 }

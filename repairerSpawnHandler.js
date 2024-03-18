@@ -1,4 +1,4 @@
-const makeWorkerBody = require("makeWorkerBody");
+const creepSpawnUtility = require("creepSpawnUtility");
 
 class RepairerSpawnHandler {
 
@@ -13,14 +13,26 @@ class RepairerSpawnHandler {
             return s.hits / s.hitsMax <= threshold;
         });
         if (repairStructure) {
-            return this.make(roomInfo.room.energyCapacityAvailable);
+            return this.make(CONSTANTS.maxRepairerLevel, roomInfo.room.energyCapacityAvailable);
         }
     }
 
-    make(energy) {
-        const worker = makeWorkerBody(CONSTANTS.maxRepairerLevel, energy);
-        return { body: worker.body, 
-                 name: "Repairer " + Game.time + " [" + worker.level + "]",
+    make(desiredLevel, energy) {
+        let body = [];
+        let lvl = 0;
+        for (let i = 0; i < desiredLevel; i++) {
+            lvl = i + 1;
+            body.push(MOVE, CARRY, CARRY, WORK);
+            if (creepSpawnUtility.getCost(body) > energy) {
+                body.pop();
+                body.pop();
+                body.pop();
+                body.pop();
+                break;
+            } 
+        }
+        return { body: body, 
+                 name: "Repairer " + Game.time + " [" + lvl + "]",
                  memory: { role: CONSTANTS.roles.repairer }};
     }
 }
