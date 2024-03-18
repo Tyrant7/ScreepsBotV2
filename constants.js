@@ -14,7 +14,4 @@ module.exports = {
     maxRepairerLevel: 8,
     maxBuilderLevel: 10,
     minEnergyStored: 5000,
-
-    // Intervals for expensive code
-    repairerInterval: 5,
 };

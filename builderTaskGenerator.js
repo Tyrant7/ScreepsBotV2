@@ -1,6 +1,7 @@
 const Task = require("task");
 const harvest = require("harvest");
 const estimateTravelTime = require("estimateTravelTime");
+const moveToRoom = require("moveToRoom");
 
 class BuilderTaskGenerator {
 
@@ -18,12 +19,12 @@ class BuilderTaskGenerator {
         for (const site of sites) {
 
             // Don't allow more build tasks than each 5,000 energy needed to complete
-            const existingTasks = activeTasks.filter((task) => task.target === site.id);
+            const existingTasks = activeTasks.filter((task) => task && task.data.targetID === site.id);
             if (existingTasks.length >= Math.ceil((site.progressTotal - site.progress) / 5000)) {
                 continue;
             }
 
-            return this.createBuilderTask(site);
+            return this.createBuildTask(site);
         }
 
         // If no existing sites, we can start requesting more
@@ -36,10 +37,10 @@ class BuilderTaskGenerator {
                 return currPriority > bestPriority ? curr : best;
             });
 
-            // Create a new site -> 
-            // The creep itself is going to do nothing here, then search for the site the following tick
+            // Create a new site and instruct the creep to move to that room
             const realPos = new RoomPosition(bestSite.pos.x, bestSite.pos.y, bestSite.pos.roomName);
             realPos.createConstructionSite(bestSite.type);
+            return new Task({ roomName: realPos.roomName }, "move", [moveToRoom]);
         }
     }
 

@@ -163,6 +163,8 @@ module.exports.loop = function() {
             const currentSpawnHandlers = [
                 crashSpawnHandler,
                 ...basicSpawnHandlers,
+                repairerSpawnHandler,
+                builderSpawnHandler,
             ];
             if (info.remoting) {
 
@@ -173,15 +175,6 @@ module.exports.loop = function() {
 
                 // Make sure we're spawning for remotes
                 currentSpawnHandlers.push(remoteSpawnHandler);
-            }
-
-            // Since this is kind of expensive, let's only check for repairers every so often
-            if (Game.time % CONSTANTS.repairerInterval === 0) {
-                currentSpawnHandlers.unshift(repairerSpawnHandler);
-            }
-            // Same idea with builders
-            else if (Game.time % CONSTANTS.repairerInterval === 1) {
-                currentSpawnHandlers.unshift(builderSpawnHandler);
             }
 
             if (info.getEnemies().length) {

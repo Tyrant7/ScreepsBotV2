@@ -4,16 +4,12 @@ const remoteUtility = require("remoteUtility");
 class BuilderSpawnHandler {
 
     getNextSpawn(roomInfo) {
-        const constructionQueue = roomInfo.getConstructionQueue();
-        if (roomInfo.builders.length >= roomInfo.constructionSites.length + roomInfo.constructionQueue.length) {
-            return;
-        }
 
         // First figure out how much energy it will take to build our desired structures
         const energyForThisRoom = roomInfo.constructionSites.reduce((total, curr) => {
             return total + (curr.progressTotal - curr.progress);
         }, 0);
-        const energyForRemotes = constructionQueue.reduce((total, curr) => {
+        const energyForRemotes = roomInfo.getConstructionQueue().reduce((total, curr) => {
             return total + CONSTRUCTION_COST[curr.type];
         }, 0);
 
@@ -31,7 +27,7 @@ class BuilderSpawnHandler {
     }
 
     make(desiredLevel, energy) {
-        const worker = makeWorkerBody(desiredLevel, energy);
+        const worker = makeWorkerBody(Math.min(desiredLevel, CONSTANTS.maxBuilderLevel), energy);
         return { body: worker.body, 
                  name: "Builder " + Game.time + " [" + worker.level + "]",
                  memory: { role: CONSTANTS.roles.builder }};
