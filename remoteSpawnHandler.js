@@ -44,6 +44,15 @@ class RemoteSpawnHandler {
                 return spawn;
             }
         }
+
+        // Any amount of hauler parts that weren't enough to make a max level by the end of all spawns
+        // should overflow here
+        // We know that our remaining needed carry will be equal to -existing carry value since it was subtracted
+        // at the end of each spawn
+        const wantedCarry = -existingSpawns[CONSTATS.roles.hauler];
+        if (wantedCarry > 0) {
+            return this.makeHauler(wantedCarry, roomInfo.room.energyCapacityAvailable);
+        }
     }
 
     getBestSpawn(maxCost, sourceCount, neededCarry, existingSpawns, remoteRoomName) {
@@ -60,9 +69,10 @@ class RemoteSpawnHandler {
         existingSpawns[CONSTANTS.roles.miner] -= sourceCount;
 
         // Haulers next
-        // Keep making haulers until we have enough to transport all energy we'll mine
+        // Only allow max size haulers, overflow extra wanted parts down to the next round of spawning
+        // If we don't have enough to make a max size hauler
         const wantedCarryParts = neededCarry - existingSpawns[CONSTANTS.roles.hauler];
-        if (wantedCarryParts > 0) {
+        if (wantedCarryParts > CONSTANTS.maxHaulerLevel * 2) {
             return this.makeHauler(wantedCarryParts, maxCost);
         }
         existingSpawns[CONSTANTS.roles.hauler] -= neededCarry;
