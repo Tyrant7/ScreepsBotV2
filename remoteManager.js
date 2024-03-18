@@ -4,7 +4,6 @@ const remotePlanner = new RemotePlanner();
 const utility = require("remoteUtility");
 
 const overlay = require("overlay");
-const profiler = require("profiler");
 
 class RemoteManager {
 
@@ -32,17 +31,16 @@ class RemoteManager {
             // Mark this remote as active and process it
             remote.active = true;
             spawnCosts += remote.cost;
-            this.processRemote(roomInfo, remote);
         }
 
         // Display our active remotes
         if (DEBUG.trackSpawnUsage) {
             const remoteDisplay = {};
-            Object.keys(remotePlans).forEach((remoteRoom) => {
+            for (const remoteRoom in remotePlans) {
                 remoteDisplay[remoteRoom] = remotePlans[remoteRoom].active 
                     ? "active (" + (Math.round(remotePlans[remoteRoom].cost * 1000) / 1000).toFixed(3) + ")" 
                     : "inactive";
-            });
+            }
             overlay.addText(roomInfo.room.name, remoteDisplay);
         }
 
@@ -145,119 +143,6 @@ class RemoteManager {
         }
         if (DEBUG.drawContainerOverlay && Memory.temp.containerPositions) {
             overlay.rects(Memory.temp.containerPositions);
-        }
-    }
-
-    processRemote(roomInfo, remoteInfo) {
-
-        // Let's remove all roads that have already been built or have a construction site from this plan
-        // Let's track all unbuilt structures for this remote
-        const unbuilt = [];
-
-        // Start with containers so that they're built first
-        profiler.startSample("Structures " + remoteInfo.room);
-        profiler.startSample("Containers " + remoteInfo.room);
-        const room = Game.rooms[remoteInfo.room];
-        if (room) {
-            remoteInfo.miningSites.forEach((miningSite) => {
-                const container = miningSite.pos;
-                const containerSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
-                const existingContainer = room.lookForAt(LOOK_STRUCTURES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
-                if (!containerSite && !existingContainer) {
-                    unbuilt.push({ pos: container, type: STRUCTURE_CONTAINER });
-                }
-            });
-        }
-        profiler.endSample("Containers " + remoteInfo.room);
-
-        // Then roads
-        profiler.startSample("Roads " + remoteInfo.room);
-        remoteInfo.roads.forEach((road) => {
-            const room = Game.rooms[road.roomName];
-            if (room) {
-                const roadSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
-                const existingRoad = room.lookForAt(LOOK_STRUCTURES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
-                if (!roadSite && !existingRoad) {
-                    unbuilt.push({ pos: road, type: STRUCTURE_ROAD });
-                }
-            }
-        });
-        profiler.endSample("Roads " + remoteInfo.room); 
-        profiler.endSample("Structures " + remoteInfo.room);
-
-        // Handle placing construction sites for this remote
-        profiler.startSample("Construction " + remoteInfo.room);
-
-
-        // TODO //
-        // DEDICATED BUILDERS
-
-        const builders = roomInfo.workers ? roomInfo.workers.filter((worker) => worker.pos.roomName === remoteInfo.room) : [];
-        if (unbuilt.length) { 
-            this.handleSites(roomInfo, remoteInfo, builders, unbuilt);
-        }
-        profiler.endSample("Construction " + remoteInfo.room);
-    }
-
-    
-    /**
-     * Handles the appropriate placing of construction sites for the target remote.
-     * @param {RoomInfo} roomInfo The info object for the home room of the remote.
-     * @param {{}} remoteInfo An object containing relevant info about the remote.
-     * @param {Creep[]} builders An array of builders assigned to this remote.
-     */
-    handleSites(roomInfo, remoteInfo, builders, unbuilt) {
-
-        // Let's take a simple approach to making sure the inside our main room are built by simply placing all of them
-        // Our aggressive base building allocation should take care of this quite easily
-        remoteInfo.roads.forEach((pos) => {
-            if (pos.roomName === roomInfo.room.name) {
-                const sitePos = new RoomPosition(pos.x, pos.y, pos.roomName);
-                sitePos.createConstructionSite(STRUCTURE_ROAD);
-            }
-        });
-
-        // We should ideally keep nBuilders + 1 sites active at a time
-        const room = Game.rooms[remoteInfo.room];
-        if (room) {
-
-            // Start with containers
-            profiler.startSample("Container Sites " + remoteInfo.room);
-            let siteCount = 0;
-            while (unbuilt.length > 0 
-                && unbuilt[0].type === STRUCTURE_CONTAINER) { 
-
-                const next = unbuilt.shift();
-                next.pos.createConstructionSite(next.type);
-                siteCount++;
-            }
-            profiler.endSample("Container Sites " + remoteInfo.room);
-
-            // No need to attempt placing roads
-            siteCount += room.find(FIND_CONSTRUCTION_SITES).length;
-            if (siteCount > builders.length + 1) {
-                return;
-            }
-
-            // Let's place the wanted site currently closest to an arbirary source
-            profiler.startSample("Road Sites " + remoteInfo.room);
-            const source = room.find(FIND_SOURCES)[0];
-            unbuilt.sort((a, b) => {
-                return source.pos.getRangeTo(b.pos) - source.pos.getRangeTo(a.pos);
-            });
-
-            while (siteCount <= builders.length + 1 && unbuilt.length > 0) {
-                const next = unbuilt.shift();
-                if (Game.rooms[next.pos.roomName]) {
-                    const realPos = new RoomPosition(next.pos.x, next.pos.y, next.pos.roomName);
-                    realPos.createConstructionSite(next.type);
-                    siteCount++;
-                }
-                else {
-                    unbuilt.push(next);
-                }
-            }
-            profiler.endSample("Road Sites " + remoteInfo.room);
         }
     }
 }
