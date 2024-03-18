@@ -12,15 +12,11 @@ class DefenderTaskGenerator {
         }
 
         // Find our strongest enemy
-        const strongestEnemy = 
-        enemies.length > 1 ?
-            enemies.reduce((strongest, curr) => {
-                const fightParts = curr.body.filter((p) => p.type === RANGED_ATTACK || p.type === ATTACK || p.type === HEAL);
-                return !strongest || fightParts > strongest.fightParts 
-                    ? { creep: curr, fightParts: fightParts } 
-                    : strongest;
-            }).creep
-        : enemies[0];
+        const strongestEnemy = enemies.reduce((strongest, curr) => {
+            const currFightParts = curr.body.filter((p) => p.type === RANGED_ATTACK || p.type === ATTACK || p.type === HEAL);
+            const strongestFightParts = strongest.body.filter((p) => p.type === RANGED_ATTACK || p.type === ATTACK || p.type === HEAL);
+            return currFightParts > strongestFightParts ? curr : strongest;
+        }, enemies[0]);
 
         const actionStack = [];
         actionStack.push(function(creep, data) {
@@ -43,16 +39,19 @@ class DefenderTaskGenerator {
                         return curr.hits < lowest.hits ? curr : lowest;
                     }, creep);
                 }
-                creep.heal(lowest);
+                if (lowest.hits < lowest.hitsMax) {
+                    creep.heal(lowest);
+                }
             }
 
             // Follow and attack our target!
             creep.say("🛡️", true);
-            creep.attack(target);
-            creep.moveTo(target, {
-                reusePath: 30,
-                range: 1,
-            });
+            if (creep.attack(target) === ERR_NOT_IN_RANGE) {
+                creep.moveTo(target, {
+                    reusePath: 30,
+                    range: 1,
+                });
+            }
             return target.hits <= 0;
         });
 
