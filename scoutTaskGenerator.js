@@ -72,7 +72,7 @@ class ScoutTaskGenerator {
 
                 // Update minerals
                 roomData.minerals.forEach((mineral) => {
-                    const gameObject = Game.getObjectById(miner.id);
+                    const gameObject = Game.getObjectById(mineral.id);
                     mineral.density = gameObject.density;
                     mineral.type = gameObject.type;
                 });
