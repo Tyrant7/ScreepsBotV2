@@ -16,6 +16,14 @@ class RepairerTaskGenerator {
         const neededRepairs = roomInfo.getWantedStructures().filter((s) => s.hits < s.hitsMax);
         if (neededRepairs.length) {
             const bestFit = neededRepairs.reduce((best, curr) => {
+
+                // Don't bother will ramparts or walls since it will suck up so much energy to repair them
+                if ((curr.structureType === STRUCTURE_WALL ||
+                    curr.structureType === STRUCTURE_RAMPART) &&
+                    curr.hits / curr.hitsMax <= repairThresholds[curr.structureType]) {
+                    return best;
+                }
+
                 // Simply sort by distance times the fraction of health the structure current has -> closer is better
                 const bestRepairNeed = estimateTravelTime(creep, best.pos) * (best.hits / (best.hitsMax * (repairThresholds[best.structureType] || 1)));
                 const currRepairNeed = estimateTravelTime(creep, curr.pos) * (curr.hits / (curr.hitsMax * (repairThresholds[curr.structureType] || 1)));
