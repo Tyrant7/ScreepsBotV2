@@ -3,6 +3,8 @@ const harvest = require("harvest");
 const estimateTravelTime = require("estimateTravelTime");
 const moveToRoom = require("moveToRoom");
 
+const profiler = require("profiler");
+
 class BuilderTaskGenerator {
 
     /**

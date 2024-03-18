@@ -10,13 +10,14 @@ global.DEBUG = {
     logTasks: true,
     drawOverlay: true,
     drawRoadOverlay: false,
-    drawPathOverlay: true,
+    drawPathOverlay: false,
     drawContainerOverlay: false,
     trackSpawnUsage: true,
     trackCPUUsage: true,
     trackRCLProgress: true,
     logRemotePlanning: false,
     replanRemotesOnReload: false,
+
     runProfiler: false,
 };
 global.RELOAD = true;

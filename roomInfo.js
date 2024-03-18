@@ -135,9 +135,9 @@ class RoomInfo {
             if (room) {
                 remote.miningSites.forEach((miningSite) => {
                     const container = miningSite.pos;
-                    const containerSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
+                    const existingSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y)[0];
                     const existingContainer = room.lookForAt(LOOK_STRUCTURES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
-                    if (!containerSite && !existingContainer) {
+                    if (!existingSite && !existingContainer) {
                         unbuilt.push({ pos: container, type: STRUCTURE_CONTAINER });
                     }
                 });
@@ -147,9 +147,9 @@ class RoomInfo {
             remote.roads.forEach((road) => {
                 const room = Game.rooms[road.roomName];
                 if (room) {
-                    const roadSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
+                    const existingSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, road.x, road.y)[0];
                     const existingRoad = room.lookForAt(LOOK_STRUCTURES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
-                    if (!roadSite && !existingRoad) {
+                    if (!existingSite && !existingRoad) {
                         unbuilt.push({ pos: road, type: STRUCTURE_ROAD });
                     }
                 }
@@ -158,10 +158,6 @@ class RoomInfo {
 
         this.constructionQueue = unbuilt;
         return unbuilt;
-    }
-
-    requestNearestSite() {
-
     }
 
     // #endregion
