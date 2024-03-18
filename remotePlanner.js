@@ -109,7 +109,7 @@ class RemotePlanner {
         });
 
         // Get our combination of remotes with the highest score, algorithm explained below
-        return this.traverseRecursively(remotes, CONSTANTS.maxBaseSpawnCapacity, 0).branch;
+        return this.traverseRecursively(remotes, 1, 0).branch;
     }
 
     /**

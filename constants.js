@@ -4,6 +4,7 @@ module.exports = {
         hauler: "hauler",
         upgrader: "upgrader",
         repairer: "repairer",
+        builder: "builder",
         scout: "scout",
         reserver: "reserver",
         defender: "defender",
@@ -11,7 +12,7 @@ module.exports = {
     maxHaulerLevel: 12,
     maxUpgraderLevel: 7,
     maxRepairerLevel: 8,
-    maxBaseSpawnCapacity: 0.95,
+    maxBuilderLevel: 10,
     minEnergyStored: 5000,
 
     // Intervals for expensive code
