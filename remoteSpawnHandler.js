@@ -35,6 +35,10 @@ class RemoteSpawnHandler {
         // Iterate through each until we find one under its spawn requirements
         for (const remoteRoom in remotes) {
             const remote = remotes[remoteRoom];
+            if (!remote.active) {
+                continue;
+            }
+
             const sourceCount = remote.haulerPaths.length;
             const spawn = this.getBestSpawn(roomInfo.room.energyCapacityAvailable, sourceCount, remote.neededHaulerCarry, existingSpawns, remoteRoom);
             if (spawn) {
@@ -49,7 +53,7 @@ class RemoteSpawnHandler {
         // should overflow here
         // We know that our remaining needed carry will be equal to -existing carry value since it was subtracted
         // at the end of each spawn
-        const wantedCarry = -existingSpawns[CONSTATS.roles.hauler];
+        const wantedCarry = -existingSpawns[CONSTANTS.roles.hauler];
         if (wantedCarry > 0) {
             return this.makeHauler(wantedCarry, roomInfo.room.energyCapacityAvailable);
         }

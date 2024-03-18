@@ -99,6 +99,9 @@ class RoomInfo {
         const structures = this.room.find(FIND_STRUCTURES);
         const remotePlans = remoteUtility.getRemotePlans(this.room.name);
         for (const roomName in remotePlans) {
+            if (!remotePlans[roomName].active) {
+                continue;
+            }
             if (Game.rooms[roomName]) {
                 structures.push(...Game.rooms[roomName].find(FIND_STRUCTURES, { 
                     filter: (s) => remoteUtility.isStructurePlanned(s)
@@ -199,6 +202,9 @@ class RoomInfo {
         const allMiningSites = [];
         if (remotePlans) {
             for (const remote in remotePlans) {
+                if (!remotePlans[remote].active) {
+                    continue;
+                }
                 allMiningSites.push(...remotePlans[remote].miningSites);
             }
         }
