@@ -30,6 +30,7 @@ class RoomInfo {
 
         this.spawns = room.find(FIND_MY_SPAWNS);
         this.remoting = room.controller && room.controller.my && room.controller.level >= 4;
+        this.constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES);
     }
 
     /**
@@ -84,6 +85,8 @@ class RoomInfo {
             (s) => s.structureType === STRUCTURE_CONTAINER);
     }
 
+    // #region Maintenance
+    
     /**
      * Finds all structures wanted by this room, including remotes.
      * @returns An array of all planned structures currently visible and wanted by this room.
@@ -107,10 +110,63 @@ class RoomInfo {
         return structures;
     }
 
-    //
-    // Remote Management Logic Below
-    //
+    // #endregion
 
+    // #region Construction
+
+    /**
+     * Finds all unbuilt planned structures in this room's remotes.
+     * @returns An array of objects, each with a position and STRUCTURE_ constant for the structure intended to be built.
+     */
+    getConstructionQueue() {
+        if (this.constructionQueue) {
+            return this.constructionQueue;
+        }
+
+        // Track all unbuilt structues in our remotes
+        const unbuilt = [];
+
+        const remotes = remoteUtility.getRemotePlans(this.room.name);
+        for (const roomName in remotes) {
+            const remote = remotes[roomName];
+
+            // Start with containers
+            const room = Game.rooms[roomName];
+            if (room) {
+                remote.miningSites.forEach((miningSite) => {
+                    const container = miningSite.pos;
+                    const containerSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
+                    const existingContainer = room.lookForAt(LOOK_STRUCTURES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
+                    if (!containerSite && !existingContainer) {
+                        unbuilt.push({ pos: container, type: STRUCTURE_CONTAINER });
+                    }
+                });
+            }
+
+            // Then roads
+            remote.roads.forEach((road) => {
+                const room = Game.rooms[road.roomName];
+                if (room) {
+                    const roadSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
+                    const existingRoad = room.lookForAt(LOOK_STRUCTURES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
+                    if (!roadSite && !existingRoad) {
+                        unbuilt.push({ pos: road, type: STRUCTURE_ROAD });
+                    }
+                }
+            });
+        }
+
+        this.constructionQueue = unbuilt;
+        return unbuilt;
+    }
+
+    requestNearestSite() {
+
+    }
+
+    // #endregion
+
+    // #region Mining
 
     /**
      * Gets an array of all mining sites for this room.
@@ -175,6 +231,10 @@ class RoomInfo {
         // Find the first site where no miner has reserved
         return sites.find((site) => !this.miners.find((m) => m.memory.miningSite && m.memory.miningSite.sourceID === site.sourceID));
     }
+
+    // #endregion
+
+    // #region Hauling
 
     /**
      * Gets an array of all energy pickup points for this room, including in remotes.
@@ -319,6 +379,8 @@ class RoomInfo {
         this.cachedEnergyDropoffPoints = dropoffPoints;
         return dropoffPoints;
     }
+
+    // #endregion
 }
 
 module.exports = RoomInfo;

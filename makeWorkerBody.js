@@ -9,5 +9,5 @@ module.exports = function make(desiredLevel, energy) {
         lvl++;
         body = body.concat(workerParts);
     }
-    return body;
+    return { body: body, level: lvl };
 }

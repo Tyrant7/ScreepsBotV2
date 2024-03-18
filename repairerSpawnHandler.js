@@ -18,10 +18,9 @@ class RepairerSpawnHandler {
     }
 
     make(energy) {
-        const body = makeWorkerBody(CONSTANTS.maxRepairerLevel, energy);
-        const level = body.filter((p) => p === WORK).length;
-        return { body: body, 
-                 name: "Repairer " + Game.time + " [" + level + "]",
+        const worker = makeWorkerBody(CONSTANTS.maxRepairerLevel, energy);
+        return { body: worker.body, 
+                 name: "Repairer " + Game.time + " [" + worker.level + "]",
                  memory: { role: CONSTANTS.roles.repairer }};
     }
 }
