@@ -96,7 +96,7 @@ const defenderSpawnHandler = new DefenderSpawnHandler();
 // such as the crashSpawnHandler which only handles recovery cases
 const basicSpawnHandlers = [
     minerSpawnHandler, // To not waste source energy
-    haulerSpawnHandler, // To recover quickly
+    // haulerSpawnHandler, // To recover quickly
     upgraderSpawnHandler, // To upgrade
     scoutSpawnHandler, // To expand
 ];

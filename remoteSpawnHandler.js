@@ -21,13 +21,14 @@ class RemoteSpawnHandler {
         });
 
         for (const creep of roomInfo.creeps) {
+            // Rather inelegant, but it'll do
+            // Haulers are measured in CARRY part count instead of creep count
+            if (creep.memory.role === CONSTANTS.roles.hauler) {
+                existingSpawns[creep.memory.role] += creep.body.filter((p) => p.type === CARRY).length;
+                continue;
+            }
+
             if (creep.memory.isRemote) {
-                // Rather inelegant, but it'll do
-                // Haulers are measured in CARRY part count instead of creep count
-                if (creep.memory.role === CONSTANTS.roles.hauler) {
-                    existingSpawns[creep.memory.role] += creep.body.filter((p) => p.type === CARRY).length;
-                    continue;
-                }
                 existingSpawns[creep.memory.role]++;
             }
         }
