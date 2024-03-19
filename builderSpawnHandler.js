@@ -17,6 +17,11 @@ class BuilderSpawnHandler {
             return total + CONSTRUCTION_COST[curr.type];
         }, 0);
 
+        // Limit energy for this room to what's in our storage to prevent massive overspawning
+        const totalForThisRoom = roomInfo.storage 
+            ? Math.min(roomInfo.storage.store[RESOURCE_ENERGY], energyForThisRoom)
+            : energyForThisRoom;
+
         // Figure out how much WORK we already have
         const existingWork = roomInfo.builders.reduce((total, curr) => {
             return total + curr.body.filter((p) => p.type === WORK).length;
@@ -24,7 +29,7 @@ class BuilderSpawnHandler {
 
         // Finally, let's allocate an arbitrary amount of WORK using this formula
         // N WORK = Math.ceil(totalEnergyToBuild / 1000)
-        const wantedWork = Math.max(Math.ceil((energyForThisRoom + energyForRemotes) / 1000) - existingWork, 0);
+        const wantedWork = Math.max(Math.ceil((totalForThisRoom + energyForRemotes) / 1000) - existingWork, 0);
         if (wantedWork > 0) {
             return this.make(wantedWork, roomInfo.room.energyCapacityAvailable);
         }
