@@ -8,6 +8,8 @@ module.exports = {
     },
 
     getPredictiveCreeps: function(creeps) {
-        return creeps.filter((c) => this.getSpawnTime(c.body) <= c.ticksToLive);
+        return creeps.filter((c) => {
+            return !c.ticksToLive || this.getSpawnTime(c.body) <= c.ticksToLive;
+        });
     },
 };

@@ -8,7 +8,7 @@ class UpgraderSpawnHandler {
             return;
         }
 
-        if (roomInfo.upgraders.length === 0) {
+        if (creepSpawnUtility.getPredictiveCreeps(roomInfo.upgraders).length === 0) {
             return this.make(roomInfo.room.energyCapacityAvailable);
         }
     }
