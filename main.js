@@ -15,7 +15,7 @@ global.DEBUG = {
     trackSpawnUsage: true,
     trackCPUUsage: true,
     trackRCLProgress: true,
-    logRemotePlanning: false,
+    logRemotePlanning: true,
     replanRemotesOnReload: false,
 
     runProfiler: false,

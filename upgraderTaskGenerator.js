@@ -23,7 +23,7 @@ class UpgraderTaskGenerator {
             );
 
             // We're within range of our container already!
-            const otherUpgrader = creep.room.lookForAt(LOOK_CREEPS, upgraderContainerPos.x, upgraderContainerPos.y);
+            const otherUpgrader = creep.room.lookForAt(LOOK_CREEPS, upgraderContainerPos.x, upgraderContainerPos.y)[0];
             const range = otherUpgrader ? 1 : 0;
             if (creep.pos.getRangeTo(upgraderContainerPos) <= range) {
                 // Pickup energy if we need it
