@@ -22,9 +22,9 @@ module.exports = function(creep, data) {
         // Also include resource piles that are more than our inventory in size
         sources.push(...creep.room.find(FIND_DROPPED_RESOURCES, { 
             filter: (r) => r.resourceType === RESOURCE_ENERGY 
-            && (r.pos.lookFor(LOOK_CONSTRUCTION_SITES).find((s) => s.structureType === STRUCTURE_CONTAINER)
+            && ((r.pos.lookFor(LOOK_CONSTRUCTION_SITES).find((s) => s.structureType === STRUCTURE_CONTAINER)
             || r.pos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER)) 
-            || r.amount >= creep.store.getCapacity()
+            || r.amount >= creep.store.getCapacity(RESOURCE_ENERGY))
         }));
 
         // We can allow ourselves to target planted haulers
