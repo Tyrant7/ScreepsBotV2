@@ -63,8 +63,6 @@ class RepairerTaskGenerator {
                 return true;
             }
 
-            console.log(target);
-
             if (creep.pos.getRangeTo(target) <= 3) {
                 creep.repair(target);
             }
