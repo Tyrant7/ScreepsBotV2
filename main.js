@@ -15,6 +15,7 @@ global.DEBUG = {
     trackSpawnUsage: true,
     trackCPUUsage: true,
     trackRCLProgress: true,
+    trackCreepCounts: true,
     logRemotePlanning: true,
     replanRemotesOnReload: false,
 
@@ -143,7 +144,7 @@ module.exports.loop = function() {
         const info = roomInfos[room];
 
         // Don't try to spawn in rooms that can't
-        if (info.spawns && info.spawns.length) {
+        if (info.spawns.length) {
 
             // Handle construction
             profiler.startSample("Construction " + room);
@@ -159,8 +160,6 @@ module.exports.loop = function() {
             }
 
             let remoteSustainCost = 0;
-
-            builderSpawnHandler.getNextSpawn(info);
 
             // Spawn handlers are passed in order of priority
             const currentSpawnHandlers = [
@@ -242,6 +241,17 @@ module.exports.loop = function() {
             });
         }
     }
+
+    // Track creeps
+    if (DEBUG.trackCreepCounts) {
+        for (const info of Object.values(roomInfos)) {
+            overlay.addHeading(info.room.name, "- Creeps -");
+            overlay.addText(info.room.name, {
+                "Count": Object.values(Memory.creeps).length,
+            });
+        }
+    }
+
     profiler.printout();
 
     // Finalize overlays
