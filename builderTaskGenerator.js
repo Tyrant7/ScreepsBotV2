@@ -75,8 +75,9 @@ const buildPriorities = {
     [STRUCTURE_LINK]: 6,
     [STRUCTURE_EXTENSION]: 5,
     [STRUCTURE_RAMPART]: 4,
-    [STRUCTURE_ROAD]: 3,
-    [STRUCTURE_WALL]: 2,
+    [STRUCTURE_LAB]: 3,
+    [STRUCTURE_ROAD]: 2,
+    [STRUCTURE_WALL]: 1,
 };
 
 module.exports = BuilderTaskGenerator;
