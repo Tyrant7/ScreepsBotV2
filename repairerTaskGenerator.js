@@ -13,6 +13,10 @@ class RepairerTaskGenerator {
      */
     run(creep, roomInfo, activeTasks) {
 
+        if (creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
+            return new Task({}, "harvest", [harvest]);
+        }
+
         // On the first task, we'll search for the lowest health structure we currently have
         if (!creep.memory.firstPass) {
             const lowest = roomInfo.getWantedStructures().reduce((lowest, curr) => {
@@ -48,8 +52,7 @@ class RepairerTaskGenerator {
     }
 
     createRepairTask(target) {
-        const actionStack = [harvest];
-        actionStack.push(function(creep, data) {
+        const actionStack = [function(creep, data) {
             const target = creep.pos.roomName === data.pos.roomName
                 ? Game.getObjectById(data.targetID)
                 : data.pos;
@@ -64,7 +67,7 @@ class RepairerTaskGenerator {
                 });
             }
             return creep.store[RESOURCE_ENERGY] === 0 || target.hits === target.hitsMax;
-        });
+        }];
         return new Task({ targetID: target.id, pos: target.pos }, "repair", actionStack);
     }
 }
