@@ -35,7 +35,7 @@ class BuilderSpawnHandler {
         let body = builderParts;
         let lvl = 1;
         const levelCost = creepSpawnUtility.getCost(body);
-        while (lvl < desiredLevel && (lvl + 1) * levelCost <= energy) {
+        while (lvl < desiredLevel && (lvl + 1) * levelCost <= energy && body.length <= 50 - builderParts.length) {
             lvl++;
             body = body.concat(builderParts);
         }

@@ -69,7 +69,7 @@ class HaulerSpawnHandler extends LeveledSpawnHandler {
         for (let i = 0; i < desiredLevel; i++) {
             lvl = i + 1;
             body.push(MOVE, CARRY, CARRY);
-            if (creepSpawnUtility.getCost(body) > energy) {
+            if (creepSpawnUtility.getCost(body) > energy || body.length > 50) {
                 body.pop();
                 body.pop();
                 body.pop();

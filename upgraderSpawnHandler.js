@@ -25,7 +25,7 @@ class UpgraderSpawnHandler {
         while (lvl < CONSTANTS.maxUpgraderLevel) {
             lvl++;
             body.push(...[MOVE, WORK, WORK, WORK, WORK]);
-            if (creepSpawnUtility.getCost(body) > maxCost) {
+            if (creepSpawnUtility.getCost(body) > maxCost || body.length > 50) {
                 lvl--;
                 body.pop();
                 body.pop();
