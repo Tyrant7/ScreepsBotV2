@@ -41,7 +41,7 @@ class RemoteSpawnHandler {
             }
 
             const sourceCount = remote.haulerPaths.length;
-            const spawn = this.getBestSpawn(roomInfo.room.energyCapacityAvailable, sourceCount, remote.neededHaulerCarry, existingSpawns, remoteRoom);
+            const spawn = this.getBestSpawn(roomInfo.room.energyCapacityAvailable, sourceCount, remote.neededHaulerCarry, existingSpawns);
             if (spawn) {
                 // Tag this creep so we know it came from remote spawning and can count it against 
                 // our spawns here next time we attempt spawning
@@ -85,20 +85,19 @@ class RemoteSpawnHandler {
         // Reservers -> just one per remote
         const wantedReservers = 1 - existingSpawns[CONSTANTS.roles.reserver];
         if (wantedReservers > 0) {
-            return this.makeClaimer(remoteRoomName);
+            return this.makeClaimer();
         }
         existingSpawns[CONSTANTS.roles.reserver] -= 1;
     }
 
-    makeClaimer(targetRoom) {
+    makeClaimer() {
         // Reservers will be made up of 2 CLAIM 2 MOVE bodies
         // It's technically possible with 1 CLAIM 1 MOVE, but give it extra to account for 
         // imperfections in pathing and spawning priorities
         return {
             body: [MOVE, MOVE, CLAIM, CLAIM],
             name: "Reserver " + Game.time + " [2]",
-            memory: { role: CONSTANTS.roles.reserver,
-                      targetRoom: targetRoom },
+            memory: { role: CONSTANTS.roles.reserver },
         };
     }
 

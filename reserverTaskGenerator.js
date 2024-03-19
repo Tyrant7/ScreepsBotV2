@@ -1,5 +1,6 @@
 const Task = require("task");
 const moveToRoom = require("moveToRoom");
+const remoteUtility = require("remoteUtility");
 
 class ReserverTaskGenerator {
 
@@ -11,6 +12,27 @@ class ReserverTaskGenerator {
      * @returns The best fitting task for this creep.
      */
     run(creep, roomInfo, activeTasks) {
+
+        // Assign this reserver to the highest priority remote currently without a reserver
+        if (!creep.memory.targetRoom) {
+            const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
+            if (!remotes) {
+                return null;
+            }
+            
+            // Find the first remote that doesn't have a reserver assigned to it
+            for (const roomName in remotes) {
+                const remote = remotes[roomName];
+                if (!roomInfo.reservers.find((r) => r.memory.targetRoom === roomName)) {
+                    creep.memory.targetRoom = roomName;
+                }
+            }
+
+            // If we still don't have a target room, just wait until a reserver dies
+            if (!creep.memory.targetRoom) {
+                return null;
+            }
+        }
 
         // If we're in the room, let's perpetually reserve until we die
         if (creep.room.name === creep.memory.targetRoom) {
