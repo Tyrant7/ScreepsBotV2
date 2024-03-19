@@ -38,12 +38,12 @@ module.exports = function(creep, data) {
         }
         
         // We don't have any containers or storage yet, mine our own energy
-        if (!sources || !sources.length) {
+        if (!sources.length) {
             sources = creep.room.find(FIND_SOURCES, { filter: (s) => s.energy > 0 });
         }
 
         // Still nothing, let's just wait
-        if (!sources || !sources.length) {
+        if (!sources.length) {
             return false;
         }
 
@@ -58,14 +58,6 @@ module.exports = function(creep, data) {
         });
         creep.memory.harvestTarget = best.id;
         harvest = Game.getObjectById(creep.memory.harvestTarget);
-    }
-
-    // Determine if it's worth gathering ->
-    // If we're above a baseline energy threshold
-    // skip refilling and go directly to our target instead
-    const optionalRefillThreshold = 50;
-    if (creep.store[RESOURCE_ENERGY] >= optionalRefillThreshold) {
-        return true;
     }
 
     if (creep.store[RESOURCE_ENERGY] > 0 && creep.pos.getRangeTo(harvest) > 1) {

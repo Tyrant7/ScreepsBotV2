@@ -22,9 +22,9 @@ class BuilderTaskGenerator {
         const sites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
         for (const site of sites) {
 
-            // Don't allow more build tasks than each 5,000 energy needed to complete
+            // Don't allow more than one build task per site
             const existingTasks = activeTasks.filter((task) => task && task.data.targetID === site.id);
-            if (existingTasks.length >= Math.ceil((site.progressTotal - site.progress) / 5000)) {
+            if (existingTasks.length) {
                 continue;
             }
 
