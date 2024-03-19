@@ -98,11 +98,8 @@ class HaulerTaskGenerator {
             return this.generateDropoffTask(creep, creep.memory.reservedDropoff);
         }
 
-        // Filter out points that can't take anymore energy
-        const dropoffPoints = roomInfo.getEnergyDropoffPoints().filter((point) => {
-            const structure = Game.getObjectById(point.id);
-            return structure && structure.store.getFreeCapacity(RESOURCE_ENERGY);
-        });
+        // Get our dropoff points that still have capacity
+        const dropoffPoints = roomInfo.getEnergyDropoffPoints();
 
         // Lower the value of already reserved dropoff points 
         dropoffPoints.forEach((point) => {

@@ -299,16 +299,23 @@ class RoomInfo {
             });
         }
 
-        // Add the storage, but keep its capacity above our minimum threshold
-        const storage = this.room.storage;
-        if (storage) {
-            pickupPoints.push({
-                pos: storage.pos,
-                amount: Math.max(0, storage.store[RESOURCE_ENERGY] - CONSTANTS.minEnergyStored),
-                fillrate: 0,
-                ticksUntilBeginFilling: 0,
-                id: storage.id,
-            });
+        // Add the storage, only if we have somewhere to put the energy 
+        // to avoid repetitively taking energy in and out of the storage
+        const dropoffPoints = this.getEnergyDropoffPoints();
+
+        // In this case, two points will always be active
+        // Storage and upgrader container
+        if (dropoffPoints.length > 2) {
+            const storage = this.room.storage;
+            if (storage) {
+                pickupPoints.push({
+                    pos: storage.pos,
+                    amount: storage.store[RESOURCE_ENERGY],
+                    fillrate: 0,
+                    ticksUntilBeginFilling: 0,
+                    id: storage.id,
+                });
+            }
         }
 
         // Add dropped energy
@@ -344,6 +351,16 @@ class RoomInfo {
         }
 
         const dropoffPoints = [];
+        function addDropoffPoint(structure) {
+            if (!structure.store.getFreeCapacity(RESOURCE_ENERGY)) {
+                return;
+            }
+            dropoffPoints.push({
+                pos: structure.pos,
+                amount: structure.store.getFreeCapacity(RESOURCE_ENERGY),
+                id: structure.id,
+            });
+        }
 
         // Add all extensions, spawns, and towers
         this.room.find(FIND_MY_STRUCTURES, { filter: (s) => {
@@ -351,31 +368,19 @@ class RoomInfo {
                    s.structureType == STRUCTURE_SPAWN || 
                    s.structureType == STRUCTURE_TOWER;
         }}).forEach((structure) => {
-            dropoffPoints.push({
-                pos: structure.pos,
-                amount: structure.store.getFreeCapacity(RESOURCE_ENERGY),
-                id: structure.id,
-            });
+            addDropoffPoint(structure);
         });
 
         // Also add the upgrader's container, if one exists
         const upgraderContainer = this.getUpgraderContainer();
         if (upgraderContainer) {
-            dropoffPoints.push({
-                pos: upgraderContainer.pos,
-                amount: upgraderContainer.store.getFreeCapacity(),
-                id: upgraderContainer.id,
-            });
+            addDropoffPoint(upgraderContainer);
         }
 
         // Finally, add the storage, if one exists
         const storage = this.room.storage;
         if (storage) {
-            dropoffPoints.push({
-                pos: storage.pos,
-                amount: storage.store.getFreeCapacity(),
-                id: storage.id,
-            });
+            addDropoffPoint(storage);
         }
 
         // Cache in case of multiple requests this tick
