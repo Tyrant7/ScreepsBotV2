@@ -13,6 +13,18 @@ class RepairerTaskGenerator {
      */
     run(creep, roomInfo, activeTasks) {
 
+        // On the first task, we'll search for the lowest health structure we currently have
+        if (!creep.memory.firstPass) {
+            const lowest = roomInfo.getWantedStructures().reduce((lowest, curr) => {
+                const lowestHP = lowest.hits / (lowest.hitsMax * (repairThresholds[lowest.structureType] || 1));
+                const currHP = curr.hits / (curr.hitsMax * (repairThresholds[curr.structureType] || 1));
+                return currHP < lowestHP ? curr : lowest;
+            });
+            creep.memory.firstPass = true;
+            return this.createRepairTask(lowest);
+        }
+
+        // After the first pass, we'll sort by a mix of distance and HP
         const neededRepairs = roomInfo.getWantedStructures().filter((s) => s.hits < s.hitsMax);
         if (neededRepairs.length) {
             const bestFit = neededRepairs.reduce((best, curr) => {
@@ -25,9 +37,9 @@ class RepairerTaskGenerator {
                 }
 
                 // Simply sort by distance times the fraction of health the structure current has -> closer is better
-                const bestRepairNeed = Math.max(estimateTravelTime(creep, best.pos) - 50, 0) 
+                const bestRepairNeed = estimateTravelTime(creep, best.pos) 
                     * Math.pow((best.hits / (best.hitsMax * (repairThresholds[best.structureType] || 1))), 3);
-                const currRepairNeed = Math.max(estimateTravelTime(creep, curr.pos) - 50, 0) 
+                const currRepairNeed = estimateTravelTime(creep, curr.pos) 
                     * Math.pow((curr.hits / (curr.hitsMax * (repairThresholds[curr.structureType] || 1))), 3);
                 return currRepairNeed < bestRepairNeed ? curr : best;
             }, neededRepairs[0]);
