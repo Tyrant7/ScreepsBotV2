@@ -20,6 +20,9 @@ class RepairerTaskGenerator {
         // On the first task, we'll search for the lowest health structure we currently have
         if (!creep.memory.firstPass) {
             const lowest = roomInfo.getWantedStructures().reduce((lowest, curr) => {
+                if (!curr.hits) {
+                    return lowest;
+                }
                 const lowestHP = lowest.hits / (lowest.hitsMax * (repairThresholds[lowest.structureType] || 1));
                 const currHP = curr.hits / (curr.hitsMax * (repairThresholds[curr.structureType] || 1));
                 return currHP < lowestHP ? curr : lowest;
@@ -60,7 +63,12 @@ class RepairerTaskGenerator {
                 return true;
             }
 
-            if (creep.repair(target) === ERR_NOT_IN_RANGE) {
+            console.log(target);
+
+            if (creep.pos.getRangeTo(target) <= 3) {
+                creep.repair(target);
+            }
+            else {
                 creep.moveTo(target, {
                     reusePath: 30,
                     range: 3,

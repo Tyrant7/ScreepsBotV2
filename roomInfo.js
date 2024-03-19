@@ -104,7 +104,7 @@ class RoomInfo {
             }
             if (Game.rooms[roomName]) {
                 structures.push(...Game.rooms[roomName].find(FIND_STRUCTURES, { 
-                    filter: (s) => remoteUtility.isStructurePlanned(s)
+                    filter: (s) => remoteUtility.isStructurePlanned(this.room.name, s.pos, s.structureType)
                 }));
             }
         }

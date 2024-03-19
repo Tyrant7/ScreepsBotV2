@@ -30,13 +30,12 @@ module.exports = {
      */
     isStructurePlanned: function(baseName, pos, type) {
 
-        // Make sure this base exists
-        if (!Memory.bases[baseName]) {
+        // Make sure we have plans and it's an actual remote
+        const plans = this.getRemotePlans(baseName);
+        if (!plans) {
             return false;
         }
-
-        // Make sure it's a valid remote
-        const remote = this.getRemotePlans(baseName).remotes[pos.roomName];
+        const remote = plans[pos.roomName];
         if (!remote) {
             return false;
         }
