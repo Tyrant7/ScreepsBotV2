@@ -29,8 +29,9 @@ class BuilderTaskGenerator {
 
         // If no existing sites, we can start requesting more
         const constructionQueue = roomInfo.getConstructionQueue();
-        if (constructionQueue.length) {
-            // SGet then highest priority site by build priority, then distance
+        while (constructionQueue.length) {
+
+            // Get the highest priority site by build priority, then distance
             const bestSite = constructionQueue.reduce((best, curr) => {
                 const bestPriority = ((buildPriorities[best.type] || 1) * 1000) - estimateTravelTime(creep, best.pos);
                 const currPriority = ((buildPriorities[curr.type] || 1) * 1000) - estimateTravelTime(creep, curr.pos);
@@ -39,11 +40,16 @@ class BuilderTaskGenerator {
 
             // Create a new site and instruct the creep to move to that room
             const realPos = new RoomPosition(bestSite.pos.x, bestSite.pos.y, bestSite.pos.roomName);
-            realPos.createConstructionSite(bestSite.type);
-
-            // Otherwise we'll have to wait until next tick when the site is created to find it
-            if (bestSite.pos.roomName !== creep.pos.roomName) {
-                return new Task({ roomName: realPos.roomName }, "move", [moveToRoom]);
+            if (realPos.createConstructionSite(bestSite.type) === OK) {
+                if (bestSite.pos.roomName !== creep.pos.roomName) {
+                    return new Task({ roomName: realPos.roomName }, "move", [moveToRoom]);
+                }
+                // Otherwise we'll have to wait until next tick when the site is created to find it
+                return null;
+            }
+            else {
+                // Invalid site, remove from queue
+                constructionQueue.splice(constructionQueue.indexOf(bestSite), 1);
             }
         }
     }

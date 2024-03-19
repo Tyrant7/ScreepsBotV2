@@ -25,8 +25,10 @@ class RepairerTaskGenerator {
                 }
 
                 // Simply sort by distance times the fraction of health the structure current has -> closer is better
-                const bestRepairNeed = estimateTravelTime(creep, best.pos) * (best.hits / (best.hitsMax * (repairThresholds[best.structureType] || 1)));
-                const currRepairNeed = estimateTravelTime(creep, curr.pos) * (curr.hits / (curr.hitsMax * (repairThresholds[curr.structureType] || 1)));
+                const bestRepairNeed = Math.max(estimateTravelTime(creep, best.pos) - 50, 0) 
+                    * Math.pow((best.hits / (best.hitsMax * (repairThresholds[best.structureType] || 1))), 3);
+                const currRepairNeed = Math.max(estimateTravelTime(creep, curr.pos) - 50, 0) 
+                    * Math.pow((curr.hits / (curr.hitsMax * (repairThresholds[curr.structureType] || 1))), 3);
                 return currRepairNeed < bestRepairNeed ? curr : best;
             }, neededRepairs[0]);
             return this.createRepairTask(bestFit);
@@ -60,7 +62,7 @@ const repairThresholds = {
     [STRUCTURE_WALL]: 0.002,
     [STRUCTURE_RAMPART]: 0.005,
     [STRUCTURE_CONTAINER]: 0.9,
-    [STRUCTURE_ROAD]: 0.7,
+    [STRUCTURE_ROAD]: 0.8,
 };
 
 module.exports = RepairerTaskGenerator;

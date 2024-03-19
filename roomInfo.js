@@ -141,9 +141,8 @@ class RoomInfo {
             if (room) {
                 remote.miningSites.forEach((miningSite) => {
                     const container = miningSite.pos;
-                    const existingSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, container.x, container.y)[0];
                     const existingContainer = room.lookForAt(LOOK_STRUCTURES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
-                    if (!existingSite && !existingContainer) {
+                    if (!existingContainer) {
                         unbuilt.push({ pos: container, type: STRUCTURE_CONTAINER });
                     }
                 });
@@ -153,9 +152,8 @@ class RoomInfo {
             remote.roads.forEach((road) => {
                 const room = Game.rooms[road.roomName];
                 if (room) {
-                    const existingSite = room.lookForAt(LOOK_CONSTRUCTION_SITES, road.x, road.y)[0];
                     const existingRoad = room.lookForAt(LOOK_STRUCTURES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
-                    if (!existingSite && !existingRoad) {
+                    if (!existingRoad) {
                         unbuilt.push({ pos: road, type: STRUCTURE_ROAD });
                     }
                 }
