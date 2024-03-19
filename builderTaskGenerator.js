@@ -14,6 +14,10 @@ class BuilderTaskGenerator {
      */
     run(creep, roomInfo, activeTasks) {
 
+        if (creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
+            return new Task({}, "harvest", [harvest]);
+        }
+
         // Start by allocating to existing sites
         const sites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
         for (const site of sites) {
@@ -24,13 +28,12 @@ class BuilderTaskGenerator {
                 continue;
             }
 
-            return this.createBuildTask(site);
+            return this.createBuildTask(creep, site);
         }
 
         // If no existing sites, we can start requesting more
         const constructionQueue = roomInfo.getConstructionQueue();
-        while (constructionQueue.length) {
-
+        if (constructionQueue.length) {
             // Get the highest priority site by build priority, then distance
             const bestSite = constructionQueue.reduce((best, curr) => {
                 const bestPriority = ((buildPriorities[best.type] || 1) * 1000) - estimateTravelTime(creep, best.pos);
@@ -40,23 +43,15 @@ class BuilderTaskGenerator {
 
             // Create a new site and instruct the creep to move to that room
             const realPos = new RoomPosition(bestSite.pos.x, bestSite.pos.y, bestSite.pos.roomName);
-            if (realPos.createConstructionSite(bestSite.type) === OK) {
-                if (bestSite.pos.roomName !== creep.pos.roomName) {
-                    return new Task({ roomName: realPos.roomName }, "move", [moveToRoom]);
-                }
-                // Otherwise we'll have to wait until next tick when the site is created to find it
-                return null;
-            }
-            else {
-                // Invalid site, remove from queue
-                constructionQueue.splice(constructionQueue.indexOf(bestSite), 1);
+            realPos.createConstructionSite(bestSite.type);
+            if (bestSite.pos.roomName !== creep.pos.roomName) {
+                return new Task({ roomName: realPos.roomName }, "move", [moveToRoom]);
             }
         }
     }
 
-    createBuildTask(site) {
-        const actionStack = [harvest];
-        actionStack.push(function(creep, data) {
+    createBuildTask(creep, site) {
+        let actionStack = [function(creep, data) {
             const target = Game.getObjectById(data.targetID);
             if (!target) {
                 return true;
@@ -68,8 +63,7 @@ class BuilderTaskGenerator {
                 });
             }
             return creep.store[RESOURCE_ENERGY] === 0;
-        });
-
+        }];
         return new Task({ targetID: site.id }, "build", actionStack);
     }
 }
