@@ -37,8 +37,9 @@ class SpawnManager {
     showVisuals(roomInfo, spawn) {
         try {
             const spawningCreep = Game.creeps[spawn.spawning.name];
+            const displayName = spawningCreep.name.split(' ')[0] + " " + spawningCreep.name.split(' ')[2];
             roomInfo.room.visual.text(
-                spawningCreep.name,
+                displayName,
                 spawn.pos.x,
                 spawn.pos.y - 1,
                 { align: "center", opacity: 0.8 });

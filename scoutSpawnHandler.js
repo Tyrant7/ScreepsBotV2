@@ -17,7 +17,7 @@ class ScoutSpawnHandler {
 
     make() {
         return { body: [MOVE], 
-            name: "Scout " + Game.time,
+            name: "Scout " + Game.time + " [1]",
             memory: { role: CONSTANTS.roles.scout }};
     }
 
