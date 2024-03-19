@@ -14,5 +14,5 @@ module.exports = {
     maxRepairerLevel: 3,
     maxBuilderLevel: 10,
     maxBuilderCount: 5,
-    minEnergyStored: 5000,
+    minEnergyStored: 50000,
 };

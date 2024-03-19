@@ -14,7 +14,7 @@ class BuilderTaskGenerator {
      */
     run(creep, roomInfo, activeTasks) {
 
-        if (creep.store.getFreeCapacity(RESOURCE_ENERGY)) {
+        if (!creep.store[RESOURCE_ENERGY]) {
             return new Task({}, "harvest", [harvest]);
         }
 
