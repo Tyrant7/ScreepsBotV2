@@ -6,10 +6,28 @@ class UsageSpawnHandler {
     
     getNextSpawn(roomInfo, energyToUse) {
 
-        // Simply return our best spawn option
-        return this.getFirstSpawn(roomInfo, energyToUse);
+        const repairer = this.trySpawnRepairer(roomInfo);
+        if (repairer) {
+            return repairer;
+        }
+
+        const upgrader = this.trySpawnUpgrader(roomInfo, energyToUse);
+        if (upgrader) {
+            return upgrader;
+        }
+
+        const scout = this.trySpawnScout(roomInfo);
+        if (scout) {
+            return scout;
+        }
     }
 
+    /**
+     * Estimates spawn time needed for this base to use X amount of energy.
+     * @param {RoomInfo} roomInfo The base to calculate use for.
+     * @param {number} energyToUse The target amount of energy to use.
+     * @returns {number} An amount of spawn time.
+     */
     estimateSpawnTimeForUsage(roomInfo, energyToUse) {
 
         // Let's figure out how much spawn time it will take us to use X amount of energy
@@ -46,6 +64,13 @@ class UsageSpawnHandler {
         return estimatedSpawnTime;
     }
 
+    /**
+     * Estimates the needed level composition and spawn times of upgraders
+     * to use as close to the required amount of energy as possible without going over.
+     * @param {RoomInfo} roomInfo The base to spawn for.
+     * @param {number} energyToUse The target amount of energy to use.
+     * @returns {{}} An object with the total spawn time and level composition of needed upgraders to meet the energy goal.
+     */
     estimateNeededUpgraders(roomInfo, energyToUse) {
 
         // This snippet spawns upgraders of increasing level until we have enough to use our energy goal
@@ -79,22 +104,12 @@ class UsageSpawnHandler {
         }
     }
 
-    getFirstSpawn(roomInfo, energyToUse) {
+    estimateCurrentUsage(roomInfo) {
 
-        const repairer = this.trySpawnRepairer(roomInfo);
-        if (repairer) {
-            return repairer;
-        }
+        // TODO //
+        // Estimate how much we're spending
 
-        const upgrader = this.trySpawnUpgrader(roomInfo, energyToUse);
-        if (upgrader) {
-            return upgrader;
-        }
-
-        const scout = this.trySpawnScout(roomInfo);
-        if (scout) {
-            return scout;
-        }
+        throw new Error("Not implemented!");
     }
 
     //#region Spawning

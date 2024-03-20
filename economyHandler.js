@@ -93,10 +93,15 @@ class EconomyHandler {
 
     handleDefaultSpawnOrder(roomInfo, energyToUse) {
 
-        
+
 
         // TODO //
         // Figure out what to spawn, producer or user
+
+        // Let's estimate our actual production vs usage values
+        // If we're producing more than we're using (minus our saving amount, of course)
+        // Then we'll spawn a user next
+        // Otherwise, we'll spawn a producer
     }
 }
 

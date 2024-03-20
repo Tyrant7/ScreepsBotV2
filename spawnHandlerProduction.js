@@ -5,13 +5,12 @@ const levelUtility = require("leveledSpawnUtility");
 
 class ProductionSpawnHandler {
 
+    /**
+     * Gets the highest priority spawn to keep producers at a balanced level.
+     * @param {RoomInfo} roomInfo The base to spawn for.
+     * @returns {{}} An object with meta-data for spawning.
+     */
     getNextSpawn(roomInfo) {
-
-        // Simply return our best spawn option
-        return this.getFirstSpawn(roomInfo, this.getExistingSpawns(roomInfo))
-    }
-
-    getFirstSpawn(roomInfo, existingSpawns) {
 
         function checkIfSpawn() {
             if (wantedMiners > existingSpawns.miners) {
@@ -33,10 +32,13 @@ class ProductionSpawnHandler {
                     roomInfo.room.energyCapacityAvailable);
                 const missingHaulerLevel = levelUtility.getMissingLevel(idealHaulerLevels, existingSpawns.haulers.levels);
                 if (missingHaulerLevel) {
-                    return creepMaker.makeHauler();
+                    return creepMaker.makeHauler(missingHaulerLevel, roomInfo.room.energyCapacityAvailable);
                 }
             }
         }
+
+        // Find our existing spawns before anything else
+        const existingSpawns = this.getExistingSpawns(roomInfo);
 
         // Main room first
         let wantedMiners = roomInfo.getSources().length;
@@ -96,6 +98,19 @@ class ProductionSpawnHandler {
         });
 
         return existingSpawns;
+    }
+
+    /**
+     * Estimates the energy production with only the currently spawned creeps.
+     * @param {RoomInfo} roomInfo The base to estimate for.
+     * @returns {number} The total estimated production.
+     */
+    estimteCurrentProduction(roomInfo) {
+
+        // TODO //
+        // Include current room and remotes
+
+        throw new Error("Not implemented!");
     }
 
     //#region Upkeep
