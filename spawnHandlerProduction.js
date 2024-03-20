@@ -1,19 +1,14 @@
 const remoteUtility = require("remoteUtility");
 const creepSpawnUtility = require("creepSpawnUtility");
 const creepMaker = require("creepMakerProduction");
+const levelUtility = require("leveledSpawnUtility");
 
 class ProductionSpawnHandler {
 
     getNextSpawn(roomInfo) {
 
-        // Get our best spawn
-        const spawn = this.getFirstSpawn(roomInfo, this.getExistingSpawns(roomInfo));
-        if (spawn) {
-            return spawn;
-        }
-
-        // Otherwise, no spawns needed
-        return null;
+        // Simply return our best spawn option
+        return this.getFirstSpawn(roomInfo, this.getExistingSpawns(roomInfo))
     }
 
     getFirstSpawn(roomInfo, existingSpawns) {
@@ -32,11 +27,11 @@ class ProductionSpawnHandler {
             // If it's the same, we'll add another if we don't have it yet, effectively restructuring our hauler configuration
             // e.x. 8C + 4C; 4C dies -> add a 12C; 8C dies -> do nothing since we now have our ideal level configuration
             if (wantedCarry >= existingSpawns.haulers.carry) {
-                const idealHaulerLevels = this.getIdealLevels(Math.ceil(wantedCarry / 2), 
+                const idealHaulerLevels = levelUtility.getIdealLevels(Math.ceil(wantedCarry / 2), 
                     CONSTANTS.maxHaulerLevel, 
                     creepMaker.haulerLevelCost, 
                     roomInfo.room.energyCapacityAvailable);
-                const missingHaulerLevel = this.getMissingLevel(idealHaulerLevels, existingSpawns.haulers.levels);
+                const missingHaulerLevel = levelUtility.getMissingLevel(idealHaulerLevels, existingSpawns.haulers.levels);
                 if (missingHaulerLevel) {
                     return creepMaker.makeHauler();
                 }
@@ -96,82 +91,14 @@ class ProductionSpawnHandler {
         existingSpawns.haulers.carry = roomInfo.haulers.reduce((total, hauler) => {
             return total + hauler.body.filter((p) => p.type === CARRY).length;
         }, 0);
-        existingSpawns.haulers.levels = this.getLevels(roomInfo.haulers, function(hauler) {
+        existingSpawns.haulers.levels = levelUtility.getLevels(roomInfo.haulers, function(hauler) {
             return hauler.body.filter((p) => p.type === MOVE).length;
         });
 
         return existingSpawns;
     }
 
-    //#region Leveled Spawning
-
-    /**
-     * Determines the level of each creep in the array according to the function passed.
-     * @param {Creep[]} creeps An array of creeps to determine level for.
-     * @param {function(Creep): number} levelDeterminer The function that determines the level of creeps.
-     * @returns {number[]} An array of creep levels.
-     */
-    getLevels(creeps, levelDeterminer) {
-
-        // Map each creep to a level determined by the determiner function
-        return creeps.map((creep) => {
-            return levelDeterminer(creep);
-        });
-    }
-
-    /**
-     * Finds the ideal level arrangement of creeps given some parameters.
-     * @param {number} levelTotal The total number of levels wanted.
-     * @param {number} maxLevel The max level of any individual creep.
-     * @param {number} levelCost The energy cost of spawning a single level.
-     * @param {number} energyCapacity The energy capacity of the room that spawning will occur in.
-     * @returns {number[]} An array of creep levels.
-     */
-    getIdealLevels(levelTotal, maxLevel, levelCost, energyCapacity) {
-
-        // Find the biggest creep we can build in this room
-        const highestLevel = Math.min(energyCapacity / levelCost, maxLevel);
-
-        // Divide our desired level count to get our desired number of creeps
-        const creepCount = Math.floor(levelTotal / highestLevel);
-
-        // If we have leftover parts that didn't fit into a max size creep, let's make a smaller one
-        const leftover = levelTotal % highestLevel;
-
-        // Add these desired levels to the queue, pushing the leftover last
-        const queue = [];
-        for (let i = 0; i < creepCount; i++) {
-            queue.push(highestLevel);
-        }
-        if (leftover > 0) {
-            queue.push(leftover);
-        }
-        return queue;
-    }
-
-    /**
-     * Finds the first level of creep that has not yet been spawned, given the ideal and existing levels.
-     * @param {number[]} idealLevels The ideal level arrangement of creeps.
-     * @param {number[]} realLevels The actual level arrangement of creeps.
-     * @returns {number} A single number, representing the level of the first missing creep to spawn.
-     */
-    getMissingLevel(idealLevels, realLevels) {
-
-        // Let's search for the first creep that we're missing
-        for (const level of idealLevels) {
-            // If we already have a creep of this level, let's remove it so it doesn't get detected again
-            const index = realLevels.indexOf(level);
-            if (index > -1) {
-                realLevels.splice(index, 1);
-                continue;
-            }
-            // Otherwise, we're missing a creep of this level
-            return level;
-        }
-        return null;
-    }
-
-    //#endregion
+    //#region Upkeep
 
     // For a base
     estimateUpkeepForBase(roomInfo) {
@@ -240,6 +167,8 @@ class ProductionSpawnHandler {
 
         return upkeeps;
     }
+
+    //#endregion
 }
 
 module.exports = ProductionSpawnHandler;

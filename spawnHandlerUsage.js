@@ -1,126 +1,127 @@
-const remoteUtility = require("remoteUtility");
 const creepSpawnUtility = require("creepSpawnUtility");
 const creepMaker = require("creepMakerUsage");
+const levelUtility = require("leveledSpawnUtility");
 
 class UsageSpawnHandler {
     
-    getNextSpawn(roomInfo) {
+    getNextSpawn(roomInfo, energyToUse) {
 
-        // Get our best spawn
-        const spawn = this.getFirstSpawn(roomInfo, this.getExistingSpawns(roomInfo));
-        if (spawn) {
-            return spawn;
-        }
-
-        // Otherwise, no spawns needed
-        return null;
+        // Simply return our best spawn option
+        return this.getFirstSpawn(roomInfo, energyToUse);
     }
 
     estimateSpawnTimeForUsage(roomInfo, energyToUse) {
 
         // Let's figure out how much spawn time it will take us to use X amount of energy
+        // A typical usage layout would look something like the following
+        // - 1 scout
+        // - 1 repairer
+        // - Any remaining upgraders
 
+        let estimatedSpawnTime = 0;
+        function recordCreep(body) {
+            estimatedSpawnTime += creepSpawnUtility.getSpawnTime(body) / CREEP_LIFE_TIME;
+
+            // Remember that spawning creeps also uses energy, so we'll have to subtract
+            // the cost from the energy we have left to use
+            energyToUse -= creepSpawnUtility.getCost(body) / CREEP_LIFE_TIME;
+
+            // Return true when we're done
+            return energyToUse <= 0;
+        }
+
+        // Scout
+        if (recordCreep(creepMaker.makeScout().body)) {
+            return estimatedSpawnTime;
+        }
+
+        // Repairer
+        if (recordCreep(creepMaker.makeRepairer(CONSTANTS.maxRepairerLevel, roomInfo.room.energyCapacityAvailable).body)) {
+            return estimatedSpawnTime;
+        }
+
+        // Upgraders
+        estimatedSpawnTime += this.estimateNeededUpgraders(roomInfo, energyToUse).spawnTime;
+
+        return estimatedSpawnTime;
     }
 
-    getFirstSpawn(roomInfo, existingSpawns) {
+    estimateNeededUpgraders(roomInfo, energyToUse) {
 
-        // Spawns are a little tough to determine for usage
-        // We want to spawn enough creeps to use up all of our produces energy 
-        // (minus our saving theshold, of course, if one exists)
-        // BUT we want to do this while still maximizing the amount of energy we make
+        // This snippet spawns upgraders of increasing level until we have enough to use our energy goal
+        let spawnTime = 0;
+        for (let level = 0; true; level++) {
 
-        // Let's start by calculating our usage goal
-        // This will be a fraction of our income
-        // e.x. 50 E/t * 0.8 = 40 E/t usage goal
-        const usageGoal = this.calculateUsageGoal(roomInfo, savingFraction);
+            let levelUsage = 0;
+            const levelComposition = [];
 
-        // If we're under this goal, we can't simply spawn up to it since that would risk dropping a remote due to missing spawn capacity
-        // and in turn causing us to overspawn energy users
-        // Instead, let's try to match what it would be by predicting which remotes will be dropped
-        
+            let nextLevel = Math.min(level, CONSTANTS.maxUpgraderLevel);
+            while (nextLevel > 0) {
+                const upgraderBody = creepMaker.makeUpgrader(nextLevel, roomInfo.room.energyCapacityAvailable).body;
 
-        // Start with upgraders
+                // Factor in the cost of the body and usage of the upgrader
+                levelUsage += creepMaker.getCost(upgraderBody);
+                levelUsage += upgraderBody.filter((p) => p === WORK).length * UPGRADE_CONTROLLER_POWER;
+                if (levelUsage > energyToUse) {
+                    break;
+                }
 
+                levelComposition.push(nextLevel);
+                nextLevel -= CONSTANTS.maxUpgraderLevel;
+            }
 
-
+            if (levelUsage > energyToUse) {
+                levelComposition.forEach((body) => {
+                    spawnTime += creepSpawnUtility.getSpawnTime(body) / CREEP_LIFE_TIME;
+                });
+                return { spawnTime: spawnTime, levels: levelComposition };
+            }
+        }
     }
 
-    /**
-     * Determines the existing spawn counts for creeps owned by this room.
-     * @param {RoomInfo} roomInfo The info object for the room to count spawns for.
-     * @returns {{}} An object mapping roles to either creep count or a sub-object of part counts and existing levels, depending on creep type.
-     */
-    getExistingSpawns(roomInfo) {
+    getFirstSpawn(roomInfo, energyToUse) {
 
-        // Track our existing spawns
-        const existingSpawns = {
-            builders: {
-                levels: [],
-            },
-            upgraders: {
-                work: 0,
-            },
+        const repairer = this.trySpawnRepairer(roomInfo);
+        if (repairer) {
+            return repairer;
+        }
 
-            // Measured by creep counts
-            repairers: 0,
-            scouts: 0,
-            defenders: 0,
-        };
+        const upgrader = this.trySpawnUpgrader(roomInfo, energyToUse);
+        if (upgrader) {
+            return upgrader;
+        }
 
-        // Basic ones
-        existingSpawns.repairers = roomInfo.repairers.length;
-        existingSpawns.scouts = roomInfo.scouts.length;
-        existingSpawns.defenders = roomInfo.defenders.length;
-
-        // More complex here, measuring total WORK for upgraders
-        existingSpawns.upgraders.work = roomInfo.upgraders.reduce((total, upgrader) => {
-            return total + upgrader.body.filter((p) => p.type === WORK).length;
-        });
-
-        // And levels for builders
-        existingSpawns.builders.levels = this.getLevels(roomInfo.builders, function(builder) {
-            return builder.body.filter((p) => p.type === WORK).length;
-        });
-
-        return existingSpawns;
+        const scout = this.trySpawnScout(roomInfo);
+        if (scout) {
+            return scout;
+        }
     }
 
+    //#region Spawning
 
+    trySpawnUpgrader(roomInfo, energyToUse) {
 
-
-
-
-
-
-
-    // INDIVIDUAL SPAWN LOGIC BELOW
-
-
-
-    trySpawnScout(roomInfo) {
-        // Don't need more than one scout per room
-        if (roomInfo.scouts.length) {
+        // Upgraders won't be able to do much without their container
+        if (!roomInfo.getUpgraderContainer()) {
             return;
         }
-        return creepMaker.makeScout();
+
+        // Let's look for the first upgrader we want but don't have
+        const wantedLevels = this.estimateNeededUpgraders(roomInfo, energyToUse).levels
+        const actualLevels = levelUtility.getLevels(creepSpawnUtility.getPredictiveCreeps(roomInfo.upgraders), function(upgrader) {
+            return upgrader.body.filter((p) => p.type === MOVE);
+        });
+
+        // If we find one, let's spawn it
+        return levelUtility.getMissingLevels(wantedLevels, actualLevels);
     }
 
-    trySpawnDefender(roomInfo) {  
-        const enemies = roomInfo.getEnemies();
-        if (enemies.length > roomInfo.defenders.length) {
-    
-            // Find our strongest enemy
-            const mostFightParts = enemies.reduce((strongest, curr) => {
-                const fightParts = curr.body.filter((p) => p.type === RANGED_ATTACK || p.type === ATTACK || p.type === HEAL).length;
-                return fightParts > strongest ? fightParts : strongest;
-            }, 0);
-    
-            // Make an appropriately sized defender
-            return creepMaker.makeMiniDefender(Math.ceil(mostFightParts / 4), roomInfo.room.energyCapacityAvailable);
+
+    trySpawnRepairer(roomInfo) {           
+        if (roomInfo.repairers.length) {
+            return;
         }
-    }
-
-    trySpawnRepairer(roomInfo) {   
+    
         // Don't be too concerned unless these structures get extra low since they decay naturally
         const REPAIR_THRESHOLDS = {
             [STRUCTURE_WALL]: 0.002,
@@ -128,30 +129,23 @@ class UsageSpawnHandler {
             [STRUCTURE_CONTAINER]: 0.5,
             [STRUCTURE_ROAD]: 0.5
         };
-        
-        if (roomInfo.repairers.length) {
-            return;
-        }
-    
+
         // Look for any structure below its repair threshold
         const repairStructure = roomInfo.getWantedStructures().find((s) => {
             const threshold = REPAIR_THRESHOLDS[s.structureType] || 1;
             return s.hits / s.hitsMax <= threshold;
         });
         if (repairStructure) {
-            return creepMaker.maxRepairer(CONSTANTS.maxRepairerLevel, roomInfo.room.energyCapacityAvailable);
+            return creepMaker.makeRepairer(CONSTANTS.maxRepairerLevel, roomInfo.room.energyCapacityAvailable);
         }
     }
 
-    trySpawnUpgrader(roomInfo) {
-        // Upgrader won't be able to do much without their container
-        if (!roomInfo.getUpgraderContainer()) {
+    trySpawnScout(roomInfo) {
+        // Don't need more than one scout per room
+        if (roomInfo.scouts.length) {
             return;
         }
-
-        if (creepSpawnUtility.getPredictiveCreeps(roomInfo.upgraders).length === 0) {
-            return creepMaker.makeUpgrader(roomInfo.room.energyCapacityAvailable);
-        }
+        return creepMaker.makeScout();
     }
 
     trySpawnBuilder(roomInfo) {
@@ -185,6 +179,8 @@ class UsageSpawnHandler {
             return creepMaker.makeBuilder(wantedWork, roomInfo.room.energyCapacityAvailable);
         }
     }
+
+    //#endregion
 }
 
 module.exports = UsageSpawnHandler;

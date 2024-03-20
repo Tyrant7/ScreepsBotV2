@@ -1,13 +1,13 @@
 module.exports = {
 
-    makeUpgrader: function(maxCost) {
+    makeUpgrader: function(desiredLevel, energy) {
         // Make the biggest upgrader we can for this room
         let body = [CARRY, CARRY];
         let lvl = 0;
-        while (lvl < CONSTANTS.maxUpgraderLevel) {
+        while (lvl < desiredLevel) {
             lvl++;
             body.push(...[MOVE, WORK, WORK, WORK, WORK]);
-            if (creepSpawnUtility.getCost(body) > maxCost || body.length > 50) {
+            if (creepSpawnUtility.getCost(body) > energy || body.length > 50) {
                 lvl--;
                 body.pop();
                 body.pop();
@@ -60,23 +60,5 @@ module.exports = {
         return { body: [MOVE], 
             name: "Scout " + Game.time + " [1]",
             memory: { role: CONSTANTS.roles.scout }};
-    },
-
-    makeMiniDefender(idealLevel, maxCost) {
-        let body = [];
-        let lvl = 0;
-        for (let i = 0; i < idealLevel; i++) {
-            lvl = i + 1;
-            body.push(MOVE, MOVE, ATTACK, ATTACK, ATTACK, HEAL);
-            if (creepSpawnUtility.getCost(body) > maxCost) {
-                body.pop();
-                body.pop();
-                body.pop();
-                break;
-            } 
-        }
-        return { body: body, 
-                 name: "Baby Defender " + Game.time + " [" + lvl + "]",
-                 memory: { role: CONSTANTS.roles.defender }};
     },
 };

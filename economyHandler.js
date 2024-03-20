@@ -1,8 +1,10 @@
 const ProductionSpawnHandler = require("spawnHandlerProduction");
-const UsageSpawnHandler = require("usageSpawnHandler");
+const UsageSpawnHandler = require("spawnHandlerUsage");
+const MilitarySpawnHandler = require("spawnHandlerMilitary");
 
 const productionSpawnHandler = new ProductionSpawnHandler();
 const usageSpawnHandler = new UsageSpawnHandler();
+const militarySpawnHandler = new MilitarySpawnHandler();
 
 const remoteUtility = require("remoteUtility");
 
@@ -10,20 +12,29 @@ class EconomyHandler {
 
     run(roomInfo) {
 
-        const maxSpawnCost = 1;
+        // Override default behaviour with defense if we're under attack
+        if (roomInfo.getEnemies().length) {
+            const militarySpawn = militarySpawnHandler.getNextSpawn(roomInfo);
+            if (militarySpawn) {
+                return militarySpawn;
+            }
+        }
+
         //
-        // Let's figure out how many remotes we can sustain with our current spawn capacity
+        // If our defense is under control
+        // let's figure out how many remotes we can sustain with our current spawn capacity
         // while ensuring that we're using enough of the energy provided to meet our saving goal
         //
 
-        // Let's figure out what we're working towards
         const savingGoal = this.determineSavingGoal(roomInfo);
+        const spendFraction = 1 - savingGoal.fraction;
+        const income = this.setupIdealIncomeConfiguration(roomInfo, spendFraction);
 
         if (roomInfo.storage && roomInfo.storage.store[RESOURCE_ENERGY] >= savingGoal.goal) {
             // We did it! Start a different type of spawn cycle
         }
         else {
-            this.spawnTowardGoal(roomInfo, savingGoal);
+            this.handleDefaultSpawnOrder(roomInfo, income * spendFraction);
         }
     }
 
@@ -36,14 +47,24 @@ class EconomyHandler {
         };
     }
 
-    spawnTowardGoal(roomInfo, savingGoal) {
-        const spendFraction = 1 - savingGoal.fraction;
+    /**
+     * Maximizing our income by activing or dropping remotes while ensuring that we spend enough to meet our saving goal.
+     * @param {RoomInfo} roomInfo The info object to do this for.
+     * @param {number} spendFraction The fraction of income to allow spending for.
+     * @returns {number} The total income of this base.
+     */
+    setupIdealIncomeConfiguration(roomInfo, spendFraction) {
 
         // To start, we already know the income and upkeep estimates of this room
         const roomUpkeep = productionSpawnHandler.estimateUpkeepForBase(roomInfo);
         const roomIncome = roomInfo.getMaxIncome() - roomUpkeep.energy;
-        let spawnCosts = roomUpkeep.spawnTime;
-        spawnCosts += usageSpawnHandler.estimateSpawnTimeForUsage(roomInfo, roomIncome * spendFraction);
+
+        // These will be tracked separately, since we may use the energy differently depending on how much we have
+        // usageSpawnCost will not compound easily and will be based on income
+        let productionSpawnCost = roomUpkeep.spawnTime;
+        let usageSpawnCost = usageSpawnHandler.estimateSpawnTimeForUsage(roomInfo, roomIncome * spendFraction);
+
+        let totalIncome = roomIncome;
 
         // Process each planned remote, cutting off when the spawns go above our threshold
         let passedThreshold = false;
@@ -51,13 +72,14 @@ class EconomyHandler {
             const remote = remotePlans[remoteRoom];
 
             // For this remote, we can estimate how much spawn time it will take us to use the energy produced here
-            const usageSpawnTime = usageSpawnHandler.estimateSpawnTimeForUsage(roomInfo, remote.score * spendFraction);
+            totalIncome += remote.score;
+            usageSpawnCost = usageSpawnHandler.estimateSpawnTimeForUsage(roomInfo, totalIncome * spendFraction);
 
             // That gives us the total amount of spawn time it will take to produce and use the energy of this remote
-            const remoteSpawnTime = remote.cost + usageSpawnTime;
+            productionSpawnCost += remote.cost;
 
             // Once we hit our cutoff, mark all remaining remotes as inactive
-            if (passedThreshold || spawnCosts + remoteSpawnTime >= maxSpawnCost) {
+            if (passedThreshold || productionSpawnCost + usageSpawnCost >= 1) {
                 passedThreshold = true;
                 remote.active = false;
                 continue;
@@ -65,11 +87,13 @@ class EconomyHandler {
 
             // Mark this remote as active and process it
             remote.active = true;
-            spawnCosts += remoteSpawnTime;
         }
+        return totalIncome;
+    }
 
-        // Now we've maximized the number of active remotes which we can use energy for
-        // We can simply spawn all of the creeps we need since we're under our threshold for spawn capacity
+    handleDefaultSpawnOrder(roomInfo, energyToUse) {
+
+        
 
         // TODO //
         // Figure out what to spawn, producer or user

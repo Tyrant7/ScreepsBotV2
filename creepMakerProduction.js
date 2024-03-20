@@ -1,6 +1,6 @@
 module.exports = {
 
-    makeMiner: function(maxCost) {
+    makeMiner: function(energy) {
 
         // Calculate an average energy produced for sources
         const sourceEnergy = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME;
@@ -14,7 +14,7 @@ module.exports = {
         for (let i = 0; i < workCount; i++) {
             lvl++;
             body.push(WORK);
-            if (creepSpawnUtility.getCost(body) > maxCost) {
+            if (creepSpawnUtility.getCost(body) > energy) {
                 lvl--;
                 body.pop();
                 break;
