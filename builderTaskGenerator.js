@@ -48,6 +48,12 @@ class BuilderTaskGenerator {
                 return new Task({ roomName: realPos.roomName }, "move", [moveToRoom]);
             }
         }
+
+        // Otherwise, no task!
+        return new Task({}, "idle", [function(creep, data) { 
+            creep.say("idle");
+            return false; 
+        }]);
     }
 
     createBuildTask(creep, site) {
