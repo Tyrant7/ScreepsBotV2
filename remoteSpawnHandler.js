@@ -1,12 +1,6 @@
 const remoteUtility = require("remoteUtility");
 const creepSpawnUtility = require("creepSpawnUtility");
 
-const MinerSpawnHandler = require("minerSpawnHandler");
-const HaulerSpawnHandler = require("haulerSpawnHandler");
-
-const minerSpawnHandler = new MinerSpawnHandler();
-const haulerSpawnHandler = new HaulerSpawnHandler();
-
 class RemoteSpawnHandler {
 
     getNextSpawn(roomInfo) {
@@ -60,7 +54,7 @@ class RemoteSpawnHandler {
         }
     }
 
-    getBestSpawn(maxCost, sourceCount, neededCarry, existingSpawns, remoteRoomName) {
+    getBestSpawn(maxCost, sourceCount, neededCarry, existingSpawns) {
 
         // Compare ideal with actual for each role
         // If we have already spawned more than we need, 
@@ -88,25 +82,6 @@ class RemoteSpawnHandler {
             return this.makeClaimer();
         }
         existingSpawns[CONSTANTS.roles.reserver] -= 1;
-    }
-
-    makeClaimer() {
-        // Reservers will be made up of 2 CLAIM 2 MOVE bodies
-        // It's technically possible with 1 CLAIM 1 MOVE, but give it extra to account for 
-        // imperfections in pathing and spawning priorities
-        return {
-            body: [MOVE, MOVE, CLAIM, CLAIM],
-            name: "Reserver " + Game.time + " [2]",
-            memory: { role: CONSTANTS.roles.reserver },
-        };
-    }
-
-    makeMiner(maxCost) {
-        return minerSpawnHandler.make(maxCost);
-    }
-
-    makeHauler(carryParts, maxCost) {
-        return haulerSpawnHandler.make(Math.min(Math.ceil(carryParts / 2), CONSTANTS.maxHaulerLevel), maxCost);
     }
 
     getUpkeepEstimates(homeRoomInfo, sourceCount, neededCarry) {

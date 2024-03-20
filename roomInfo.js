@@ -48,11 +48,6 @@ class RoomInfo {
         return this.getSources().reduce((total, source) => total + (source.energyCapacity / ENERGY_REGEN_TIME), 0);
     }
 
-    getGrossIncome() {
-        const income = this.miners.reduce((total, curr) => total + curr.body.filter((part) => part.type === WORK).length * HARVEST_POWER, 0);
-        return Math.min(income, this.getMaxIncome());
-    }
-
     /**
      * Finds enemies in remotes of this room and caches them.
      * @returns {Creep[]} A list of enemy creeps in this room's remotes.

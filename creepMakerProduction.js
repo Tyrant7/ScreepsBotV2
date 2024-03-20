@@ -53,4 +53,8 @@ module.exports = {
             memory: { role: CONSTANTS.roles.reserver },
         };
     },
+
+    haulerLevelCost: creepSpawnUtility.getCost([MOVE, CARRY, CARRY]),
+
+    
 };

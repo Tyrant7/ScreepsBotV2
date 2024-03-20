@@ -14,6 +14,8 @@ class HaulerSpawnHandler extends LeveledSpawnHandler {
         const incomeToPartRatio = 0.8;
         const maxCarryParts = Math.ceil(roomInfo.getMaxIncome() * incomeToPartRatio);
 
+
+        
         // Find the most expensive hauler we can build in this room
         const levelCost = creepSpawnUtility.getCost([MOVE, CARRY, CARRY]);
         const haulerLevel = Math.min(roomInfo.room.energyCapacityAvailable / levelCost, CONSTANTS.maxHaulerLevel);

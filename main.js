@@ -70,36 +70,13 @@ const creepRoleMap = {
 const spawnManager = new SpawnManager();
 
 const CrashSpawnHandler = require("crashSpawnHandler");
-const MinerSpawnHandler = require("minerSpawnHandler");
-const HaulerSpawnHandler = require("haulerSpawnHandler");
-const UpgraderSpawnHandler = require("upgraderSpawnHandler");
-const ScoutSpawnHandler = require("scoutSpawnHandler");
-const RepairerSpawnHandler = require("repairerSpawnHandler");
-const BuilderSpawnHandler = require("builderSpawnHandler");
-
-const RemoteSpawnHandler = require("remoteSpawnHandler");
-const DefenderSpawnHandler = require("defenderSpawnHandler");
+const ProductionSpawnHandler = require("spawnHandlerProduction");
+const UsageSpawnHandler = require("spawnHandlerUsage")
 
 const crashSpawnHandler = new CrashSpawnHandler();
-const minerSpawnHandler = new MinerSpawnHandler();
-const haulerSpawnHandler = new HaulerSpawnHandler();
-const upgraderSpawnHandler = new UpgraderSpawnHandler();
-const scoutSpawnHandler = new ScoutSpawnHandler();
-const repairerSpawnHandler = new RepairerSpawnHandler();
-const builderSpawnHandler = new BuilderSpawnHandler();
+const productionSpawnHandler = new ProductionSpawnHandler();
+const usageSpawnHandler = new UsageSpawnHandler();
 
-const remoteSpawnHandler = new RemoteSpawnHandler();
-const defenderSpawnHandler = new DefenderSpawnHandler();
-
-// Only include economy based spawn handlers,
-// and do not include handlers that are not meant to regularly spawn in bases
-// such as the crashSpawnHandler which only handles recovery cases
-const basicSpawnHandlers = [
-    minerSpawnHandler, // To not waste source energy
-    // haulerSpawnHandler, // To recover quickly
-    upgraderSpawnHandler, // To upgrade
-    scoutSpawnHandler, // To expand
-];
 
 // Defense
 const towerManager = new TowerManager();
