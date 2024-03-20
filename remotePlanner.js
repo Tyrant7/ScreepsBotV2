@@ -1,6 +1,6 @@
-const RemoteSpawnHandler = require("remoteSpawnHandler");
+const ProductionSpawnHandler = require("productionSpawnHandler");
 
-const remoteSpawnHandler = new RemoteSpawnHandler();
+const productionSpawnHandler = new ProductionSpawnHandler();
 const scoutingUtility = require("scoutingUtility");
 
 class RemotePlanner {
@@ -186,7 +186,7 @@ class RemotePlanner {
         upkeep.structures = totalContainerUpkeep + totalRoadUpkeep;
 
         // Now for creeps spawn costs, total up energy and spawn time upkeeps
-        upkeep.creeps = remoteSpawnHandler.getUpkeepEstimates(roomInfo, remoteInfo.sources.length, neededCarry);
+        upkeep.creeps = productionSpawnHandler.getUpkeepEstimates(roomInfo, remoteInfo.sources.length, neededCarry);
 
         // Calculate net energy produced in this room
         const grossEnergy = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME * remoteInfo.sources.length;
