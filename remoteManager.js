@@ -15,24 +15,6 @@ class RemoteManager {
             return 0;
         }
 
-        // Process each planned remote, cutting off when the spawns go above our threshold
-        let spawnCosts = 0;
-        let passedThreshold = false;
-        for (const remoteRoom in remotePlans) {
-            const remote = remotePlans[remoteRoom];
-
-            // Once we hit our cutoff, mark all remaining remotes as inactive
-            if (passedThreshold || spawnCosts + remote.cost + baseRoomSpawnCost >= 1) {
-                passedThreshold = true;
-                remote.active = false;
-                continue;
-            }
-
-            // Mark this remote as active and process it
-            remote.active = true;
-            spawnCosts += remote.cost;
-        }
-
         // Display our active remotes
         if (DEBUG.trackSpawnUsage) {
             const remoteDisplay = {};

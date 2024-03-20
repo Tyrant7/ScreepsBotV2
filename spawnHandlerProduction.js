@@ -31,12 +31,12 @@ class ProductionSpawnHandler {
             // If it's more, we can add another of appropriate level
             // If it's the same, we'll add another if we don't have it yet, effectively restructuring our hauler configuration
             // e.x. 8C + 4C; 4C dies -> add a 12C; 8C dies -> do nothing since we now have our ideal level configuration
-            if (wantedCarry >= existingSpawns.haulerCarry) {
+            if (wantedCarry >= existingSpawns.haulers.carry) {
                 const idealHaulerLevels = this.getIdealLevels(Math.ceil(wantedCarry / 2), 
                     CONSTANTS.maxHaulerLevel, 
                     creepMaker.haulerLevelCost, 
                     roomInfo.room.energyCapacityAvailable);
-                const missingHaulerLevel = this.getMissingLevel(idealHaulerLevels, existingSpawns.haulers);
+                const missingHaulerLevel = this.getMissingLevel(idealHaulerLevels, existingSpawns.haulers.levels);
                 if (missingHaulerLevel) {
                     return creepMaker.makeHauler();
                 }
@@ -80,22 +80,23 @@ class ProductionSpawnHandler {
     getExistingSpawns(roomInfo) {
 
         // Track our existing spawns
-        // Same deal as tracking ideal spawns, but this time for creeps that already exist
         const existingSpawns = {
             miners: 0,
             reservers: 0,
-            haulerCarry: 0,
-            haulers: [],
+            haulers: {
+                carry: 0,
+                levels: [],
+            }
         };
 
         existingSpawns.miners = roomInfo.miners.length;
         existingSpawns.reservers = roomInfo.reservers.length;
 
         // We'll have to do something slightly different for haulers that are measured by part counts
-        haulerCarry = roomInfo.haulers.reduce((total, hauler) => {
-            return total + hauler.body.filter((p) => p.type === CARRY);
+        existingSpawns.haulers.carry = roomInfo.haulers.reduce((total, hauler) => {
+            return total + hauler.body.filter((p) => p.type === CARRY).length;
         }, 0);
-        existingSpawns.haulers = this.getLevels(roomInfo.haulers, function(hauler) {
+        existingSpawns.haulers.levels = this.getLevels(roomInfo.haulers, function(hauler) {
             return hauler.body.filter((p) => p.type === MOVE).length;
         });
 
@@ -172,6 +173,36 @@ class ProductionSpawnHandler {
 
     //#endregion
 
+    // For a base
+    estimateUpkeepForBase(roomInfo) {
+
+        function calculateUpkeep(creeps, calculation) {
+            return creeps.reduce((total, curr) => total + calculation(curr.body), 0) / CREEP_LIFE_TIME;
+        }
+
+        const upkeeps = { energy: 0, spawnTime: 0 };
+        const maxCost = roomInfo.room.energyCapacityAvailable;
+
+        const miners = [];
+        roomInfo.getSources().forEach((s) => {
+            miners.push(creepMaker.makeMiner(maxCost));
+        });
+        upkeeps.energy += calculateUpkeep(miners, creepSpawnUtility.getCost);
+        upkeeps.spawnTime += calculateUpkeep(miners, creepSpawnUtility.getSpawnTime);
+
+        const haulers = [];
+        let neededCarry = roomInfo.getMaxIncome();
+        while (neededCarry > 0) {
+            const hauler = creepMaker.makeHauler(neededCarry, maxCost);
+            neededCarry -= hauler.body.filter((p) => p === CARRY).length;
+            haulers.push(hauler);
+        }
+        upkeeps.energy += calculateUpkeep(haulers, creepSpawnUtility.getCost);
+        upkeeps.spawnTime += calculateUpkeep(haulers, creepSpawnUtility.getSpawnTime);
+
+        return upkeeps;
+    }
+
     // For remotes
     getUpkeepEstimates(homeRoomInfo, sourceCount, neededCarry) {
 
@@ -186,7 +217,7 @@ class ProductionSpawnHandler {
         // Start with miners
         const miners = [];
         for (let i = 0; i < sourceCount; i++) {
-            miners.push(this.makeMiner(maxCost));
+            miners.push(creepMaker.makeMiner(maxCost));
         }
         upkeeps.energy += calculateUpkeep(miners, creepSpawnUtility.getCost);
         upkeeps.spawnTime += calculateUpkeep(miners, creepSpawnUtility.getSpawnTime);
@@ -195,17 +226,17 @@ class ProductionSpawnHandler {
         const haulers = [];
         // Keep making haulers until we have enough to transport all energy we'll mine
         while (neededCarry > 0) {
-            const hauler = this.makeHauler(neededCarry, maxCost);
+            const hauler = creepMaker.makeHauler(neededCarry, maxCost);
             neededCarry -= hauler.body.filter((p) => p === CARRY).length;
             haulers.push(hauler);
         }
         upkeeps.energy += calculateUpkeep(haulers, creepSpawnUtility.getCost);
         upkeeps.spawnTime += calculateUpkeep(haulers, creepSpawnUtility.getSpawnTime);
 
-        // Finally, claimers
-        const claimerBody = this.makeClaimer().body;
-        upkeeps.energy += creepSpawnUtility.getCost(claimerBody) / CREEP_CLAIM_LIFE_TIME;
-        upkeeps.spawnTime += creepSpawnUtility.getSpawnTime(claimerBody) / CREEP_CLAIM_LIFE_TIME;
+        // Finally, reservers
+        const reserverBody = creepMaker.makeReserver().body;
+        upkeeps.energy += creepSpawnUtility.getCost(reserverBody) / CREEP_CLAIM_LIFE_TIME;
+        upkeeps.spawnTime += creepSpawnUtility.getSpawnTime(reserverBody) / CREEP_CLAIM_LIFE_TIME;
 
         return upkeeps;
     }

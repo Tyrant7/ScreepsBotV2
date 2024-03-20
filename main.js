@@ -68,14 +68,8 @@ const creepRoleMap = {
 
 // Spawning
 const spawnManager = new SpawnManager();
-
-const CrashSpawnHandler = require("crashSpawnHandler");
-const ProductionSpawnHandler = require("spawnHandlerProduction");
-const UsageSpawnHandler = require("spawnHandlerUsage")
-
-const crashSpawnHandler = new CrashSpawnHandler();
-const productionSpawnHandler = new ProductionSpawnHandler();
-const usageSpawnHandler = new UsageSpawnHandler();
+const EconomyHandler = require("economyHandler");
+const economyHandler = new EconomyHandler();
 
 
 // Defense
