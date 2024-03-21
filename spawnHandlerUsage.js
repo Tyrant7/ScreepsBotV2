@@ -78,10 +78,10 @@ class UsageSpawnHandler {
     estimateNeededUpgraders(roomInfo, energyToUse) {
 
         // This snippet spawns upgraders of increasing level until we have enough to use our energy goal
-        let spawnTime = 0;
-        for (let level = 0; true; level++) {
+        for (let level = 1; true; level++) {
 
             let levelUsage = 0;
+            let totalParts = 0;
             const levelComposition = [];
 
             let remainingLevel = level;
@@ -94,13 +94,21 @@ class UsageSpawnHandler {
                 levelUsage += upgraderBody.filter((p) => p === WORK).length * UPGRADE_CONTROLLER_POWER;
 
                 if (levelUsage > energyToUse) {
-                    levelComposition.forEach((body) => {
-                        spawnTime += creepSpawnUtility.getSpawnTime(body) / CREEP_LIFE_TIME;
-                    });
+
+                    // This level caused us to hit our max, let's backup one level
+                    // That's our max upgrader composition
+                    const adjustedLevel = nextLevel - 1;
+                    if (adjustedLevel > 0) {
+                        levelComposition.push(adjustedLevel);
+                        totalParts += creepMaker.makeUpgrader(adjustedLevel, roomInfo.room.energyCapacityAvailable).body;
+                    }
+
+                    const spawnTime = (totalParts * CREEP_SPAWN_TIME) / CREEP_LIFE_TIME;
                     return { spawnTime: spawnTime, levels: levelComposition };
                 }
 
                 levelComposition.push(nextLevel);
+                totalParts += upgraderBody.length;
                 remainingLevel -= CONSTANTS.maxUpgraderLevel;
             }
         }
