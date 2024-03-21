@@ -80,7 +80,6 @@ class HaulerTaskGenerator {
             }
             else if (intentResult === ERR_NOT_IN_RANGE) {
                 creep.moveTo(pickupObject, {
-                    reusePath: 30,
                     range: 1,
                 });
             }
@@ -180,7 +179,6 @@ class HaulerTaskGenerator {
             }
             else if (intentResult === ERR_NOT_IN_RANGE) {
                 creep.moveTo(target, {
-                    reusePath: 30,
                     range: 1,
                 });
             }

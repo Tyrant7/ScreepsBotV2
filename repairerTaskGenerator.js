@@ -68,7 +68,6 @@ class RepairerTaskGenerator {
             }
             else {
                 creep.moveTo(target, {
-                    reusePath: 30,
                     range: 3,
                 });
             }
