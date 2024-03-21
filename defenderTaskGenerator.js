@@ -46,11 +46,11 @@ class DefenderTaskGenerator {
             }
 
             // Follow and attack our target!
-            creep.say("🛡️", true);
-            if (creep.attack(target) === ERR_NOT_IN_RANGE) {
+            creep.say("🛡️", true);           
+            if (creep.rangedAttack(target) === ERR_NOT_IN_RANGE) {
                 creep.moveTo(target, {
                     reusePath: 30,
-                    range: 1,
+                    range: 2,
                 });
             }
             return target.hits <= 0;
