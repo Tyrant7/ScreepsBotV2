@@ -11,6 +11,10 @@ class UsageSpawnHandler {
             return repairer;
         }
 
+        // Other types of creep spawns that would be regular, but not contribute to
+        // production or transport of energy would go here
+        // e.g. future mineral harvesters, etc.
+
         const upgrader = this.trySpawnUpgrader(roomInfo, energyToUse);
         if (upgrader) {
             return upgrader;
