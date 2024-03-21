@@ -17,7 +17,8 @@ class MilitarySpawnHandler {
             }, 0);
 
             // Make an appropriately sized defender
-            return creepMaker.makeMiniDefender(Math.ceil(mostFightParts / 4), roomInfo.room.energyCapacityAvailable);
+            // i.e. one level larger in size
+            return creepMaker.makeMiniDefender(Math.ceil(mostFightParts / 4) + 1, roomInfo.room.energyCapacityAvailable);
         }
     }
 }

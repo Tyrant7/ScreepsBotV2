@@ -7,11 +7,11 @@ module.exports = {
         let lvl = 0;
         for (let i = 0; i < desiredLevel; i++) {
             lvl = i + 1;
-            body.push(MOVE, MOVE, ATTACK, ATTACK, ATTACK, HEAL);
+            body.push(MOVE, ATTACK, ATTACK, MOVE, ATTACK, HEAL);
             if (creepSpawnUtility.getCost(body) > maxCost) {
-                body.pop();
-                body.pop();
-                body.pop();
+                for (let i = 0; i < 6; i++) {
+                    body.pop();
+                }
                 break;
             } 
         }
