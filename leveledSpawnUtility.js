@@ -24,7 +24,7 @@ module.exports = {
     getIdealLevels: function(levelTotal, maxLevel, levelCost, energyCapacity) {
 
         // Find the biggest creep we can build in this room
-        const highestLevel = Math.min(energyCapacity / levelCost, maxLevel);
+        const highestLevel = Math.min(Math.floor(energyCapacity / levelCost), maxLevel);
 
         // Divide our desired level count to get our desired number of creeps
         const creepCount = Math.floor(levelTotal / highestLevel);

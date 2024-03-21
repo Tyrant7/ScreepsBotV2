@@ -154,6 +154,16 @@ class UsageSpawnHandler {
             return upgrader.body.filter((p) => p.type === MOVE).length;
         });
 
+        // Let's make sure we aren't spawning a ton if we change our leveling scheme
+        // If the max level we can support increases when we build a new extension, we'd otherwise
+        // spawn a ton trying to replace all level 7s with 8s, for example
+        // This way we wait until they die to restructure ourselves
+        const wantedSum = wantedLevels.reduce((total, curr) => total + curr, 0);
+        const actualSum = actualLevels.reduce((total, curr) => total + curr, 0);
+        if (wantedSum < actualSum) {
+            return;
+        }
+
         // If we find one, let's spawn it
         const missingLevel = levelUtility.getMissingLevel(wantedLevels, actualLevels);
         if (missingLevel) {
