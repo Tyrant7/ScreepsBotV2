@@ -23,6 +23,9 @@ global.DEBUG = {
 };
 global.RELOAD = true;
 
+// Extensions
+require("betterPathing");
+
 // Managers
 const CreepManager = require("creepManager");
 const SpawnManager = require("spawnManager");
