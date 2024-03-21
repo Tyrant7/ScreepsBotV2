@@ -16,7 +16,7 @@ module.exports = {
             } 
         }
         return { body: body, 
-                 name: "Baby Defender " + Game.time + " [" + lvl + "]",
+                 name: "Baby_Defender " + Game.time + " [" + lvl + "]",
                  memory: { role: CONSTANTS.roles.defender }};
     },
 }
