@@ -8,6 +8,8 @@ const militarySpawnHandler = new MilitarySpawnHandler();
 
 const remoteUtility = require("remoteUtility");
 
+const profiler = require("profiler");
+
 class EconomyHandler {
 
     run(roomInfo) {
@@ -28,7 +30,10 @@ class EconomyHandler {
 
         const savingGoal = this.determineSavingGoal(roomInfo);
         const spendFraction = 1 - savingGoal.fraction;
+
+        profiler.startSample(roomInfo.room.name + " income");
         this.setupIdealIncomeConfiguration(roomInfo, spendFraction);
+        profiler.endSample(roomInfo.room.name + " income");
 
         if (roomInfo.storage && roomInfo.storage.store[RESOURCE_ENERGY] >= savingGoal.goal) {
 
@@ -100,13 +105,11 @@ class EconomyHandler {
     handleDefaultSpawnOrder(roomInfo, fractionToSpend) {
 
         // Let's estimate our actual production and usage values
+        profiler.startSample(roomInfo.room.name + " estimate");
         const energyUsage = usageSpawnHandler.estimateCurrentUsage(roomInfo);
         const energyProduction = productionSpawnHandler.estimateCurrentProduction(roomInfo);
         const energyToSpend = energyProduction * fractionToSpend;
-
-        console.log("production: " + energyProduction);
-        console.log("spend target: " + energyToSpend);
-        console.log("spend current: " + energyUsage);
+        profiler.endSample(roomInfo.room.name + " estimate");
 
         // If we're producing more than we want to use (minus our saving amount, of course)
         // We'll spawn a user next
@@ -114,7 +117,9 @@ class EconomyHandler {
 
             // If we have a valid productive spawn, let's spawn it
             // Occasionally we won't be able to fit another upgrader in
+            profiler.startSample(roomInfo.room.name + " next spawn");
             const next = usageSpawnHandler.getNextSpawn(roomInfo, energyToSpend);
+            profiler.endSample(roomInfo.room.name + " next spawn");
             if (next) {
                 return next;
             }
