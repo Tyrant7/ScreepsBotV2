@@ -262,6 +262,15 @@ class RoomInfo {
                     id: drop.id,
                 });
             });
+            room.find(FIND_TOMBSTONES).filter((t) => t.store[RESOURCE_ENERGY]).forEach((tombstone) => {
+                pickupPoints.push({
+                    pos: tombstone.pos,
+                    amount: tombstone.store[RESOURCE_ENERGY],
+                    fillrate: -tombstone.store[RESOURCE_ENERGY],
+                    ticksUntilBeginFilling: tombstone.ticksToDecay,
+                    id: tombstone.id,
+                });
+            });
         }
 
         // Add all mining sites as valid pickup points
