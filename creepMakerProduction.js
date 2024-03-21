@@ -1,3 +1,5 @@
+const creepSpawnUtility = require("creepSpawnUtility");
+
 module.exports = {
 
     makeMiner: function(energy) {

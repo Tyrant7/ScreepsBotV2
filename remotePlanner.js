@@ -1,4 +1,4 @@
-const ProductionSpawnHandler = require("productionSpawnHandler");
+const ProductionSpawnHandler = require("spawnHandlerProduction");
 
 const productionSpawnHandler = new ProductionSpawnHandler();
 const scoutingUtility = require("scoutingUtility");

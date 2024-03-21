@@ -7,10 +7,10 @@ const overlay = require("overlay");
 
 class RemoteManager {
 
-    run(roomInfo, baseRoomSpawnCost) {
+    run(roomInfo) {
         
         // Get our plans
-        const remotePlans = this.ensurePlansExist(roomInfo, baseRoomSpawnCost);
+        const remotePlans = this.ensurePlansExist(roomInfo);
         if (!remotePlans) {
             return 0;
         }
@@ -28,20 +28,16 @@ class RemoteManager {
 
         // Overlays
         this.drawOverlays();
-
-        // For tracking
-        return spawnCosts;
     }
 
     /**
      * Plan our remotes, if we haven't already.
      * @param {RoomInfo} roomInfo Info object for the room to plan remotes for.
-     * @param {number} baseRoomSpawnCost Spawn capacity for that room.
      * @returns The active plans for remotes for this room.
      */
-    ensurePlansExist(roomInfo, baseRoomSpawnCost) {
+    ensurePlansExist(roomInfo) {
         if (!utility.getRemotePlans(roomInfo.room.name) || (RELOAD && DEBUG.replanRemotesOnReload)) {
-            const unsortedPlans = this.planRemotes(roomInfo, baseRoomSpawnCost);
+            const unsortedPlans = this.planRemotes(roomInfo);
 
             // Sort plans by distance, then efficiency score to allow creeps to be assigned under a natural priority 
             // of more important (i.e. higher scoring and closer) remotes
@@ -65,7 +61,7 @@ class RemoteManager {
         return utility.getRemotePlans(roomInfo.room.name);
     }
 
-    planRemotes(roomInfo, baseRoomSpawnCost) {
+    planRemotes(roomInfo) {
 
         const cpu = Game.cpu.getUsed();
 
@@ -99,7 +95,7 @@ class RemoteManager {
             console.log("Planned remotes with: " + (Game.cpu.getUsed() - cpu) + " cpu");
             bestBranch.forEach((b) => console.log("Room " + b.room + " with score: " + b.score + " and cost: " + b.cost));
             const totalCost = bestBranch.reduce((usage, node) => usage + node.cost, 0);
-            console.log("Total spawn usage after remotes: " + (baseRoomSpawnCost + totalCost));
+            console.log("Total spawn usage after remotes: " + (totalCost));
         }
 
         return bestBranch;

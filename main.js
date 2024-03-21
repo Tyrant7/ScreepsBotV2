@@ -122,41 +122,17 @@ module.exports.loop = function() {
             constructionManager.run(info);
             profiler.endSample("Construction " + room);
 
-            // This represent the fraction of our total spawn capacity we sit at
-            // i.e. the amount of time we spend spawning / 1
-            const avgSustainCost = basicSpawnHandlers.reduce((total, curr) => total + curr.getTotalAvgSpawnTime(info), 0) / info.spawns.length;
-            if (DEBUG.trackSpawnUsage) {
-                overlay.addHeading(info.room.name, "- Spawns -");
-                overlay.addText(info.room.name, { [info.room.name]: "(" + (Math.round(avgSustainCost * 1000) / 1000).toFixed(3) + ")" });
-            }
-
-            let remoteSustainCost = 0;
-
-            // Spawn handlers are passed in order of priority
-            const currentSpawnHandlers = [
-                crashSpawnHandler,
-                ...basicSpawnHandlers,
-                repairerSpawnHandler,
-                builderSpawnHandler,
-            ];
             if (info.remoting) {
 
                 // Plan remotes for bases!
                 profiler.startSample("Remotes " + room);
-                remoteSustainCost = remoteManager.run(info, avgSustainCost);
+                remoteSustainCost = remoteManager.run(info);
                 profiler.endSample("Remotes " + room);
-
-                // Make sure we're spawning for remotes
-                currentSpawnHandlers.push(remoteSpawnHandler);
-            }
-
-            if (info.getEnemies().length) {
-                currentSpawnHandlers.unshift(defenderSpawnHandler);
             }
 
             // Spawn progress
             if (DEBUG.trackSpawnUsage) {
-                overlay.addText(info.room.name, { "Spawn Capacity": (Math.round((avgSustainCost + remoteSustainCost) * 1000) / 1000).toFixed(3) + " / 1" });
+                overlay.addText(info.room.name, { "Spawn Capacity": (Math.round((remoteSustainCost) * 1000) / 1000).toFixed(3) + " / 1" });
             }
 
             // Track RCL progress
@@ -171,7 +147,7 @@ module.exports.loop = function() {
 
             // Handle spawns
             profiler.startSample("Spawns " + room);
-            spawnManager.run(info, currentSpawnHandlers);
+            spawnManager.run(info, economyHandler);
             profiler.endSample("Spawns " + room);
         }
 

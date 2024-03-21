@@ -57,8 +57,8 @@ class ProductionSpawnHandler {
                 continue;
             }
 
-            wantedMiners += remote.sourceCount;
-            wantedCarry += remote.neededCarry;
+            wantedMiners += remote.miningSites.length;
+            wantedCarry += remote.neededHaulerCarry;
             wantedReservers += 1;
 
             // If we're missing anything, let's get to spawning
@@ -105,12 +105,11 @@ class ProductionSpawnHandler {
      * @param {RoomInfo} roomInfo The base to estimate for.
      * @returns {number} The total estimated production.
      */
-    estimteCurrentProduction(roomInfo) {
+    estimateCurrentProduction(roomInfo) {
 
-        // TODO //
-        // Include current room and remotes
-
-        throw new Error("Not implemented!");
+        // Since we always spawn transporters before the next miner, we should be a single miner's worth of estimate ahead
+        // No biggie, though
+        return roomInfo.miners.length * (SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME);
     }
 
     //#region Upkeep

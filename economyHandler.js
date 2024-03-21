@@ -28,14 +28,15 @@ class EconomyHandler {
 
         const savingGoal = this.determineSavingGoal(roomInfo);
         const spendFraction = 1 - savingGoal.fraction;
-        const income = this.setupIdealIncomeConfiguration(roomInfo, spendFraction);
+        this.setupIdealIncomeConfiguration(roomInfo, spendFraction);
 
         if (roomInfo.storage && roomInfo.storage.store[RESOURCE_ENERGY] >= savingGoal.goal) {
-            // We did it! Start a different type of spawn cycle
+
+            // TODO //
+            // We did it! Start a different type of spawn cycle 
         }
-        else {
-            this.handleDefaultSpawnOrder(roomInfo, income * spendFraction);
-        }
+
+        return this.handleDefaultSpawnOrder(roomInfo, spendFraction);
     }
 
     determineSavingGoal(roomInfo) {
@@ -51,7 +52,6 @@ class EconomyHandler {
      * Maximizing our income by activing or dropping remotes while ensuring that we spend enough to meet our saving goal.
      * @param {RoomInfo} roomInfo The info object to do this for.
      * @param {number} spendFraction The fraction of income to allow spending for.
-     * @returns {number} The total income of this base.
      */
     setupIdealIncomeConfiguration(roomInfo, spendFraction) {
 
@@ -68,6 +68,7 @@ class EconomyHandler {
 
         // Process each planned remote, cutting off when the spawns go above our threshold
         let passedThreshold = false;
+        const remotePlans = remoteUtility.getRemotePlans(roomInfo.room.name);
         for (const remoteRoom in remotePlans) {
             const remote = remotePlans[remoteRoom];
 
@@ -88,20 +89,39 @@ class EconomyHandler {
             // Mark this remote as active and process it
             remote.active = true;
         }
-        return totalIncome;
     }
 
-    handleDefaultSpawnOrder(roomInfo, energyToUse) {
+    /**
+     * Figure out if we should spawn a producer or a user based on current economic situation.
+     * @param {RoomInfo} roomInfo The base to determine spawns for.
+     * @param {number} fractionToSpend The fraction of produced energy to spend.
+     * @returns {{}} An object with creep spawn data according to the choice made.
+     */
+    handleDefaultSpawnOrder(roomInfo, fractionToSpend) {
 
+        // Let's estimate our actual production and usage values
+        const energyUsage = usageSpawnHandler.estimateCurrentUsage(roomInfo);
+        const energyProduction = productionSpawnHandler.estimateCurrentProduction(roomInfo);
+        const energyToSpend = energyProduction * fractionToSpend;
 
+        console.log("production: " + energyProduction);
+        console.log("spend target: " + energyToSpend);
+        console.log("spend current: " + energyUsage);
 
-        // TODO //
-        // Figure out what to spawn, producer or user
+        // If we're producing more than we want to use (minus our saving amount, of course)
+        // We'll spawn a user next
+        if (energyToSpend >= energyUsage) {
 
-        // Let's estimate our actual production vs usage values
-        // If we're producing more than we're using (minus our saving amount, of course)
-        // Then we'll spawn a user next
+            // If we have a valid productive spawn, let's spawn it
+            // Occasionally we won't be able to fit another upgrader in
+            const next = usageSpawnHandler.getNextSpawn(roomInfo, energyToSpend);
+            if (next) {
+                return next;
+            }
+        }
+
         // Otherwise, we'll spawn a producer
+        return productionSpawnHandler.getNextSpawn(roomInfo);
     }
 }
 

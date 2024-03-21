@@ -80,36 +80,51 @@ class UsageSpawnHandler {
             let levelUsage = 0;
             const levelComposition = [];
 
-            let nextLevel = Math.min(level, CONSTANTS.maxUpgraderLevel);
-            while (nextLevel > 0) {
+            let remainingLevel = level;
+            while (remainingLevel > 0) {
+                const nextLevel = Math.min(remainingLevel, CONSTANTS.maxUpgraderLevel);
                 const upgraderBody = creepMaker.makeUpgrader(nextLevel, roomInfo.room.energyCapacityAvailable).body;
 
                 // Factor in the cost of the body and usage of the upgrader
-                levelUsage += creepMaker.getCost(upgraderBody);
+                levelUsage += creepSpawnUtility.getCost(upgraderBody) / CREEP_LIFE_TIME;
                 levelUsage += upgraderBody.filter((p) => p === WORK).length * UPGRADE_CONTROLLER_POWER;
+
                 if (levelUsage > energyToUse) {
-                    break;
+                    levelComposition.forEach((body) => {
+                        spawnTime += creepSpawnUtility.getSpawnTime(body) / CREEP_LIFE_TIME;
+                    });
+                    return { spawnTime: spawnTime, levels: levelComposition };
                 }
 
                 levelComposition.push(nextLevel);
-                nextLevel -= CONSTANTS.maxUpgraderLevel;
-            }
-
-            if (levelUsage > energyToUse) {
-                levelComposition.forEach((body) => {
-                    spawnTime += creepSpawnUtility.getSpawnTime(body) / CREEP_LIFE_TIME;
-                });
-                return { spawnTime: spawnTime, levels: levelComposition };
+                remainingLevel -= CONSTANTS.maxUpgraderLevel;
             }
         }
     }
 
+    /**
+     * Estimates the current amount of energy that the creeps of this base are actually using.
+     * @param {RoomInfo} roomInfo The base object to estimate for.
+     * @returns {number} The average estimated energy usage per tick.
+     */
     estimateCurrentUsage(roomInfo) {
 
-        // TODO //
-        // Estimate how much we're spending
+        // Estimate how much we're spending on average in this room
+        let totalEnergyUsage = 0;
 
-        throw new Error("Not implemented!");
+        // Scout and repairers
+        totalEnergyUsage += creepSpawnUtility.getCost(creepMaker.makeScout().body) / CREEP_LIFE_TIME;
+        totalEnergyUsage += creepSpawnUtility.getCost(creepMaker.makeRepairer(
+            CONSTANTS.maxRepairerLevel, roomInfo.room.energyCapacityAvailable).body) / CREEP_LIFE_TIME;
+    
+        // Upgraders
+        totalEnergyUsage += roomInfo.upgraders.reduce((total, upgrader) => {
+            return total 
+                + creepSpawnUtility.getCost(upgrader.body) 
+                + (upgrader.body.filter((p) => p.type === WORK).length * UPGRADE_CONTROLLER_POWER);
+        }, 0);
+
+        return totalEnergyUsage;
     }
 
     //#region Spawning
@@ -124,11 +139,14 @@ class UsageSpawnHandler {
         // Let's look for the first upgrader we want but don't have
         const wantedLevels = this.estimateNeededUpgraders(roomInfo, energyToUse).levels
         const actualLevels = levelUtility.getLevels(creepSpawnUtility.getPredictiveCreeps(roomInfo.upgraders), function(upgrader) {
-            return upgrader.body.filter((p) => p.type === MOVE);
+            return upgrader.body.filter((p) => p.type === MOVE).length;
         });
 
         // If we find one, let's spawn it
-        return levelUtility.getMissingLevels(wantedLevels, actualLevels);
+        const missingLevel = levelUtility.getMissingLevel(wantedLevels, actualLevels);
+        if (missingLevel) {
+            return creepMaker.makeUpgrader(missingLevel, roomInfo.room.energyCapacityAvailable);
+        }
     }
 
 

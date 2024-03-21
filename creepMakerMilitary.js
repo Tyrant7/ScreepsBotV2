@@ -1,3 +1,5 @@
+const creepSpawnUtility = require("creepSpawnUtility");
+
 module.exports = {
 
     makeMiniDefender: function(desiredLevel, maxCost) {

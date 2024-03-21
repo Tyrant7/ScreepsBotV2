@@ -1,3 +1,5 @@
+const creepSpawnUtility = require("creepSpawnUtility");
+
 module.exports = {
 
     makeUpgrader: function(desiredLevel, energy) {
