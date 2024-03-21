@@ -49,7 +49,7 @@ class EconomyHandler {
         // TODO //
         return {
             goal: 50000,
-            fraction: 0.2,
+            fraction: 0.5,
         };
     }
 
