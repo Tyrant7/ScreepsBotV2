@@ -1,3 +1,5 @@
+const profiler = require("profiler");
+
 // Make sure we have some default options that can be overridden for our movement
 const defaultOptions = {
     reusePath: 50,
@@ -32,7 +34,13 @@ Creep.prototype.moveTo = function(target, options = defaultOptions) {
 
     // Save our shove target in case we get shoved
     this.memory._shoveTarget = target;
+
+    // TODO //
+    // Switch to custom moveTo implementation
+
+    profiler.startSample(this.name + " moveTo");
     this.wrappedMoveTo(target, options);
+    profiler.endSample(this.name + " moveTo");
 }
 Creep.prototype.wrappedMove = Creep.prototype.move;
 Creep.prototype.move = function(direction) {
@@ -63,8 +71,6 @@ Creep.prototype.shoveIfNecessary = function(targetPos) {
     }
 }
 Creep.prototype.requestShove = function(shover) {
-
-    console.log(shover.name + " requesting shove on " + this.name);
 
     // Let's add this creep to the shove registry so it can't be shoved twice
     moveRegistry[this.name] = true;
