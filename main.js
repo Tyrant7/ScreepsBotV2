@@ -13,7 +13,7 @@ global.DEBUG = {
     drawRoadOverlay: false,
     drawPathOverlay: false,
     drawContainerOverlay: false,
-    drawTrafficArrows: false,
+    drawTrafficArrows: true,
 
     trackSpawnUsage: true,
     trackCPUUsage: true,

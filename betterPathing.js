@@ -109,6 +109,9 @@ Creep.prototype.move = function(direction) {
     this.shoveIfNecessary(getPosInDirection(this.pos, direction));
 }
 Creep.prototype.shoveIfNecessary = function(targetPos) {
+    if (!targetPos) {
+        return;
+    }
 
     const blockingCreep = this.room.lookForAt(LOOK_CREEPS, targetPos.x, targetPos.y).find((c) => c.my);
     if (blockingCreep) {
@@ -187,6 +190,9 @@ function drawArrow(pos, direction, style) {
         return;
     }
     const target = getPosInDirection(pos, direction);
+    if (!target) {
+        return;
+    }
     const x = target.x - ((target.x - pos.x) * 0.5);
     const y = target.y - ((target.y - pos.y) * 0.5);
     Game.rooms[pos.roomName].visual.line(pos.x, pos.y, x, y, style);
@@ -204,7 +210,11 @@ function getPosInDirection(startPos, direction) {
         [LEFT]:         [-1, 0],
         [TOP_LEFT]:     [-1,-1],
     }
-    return new RoomPosition(startPos.x + directions[direction][0], startPos.y + directions[direction][1], startPos.roomName);
+    const newX = startPos.x + directions[direction][0];
+    const newY = startPos.y + directions[direction][1];
+    if (newX > 0 && newX < 49 && newY > 0 && newY < 49) {
+        return new RoomPosition(newX, newY, startPos.roomName);
+    }
 }
 
 let cachedCostMatrices = {};
