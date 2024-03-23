@@ -21,7 +21,7 @@ global.DEBUG = {
     trackCreepCounts: true,
     
     logRemotePlanning: true,
-    replanRemotesOnReload: false,
+    replanRemotesOnReload: true,
 
     runProfiler: false,
 };

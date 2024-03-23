@@ -9,6 +9,9 @@ class RemoteManager {
 
     run(roomInfo) {
         
+        remotePlanner.planRemotes(roomInfo);
+        return;
+
         // Get our plans
         const remotePlans = this.ensurePlansExist(roomInfo);
         if (!remotePlans) {
@@ -52,7 +55,6 @@ class RemoteManager {
             const finalPlans = {};
             for (const plan of sortedPlans) {
                 const roomName = plan.room;
-                delete plan.children;
                 plan.roads = plan.roads.filter((r) => r.x > 0 && r.x < 49 && r.y > 0 && r.y < 49);
                 finalPlans[roomName] = plan;
             }

@@ -1,8 +1,3 @@
-const ProductionSpawnHandler = require("spawnHandlerProduction");
-
-const productionSpawnHandler = new ProductionSpawnHandler();
-const scoutingUtility = require("scoutingUtility");
-
 class RemotePlanner {
 
     constructor() {
@@ -21,33 +16,107 @@ class RemotePlanner {
      */
     planRemotes(roomInfo) {
 
-        // If we haven't even scouted our own room, we definitely shouldn't plan remotes
-        if (!Memory.rooms[roomInfo.room.name]) {
-            return;
-        }
+        /*
+            Let's record each source as its own remote
+            Each remote (source) should record a few things:
+            {
+                room:        string,
+                source: {
+                    id:      string,
+                    pos:     RoomPosition,
+                },
+                container:   RoomPosition,
+                roads:       RoomPosition[],
+                
+                neededCarry: number,
 
-        // Let's check that all rooms within a range of 3 have been scouted
-        const unexplored = scoutingUtility.searchForUnexploredRoomsNearby(roomInfo.room.name, 3);
-        if (unexplored) {
-            return;
-        }
+                score:       number,
+                cost:        number,
 
-        // Now, let's find all rooms within range 2
-        // Organize them in a tree-like structure 
-        //     { }
-        //    /   \
-        //   1     1
-        //  / \   / \
-        // 2   2 2   2
-        const nearbyRooms = {};
-        const exits = Object.values(Game.map.describeExits(roomInfo.room.name));
-        for (const room of exits) {
-            const exitsOfExits = Object.values(Game.map.describeExits(room)).filter((exit) => exit !== roomInfo.room.name);
-            nearbyRooms[room] = exitsOfExits;
-        }
+                children:    Remote[],
+            }
 
-        // Now we're going to build a new tree structure a little bit differently to the one above
+            We can organize sources that share roads with eachother
+            Any source that shares roads with a closer source will be considered a "child" of the closer source
+            This means that it is always more efficient resource-wise to mine the parent source before the child source,
+            and because of this, child sources will only be considered for mining if their parent source is being mined as well
+            This also means that when calculating the maintenance costs of mining a child source, the parent's road maintenance 
+            cost can be deducted from the maintenance cost of the child since the parent's roads are already being maintained
+            This idea also applies for maintenance and spawn costs of reservers when the child source is in the same room as the parent
+        */
+
+        // First, let's get all of our possible remote rooms
+        const potentialRemoteRooms = this.getPotentialRemoteRooms(roomInfo.room.name);
+
+        // Next, let's make a remote object for each source in these rooms
         const remotes = [];
+        for (const remoteRoom of potentialRemoteRooms) {
+            for (const source of Memory.rooms[remoteRoom].sources) {
+                remotes.push({
+                    room: remoteRoom,
+                    source: {
+                        id: source.id,
+                        pos: new RoomPosition(source.pos.x, source.pos.y, remoteRoom),
+                    },
+                });
+            }
+        }
+
+        // Let's sort these sources by distance to our storage
+        /*
+        const goal = roomInfo.room.storage.pos;
+        const scores = {};
+        remotes.forEach((remote) => {
+            scores[remote.source.id] = PathFinder.search(remote.source.pos, { pos: goal, range: 1 }, {
+                maxRooms: 3,
+            }).path.length;
+        })
+        remotes.sort((a, b) => {
+            return scores[a.source.id] - scores[b.source.id];
+        });
+        */
+
+        // Let's plan each route back to our storage
+        // As we do this, let's build up a CostMatrix of planned roads 
+        // to encourage remotes to combine roads where they can
+        for (const remote of remotes) {
+            
+            // TODO //
+
+        }
+
+
+        // Once we've planned all of our roads, let's place down containers
+        // Let's keep them next to the source, but avoid placing on a road, if possible
+
+        // TODO
+
+
+        // Additionally, after roads we can easily figure out how much CARRY we'll need to support the income
+        // Simply calculate it based on our number of roads to the storage
+
+        // TODO //
+
+
+        // Next, we can begin structuring our tree of parent-child relationships
+        
+        // Let's check each of our remotes for overlap of planned roads
+        // If this occurs, we'll remove all overlapping planned roads for the further remote
+        
+        // TODO //
+
+
+        // Finally, let's determine our score and cost for this source
+        // Each source's cost will be the spawn cost to spawn one miner, plus as many haulers as is needed in CARRY parts
+        // Each source's score will be determined with a simple equation of:
+        // Income - spawnEnergy - maintenanceRoadsAndContainer
+
+        // TODO //
+
+
+        // We're finished!
+        // Return all of our remote plans
+
 
         // Traverse this tree from the base upwards when planning roads so we can guarantee that
         // roads from closer remotes exist when planning further remotes
@@ -67,7 +136,6 @@ class RemotePlanner {
 
                 // Then plan roads for each child one this remote
                 // Each distOne should have multiple distTwo depending remotes
-                const children = [];
                 nearbyRooms[distOne].forEach((distTwo) => {
                     if (this.isValidRemote(distTwo)) {
                         const distTwoPaths = this.getSourcePaths(roomInfo, distTwo, distOneRoadPositions);
@@ -79,7 +147,7 @@ class RemotePlanner {
                         const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoNeededCarry, distTwoRoadPositions, distTwoMiningSites.length);
 
                         // Score this remote
-                        children.push({
+                        remotes.push({
                             room: distTwo,
                             score: scoreCost.score,
                             cost: scoreCost.cost,
@@ -88,7 +156,6 @@ class RemotePlanner {
                             miningSites: distTwoMiningSites,
                             haulerPaths: distTwoHaulerPaths,
                             neededHaulerCarry: distTwoNeededCarry,
-                            children: [],
                         });
                     }
                 });
@@ -103,13 +170,59 @@ class RemotePlanner {
                     miningSites: distOneMiningSites,
                     haulerPaths: distOneHaulerPaths,
                     neededHaulerCarry: distOneNeededCarry,
-                    children: children,
                 });
             }
         });
 
-        // Get our combination of remotes with the highest score, algorithm explained below
-        return this.traverseRecursively(remotes, 1, 0).branch;
+        // Return all possible remotes for us so we can hand pick them later
+        return remotes;
+    }
+
+    /**
+     * Gets all possible remote rooms in Manhattan distance of 2.
+     * @param {string} baseName Name of the room to get remotes for.
+     * @returns {string[]} An array of room names.
+     */
+    getPotentialRemoteRooms(baseName) {
+
+        // Let's make a set containing all rooms in Manhattan distance of 2
+        const nearbyRooms = [];
+        for (const neighbour of Object.values(Game.map.describeExits(baseName))) {
+            if (this.isValidRemote(neighbour)) {
+                nearbyRooms.push(neighbour);
+            }
+            for (const neighbourOfNeighbours of Object.values(Game.map.describeExits(neighbour))) {
+                if (neighbourOfNeighbours !== baseName && !nearbyRooms.includes(neighbourOfNeighbours) &&
+                    this.isValidRemote(neighbourOfNeighbours)) {
+                    nearbyRooms.push(neighbourOfNeighbours);
+                }
+            }
+        }
+        return nearbyRooms;
+    }
+ 
+    /**
+     * Determines if this room is a valid remote.
+     * @param {string} roomName The name of the room to check.
+     * @returns True or false depending on the presence of sources, invaders, players, and other factors.
+     */
+    isValidRemote(roomName) {
+        const remoteInfo = Memory.rooms[roomName];
+        if (!remoteInfo.lastVisit) {
+            return false;
+        }
+
+        // No sources
+        if (!remoteInfo.sources || !remoteInfo.sources.length) {
+            return false;
+        }
+
+        // Source keepers
+        if ((remoteInfo.sourceKeepers && remoteInfo.sourceKeepers.length) || 
+            (remoteInfo.keeperLairs && remoteInfo.keeperLairs.length)) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -197,40 +310,6 @@ class RemotePlanner {
             score: netEnergy,
             cost: upkeep.creeps.spawnTime,
         };
-    }
-
-    /**
-     * Determines if this room is a valid remote.
-     * @param {string} roomName The name of the room to check.
-     * @returns True or false depending on the presence of sources, invaders, players, and other factors.
-     */
-    isValidRemote(roomName) {
-        const remoteInfo = Memory.rooms[roomName];
-        if (!remoteInfo.lastVisit) {
-            return false;
-        }
-
-        // Owned by another player
-        if (!remoteInfo.controller || remoteInfo.controller.owner) {
-            return false;
-        }
-
-        // No sources
-        if (!remoteInfo.sources || !remoteInfo.sources.length) {
-            return false;
-        }
-
-        // Too dangerous
-        if ((remoteInfo.sourceKeepers && remoteInfo.sourceKeepers.length) || 
-            (remoteInfo.keeperLairs && remoteInfo.keeperLairs.length)) {
-            return false;
-        }
-
-        // Stronghold
-        if (remoteInfo.invaderCores && remoteInfo.invaderCores.length) {
-            return false;
-        }
-        return true;
     }
 
     /**
@@ -383,71 +462,6 @@ class RemotePlanner {
         });
 
         return haulerPaths;
-    }
-
-
-    /**
-     * Traverses a tree of remotes in a specific way in order to find the branch with the highest score.
-     * The steps are as follows:
-     * - For each node we can currently access, let's search its first child, sum its score and cost with our current total, 
-     * then recursively search the list again, excluding this node and including all of its children
-     * - Once we exceed our cost threshold, we can back up one step and record this branch's score, checking it against our highest score
-     * - From here time we should access the second available node, and so on until all children have been checked
-     * - At this point we should know the highest score and can return the corresponding branch
-     * @param {[]} choices An array of objects. Each object should have a parameter `children` which is an 
-     * array of any number of objects with the property `children`.
-     * Each object should also have a cost and a score.
-     * @param {number} remainingCost The max cost before a branch is cut. 
-     * @param {number} score The current score of this branch.
-     * @returns An object with the following properties: 
-     * - The score of the highest scoring branch
-     * - The cost of the highest scoring branch
-     * - The rooms that make up the highest scoring branch
-     */
-    traverseRecursively(choices, remainingCost, score) {
-
-        // Leaf node, return score and empty branch
-        if (remainingCost <= 0) {
-            return {
-                score: score,
-                branch: [],
-                leafNode: true,
-            };
-        }
-
-        // Track best option available
-        let bestScore = 0;
-        let bestBranch = [];
-
-        // Search each of our current choices
-        choices.forEach((choice) => {
-
-            // Pass children recusively
-            const nextChoices = choices.filter((c) => c !== choice).concat(choice.children);
-            const result = this.traverseRecursively(nextChoices, remainingCost - choice.cost, score + choice.score);
-
-            // Adjust score to be correct for leaf nodes
-            if (result.leafNode) {
-                result.score -= choice.score;
-            }
-
-            // If this choice beats our current one, let's track the score and append it and its best children
-            if (!bestBranch || result.score > bestScore) {
-                bestScore = result.score;
-                bestBranch = result.branch;
-
-                // Don't push the choice that resulted in a leaf node, since it exceeds our allowed cost
-                if (!result.leafNode) {
-                    bestBranch.push(choice);
-                }
-            }
-        });
-
-        return {
-            score: score,
-            branch: bestBranch,
-            leafNode: false,
-        };
     }
 }
 
