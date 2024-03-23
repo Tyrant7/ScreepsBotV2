@@ -59,7 +59,7 @@ Creep.prototype.betterMoveTo = function(target, options) {
 
         // If we don't have valid move data, let's repath
         const moveData = creep.memory._move;
-        if (!moveData || !moveData.path.length || moveData.room !== creep.room.name) {
+        if (!moveData || !moveData.path || !moveData.path.length || moveData.room !== creep.room.name) {
             return getNewPath(creep.pos, { pos: target, range: options.range });
         }
 
