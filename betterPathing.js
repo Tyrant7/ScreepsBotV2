@@ -23,7 +23,7 @@ Creep.prototype.moveTo = function(target, options = {}) {
         options.range = 1;
     }
     if (!options.maxRooms === undefined) {
-        options.maxRooms = 6;
+        options.maxRooms = 4;
     }
 
     // Save our shove target in case we get shoved
@@ -33,10 +33,10 @@ Creep.prototype.moveTo = function(target, options = {}) {
 }
 Creep.prototype.betterMoveTo = function(target, options) {
 
-    function getNewPath(startPos, goals, maxRooms = options.maxRooms) {
+    function getNewPath(startPos, goals) {
         const result = PathFinder.search(
             startPos, goals, {
-                maxRooms: maxRooms,
+                maxRooms: options.maxRooms,
                 plainCost: 2,
                 swampCost: 10,
                 roomCallback: getCachedCostMatrix,
@@ -160,7 +160,7 @@ Creep.prototype.requestShove = function(shover) {
 
     // Let's make sure we resort to spaces with other creeps last
     adjacentSpaces.sort((a, b) => {
-        return a.lookFor(LOOK_CREEPS)[0] ? -1 : 0;
+        return a.lookFor(LOOK_CREEPS)[0] ? 1 : 0;
     });
 
     // Big ugly code block :)
