@@ -1,14 +1,8 @@
-class RemotePlanner {
+const PLANNING_PLAINS = 5;
+const PLANNING_SWAMP = 6;
+const PLANNING_ROAD = 1;
 
-    constructor() {
-        this.planningConstants = {
-            planningPlainCost: 5,
-            planningSwampCost: 6,
-            plainCost: 2,
-            swampCost: 10,
-            roadCost: 1,
-        };
-    }
+class RemotePlanner {
 
     /**
      * Plans remotes for a room. Returns early if not enough rooms have been scouted.
@@ -25,8 +19,8 @@ class RemotePlanner {
                     id:      string,
                     pos:     RoomPosition,
                 },
-                container:   RoomPosition,
                 roads:       RoomPosition[],
+                container:   RoomPosition,
                 
                 neededCarry: number,
 
@@ -77,23 +71,28 @@ class RemotePlanner {
         */
 
         // Let's plan each route back to our storage
-        // As we do this, let's build up a CostMatrix of planned roads 
+        // As we do this, let's build up a few CostMatrix's of planned roads 
         // to encourage remotes to combine roads where they can
-        for (const remote of remotes) {
+        // The very first road position can be used as the container position
+        const remoteMatrices = this.initializeRemoteMatrices(roomInfo);
+        for (const remote of remotes) {         
+            const storage = roomInfo.room.storage;
+            const roads = this.planRoads(remote.source.pos, storage.pos, remoteMatrices);
+            const container = roads.shift();
             
-            // TODO //
+            remote.roads = roads;
+            remote.container = container;
 
+            // Update our cost matrices so the next remote is aware of our placed roads
+            for (const road of roads) {
+                remoteMatrices[road.roomName].set(road.x, road.y, PLANNING_ROAD);
+            }
+            remoteMatrices[container.roomName].set(container.x, container.y, 255);
         }
 
-
-        // Once we've planned all of our roads, let's place down containers
-        // Let's keep them next to the source, but avoid placing on a road, if possible
-
-        // TODO
-
-
-        // Additionally, after roads we can easily figure out how much CARRY we'll need to support the income
+        // Now that roads are planned, we can easily figure out how much CARRY we'll need to support the income of each source
         // Simply calculate it based on our number of roads to the storage
+
 
         // TODO //
 
@@ -127,7 +126,7 @@ class RemotePlanner {
 
                 // Let's plan roads for our distOne first to home first
                 const distOnePaths = this.getSourcePaths(roomInfo, distOne, []);
-                const distOneRoadPositions = this.planRoads(distOnePaths);
+                const distOneRoadPositions = this.planRoadsOld(distOnePaths);
                 const distOneMiningSites = this.planMiningSites(distOne, distOnePaths);
                 const distOneHaulerPaths = this.getHaulerPaths(roomInfo, 
                     { pos: roomInfo.room.storage.pos, range: 1 }, distOneRoadPositions, distOneMiningSites.map((site) => site.pos));
@@ -139,7 +138,7 @@ class RemotePlanner {
                 nearbyRooms[distOne].forEach((distTwo) => {
                     if (this.isValidRemote(distTwo)) {
                         const distTwoPaths = this.getSourcePaths(roomInfo, distTwo, distOneRoadPositions);
-                        const distTwoRoadPositions = this.planRoads(distTwoPaths);
+                        const distTwoRoadPositions = this.planRoadsOld(distTwoPaths);
                         const distTwoMiningSites = this.planMiningSites(distTwo, distTwoPaths);
                         const distTwoHaulerPaths = this.getHaulerPaths(roomInfo, 
                             { pos: roomInfo.room.storage.pos, range: 1 }, distTwoRoadPositions.concat(distOneRoadPositions), distTwoMiningSites.map((site) => site.pos));
@@ -226,11 +225,71 @@ class RemotePlanner {
     }
 
     /**
+     * Initializes empty cost matrices for each remote room, and fills in some structures details for the main room.
+     * @param {RoomInfo} roomInfo Info for the main room.
+     * @param {string[]} remoteRooms Names of all of the rooms to create a CostMatrix for.
+     * @returns {PathFinder.CostMatrix[]} An array of cost matrices.
+     */
+    initializeRemoteMatrices(roomInfo, remoteRooms) {
+        const matrices = {};
+
+        // To start, we can initialize the matrix for our main room with our existing structures
+        matrices[roomInfo.room.name] = new PathFinder.CostMatrix();
+        roomInfo.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD }}).forEach((s) => {
+            if (s.structureType === STRUCTURE_ROAD) {
+                matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, PLANNING_ROAD);
+            }
+            else if (s.structureType !== STRUCTURE_RAMPART || !s.my) {
+
+                // Don't path over any structures except ramparts
+                // Not including containers here either
+                matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, 255);
+            }
+        });
+
+        for (const remoteRoom of remoteRooms) {
+            matrices[remoteRoom] = new PathFinder.CostMatrix();
+        }
+        return matrices;
+    }
+
+    /**
+     * Plans roads from 'from' to 'to', using a precreated array of CostMatrix's.
+     * @param {RoomPosition} from The position to path from
+     * @param {RoomPosition} to The position to path to.
+     * @param {PathFinder.CostMatrix[]} costMatrices The array of cost matrices to use. 
+     * Should contain data about roads planned by other remotes, as well as data about the structures in the room that owns this remote.
+     * @returns {RoomPosition[]} An array of road positions.
+     */
+    planRoads(from, to, costMatrices) {
+
+        return PathFinder.search(from, { pos: to, range: 1 }, {
+            plainCost: PLANNING_PLAINS,
+            swampCost: PLANNING_SWAMP,
+
+            // If we're not planning for that room, we shouldn't move through it
+            // Let's return false so we don't waste operations trying to path to a room 
+            // that's further away from our target's room
+            roomCallback: function(roomName) {
+                if (costMatrices[roomName]) {
+                    return costMatrices[roomName];
+                }
+                return false;
+            },
+        }).path;
+    }
+
+
+
+    // OLD CODE THAT MIGHT POTENTIALLY BE USEFUL BELOW //
+
+
+    /**
      * Plans roads for a remote given the paths to each source.
      * @param {RoomPosition[][]} sourcePaths Paths for this remote obtained using getSourcePaths()
      * @returns {RoomPosition[]} An array of RoomPositions for roads for this remote.
      */
-    planRoads(sourcePaths) {
+    planRoadsOld(sourcePaths) {
 
         const allPaths = [];
         sourcePaths.forEach((sourcePath) => allPaths.push(...sourcePath));
@@ -310,85 +369,6 @@ class RemotePlanner {
             score: netEnergy,
             cost: upkeep.creeps.spawnTime,
         };
-    }
-
-    /**
-     * Draws paths between a remote's sources and controllers and the nearest road in its host room.
-     * @param {RoomInfo} roomInfo The info object associated with the host room.
-     * @param {string} targetName The name of the room to remote.
-     * @param {RoomPosition[]} plannedRoads If this remote is greater than distance one, 
-     * this will be the planned road array for the distance one remote this one relies on.
-     * @returns An array of arrays of RoomPositions between each source and the nearest road in the host room.
-     * Each element corresponds to a unique path.
-     */
-    getSourcePaths(roomInfo, targetName, plannedRoads) {
-        const remoteInfo = Memory.rooms[targetName];
-
-        // Build cost matrices to include all of our planned roads
-        // These should only be from the dependant room
-        const matrices = { [roomInfo.room.name]: new PathFinder.CostMatrix(),
-                           [targetName]: new PathFinder.CostMatrix() };
-        plannedRoads.forEach((road) => {
-            if (!matrices[road.roomName]) {
-                matrices[road.roomName] = new PathFinder.CostMatrix();
-            }
-            matrices[road.roomName].set(road.x, road.y, this.planningConstants.roadCost);
-        });
-
-        // Make an ordinary matrix for our home room
-        roomInfo.room.find(FIND_STRUCTURES).forEach((s) => {
-            if (s.structureType === STRUCTURE_ROAD) {
-                matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, this.planningConstants.roadCost);
-            }
-            else if (s.structureType !== STRUCTURE_CONTAINER &&
-                (s.structureType !== STRUCTURE_RAMPART || !s.my)) {
-                matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, 255);
-            }
-        });
-
-        // Our goals is to find roads in our starting room to connect into
-        const goals = roomInfo.room.find(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_ROAD } }).map((road) => {
-            return { pos: road.pos, range: 1 };
-        });
-
-        // Let's find paths to each source in the room
-        const sourceResults = [];
-        remoteInfo.sources.forEach(source => {
-            const sourcePos = new RoomPosition(source.pos.x, source.pos.y, targetName);
-            const result = PathFinder.search(sourcePos, goals, {
-                plainCost: this.planningConstants.planningPlainCost,
-                swampCost: this.planningConstants.planningSwampCost,
-
-                // If we don't have planned roads for this room, 
-                // return false so we don't consider it
-                roomCallback: function(roomName) {
-                    if (matrices[roomName]) {
-                        return matrices[roomName];
-                    }
-                    return false;
-                }
-            });
-
-            // If we're missing any paths this won't work, return early
-            if (result.incomplete) {
-                console.log("No source path found in " + targetName);
-                return;
-            }
-
-            // Let's update our cost matrices with these new paths so that 
-            // they can be reused when pathing to other sources
-            result.path.forEach((point) => {
-                if (!matrices[point.roomName]) {
-                    matrices[point.roomName] = new PathFinder.CostMatrix();
-                }    
-                matrices[point.roomName].set(point.x, point.y, this.planningConstants.roadCost);
-            });
-
-            // Store calculated path
-            sourceResults.push(result.path);
-        });
-
-        return sourceResults;
     }
 
     /**
