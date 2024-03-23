@@ -7,8 +7,7 @@ Creep.prototype.moveTo = function(target, options = {}) {
     if (!(target instanceof RoomPosition)) {
         target = target.pos;
         if (!target) {
-            console.log("Invalid target: " + target);
-            return;
+            throw new Error("Invalid move target: " + target + " does not contain a 'pos' property");
         }
     }
 
@@ -29,7 +28,6 @@ Creep.prototype.moveTo = function(target, options = {}) {
 
     // Save our shove target in case we get shoved
     profiler.startSample(this.name + " moveTo");
-    this.memory._shoveTarget = target;
     this.betterMoveTo(target, options);
     profiler.endSample(this.name + " moveTo");
 }
@@ -84,16 +82,13 @@ Creep.prototype.betterMoveTo = function(target, options) {
     const path = verifyPath(this);
     if (path.length) {
         const nextStep = new RoomPosition(path[0].x, path[0].y, path[0].roomName);
-        const direction = this.pos.getDirectionTo(nextStep);
-    
-        console.log(this.pos + " my, " + nextStep + " target");
-        console.log(direction);
-    
+        const direction = this.pos.getDirectionTo(nextStep); 
         drawArrow(this.pos, direction, { color: "#00FF00" });
         this.move(direction);
     }
 
     // Save our move data
+    this.memory._shoveTarget = target;
     if (!this.memory._move) {
         this.memory._move = {};
     }
@@ -188,6 +183,9 @@ Creep.prototype.requestShove = function(shover) {
 
 // Debug
 function drawArrow(pos, direction, style) {
+    if (!DEBUG.drawOverlay || !DEBUG.drawTrafficArrows) {
+        return;
+    }
     const target = getPosInDirection(pos, direction);
     const x = target.x - ((target.x - pos.x) * 0.5);
     const y = target.y - ((target.y - pos.y) * 0.5);

@@ -8,14 +8,18 @@ Tyrant Bot V2
 global.CONSTANTS = require("constants");
 global.DEBUG = {
     logTasks: true,
+
     drawOverlay: true,
     drawRoadOverlay: false,
     drawPathOverlay: false,
     drawContainerOverlay: false,
+    drawTrafficArrows: true,
+
     trackSpawnUsage: true,
     trackCPUUsage: true,
     trackRCLProgress: true,
     trackCreepCounts: true,
+    
     logRemotePlanning: true,
     replanRemotesOnReload: false,
 
