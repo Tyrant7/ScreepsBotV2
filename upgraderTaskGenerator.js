@@ -25,7 +25,16 @@ class UpgraderTaskGenerator {
             // We're within range of our container already!
             const otherUpgrader = creep.room.lookForAt(LOOK_CREEPS, upgraderContainerPos.x, upgraderContainerPos.y)[0];
             const range = otherUpgrader ? 1 : 0;
-            if (creep.pos.getRangeTo(upgraderContainerPos) <= range) {
+            if (creep.pos.getRangeTo(upgraderContainerPos) > range) {
+                creep.moveTo(upgraderContainerPos, {
+                    maxRooms: 1,
+                });
+            }
+
+            // Always be upgrading when we can
+            if (creep.pos.getRangeTo(creep.room.controller) <= 3) {
+                creep.upgradeController(target);
+
                 // Pickup energy if we need it
                 const energyUsage = creep.body.filter((p) => p.type === WORK).length * UPGRADE_CONTROLLER_POWER;
                 if (creep.store[RESOURCE_ENERGY] <= energyUsage) {
@@ -35,16 +44,6 @@ class UpgraderTaskGenerator {
                         creep.withdraw(container, RESOURCE_ENERGY);
                     }
                 }
-            }
-            else {
-                creep.moveTo(upgraderContainerPos, {
-                    maxRooms: 1,
-                });
-            }
-
-            // Always be upgrading when we can
-            if (creep.pos.getRangeTo(creep.room.controller) <= 3) {
-                creep.upgradeController(target);
             }
         });
         
