@@ -19,10 +19,11 @@ Creep.prototype.moveTo = function(target, options = {}) {
     }
 
     // Make sure we include these options
-    if (!options.range) {
+    // Must explicitly check undefined since 0 will evaluate to false
+    if (options.range === undefined) {
         options.range = 1;
     }
-    if (!options.maxRooms) {
+    if (!options.maxRooms === undefined) {
         options.maxRooms = 6;
     }
 
@@ -162,20 +163,26 @@ Creep.prototype.requestShove = function(shover) {
         return;
     }
 
+    // Let's make sure we resort to spaces with other creeps last
+    adjacentSpaces.sort((a, b) => {
+        return a.lookFor(LOOK_CREEPS)[0] ? -1 : 0;
+    });
+
     // Big ugly code block :)
     const shoveTarget = this.memory._shoveTarget;
     const chosenSpace = shoveTarget 
         // Let's make sure we're within range of our target
         ? adjacentSpaces.reduce((closest, curr) => {
-        const currDist = curr.getRangeTo(shoveTarget.x, shoveTarget.y);
-        const closestDist = closest.getRangeTo(shoveTarget.x, shoveTarget.y);
-        return currDist < closestDist ? curr : closest;
-    }, adjacentSpaces[0])
+            // Limit the range to a minimum of 1 since we don't necessarily want to be pushed
+            // Direction into our target most of the time
+            const currDist = Math.max(curr.getRangeTo(shoveTarget.x, shoveTarget.y), 1);
+            const closestDist = Math.max(closest.getRangeTo(shoveTarget.x, shoveTarget.y), 1);
+            return currDist < closestDist ? curr : closest;
+        }, adjacentSpaces[0])
         // If we don't have somewhere we want to be near, let's just move somewhere random
         : adjacentSpaces[Math.floor(Math.random() * adjacentSpaces.length)];
      
     drawArrow(this.pos, this.pos.getDirectionTo(chosenSpace), { color: "#FF0000" });
-    console.log(this.name + " is getting shoved to " + chosenSpace);
     this.move(this.pos.getDirectionTo(chosenSpace));
 }
 
