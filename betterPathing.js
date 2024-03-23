@@ -71,9 +71,15 @@ Creep.prototype.betterMoveTo = function(target, options) {
             return getNewPath(creep.pos, { pos: target, range: options.range });
         }
 
+        // If we moved last time, we should be right on our path
         const nextStep = new RoomPosition(path[0].x, path[0].y, path[0].roomName);
         if (creep.pos.isEqualTo(nextStep)) {
             return moveData.path.slice(1);
+        }
+
+        // Something went wrong with our pathing
+        if (creep.pos.getRangeTo(nextStep) > 1) {
+            return getNewPath(creep.pos, { pos: target, range: options.range });
         }
 
         return moveData.path;
