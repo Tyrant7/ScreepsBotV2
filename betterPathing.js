@@ -47,11 +47,6 @@ Creep.prototype.betterMoveTo = function(target, options) {
 
     function verifyPath(creep) {
 
-        // Don't path until we've spawned
-        if (creep.spawning) {
-            return [];
-        }
-
         // Don't need to move
         if (creep.pos.getRangeTo(target) <= options.range) {
             return [];
@@ -83,6 +78,11 @@ Creep.prototype.betterMoveTo = function(target, options) {
         }
 
         return moveData.path;
+    }
+
+    // Don't try to move until we've spawned
+    if (this.spawning) {
+        return;
     }
 
     const path = verifyPath(this);
