@@ -14,8 +14,7 @@ module.exports = function(creep, data) {
     const moveTarget = controller ? controller.pos : { x: 25, y: 25 };
     const pos = new RoomPosition(moveTarget.x, moveTarget.y, data.roomName);
     creep.moveTo(pos, {
-        // The target will never change
-        reusePath: 10000,
+        range: 0,
         maxRooms: data.maxRooms ? data.maxRooms : 16,
     });
 };

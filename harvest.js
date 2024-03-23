@@ -102,9 +102,7 @@ module.exports = function(creep, data) {
 
     // Move if too far away
     if (intentResult === ERR_NOT_IN_RANGE) {
-        creep.moveTo(harvest, {
-            range: 1,
-        });
+        creep.moveTo(harvest);
     }
     return false;
 };

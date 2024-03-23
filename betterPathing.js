@@ -34,30 +34,6 @@ Creep.prototype.moveTo = function(target, options = {}) {
 }
 Creep.prototype.betterMoveTo = function(target, options) {
 
-    function serializePath(startPos, path) {
-
-        // First 4 characters are coordinates of the next step
-        let serialized = "";
-        serialized += path[0].x < 10 ? "0" + path[0].x : path[0].x;
-        serialized += path[0].y < 10 ? "0" + path[0].y : path[0].y;
-
-        // Now append directions for the remainer of the path until we hit a different room
-        let previous = startPos;
-        for (const point of path) {
-            if (point.x < 0 || point.x > 49 || point.y < 0 || point.y > 49) {
-                break;
-            }
-            const next = new RoomPosition(point.x, point.y, startPos.roomName);
-            serialized += previous.getDirectionTo(next);
-            previous = next;
-        }
-        return serialized;
-    }
-
-    function deserializePath(serializedPath) {
-        return Room.deserializePath(serializedPath);
-    }
-
     function getNewPath(startPos, goals, maxRooms = options.maxRooms) {
         const result = PathFinder.search(
             startPos, goals, {
@@ -67,108 +43,65 @@ Creep.prototype.betterMoveTo = function(target, options) {
                 roomCallback: getCachedCostMatrix,
             }
         );
-        return serializePath(startPos, result.path);
+        return result.path;
     }
 
     function verifyPath(creep) {
 
-        // For testing
-        if (false) {
-            const newPath = getNewPath(creep.pos, { pos: target, range: options.range });
-            return {
-                dest: target,
-                path: newPath,
-                room: creep.room.name,
-            };
+        // Don't path until we've spawned
+        if (creep.spawning) {
+            return [];
         }
 
-        // Make sure we have valid move data for the room we're in
+        // Don't need to move
+        if (creep.pos.getRangeTo(target) <= options.range) {
+            return [];
+        }
+
+        // If we don't have valid move data, let's repath
         const moveData = creep.memory._move;
-        if (!moveData || creep.room.name !== moveData.room) {
-            const newPath = getNewPath(creep.pos, { pos: target, range: options.range });
-            return {
-                dest: target,
-                path: newPath,
-                room: creep.room.name,
-            };
+        if (!moveData || !moveData.path.length || moveData.room !== creep.room.name) {
+            return getNewPath(creep.pos, { pos: target, range: options.range });
         }
 
         // Make sure our path ends within range of our target
-        const path = deserializePath(moveData.path);
+        const path = moveData.path;
         const lastNode = path.slice(-1);
         if (target.getRangeTo(lastNode.x, lastNode.y) <= options.range ||
             target.roomName !== moveData.dest.roomName) {
-            const newPath = getNewPath(creep.pos, { pos: target, range: options.range });
-            return {
-                dest: target,
-                path: newPath,
-                room: creep.room.name,
-            };
+            return getNewPath(creep.pos, { pos: target, range: options.range });
         }
 
-        // If we've been shoved, it's possible we'll be out of range of our next path point
-        // If that occurs, let's push a short correction pathing to any point in our path
-        if (creep.pos.getRangeTo(path[0]) > 1) {
-            
-            console.log(creep.name + " path correction");
-
-            // Let's make sure we're only trying to correct using points that are in this room
-            const goals = [];
-            let lastX = creep.pos.x;
-            let lastY = creep.pos.y;
-            for (const point in path) {
-                lastX += point.dx;
-                lastY += point.dy;
-                if (lastX <= 0 || lastX >= 49 || lastY <= 0 || lastY >= 49) {
-                    break;
-                }
-                goals.push({
-                    pos: new RoomPosition(lastX, lastY, creep.roomName),
-                    range: 0,
-                });
-            }
-            const pathCorrection = deserializePath(getNewPath(creep.pos, goals, 1));
-            return {
-                dest: target,
-                path: pathCorrection.concat(path),
-                room: creep.room.name,
-            };
-        }        
-
-        // Valid
-        return moveData;
-    }
-
-    // We don't need to move at all
-    if (this.pos.getRangeTo(target) <= options.range) {
-        return;
-    }
-
-    const moveData = verifyPath(this);
-
-    // console.log(this.name + " path: " + moveData.path);
-
-    const path = deserializePath(moveData.path);
-    let nextStep = path[0];
-
-    // We must have moved last tick since we're standing at the first spot in our path, 
-    // let's serialize our path again
-    if (nextStep.x === this.pos.x && nextStep.y === this.pos.y) {
-        path.shift();
-        if (!path.length) {
-            return;
+        const nextStep = new RoomPosition(path[0].x, path[0].y, path[0].roomName);
+        if (creep.pos.isEqualTo(nextStep)) {
+            return moveData.path.slice(1);
         }
-        moveData.path = serializePath(this.pos, path);
-        nextStep = path[0];
+
+        return moveData.path;
     }
 
-    this.move(nextStep.direction);
-    this.memory._move = moveData;
+    const path = verifyPath(this);
+    if (path.length) {
+        const nextStep = new RoomPosition(path[0].x, path[0].y, path[0].roomName);
+        const direction = this.pos.getDirectionTo(nextStep);
+    
+        console.log(this.pos + " my, " + nextStep + " target");
+        console.log(direction);
+    
+        drawArrow(this.pos, direction, { color: "#00FF00" });
+        this.move(direction);
+    }
+
+    // Save our move data
+    if (!this.memory._move) {
+        this.memory._move = {};
+    }
+    this.memory._move.dest = target;
+    this.memory._move.path = path;
+    this.memory._move.room = this.room.name;
 }
 Creep.prototype.wrappedMove = Creep.prototype.move;
 Creep.prototype.move = function(direction) {
-
-    drawArrow(this.pos, direction);
 
     // Record ourselves in the move registry
     moveRegistry[this.name] = true;
@@ -198,7 +131,9 @@ Creep.prototype.requestShove = function(shover) {
     // Reusable utility method to ensure if a spot is walkable
     const terrain = Game.map.getRoomTerrain(this.room.name);
     function isObstructed(room, pos) {
+        // Terrain block
         return terrain.get(pos.x, pos.y) === TERRAIN_MASK_WALL ||
+        // Unwalkable structure
                room.lookForAt(LOOK_STRUCTURES, pos).find(
                     (s) => s.structureType !== STRUCTURE_ROAD && s.structureType !== STRUCTURE_CONTAINER &&
                            (s.structureType !== STRUCTURE_RAMPART && s.my));
@@ -227,30 +162,29 @@ Creep.prototype.requestShove = function(shover) {
         return;
     }
 
-    // If we don't have somewhere we want to be near, let's just move somewhere random
+    // Big ugly code block :)
     const shoveTarget = this.memory._shoveTarget;
-    if (!shoveTarget) {
-        const chosenSpace = adjacentSpaces[Math.floor(Math.random() * adjacentSpaces.length)];
-        this.move(this.pos.getDirectionTo(chosenSpace));
-        return;
-    }
-
-    // Otherwise, let's make sure we're within range of our target
-    const chosenSpace = adjacentSpaces.reduce((closest, curr) => {
+    const chosenSpace = shoveTarget 
+        // Let's make sure we're within range of our target
+        ? adjacentSpaces.reduce((closest, curr) => {
         const currDist = curr.getRangeTo(shoveTarget.x, shoveTarget.y);
         const closestDist = closest.getRangeTo(shoveTarget.x, shoveTarget.y);
         return currDist < closestDist ? curr : closest;
-    }, adjacentSpaces[0]);
-
+    }, adjacentSpaces[0])
+        // If we don't have somewhere we want to be near, let's just move somewhere random
+        : adjacentSpaces[Math.floor(Math.random() * adjacentSpaces.length)];
+     
+    drawArrow(this.pos, this.pos.getDirectionTo(chosenSpace), { color: "#FF0000" });
+    console.log(this.name + " is getting shoved to " + chosenSpace);
     this.move(this.pos.getDirectionTo(chosenSpace));
 }
 
 // Debug
-function drawArrow(pos, direction) {
+function drawArrow(pos, direction, style) {
     const target = getPosInDirection(pos, direction);
     const x = target.x - ((target.x - pos.x) * 0.5);
     const y = target.y - ((target.y - pos.y) * 0.5);
-    Game.rooms[pos.roomName].visual.line(pos.x, pos.y, x, y);
+    Game.rooms[pos.roomName].visual.line(pos.x, pos.y, x, y, style);
 }
 
 // Utility function

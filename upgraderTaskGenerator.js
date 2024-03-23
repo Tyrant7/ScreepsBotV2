@@ -35,13 +35,16 @@ class UpgraderTaskGenerator {
                         creep.withdraw(container, RESOURCE_ENERGY);
                     }
                 }
-                creep.upgradeController(target);
             }
             else {
                 creep.moveTo(upgraderContainerPos, {
-                    reusePath: 1000,
                     maxRooms: 1,
                 });
+            }
+
+            // Always be upgrading when we can
+            if (creep.pos.getRangeTo(creep.room.controller) <= 3) {
+                creep.upgradeController(target);
             }
         });
         
