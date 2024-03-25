@@ -26,17 +26,7 @@ class RemotePlanner {
 
                 score:       number,
                 cost:        number,
-
-                children:    Remote[],
             }
-
-            We can organize sources that share roads with eachother
-            Any source that shares roads with a closer source will be considered a "child" of the closer source
-            This means that it is always more efficient resource-wise to mine the parent source before the child source,
-            and because of this, child sources will only be considered for mining if their parent source is being mined as well
-            This also means that when calculating the maintenance costs of mining a child source, the parent's road maintenance 
-            cost can be deducted from the maintenance cost of the child since the parent's roads are already being maintained
-            This idea also applies for maintenance and spawn costs of reservers when the child source is in the same room as the parent
         */
 
         // First, let's get all of our possible remote rooms
@@ -56,25 +46,11 @@ class RemotePlanner {
             }
         }
 
-        // Let's sort these sources by distance to our storage
-        /*
-        const goal = roomInfo.room.storage.pos;
-        const scores = {};
-        remotes.forEach((remote) => {
-            scores[remote.source.id] = PathFinder.search(remote.source.pos, { pos: goal, range: 1 }, {
-                maxRooms: 3,
-            }).path.length;
-        })
-        remotes.sort((a, b) => {
-            return scores[a.source.id] - scores[b.source.id];
-        });
-        */
-
         // Let's plan each route back to our storage
         // As we do this, let's build up a few CostMatrix's of planned roads 
         // to encourage remotes to combine roads where they can
         // The very first road position can be used as the container position
-        const remoteMatrices = this.initializeRemoteMatrices(roomInfo);
+        const remoteMatrices = this.initializeRemoteMatrices(roomInfo, potentialRemoteRooms);
         for (const remote of remotes) {         
             const storage = roomInfo.room.storage;
             const roads = this.planRoads(remote.source.pos, storage.pos, remoteMatrices);
@@ -83,6 +59,13 @@ class RemotePlanner {
             remote.roads = roads;
             remote.container = container;
 
+
+            // We can also easily figure out how much CARRY we'll need to support the income of each source
+            // Since we plan roads all the way until the storage, our travel distance is simply our number of roads
+            // Each source gives 10 energy per tick, and hauler is empty on the way back
+            // Therefore, 20 * distance / CARRY_CAPACITY
+            remote.neededCarry = Math.ceil(20 * roads.length / CARRY_CAPACITY);
+
             // Update our cost matrices so the next remote is aware of our placed roads
             for (const road of roads) {
                 remoteMatrices[road.roomName].set(road.x, road.y, PLANNING_ROAD);
@@ -90,25 +73,92 @@ class RemotePlanner {
             remoteMatrices[container.roomName].set(container.x, container.y, 255);
         }
 
-        // Now that roads are planned, we can easily figure out how much CARRY we'll need to support the income of each source
-        // Simply calculate it based on our number of roads to the storage
 
+        // Next, we can begin ordering our remotes by priority
 
-        // TODO //
-
-
-        // Next, we can begin structuring our tree of parent-child relationships
+        // Here's how we'll do that:
+        // 1. Add all planned roads to a set, tagging the road with an array of remotes that it belongs to        
+        // Once all roads have been added to the set, we'll:
+        // 2. Find the remote in the set with the fewest number of owned roads (i.e. the closest)
+        // 3. For all roads planned by this remote that are also planned by another remote,
+        //    remove them from the other remote's planned roads
+        // 4. Remove all roads of this remote from the set
+        // 5. Repeat from step 2 until there are no roads remaining in the set
         
-        // Let's check each of our remotes for overlap of planned roads
-        // If this occurs, we'll remove all overlapping planned roads for the further remote
-        
-        // TODO //
+        // Utility method to allow us to use roads as keys
+        function serializeRoad(road) {
+            return road.x + "," + road.y + "," + road.roomName;
+        }
 
+        const balls = Game.cpu.getUsed();
 
-        // Finally, let's determine our score and cost for this source
+        // 1. Add all planned roads to a set, tagging the road with an array of remotes that it belongs to 
+        let allRoads = {};
+        for (const remote of remotes) {
+            for (const road of remote.roads) {
+                const key = serializeRoad(road);
+                if (!allRoads[key]) {
+                    allRoads[key] = [];
+                }
+                allRoads[key].push(remote.source.id);
+            }
+        }
+
+        // Once all roads have been added to the set, we'll:
+        while (Object.keys(allRoads)) {
+
+            // 2. Find the remote in the set with the fewest number of owned roads
+            const owners = {};
+            for (const road in allRoads) {
+                const roadOwners = allRoads[road];
+                for (const owner of roadOwners) {
+                    if (!owners[owner]) {
+                        owners[owner] = 0;
+                    }
+                    owners[owner]++;
+                }
+            }
+            const fewestRoadsOwner = Object.keys(owners).reduce((lowest, curr) => {
+                return owners[curr] < owners[lowest] ? curr : lowest;
+            });
+
+            // Now we have the sourceID of the remote with the fewest roads in the set
+            const nextRemote = remotes.find((r) => r.source.id === fewestRoadsOwner);
+            nextRemote.children = [];
+
+            // 3. Set any owners of conflicting roads as children of this remote
+            for (const road of nextRemote.roads) {
+                const key = serializeRoad(road);
+                const conflictingOwners = allRoads[key].filter((owner) => owner !== nextRemote.source.id);
+                for (const owner of conflictingOwners) {
+                    nextRemote.children.push(owner);
+
+                    // 4. Remove any roads from the children of this remote that conflict with this remote's own roads
+                    const roadOwner = remotes.find((r) => r.source.id === owner);
+                    roadOwner.roads = roadOwner.roads.filter((r) => serializeRoad(r) !== key);
+                }
+            }
+
+            // 5. Remove all roads of this remote from the set
+            const newAllRoads = {};
+            for (const key in allRoads) {
+                if (!allRoads[key].includes(nextRemote.source.id)) {
+                    newAllRoads[key] = allRoads[key];
+                }
+            }
+            allRoads = newAllRoads;
+        }
+
+        console.log("Holy shit! We used: " + Game.cpu.getUsed() - balls + " cpu!");
+
+        return;
+
+        // Finally, let's determine our net income and cost for this source
         // Each source's cost will be the spawn cost to spawn one miner, plus as many haulers as is needed in CARRY parts
-        // Each source's score will be determined with a simple equation of:
-        // Income - spawnEnergy - maintenanceRoadsAndContainer
+        // Each source's income will be determined with a simple equation of:
+        // sourceEnergy - spawnEnergy - maintenance (for roads and container)
+        // Keep in mind that through the above algorithm, shared roads will be owned by the closer remote and will not
+        // count against the maintenance cost of the further remote(s)
 
         // TODO //
 
@@ -280,7 +330,6 @@ class RemotePlanner {
     }
 
 
-
     // OLD CODE THAT MIGHT POTENTIALLY BE USEFUL BELOW //
 
 
@@ -298,32 +347,6 @@ class RemotePlanner {
         });
 
         return allRoads;
-    }
-
-    /**
-     * Plans containers for a remote given the roads and room name.
-     * @param {string} targetName The name of the remote room.
-     * @param {RoomPosition[][]} sourcePaths Paths for this remote obtained using getSourcePaths()
-     * @returns {RoomPosition[]} An array of RoomPositions for containers for this remote.
-     */
-    planMiningSites(targetName, sourcePaths) {
-        const remoteInfo = Memory.rooms[targetName];
-
-        // Look for spaces around each source where we can place a container
-        // Ideally we place them next to roads, but not directly on top of them
-        const containers = [];
-        remoteInfo.sources.forEach((source) => {
-
-            // Figure out which source path matches this source
-            const matchingPath = sourcePaths.find((path) => path[0].getRangeTo(source.pos.x, source.pos.y) <= 1);
-
-            // Push the first step of the path
-            containers.push({
-                pos: matchingPath[0],
-                sourceID: source.id,
-            });
-        });
-        return containers;
     }
 
     /**
