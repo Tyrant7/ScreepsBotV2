@@ -164,6 +164,8 @@ class RemotePlanner {
         // we'll try to mine the further one because we only think that it takes 3 road's worth of maintenance
         // while the closer one takes 20
         // Probably should reintroduce the parent child system but do it a little differently than before
+        // Possibly instead of direct parent and children, we have a list of dependants that need to be mined
+        // before this source can be mined
         // ^^^^^^ IMPORTANT ^^^^^^
 
 
