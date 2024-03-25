@@ -74,10 +74,10 @@ class RemotePlanner {
         }
 
 
-        // Next, we can begin ordering our remotes by priority
+        // Next, we can figure out who's actually responsible for doubled up road plans
 
         // Here's how we'll do that:
-        // 1. Add all planned roads to a set, tagging the road with an array of remotes that it belongs to        
+        // 1. Add all planned roads to a set, tagging the road with an array of remotes that it belongs to
         // Once all roads have been added to the set, we'll:
         // 2. Find the remote in the set with the fewest number of owned roads (i.e. the closest)
         // 3. For all roads planned by this remote that are also planned by another remote,
@@ -153,9 +153,9 @@ class RemotePlanner {
 
         return;
 
-        // Finally, let's determine our net income and cost for this source
+        // Finally, let's determine our score and cost for this source
         // Each source's cost will be the spawn cost to spawn one miner, plus as many haulers as is needed in CARRY parts
-        // Each source's income will be determined with a simple equation of:
+        // Each source's score will be determined with a simple equation of:
         // sourceEnergy - spawnEnergy - maintenance (for roads and container)
         // Keep in mind that through the above algorithm, shared roads will be owned by the closer remote and will not
         // count against the maintenance cost of the further remote(s)
@@ -163,68 +163,13 @@ class RemotePlanner {
         // TODO //
 
 
+        // (Optional)
+        // Sort plans by the best income/cost ratio
+
+
         // We're finished!
         // Return all of our remote plans
 
-
-        // Traverse this tree from the base upwards when planning roads so we can guarantee that
-        // roads from closer remotes exist when planning further remotes
-        Object.keys(nearbyRooms).forEach((distOne) => {
-
-            // Make sure it's a valid remote before planning
-            if (this.isValidRemote(distOne)) {
-
-                // Let's plan roads for our distOne first to home first
-                const distOnePaths = this.getSourcePaths(roomInfo, distOne, []);
-                const distOneRoadPositions = this.planRoadsOld(distOnePaths);
-                const distOneMiningSites = this.planMiningSites(distOne, distOnePaths);
-                const distOneHaulerPaths = this.getHaulerPaths(roomInfo, 
-                    { pos: roomInfo.room.storage.pos, range: 1 }, distOneRoadPositions, distOneMiningSites.map((site) => site.pos));
-                const distOneNeededCarry = distOneHaulerPaths.reduce((total, curr) => total + curr.neededCarry, 0);
-                const scoreCost = this.scoreRemote(roomInfo, distOne, distOneNeededCarry, distOneRoadPositions, distOneMiningSites.length);
-
-                // Then plan roads for each child one this remote
-                // Each distOne should have multiple distTwo depending remotes
-                nearbyRooms[distOne].forEach((distTwo) => {
-                    if (this.isValidRemote(distTwo)) {
-                        const distTwoPaths = this.getSourcePaths(roomInfo, distTwo, distOneRoadPositions);
-                        const distTwoRoadPositions = this.planRoadsOld(distTwoPaths);
-                        const distTwoMiningSites = this.planMiningSites(distTwo, distTwoPaths);
-                        const distTwoHaulerPaths = this.getHaulerPaths(roomInfo, 
-                            { pos: roomInfo.room.storage.pos, range: 1 }, distTwoRoadPositions.concat(distOneRoadPositions), distTwoMiningSites.map((site) => site.pos));
-                        const distTwoNeededCarry = distTwoHaulerPaths.reduce((total, curr) => total + curr.neededCarry, 0);
-                        const scoreCost = this.scoreRemote(roomInfo, distTwo, distTwoNeededCarry, distTwoRoadPositions, distTwoMiningSites.length);
-
-                        // Score this remote
-                        remotes.push({
-                            room: distTwo,
-                            score: scoreCost.score,
-                            cost: scoreCost.cost,
-                            active: false,
-                            roads: distTwoRoadPositions,
-                            miningSites: distTwoMiningSites,
-                            haulerPaths: distTwoHaulerPaths,
-                            neededHaulerCarry: distTwoNeededCarry,
-                        });
-                    }
-                });
-
-                // Populate this tree node
-                remotes.push({
-                    room: distOne,
-                    score: scoreCost.score,
-                    cost: scoreCost.cost,
-                    active: false,
-                    roads: distOneRoadPositions,
-                    miningSites: distOneMiningSites,
-                    haulerPaths: distOneHaulerPaths,
-                    neededHaulerCarry: distOneNeededCarry,
-                });
-            }
-        });
-
-        // Return all possible remotes for us so we can hand pick them later
-        return remotes;
     }
 
     /**
