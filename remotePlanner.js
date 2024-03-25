@@ -1,3 +1,5 @@
+const overlay = require("overlay");
+
 const PLANNING_PLAINS = 5;
 const PLANNING_SWAMP = 6;
 const PLANNING_ROAD = 1;
@@ -78,80 +80,92 @@ class RemotePlanner {
 
         // Here's how we'll do that:
         // 1. Add all planned roads to a set, tagging the road with an array of remotes that it belongs to
-        // Once all roads have been added to the set, we'll:
+        // Once we've added all roads, while there are roads left in the set we can:
         // 2. Find the remote in the set with the fewest number of owned roads (i.e. the closest)
         // 3. For all roads planned by this remote that are also planned by another remote,
         //    remove them from the other remote's planned roads
         // 4. Remove all roads of this remote from the set
-        // 5. Repeat from step 2 until there are no roads remaining in the set
         
-        // Utility method to allow us to use roads as keys
-        function serializeRoad(road) {
-            return road.x + "," + road.y + "," + road.roomName;
-        }
+        console.log("Running road algorithm...")
+        const cpuTest = Game.cpu.getUsed();
 
-        const balls = Game.cpu.getUsed();
-
-        // 1. Add all planned roads to a set, tagging the road with an array of remotes that it belongs to 
-        let allRoads = {};
+        // 1. Add all planned roads to a set, tagging the road with an array of remotes that it belongs to
+        let allRoads = [];
         for (const remote of remotes) {
-            for (const road of remote.roads) {
-                const key = serializeRoad(road);
-                if (!allRoads[key]) {
-                    allRoads[key] = [];
+            for (const roadPosition of remote.roads) {
+                const existingPlan = allRoads.find((r) => r.pos.isEqualTo(roadPosition));
+                if (!existingPlan) {
+                    allRoads.push({
+                        pos: roadPosition,
+                        owners: [remote.source.id],
+                    });
+                    continue;
                 }
-                allRoads[key].push(remote.source.id);
+                existingPlan.owners.push(remote.source.id);
             }
         }
 
-        // Once all roads have been added to the set, we'll:
-        while (Object.keys(allRoads)) {
+        // Once we've added all roads, while there are roads left in the set we can:
+        while (allRoads.length) {
 
-            // 2. Find the remote in the set with the fewest number of owned roads
-            const owners = {};
-            for (const road in allRoads) {
-                const roadOwners = allRoads[road];
-                for (const owner of roadOwners) {
-                    if (!owners[owner]) {
-                        owners[owner] = 0;
+            // 2. Find the remote in the set with the fewest number of owned roads (i.e. the closest)
+            const roadCountsForOwners = {};
+            for (const plannedRoad of allRoads) {
+                for (const owner of plannedRoad.owners) {
+                    if (!roadCountsForOwners[owner]) {
+                        roadCountsForOwners[owner] = 0;
                     }
-                    owners[owner]++;
+                    roadCountsForOwners[owner]++;
                 }
             }
-            const fewestRoadsOwner = Object.keys(owners).reduce((lowest, curr) => {
-                return owners[curr] < owners[lowest] ? curr : lowest;
+            const fewestRoadsOwner = Object.keys(roadCountsForOwners).reduce((lowest, curr) => {
+                return roadCountsForOwners[curr] < roadCountsForOwners[lowest] ? curr : lowest;
             });
 
             // Now we have the sourceID of the remote with the fewest roads in the set
             const nextRemote = remotes.find((r) => r.source.id === fewestRoadsOwner);
-            nextRemote.children = [];
 
-            // 3. Set any owners of conflicting roads as children of this remote
-            for (const road of nextRemote.roads) {
-                const key = serializeRoad(road);
-                const conflictingOwners = allRoads[key].filter((owner) => owner !== nextRemote.source.id);
-                for (const owner of conflictingOwners) {
-                    nextRemote.children.push(owner);
+            // 3. For all roads planned by this remote that are also planned by another remote
+            for (const roadPosition of nextRemote.roads) {
 
-                    // 4. Remove any roads from the children of this remote that conflict with this remote's own roads
+                // Remove them from the other remote's planned roads
+                const conflictingOwners = allRoads.find((road) => road.pos.isEqualTo(roadPosition)).owners;
+                for (const owner of conflictingOwners) {   
+                    
+                    // Don't filter our own roads
+                    if (owner === nextRemote.source.id) {
+                        continue;
+                    }
                     const roadOwner = remotes.find((r) => r.source.id === owner);
-                    roadOwner.roads = roadOwner.roads.filter((r) => serializeRoad(r) !== key);
+                    roadOwner.roads = roadOwner.roads.filter((rPos) => !rPos.isEqualTo(roadPosition));
                 }
-            }
 
-            // 5. Remove all roads of this remote from the set
-            const newAllRoads = {};
-            for (const key in allRoads) {
-                if (!allRoads[key].includes(nextRemote.source.id)) {
-                    newAllRoads[key] = allRoads[key];
-                }
+                // 4. Remove all roads of this remote from the set
+                allRoads = allRoads.filter((r) => !r.pos.isEqualTo(roadPosition));
             }
-            allRoads = newAllRoads;
         }
 
-        console.log("Holy shit! We used: " + Game.cpu.getUsed() - balls + " cpu!");
+        console.log("We used: " + (Game.cpu.getUsed() - cpuTest) + " cpu to filter " + remotes.length + " remotes!");
+
+        // For debugging
+        this.temp = {};
+        for (const remote of remotes) {
+            this.temp[remote.source.id] = [];
+            for (const road of remote.roads) {
+                this.temp[remote.source.id].push(road);
+            }
+        }
 
         return;
+
+        // TODO //
+        // We need some way of forcing us to mine source that share roads with further ones before the further one
+        // Because of the equation below, if two sources are 20 tiles away from the base and 3 tiles away from eachother, for example, 
+        // we'll try to mine the further one because we only think that it takes 3 road's worth of maintenance
+        // while the closer one takes 20
+        // Probably should reintroduce the parent child system but do it a little differently than before
+        // ^^^^^^ IMPORTANT ^^^^^^
+
 
         // Finally, let's determine our score and cost for this source
         // Each source's cost will be the spawn cost to spawn one miner, plus as many haulers as is needed in CARRY parts
@@ -170,6 +184,27 @@ class RemotePlanner {
         // We're finished!
         // Return all of our remote plans
 
+    }
+
+    debugFunction() {
+        if (!this.temp) {
+            return;
+        }
+        const colours = [
+            "#FF0000",
+            "#00FF00",
+            "#0000FF",
+            "#FFFF00",
+            "#00FFFF",
+            "#FF00FF",
+        ];
+        let i = 0;
+        for (const remote in this.temp) {
+            for (const road of this.temp[remote]) {
+                overlay.circles([road], { fill: colours[i % colours.length], radius: 0.25 });
+            }
+            i++;
+        }
     }
 
     /**

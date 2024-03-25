@@ -10,6 +10,7 @@ class RemoteManager {
     run(roomInfo) {
         
         remotePlanner.planRemotes(roomInfo);
+        remotePlanner.debugFunction();
         return;
 
         // Get our plans
