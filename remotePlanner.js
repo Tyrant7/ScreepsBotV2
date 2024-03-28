@@ -1,5 +1,5 @@
-const spawnHandler = require("spawnHandlerUsage");
-const overlay = require("overlay");
+const creepMaker = require("creepMakerProduction");
+const creepSpawnUtility = require("creepSpawnUtility");
 
 const PLANNING_PLAINS = 5;
 const PLANNING_SWAMP = 6;
@@ -155,15 +155,15 @@ class RemotePlanner {
 
             // Each source's cost will be the spawn cost to spawn one miner, plus as many haulers as is needed in CARRY parts
             // const upkeep = spawnHandler.estimateSpawnCost(remote.neededCarry);
-            const upkeep = { spawnTime: remote.roads.length, energy: remote.roads.length };
-            remote.cost = upkeep.spawnTime / 1500;
+            const upkeep = estimateCreepUpkeep(roomInfo.room.energyCapacityAvailable, remote.neededCarry);
+            remote.cost = upkeep.spawnTime;
 
             // Each source's score will be determined with a simple equation of:
             // sourceEnergy - (spawnEnergy + containerMaintenance + roadMaintenance)
             // Keep in mind that through the above algorithm, shared roads will be owned by the closer remote and will not
             // count against the maintenance cost of the further remote(s)
             const sourceEnergy = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME;
-            const spawnEnergy = upkeep.energy / 1500;
+            const spawnEnergy = upkeep.energy;
             const containerMaintenance = CONTAINER_DECAY / CONTAINER_DECAY_TIME / REPAIR_POWER;
 
             // Remember that roads built on swamps cost 5x more
@@ -288,6 +288,31 @@ class RemotePlanner {
                 return false;
             },
         }).path;
+    }
+
+    /**
+     * Estimates amount of energy and spawnTime to keep spawn enough creeps to keep a remote operational.
+     * @param {number} maxEnergy The energy capacity of the room where creeps will be spawned.
+     * @param {number} neededCarry The amount of carry parts needed by this remote.
+     * @returns {{energy: number, spawnTime: number}} An object with energy and spawnTime for creeps already adjusted for creep lifetime.
+     */
+    estimateCreepUpkeep(maxEnergy, neededCarry) {
+        const upkeep = { energy: 0, spawnTime: 0 };
+
+        // Start with a miner
+        const miner = creepMaker.makeMiner(maxEnergy);
+        upkeep.energy += creepSpawnUtility.getCost(miner.body) / CREEP_LIFE_TIME;
+        upkeep.spawnTime += creepSpawnUtility.getSpawnTime(miner.body) / CREEP_LIFE_TIME;
+        
+        // Then haulers until we hit our needed carry
+        let totalCarry = 0;
+        while (totalCarry < neededCarry) {
+            const newHauler = creepMaker.makeHauler(CONSTANTS.maxHaulerLevel, maxEnergy);
+            totalCarry += newHauler.body.filter((p) => p === CARRY);
+            upkeep.energy += creepSpawnUtility.getCost(hauler.body) / CREEP_LIFE_TIME;
+            upkeep.spawnTime += creepSpawnUtility.getSpawnTime(hauler.body) / CREEP_LIFE_TIME;
+        }
+        return upkeep;
     }
 }
 

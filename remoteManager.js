@@ -9,25 +9,10 @@ class RemoteManager {
 
     run(roomInfo) {
         
-        if (Game.cpu.bucket < 1000) {
-            console.log("Bucket is low: " + Game.cpu.bucket);
-            return;
-        }
-
-        console.log("Planning remotes...")
-        const cpuTest = Game.cpu.getUsed();
-        const remotes = remotePlanner.planRemotes(roomInfo);
-        this.drawOverlays(remotes);
-
-        Memory.tempRemotes = remotes;
-
-        console.log("We used: " + (Game.cpu.getUsed() - cpuTest) + " cpu to plan remotes!");
-        return;
-
         // Get our plans
         const remotePlans = this.ensurePlansExist(roomInfo);
         if (!remotePlans) {
-            return 0;
+            return;
         }
 
         // Display our active remotes
@@ -40,27 +25,20 @@ class RemoteManager {
             }
             overlay.addText(roomInfo.room.name, remoteDisplay);
         }
+
+        // Overlays!
+        this.drawOverlays();
     }
 
-    drawOverlays(remotes) {
+    /**
+     * Draws enabled overlays for remotes.
+     * @param {{}[]} remotes An array of remotes.
+     */
+    drawOverlays() {
         if (!DEBUG.drawOverlay) {
             return;
         }
 
-        if (!Memory.temp) {
-            Memory.temp = {};
-        }
-        if (RELOAD) {            
-            Memory.temp.roads = {};
-            Memory.temp.containerPositions = [];
-            for (const remote of remotes) {
-                Memory.temp.roads[remote.source.id] = [];
-                for (const road of remote.roads) {
-                    Memory.temp.roads[remote.source.id].push(road);
-                }
-                Memory.temp.containerPositions.push(remote.container);
-            }
-        }
         if (DEBUG.drawRemoteOwnership && Memory.temp.roads) {
             const colours = [
                 "#FF0000",
@@ -90,22 +68,15 @@ class RemoteManager {
      */
     ensurePlansExist(roomInfo) {
         if (!utility.getRemotePlans(roomInfo.room.name) || (RELOAD && DEBUG.replanRemotesOnReload)) {
-            const unsortedPlans = this.planRemotes(roomInfo);
-
-            // Sort plans by distance, then efficiency score to allow creeps to be assigned under a natural priority 
-            // of more important (i.e. higher scoring and closer) remotes
-            const sortedPlans = unsortedPlans.sort((a, b) => {
-                const aScore = (a.children.length ? 100000 : 0) + a.score;
-                const bScore = (b.children.length ? 100000 : 0) + b.score;
-                return bScore - aScore;
-            });
 
             // Simplify the plan objects and map the roomName as a key
-            // Also filter out construction sites on invalid locations
+            // Also filter out construction sites on invalid locations (room transitions)
+            // and give each remote an activity status
             const finalPlans = {};
-            for (const plan of sortedPlans) {
+            for (const plan of this.planRemotes(roomInfo)) {
                 const roomName = plan.room;
                 plan.roads = plan.roads.filter((r) => r.x > 0 && r.x < 49 && r.y > 0 && r.y < 49);
+                plan.active = false;
                 finalPlans[roomName] = plan;
             }
             utility.setRemotePlans(roomInfo.room.name, finalPlans);
@@ -114,30 +85,23 @@ class RemoteManager {
     }
 
     planRemotes(roomInfo) {
-
         const cpu = Game.cpu.getUsed();
+        const remotes = remotePlanner.planRemotes(roomInfo);
 
-        // Here's best combination of remotes and the order they have to be built in
-        // Keep in mind that distance 1's are interchangable, so we can use a greedy algorithm 
-        // to easily pull the most efficient one
-        const bestBranch = remotePlanner.planRemotes(roomInfo);
-        if (!bestBranch) {
-            return;
-        }
-
-        // Track road postions for debugging
+        // Visuals for debugging
         if (DEBUG.drawOverlay) {
-            if (DEBUG.drawRoadOverlay) {
-                const allRoads = bestBranch.reduce((roads, node) => roads.concat(node.roads), []);     
-                Memory.temp.roadVisuals = allRoads;
-            }
-            if (DEBUG.drawPathOverlay) {
-                const allHaulerPaths = [];
-                bestBranch.forEach((node) => allHaulerPaths.push(...node.haulerPaths));
-                Memory.temp.haulerPaths = allHaulerPaths;
+            Memory.temp = {};
+            if (DEBUG.drawRemoteOwnership) {
+                Memory.temp.roads = {};
+                for (const remote of remotes) {
+                    Memory.temp.roads[remote.source.id] = [];
+                    for (const road of remote.roads) {
+                        Memory.temp.roads[remote.source.id].push(road);
+                    }
+                }
             }
             if (DEBUG.drawContainerOverlay) {
-                const allContainerPositions = bestBranch.reduce((containers, node) => containers.concat(node.miningSites.map((site) => site.pos)), []);
+                const allContainerPositions = remotes.reduce((containers, current) => containers.concat(current.container), []);
                 Memory.temp.containerPositions = allContainerPositions;
             }
         }
@@ -145,12 +109,12 @@ class RemoteManager {
         // CPU tracking
         if (DEBUG.logRemotePlanning) {
             console.log("Planned remotes with: " + (Game.cpu.getUsed() - cpu) + " cpu");
-            bestBranch.forEach((b) => console.log("Room " + b.room + " with score: " + b.score + " and cost: " + b.cost));
-            const totalCost = bestBranch.reduce((usage, node) => usage + node.cost, 0);
-            console.log("Total spawn usage after remotes: " + (totalCost));
+            remotes.forEach((remote) => {
+                console.log("Source at " + remote.source.pos + " with score: " + remote.score + " and cost: " + remote.cost);
+            });
         }
 
-        return bestBranch;
+        return remotes;
     }
 }
 
