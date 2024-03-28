@@ -9,8 +9,19 @@ class RemoteManager {
 
     run(roomInfo) {
         
-        remotePlanner.planRemotes(roomInfo);
-        remotePlanner.debugFunction();
+        if (Game.cpu.bucket < 1000) {
+            console.log("Bucket is low: " + Game.cpu.bucket);
+            return;
+        }
+
+        console.log("Planning remotes...")
+        const cpuTest = Game.cpu.getUsed();
+        const remotes = remotePlanner.planRemotes(roomInfo);
+        this.drawOverlays(remotes);
+
+        Memory.tempRemotes = remotes;
+
+        console.log("We used: " + (Game.cpu.getUsed() - cpuTest) + " cpu to plan remotes!");
         return;
 
         // Get our plans
@@ -29,9 +40,47 @@ class RemoteManager {
             }
             overlay.addText(roomInfo.room.name, remoteDisplay);
         }
+    }
 
-        // Overlays
-        this.drawOverlays();
+    drawOverlays(remotes) {
+        if (!DEBUG.drawOverlay) {
+            return;
+        }
+
+        if (!Memory.temp) {
+            Memory.temp = {};
+        }
+        if (RELOAD) {            
+            Memory.temp.roads = {};
+            Memory.temp.containerPositions = [];
+            for (const remote of remotes) {
+                Memory.temp.roads[remote.source.id] = [];
+                for (const road of remote.roads) {
+                    Memory.temp.roads[remote.source.id].push(road);
+                }
+                Memory.temp.containerPositions.push(remote.container);
+            }
+        }
+        if (DEBUG.drawRemoteOwnership && Memory.temp.roads) {
+            const colours = [
+                "#FF0000",
+                "#00FF00",
+                "#0000FF",
+                "#FFFF00",
+                "#00FFFF",
+                "#FF00FF",
+            ];
+            let i = 0;
+            for (const remote in Memory.temp.roads) {
+                for (const road of Memory.temp.roads[remote]) {
+                    overlay.circles([road], { fill: colours[i % colours.length], radius: 0.25 });
+                }
+                i++;
+            }
+        }
+        if (DEBUG.drawContainerOverlay && Memory.temp.containerPositions) {
+            overlay.rects(Memory.temp.containerPositions);
+        }
     }
 
     /**
@@ -102,31 +151,6 @@ class RemoteManager {
         }
 
         return bestBranch;
-    }
-
-    drawOverlays() {
-        if (DEBUG.drawRoadOverlay && Memory.temp.roadVisuals) {
-            overlay.circles(Memory.temp.roadVisuals);
-        }
-        if (DEBUG.drawPathOverlay && Memory.temp.haulerPaths) {
-            const colours = [
-                "#FF0000",
-                "#00FF00",
-                "#0000FF",
-            ];
-
-            let i = 0;
-            Memory.temp.haulerPaths.forEach((path) => {
-                const pathFixed = path.path.map((point) => {
-                    return { x: point.x, y: point.y, roomName: point.roomName };
-                });
-                overlay.circles(pathFixed, { fill: colours[i % colours.length], radius: 0.25, opacity: 0.3 });
-                i++;
-            });
-        }
-        if (DEBUG.drawContainerOverlay && Memory.temp.containerPositions) {
-            overlay.rects(Memory.temp.containerPositions);
-        }
     }
 }
 

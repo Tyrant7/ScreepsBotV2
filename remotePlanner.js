@@ -1,3 +1,4 @@
+const spawnHandler = require("spawnHandlerUsage");
 const overlay = require("overlay");
 
 const PLANNING_PLAINS = 5;
@@ -11,7 +12,6 @@ class RemotePlanner {
      * @param {RoomInfo} roomInfo The associated room info object.
      */
     planRemotes(roomInfo) {
-
         /*
             Let's record each source as its own remote
             Each remote (source) should record a few things:
@@ -44,6 +44,7 @@ class RemotePlanner {
                         id: source.id,
                         pos: new RoomPosition(source.pos.x, source.pos.y, remoteRoom),
                     },
+                    dependants: [],
                 });
             }
         }
@@ -84,10 +85,9 @@ class RemotePlanner {
         // 2. Find the remote in the set with the fewest number of owned roads (i.e. the closest)
         // 3. For all roads planned by this remote that are also planned by another remote,
         //    remove them from the other remote's planned roads
-        // 4. Remove all roads of this remote from the set
+        // 4. Add the closer remote as a dependant of the further remote
+        // 5. Remove all roads of this remote from the set
         
-        console.log("Running road algorithm...")
-        const cpuTest = Game.cpu.getUsed();
 
         // 1. Add all planned roads to a set, tagging the road with an array of remotes that it belongs to
         let allRoads = [];
@@ -130,7 +130,7 @@ class RemotePlanner {
 
                 // Remove them from the other remote's planned roads
                 const conflictingOwners = allRoads.find((road) => road.pos.isEqualTo(roadPosition)).owners;
-                for (const owner of conflictingOwners) {   
+                for (const owner of conflictingOwners) {
                     
                     // Don't filter our own roads
                     if (owner === nextRemote.source.id) {
@@ -138,75 +138,54 @@ class RemotePlanner {
                     }
                     const roadOwner = remotes.find((r) => r.source.id === owner);
                     roadOwner.roads = roadOwner.roads.filter((rPos) => !rPos.isEqualTo(roadPosition));
-                }
 
-                // 4. Remove all roads of this remote from the set
+                    // 4. Add the closer remote as a dependant of the further remote
+                    if (!roadOwner.dependants.includes(nextRemote.source.id)) {
+                        roadOwner.dependants.push(nextRemote.source.id);
+                    }
+                }
+                
+                // 5. Remove all roads of this remote from the set
                 allRoads = allRoads.filter((r) => !r.pos.isEqualTo(roadPosition));
             }
         }
 
-        console.log("We used: " + (Game.cpu.getUsed() - cpuTest) + " cpu to filter " + remotes.length + " remotes!");
-
-        // For debugging
-        this.temp = {};
+        // Let's determine our score and cost for this source
         for (const remote of remotes) {
-            this.temp[remote.source.id] = [];
-            for (const road of remote.roads) {
-                this.temp[remote.source.id].push(road);
-            }
+
+            // Each source's cost will be the spawn cost to spawn one miner, plus as many haulers as is needed in CARRY parts
+            // const upkeep = spawnHandler.estimateSpawnCost(remote.neededCarry);
+            const upkeep = { spawnTime: remote.roads.length, energy: remote.roads.length };
+            remote.cost = upkeep.spawnTime / 1500;
+
+            // Each source's score will be determined with a simple equation of:
+            // sourceEnergy - (spawnEnergy + containerMaintenance + roadMaintenance)
+            // Keep in mind that through the above algorithm, shared roads will be owned by the closer remote and will not
+            // count against the maintenance cost of the further remote(s)
+            const sourceEnergy = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME;
+            const spawnEnergy = upkeep.energy / 1500;
+            const containerMaintenance = CONTAINER_DECAY / CONTAINER_DECAY_TIME / REPAIR_POWER;
+
+            // Remember that roads built on swamps cost 5x more
+            let roadMaintenance = 0;
+            const roadUpkeep = ROAD_DECAY_AMOUNT / ROAD_DECAY_TIME / REPAIR_POWER;
+            remote.roads.forEach((road) => {
+                const terrain = Game.map.getRoomTerrain(road.roomName).get(road.x, road.y);
+                roadMaintenance += roadUpkeep * (terrain === TERRAIN_MASK_SWAMP ? CONSTRUCTION_COST_ROAD_SWAMP_RATIO : 1);
+            });
+            remote.score = sourceEnergy - (spawnEnergy + containerMaintenance + roadMaintenance);
         }
 
-        return;
-
-        // TODO //
-        // We need some way of forcing us to mine source that share roads with further ones before the further one
-        // Because of the equation below, if two sources are 20 tiles away from the base and 3 tiles away from eachother, for example, 
-        // we'll try to mine the further one because we only think that it takes 3 road's worth of maintenance
-        // while the closer one takes 20
-        // Probably should reintroduce the parent child system but do it a little differently than before
-        // Possibly instead of direct parent and children, we have a list of dependants that need to be mined
-        // before this source can be mined
-        // ^^^^^^ IMPORTANT ^^^^^^
-
-
-        // Finally, let's determine our score and cost for this source
-        // Each source's cost will be the spawn cost to spawn one miner, plus as many haulers as is needed in CARRY parts
-        // Each source's score will be determined with a simple equation of:
-        // sourceEnergy - spawnEnergy - maintenance (for roads and container)
-        // Keep in mind that through the above algorithm, shared roads will be owned by the closer remote and will not
-        // count against the maintenance cost of the further remote(s)
-
-        // TODO //
-
-
-        // (Optional)
-        // Sort plans by the best income/cost ratio
-
-
-        // We're finished!
-        // Return all of our remote plans
-
-    }
-
-    debugFunction() {
-        if (!this.temp) {
-            return;
-        }
-        const colours = [
-            "#FF0000",
-            "#00FF00",
-            "#0000FF",
-            "#FFFF00",
-            "#00FFFF",
-            "#FF00FF",
-        ];
-        let i = 0;
-        for (const remote in this.temp) {
-            for (const road of this.temp[remote]) {
-                overlay.circles([road], { fill: colours[i % colours.length], radius: 0.25 });
-            }
-            i++;
-        }
+        // As a final note:
+        // When deciding which remotes to mine, we should always take the remote with the best score/cost ratio 
+        // However, we cannot take remotes that do not have their dependancies met
+        //
+        // For example, if we have one remote that is 15 tiles away, and another that is 17 tiles, we will take the 15 tile one first
+        // Let's suppose that the 15 tile remote also has a dependant that is 20 tiles away
+        // We'll naturally go with the 20 tiles remote, because its cost only considers those 5 tiles of additional road, however
+        // we could not have chosen that technically cheaper (remember that it only costs 5 tiles of road, instead of 15) 
+        // remote first, since the 15 tile remote it depended on was not activated yet
+        return remotes;
     }
 
     /**
@@ -309,144 +288,6 @@ class RemotePlanner {
                 return false;
             },
         }).path;
-    }
-
-
-    // OLD CODE THAT MIGHT POTENTIALLY BE USEFUL BELOW //
-
-
-    /**
-     * Plans roads for a remote given the paths to each source.
-     * @param {RoomPosition[][]} sourcePaths Paths for this remote obtained using getSourcePaths()
-     * @returns {RoomPosition[]} An array of RoomPositions for roads for this remote.
-     */
-    planRoadsOld(sourcePaths) {
-
-        const allPaths = [];
-        sourcePaths.forEach((sourcePath) => allPaths.push(...sourcePath));
-        const allRoads = allPaths.sort((a, b) => a.roomName + a.x + a.y > b.roomName + b.x + b.y ? a : b).filter(function(item, pos, arr) {
-            return !pos || !item.isEqualTo(arr[pos - 1]);
-        });
-
-        return allRoads;
-    }
-
-    /**
-     * Scores a potential remote for this room.
-     * @param {RoomInfo} roomInfo The info object associated with the host room.
-     * @param {string} targetName The name of the room to score a remote for. Must have been scouted previously.
-     * @param {number} neededCarry The number of hauler parts for this remote to fully transport its produced energy.
-     * @param {RoomPosition[]} roads The locations of all roads needed to plan this remote. Should be the array obtained by `planRoads()`.
-     * @param {number} containerCount The number of containers needed to plan this remote. Should be the length of the array obtained by `planMiningSites()`.
-     * @returns An object with scoring information for this remotes. 
-     * Contains a `score` property for energy output and a `cost` property for spawn time.
-     */
-    scoreRemote(roomInfo, targetName, neededCarry, roads, containerCount) {
-        const remoteInfo = Memory.rooms[targetName];
-
-        // Let's calculate some upkeep costs using those newly created paths
-        const upkeep = {};
-
-        // Starting with containers, first
-        const containerUpkeep = CONTAINER_DECAY / CONTAINER_DECAY_TIME / REPAIR_POWER;
-        const totalContainerUpkeep = containerUpkeep * containerCount;
-        
-        // Then roads, remember that roads built on swamps cost 5x more
-        const roadUpkeep = ROAD_DECAY_AMOUNT / ROAD_DECAY_TIME / REPAIR_POWER;
-        let totalRoadUpkeep = 0;
-        roads.forEach((road) => {
-            const terrain = Game.map.getRoomTerrain(road.roomName).get(road.x, road.y);
-            totalRoadUpkeep += roadUpkeep * (terrain === TERRAIN_MASK_SWAMP ? CONSTRUCTION_COST_ROAD_SWAMP_RATIO : 1);
-        });
-
-        // Total energy upkeep for structures in this room
-        upkeep.structures = totalContainerUpkeep + totalRoadUpkeep;
-
-        // Now for creeps spawn costs, total up energy and spawn time upkeeps
-        upkeep.creeps = productionSpawnHandler.getUpkeepEstimates(roomInfo, remoteInfo.sources.length, neededCarry);
-
-        // Calculate net energy produced in this room
-        const grossEnergy = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME * remoteInfo.sources.length;
-        const netEnergy = grossEnergy - (upkeep.structures + upkeep.creeps.energy);
-
-        // Here's the score and cost of this remote so we can calculate which are most important
-        return {
-            score: netEnergy,
-            cost: upkeep.creeps.spawnTime,
-        };
-    }
-
-    /**
-     * Gets paths from remote sources to goals in the homeroom, only allowing planned roads as transport except in the home room.
-     * @param {RoomInfo} roomInfo Info for the homeroom.
-     * @param {[]} goals An array of goals objects for the pathfinder to use. Should have pos and range attributes. 
-     * @param {RoomPosition[]} plannedRoads An array of all planned roads in rooms we expect haulers to traverse through.
-     * @param {RoomPosition[]} containerPositions An array of all planned containers in the remote. Haulers will path from these.
-     * @returns 
-     */
-    getHaulerPaths(roomInfo, goals, plannedRoads, containerPositions) {
-
-        // Setup an unwalkable matrix for room we shouldn't go through
-        const unwalkable = new PathFinder.CostMatrix();
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                unwalkable.set(x, y, 255);
-            }
-        }
-
-        // Generate cost matrices for each room we're planning on moving through
-        const matrices = { [roomInfo.room.name]: new PathFinder.CostMatrix() };
-        plannedRoads.forEach((road) => {
-            if (!matrices[road.roomName]) {
-                matrices[road.roomName] = unwalkable.clone();
-            }
-            matrices[road.roomName].set(road.x, road.y, this.planningConstants.roadCost);
-        });
-
-        // Make an ordinary matrix for our home room
-        roomInfo.room.find(FIND_STRUCTURES).forEach((s) => {
-            if (s.structureType === STRUCTURE_ROAD) {
-                matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, this.planningConstants.roadCost);
-            }
-            else if (s.structureType !== STRUCTURE_CONTAINER &&
-                (s.structureType !== STRUCTURE_RAMPART || !s.my)) {
-                matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, 255);
-            }
-        });
-
-        // Simply path from each container to the goal, only allowing planned roads as transport, except in the home room
-        const haulerPaths = [];
-        containerPositions.forEach((container) => {
-            const result = PathFinder.search(container, goals, {
-                // These normally wouldn't be necessary, however we should include them for our home room
-                plainCost: this.planningConstants.plainCost,
-                swampCost: this.planningConstants.swampCost,
-
-                // Don't allow us to consider any rooms we don't have planned roads for
-                roomCallback: function(roomName) {
-                    if (matrices[roomName]) {
-                        return matrices[roomName];
-                    }
-                    return false;
-                }
-            });
-
-            // No path found!
-            if (result.incomplete) {
-                console.log("No hauler path found in " + container.roomName);
-                return;
-            }
-
-            haulerPaths.push({ 
-                container: container, 
-                path: result.path, 
-                // Each source gives 10 energy per tick, and hauler is empty on the way back
-                // Therefore, 20 * distance / CARRY_CAPACITY
-                neededCarry: Math.ceil(20 * result.path.length / CARRY_CAPACITY), 
-            });
-        });
-
-        return haulerPaths;
     }
 }
 
