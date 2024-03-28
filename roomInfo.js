@@ -29,7 +29,6 @@ class RoomInfo {
         });
 
         this.spawns = room.find(FIND_MY_SPAWNS);
-        this.remoting = room.controller && room.controller.my && room.controller.level >= 4;
         this.constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES);
     }
 
