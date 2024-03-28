@@ -1,5 +1,8 @@
 const RemoteManager = require("remoteManager");
+const SpawnManager = require("spawnManager");
+
 const remoteManager = new RemoteManager();
+const spawnManager = new SpawnManager();
 
 const overlay = require("overlay");
 
@@ -13,6 +16,10 @@ class EconomyManager {
         //
         // Overall idea: 
         // Keep us stable while honing in on our max economic output
+        //
+        // Responsibilities:
+        // Tracking spawn usage
+        // Determining when to add/drop remotes and which remotes to sustain
         //
 
         // Validate our base
@@ -28,7 +35,7 @@ class EconomyManager {
         // Run the spawn manager to spawn everything necessary to support what's currently active
         // This number will represent the fraction of total spawns that are active this tick
         // 0.5 and 0.33 respectively for 1/2 and 1/3 spawns active at higher RCLs
-        const spawnUsageThisTick = 1; // TODO //
+        const spawnUsageThisTick = spawnManager.doSpawns(roomInfo);
 
         // Let's compare our actual spawn usage to our estimates    
         // Since we don't want to wait too long to see results, 
@@ -92,7 +99,8 @@ class EconomyManager {
         }
 
         // Display our active remotes
-        this.drawOverlay(roomInfo, remotes);
+        this.drawOverlay(roomInfo, remotes, base.spawnUsage);
+        remoteManager.drawOverlay(roomInfo);
     }
 
     /**
@@ -169,17 +177,21 @@ class EconomyManager {
      * @param {RoomInfo} roomInfo The room to draw overlay for.
      * @param {{}[]} remotes Array of remotes planned by that room.
      */
-    drawOverlay(roomInfo, remotes) {
-        if (!DEBUG.trackRemoteOverlay) {
-            return;
+    drawOverlay(roomInfo, remotes, spawnEstimate) {
+        if (DEBUG.trackSpawnUsage) {
+            const spawnDisplay = (Math.round((spawnEstimate) * 1000) / 1000).toFixed(3);
+            overlay.addText(roomInfo.room.name, { "Spawn Capacity": spawnDisplay + " / 1" });
         }
-        const remoteDisplay = {};
-        for (const remote of remotes) {
-            if (remote.active) {
-                remoteDisplay[remoteRoom] = " (" + (Math.round(remotes[remoteRoom].score * 1000) / 1000).toFixed(3) + "E/t)";
+
+        if (DEBUG.trackRemoteOverlay) {
+            const remoteDisplay = {};
+            for (const remote of remotes) {
+                if (remote.active) {
+                    remoteDisplay[remoteRoom] = " (" + (Math.round(remotes[remoteRoom].score * 1000) / 1000).toFixed(3) + "E/t)";
+                }
             }
+            overlay.addText(roomInfo.room.name, remoteDisplay);
         }
-        overlay.addText(roomInfo.room.name, remoteDisplay);
     }
 }
 

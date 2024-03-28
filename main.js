@@ -33,7 +33,6 @@ require("betterPathing");
 // Managers
 const CreepManager = require("creepManager");
 const EconomyManager = require("economyManager");
-const SpawnManager = require("spawnManager");
 const TowerManager = require("towerManager");
 const ColonyConstructionManager = require("colonyConstructionManager");
 
@@ -72,11 +71,6 @@ const creepRoleMap = {
     [CONSTANTS.roles.reserver]: reserverManager,
     [CONSTANTS.roles.defender]: defenderManager,
 };
-
-// Spawning
-const spawnManager = new SpawnManager();
-const EconomyHandler = require("economyHandler");
-const economyHandler = new EconomyHandler();
 
 // Economy
 const economyManager = new EconomyManager();
@@ -120,7 +114,7 @@ module.exports.loop = function() {
         roomInfos[room] = new RoomInfo(Game.rooms[room]);
         const info = roomInfos[room];
 
-        // Handle economy (remotes and other eco spawns)
+        // Handle economy (remotes and spawns)
         profiler.startSample("Economy " + room);
         economyManager.run(info);
         profiler.endSample("Economy " + room);
@@ -129,11 +123,6 @@ module.exports.loop = function() {
         profiler.startSample("Construction " + room);
         constructionManager.run(info);
         profiler.endSample("Construction " + room);
-
-        // Spawn progress
-        if (DEBUG.trackSpawnUsage) {
-            overlay.addText(info.room.name, { "Spawn Capacity": (Math.round((remoteSustainCost) * 1000) / 1000).toFixed(3) + " / 1" });
-        }
 
         // Track RCL progress
         if (DEBUG.trackRCLProgress) {
@@ -144,11 +133,6 @@ module.exports.loop = function() {
             const ticksUntilNextRCL = Math.floor(neededEnergyToNextRCL / averageRCL);
             overlay.addText(info.room.name, { "Next RCL In": ticksUntilNextRCL});
         }
-
-        // Handle spawns
-        profiler.startSample("Spawns " + room);
-        spawnManager.run(info, economyHandler);
-        profiler.endSample("Spawns " + room);
 
         // Defense
         towerManager.run(info);

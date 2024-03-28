@@ -11,7 +11,7 @@ class RemoteManager {
      * Draws enabled overlays for remotes.
      * @param {{}[]} remotes An array of remotes.
      */
-    drawOverlays() {
+    drawOverlay() {
         if (!DEBUG.drawOverlay) {
             return;
         }
