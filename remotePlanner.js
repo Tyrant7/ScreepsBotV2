@@ -28,6 +28,8 @@ class RemotePlanner {
 
                 score:       number,
                 cost:        number,
+
+                dependants:  string[],
             }
         */
 

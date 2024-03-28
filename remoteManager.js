@@ -7,29 +7,6 @@ const overlay = require("overlay");
 
 class RemoteManager {
 
-    run(roomInfo) {
-        
-        // Get our plans
-        const remotePlans = this.ensurePlansExist(roomInfo);
-        if (!remotePlans) {
-            return;
-        }
-
-        // Display our active remotes
-        if (DEBUG.trackSpawnUsage) {
-            const remoteDisplay = {};
-            for (const remoteRoom in remotePlans) {
-                remoteDisplay[remoteRoom] = remotePlans[remoteRoom].active 
-                    ? "active (" + (Math.round(remotePlans[remoteRoom].cost * 1000) / 1000).toFixed(3) + ")" 
-                    : "inactive";
-            }
-            overlay.addText(roomInfo.room.name, remoteDisplay);
-        }
-
-        // Overlays!
-        this.drawOverlays();
-    }
-
     /**
      * Draws enabled overlays for remotes.
      * @param {{}[]} remotes An array of remotes.

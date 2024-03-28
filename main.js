@@ -14,13 +14,14 @@ global.DEBUG = {
     drawContainerOverlay: true,
     drawTrafficArrows: false,
 
-    trackSpawnUsage: true,
     trackCPUUsage: true,
     trackRCLProgress: true,
     trackCreepCounts: true,
+    trackRemoteOverlay: true,
     
     logRemotePlanning: true,
     replanRemotesOnReload: true,
+    reestimateSpawnUsageOnReload: true,
 
     runProfiler: false,
 };
