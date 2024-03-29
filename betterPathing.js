@@ -34,15 +34,25 @@ Creep.prototype.moveTo = function(target, options = {}) {
 Creep.prototype.betterMoveTo = function(target, options) {
 
     function getNewPath(startPos, goals) {
-        const result = PathFinder.search(
-            startPos, goals, {
-                maxRooms: options.maxRooms,
-                plainCost: 2,
-                swampCost: 10,
-                roomCallback: getCachedCostMatrix,
+        const maxOps = 2000;
+        const MAX_ATTEMPTS = 2;
+        for (let attempts = 1; attempts <= MAX_ATTEMPTS; attempts++) {
+            const result = PathFinder.search(
+                startPos, goals, {
+                    maxRooms: options.maxRooms,
+                    maxOps: maxOps * attempts,
+                    plainCost: 2,
+                    swampCost: 10,
+                    roomCallback: getCachedCostMatrix,
+                }
+            );
+            if (result.incomplete) {            
+                // Raise maxOps and try again
+                continue;
             }
-        );
-        return result.path;
+            return result.path;
+        }
+        return null;
     }
 
     function verifyPath(creep) {
@@ -86,7 +96,7 @@ Creep.prototype.betterMoveTo = function(target, options) {
     }
 
     const path = verifyPath(this);
-    if (path.length) {
+    if (path && path.length) {
         const nextStep = new RoomPosition(path[0].x, path[0].y, path[0].roomName);
         const direction = this.pos.getDirectionTo(nextStep); 
         drawArrow(this.pos, direction, { color: "#00FF00" });
