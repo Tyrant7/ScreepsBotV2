@@ -18,6 +18,7 @@ global.DEBUG = {
     trackRCLProgress: true,
     trackCreepCounts: true,
     trackRemoteOverlay: true,
+    trackSpawnUsage: true,
     
     logRemotePlanning: true,
     replanRemotesOnReload: true,

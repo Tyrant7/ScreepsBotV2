@@ -1,5 +1,6 @@
 const creepMaker = require("creepMaker");
 const remoteUtility = require("remoteUtility");
+const creepSpawnUtility = require("creepSpawnUtility");
 
 // 10_000 energy => one build part worth of workers
 const WORK_TO_BUILD_RATIO = 10000;
@@ -121,7 +122,7 @@ class ProductionSpawnHandler extends SpawnHandler {
             }
 
             wantedMiners += 1;
-            wantedCarry += remote.neededHaulerCarry;
+            wantedCarry += remote.neededCarry;
 
             // Since some remotes have the same room, we'll use a set to track the ones we need to reserve
             reservedRooms.add(remote.room);
@@ -190,39 +191,39 @@ class UsageSpawnHandler extends SpawnHandler {
         }
     }
 
-    /**
-     * Estimates the needed amount of upgraders in levels
-     * to use as close to the required amount of energy as possible without going over.
-     * @param {RoomInfo} roomInfo The base to spawn for.
-     * @param {number} energyToUse The target amount of energy to use.
-     * @returns {number} The total level of needed upgraders required to meet the energy goal.
-     */
-    estimateNeededUpgraders(roomInfo, energyToUse) {
-        for (let level = 1; true; level++) {
-
-            let levelUsage = 0;
-            let remainingLevel = level;
-            while (remainingLevel > 0) {
-                const nextLevel = Math.min(remainingLevel, CONSTANTS.maxUpgraderLevel);
-                const upgraderBody = creepMaker.makeUpgrader(nextLevel, roomInfo.room.energyCapacityAvailable).body;
-
-                // Factor in the cost of the body and usage of the upgrader
-                levelUsage += creepSpawnUtility.getCost(upgraderBody) / CREEP_LIFE_TIME;
-                levelUsage += upgraderBody.filter((p) => p === WORK).length * UPGRADE_CONTROLLER_POWER;
-
-                // Once we go over our threshold, we know that we can fit n-1 upgrader levels
-                if (levelUsage > energyToUse) {
-                    return level - 1;
-                }
-
-                remainingLevel -= CONSTANTS.maxUpgraderLevel;
-            }
-        }
-    }
-
     //#region Spawning
 
     trySpawnUpgrader(roomInfo) {
+
+        /**
+        * Estimates the needed amount of upgraders in levels
+        * to use as close to the required amount of energy as possible without going over.
+        * @param {RoomInfo} roomInfo The base to spawn for.
+        * @param {number} energyToUse The target amount of energy to use.
+        * @returns {number} The total level of needed upgraders required to meet the energy goal.
+        */
+        function estimateNeededUpgraders(roomInfo, energyToUse) {
+            for (let level = 1; true; level++) {
+    
+                let levelUsage = 0;
+                let remainingLevel = level;
+                while (remainingLevel > 0) {
+                    const nextLevel = Math.min(remainingLevel, CONSTANTS.maxUpgraderLevel);
+                    const upgraderBody = creepMaker.makeUpgrader(nextLevel, roomInfo.room.energyCapacityAvailable).body;
+    
+                    // Factor in the cost of the body and usage of the upgrader
+                    levelUsage += creepSpawnUtility.getCost(upgraderBody) / CREEP_LIFE_TIME;
+                    levelUsage += upgraderBody.filter((p) => p === WORK).length * UPGRADE_CONTROLLER_POWER;
+    
+                    // Once we go over our threshold, we know that we can fit n-1 upgrader levels
+                    if (levelUsage > energyToUse) {
+                        return level - 1;
+                    }
+    
+                    remainingLevel -= CONSTANTS.maxUpgraderLevel;
+                }
+            }
+        }
 
         // Upgraders won't be able to do much without their container
         if (!roomInfo.getUpgraderContainer()) {
@@ -240,7 +241,7 @@ class UsageSpawnHandler extends SpawnHandler {
         }, 0);
         const usableIncome = estimatedIncome - neededToBuild;
 
-        const wantedLevels = this.estimateNeededUpgraders(roomInfo, usableIncome);
+        const wantedLevels = estimateNeededUpgraders(roomInfo, usableIncome);
         const actualLevels = creepSpawnUtility.getPredictiveCreeps(roomInfo.upgraders).map((u) => {
             return u.body.filter((p) => p.type === MOVE).length;
         });
@@ -302,7 +303,7 @@ class UsageSpawnHandler extends SpawnHandler {
 
         // Next, let's allocate an arbitrary amount of WORK using this formula
         // N WORK = Math.ceil(totalEnergyToBuild / WORK_TO_BUILD_RATIO)
-        const wantedWork = Math.ceil((totalForThisRoom + energyForRemotes) / WORK_TO_BUILD_RATIO);
+        const wantedWork = Math.ceil(totalForThisRoom / WORK_TO_BUILD_RATIO);
         const nextWork = wantedWork - existingWork;
         if (nextWork > 0) {
             // If we really don't need much work, let's just spawn a smaller builder
@@ -356,7 +357,7 @@ class SpawnManager {
         }
 
         // Track our spawn usage
-        return (roomInfo.spawns.length - inactiveSpawns.length) / roomInfo.spawns.length;
+        return (roomInfo.spawns.length - inactiveSpawns.length);
     }
 
     /**

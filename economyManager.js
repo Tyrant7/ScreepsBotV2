@@ -4,6 +4,7 @@ const SpawnManager = require("spawnManager");
 const remoteManager = new RemoteManager();
 const spawnManager = new SpawnManager();
 
+const remoteUtility = require("remoteUtility");
 const overlay = require("overlay");
 
 const REACTION_SPEED = CREEP_LIFE_TIME;
@@ -33,8 +34,8 @@ class EconomyManager {
         const lastSpawnEstimate = this.estimateSpawnUsage(roomInfo);
 
         // Run the spawn manager to spawn everything necessary to support what's currently active
-        // This number will represent the fraction of total spawns that are active this tick
-        // 0.5 and 0.33 respectively for 1/2 and 1/3 spawns active at higher RCLs
+        // This number will represent the fraction of spawns that are active this tick
+        // At higher RCLs, if we have multiple spawns, we'll get even higher numbers like 2 and 3
         const spawnUsageThisTick = spawnManager.trackSpawns(roomInfo);
 
         // Let's compare our actual spawn usage to our estimates    
@@ -48,7 +49,7 @@ class EconomyManager {
         // Based on our new estimates, we should be able to add/drop remotes according
         // to what we can or can no longer support
         const maxSpawnUsage = roomInfo.spawns.length;
-        const remotes = remoteManager.ensurePlansExist(roomInfo);
+        const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
         if (base.spawnUsage > maxSpawnUsage - DROP_THRESHOLD) {
 
             // Drop a remote each tick until our spawn usage is under the threshold
@@ -86,15 +87,17 @@ class EconomyManager {
             }
 
             // Keep adding our highest priority remote until we can't support any additional
-            const nextRemote = this.getBestRemote(inactiveRemotes, activeRemotes);
+            if (inactiveRemotes.length) {
+                const nextRemote = this.getBestRemote(inactiveRemotes, activeRemotes);
 
-            // Validate adding this remote
-            if (base.spawnUsage + nextRemote.cost <= maxSpawnUsage - DROP_THRESHOLD) {
-                nextRemote.active = true;
-
-                // Update our estimate so we don't add more than necessary
-                base.spawnUsage += nextRemote.cost;
-                console.log(roomInfo.room.name + " adding remote: " + nextRemote.source.id);
+                // Validate adding this remote
+                if (base.spawnUsage + nextRemote.cost <= maxSpawnUsage - DROP_THRESHOLD) {
+                    nextRemote.active = true;
+    
+                    // Update our estimate so we don't add more than necessary
+                    base.spawnUsage += nextRemote.cost;
+                    console.log(roomInfo.room.name + " adding remote: " + nextRemote.source.id);
+                }
             }
         }
 
@@ -181,16 +184,17 @@ class EconomyManager {
         if (!DEBUG.drawOverlay) {
             return;
         }
+
         if (DEBUG.trackSpawnUsage) {
             const spawnDisplay = (Math.round((spawnEstimate) * 1000) / 1000).toFixed(3);
-            overlay.addText(roomInfo.room.name, { "Spawn Capacity": spawnDisplay + " / 1" });
+            overlay.addText(roomInfo.room.name, { "Spawn Usage": spawnDisplay + " / " + roomInfo.spawns.length });
         }
-
         if (DEBUG.trackRemoteOverlay) {
             const remoteDisplay = {};
             for (const remote of remotes) {
                 if (remote.active) {
-                    remoteDisplay[remote.source.id] = " (" + (Math.round(remote.score * 1000) / 1000).toFixed(3) + "E/t)";
+                    const key = remote.source.id.substring(0, 8);
+                    remoteDisplay[key] = " (" + (Math.round(remote.score * 1000) / 1000).toFixed(3) + "E/t)";
                 }
             }
             overlay.addText(roomInfo.room.name, remoteDisplay);
