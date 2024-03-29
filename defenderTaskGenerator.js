@@ -8,7 +8,11 @@ class DefenderTaskGenerator {
         // Find our enemies
         const enemies = roomInfo.getEnemies();
         if (enemies.length === 0) {
-            creep.suicide();
+            // Follow our enemy if they're still in one of our rooms
+            if (creep.memory.lastSeen && creep.pos.roomName !== creep.memory.lastSeen) {
+                const actionStack = [moveToRoom];
+                return new Task({ roomName: creep.memory.lastSeen }, "pursue", actionStack);
+            }
             return null;
         }
 
@@ -22,7 +26,7 @@ class DefenderTaskGenerator {
         const actionStack = [];
         actionStack.push(function(creep, data) {
 
-            // Our target died or fleed
+            // Our target died or fled
             const target = Game.getObjectById(data.targetID);
             if (!target) {
                 return true;
@@ -55,6 +59,8 @@ class DefenderTaskGenerator {
             return target.hits <= 0;
         });
 
+        // Save where we last saw the enemy in case we lose sight of them
+        creep.memory.lastSeen = strongestEnemy.pos.room;
         return new Task({ targetID: strongestEnemy.id }, "kill", actionStack);
     }
 }
