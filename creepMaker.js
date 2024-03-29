@@ -8,8 +8,6 @@ module.exports = {
     //#region Energy Production
 
     makeMiner: function(energy) {
-
-        // Make a miner!
         let body = [MOVE, MOVE, MOVE];
         let lvl = 0;
         for (let i = 0; i < MINER_WORK; i++) {
@@ -23,6 +21,20 @@ module.exports = {
         }
         return { body: body, 
                  name: "Miner " + Game.time + " [" + lvl + "]",
+                 memory: { role: CONSTANTS.roles.miner }};
+    },
+
+    makeRecoveryMiner: function() {
+        let body = [MOVE];
+        let lvl = 0;
+        while (creepSpawnUtility.getCost(body) <= SPAWN_ENERGY_START && lvl <= MINER_WORK) {
+            lvl++;
+            body.push(WORK);
+        }
+        lvl--;
+        body.pop();
+        return { body: body, 
+                 name: "Recovery Miner " + Game.time + " [" + lvl + "]",
                  memory: { role: CONSTANTS.roles.miner }};
     },
 

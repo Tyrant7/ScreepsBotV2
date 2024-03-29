@@ -3,6 +3,7 @@ const creepMaker = requier("creepMaker");
 // This is the order we'll handle spawns in
 // All spawns must be met from each handler before moving on to the next
 const spawnOrder = [
+    new CrashSpawnHandler(),
     new DefenseSpawnHandler(),
     new BaseSpawnHandler(),
     new RemoteSpawnHandler(),
@@ -77,9 +78,37 @@ class SpawnHandler {
     }
 }
 
+class CrashSpawnHandler extends SpawnHandler {
+    getNextSpawn(roomInfo) {
+        
+        // Let's ensure our colony has met some basic requirements before spawning additional creeps
+        // In this case we should be good to restart now
+        if (roomInfo.miners.length >= 1 && roomInfo.haulers.length >= 1) {
+            return;
+        }
+
+        // If we have a miner but no haulers, let's spawn a hauler to restock quickly
+        if (roomInfo.miners.length) {
+
+            // Make sure we can afford any hauler at all
+            const hauler = creepMaker.makeHauler(CONSTANTS.maxHaulerlevel, roomInfo.energyAvailable);
+            if (hauler && hauler.body.length) {
+                return hauler;
+            }
+        }
+        // We have no miner
+        else {
+            const miner = creepMaker.makeRecoveryMiner(roomInfo.room.energyCapacityAvailable);
+            if (miner) {
+                return miner;
+            }
+        }
+    }
+}
+
 class BaseSpawnHandler extends SpawnHandler {
     getNextSpawn(roomInfo) {
-
+        
     }
 }   
 
