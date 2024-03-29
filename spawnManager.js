@@ -340,6 +340,13 @@ class SpawnManager {
      */
     trackSpawns(roomInfo) {
 
+        // Visuals
+        for (const spawn of roomInfo.spawns) {
+            if (spawn.spawning) {
+                this.showVisuals(spawn);
+            }
+        }
+
         // Handle our next spawn
         const inactiveSpawns = roomInfo.spawns.filter((s) => !s.spawning);
 
@@ -349,16 +356,15 @@ class SpawnManager {
             if (next) {
                 // Save the room responsible for this creep and start spawning
                 next.memory.home = roomInfo.room.name;
-                inactiveSpawns[0].spawnCreep(next.body, next.name, { 
+                const intentResult = inactiveSpawns[0].spawnCreep(next.body, next.name, { 
                     memory: next.memory,
                 });
-            }
-        }
 
-        // Visuals
-        for (const spawn of roomInfo.spawns) {
-            if (spawn.spawning) {
-                this.showVisuals(spawn);
+                // If we can't spawn our desired creep, we'll treat this as all spawns being active
+                // i.e. too much spawning -> should drop some remotes
+                if (intentResult === ERR_NOT_ENOUGH_ENERGY) {
+                    return roomInfo.spawns.length;
+                }
             }
         }
 
