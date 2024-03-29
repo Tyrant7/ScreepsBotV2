@@ -9,7 +9,7 @@ module.exports = {
         reserver: "reserver",
         defender: "defender",
     },
-    maxHaulerLevel: 14,
+    maxHaulerLevel: 16,
     maxUpgraderLevel: 9,
     maxRepairerLevel: 3,
     maxBuilderLevel: 10,
