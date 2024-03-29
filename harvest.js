@@ -37,9 +37,9 @@ module.exports = function(creep, data) {
             sources.push(creep.room.storage);
         }
         
-        // We don't have any containers or storage yet, mine our own energy
-        if (!sources.length) {
-            sources = creep.room.find(FIND_SOURCES, { filter: (s) => s.energy > 0 });
+        // Let's also add sources, if we can mine
+        if (creep.body.find((p) => p.type === WORK)) {
+            sources.push(...creep.room.find(FIND_SOURCES, { filter: (s) => s.energy > 0 }));
         }
 
         // Still nothing, let's just wait
@@ -47,14 +47,20 @@ module.exports = function(creep, data) {
             return false;
         }
 
-        // Find the best target -> measured by a blend of distance and energy amount
+        // Find the best target
+        // -> If they have enough energy to support our full carry, we'll sort by distance
+        // -> Otherwise, sort by amount
+        const carryCapacity = creep.body.filter((p) => p.type === CARRY).length * CARRY_CAPACITY;
         const best = sources.reduce(function(best, curr) {
-            const bEnergy = best instanceof Source ? best.energy : best instanceof Resource ? best.amount : best.store[RESOURCE_ENERGY];
-            const cEnergy = curr instanceof Source ? curr.energy : curr instanceof Resource ? best.amount : curr.store[RESOURCE_ENERGY];
-            // Every 25 energy in a container counts as 1 distance closer when prioritising
-            const bScore = creep.pos.getRangeTo(best) - (bEnergy / 25);
-            const cScore = creep.pos.getRangeTo(curr) - (cEnergy / 25);
-            return bScore > cScore ? curr : best;
+            const bDist = creep.pos.getRangeTo(best);
+            const cDist = creep.pos.getRangeTo(curr);
+            const bEnergy = best instanceof Source ? best.energy
+                : best instanceof Resource ? best.amount : best.store[RESOURCE_ENERGY];
+            const cEnergy = curr instanceof Source ? curr.energy
+                : curr instanceof Resource ? best.amount : curr.store[RESOURCE_ENERGY];
+            const bScore = bEnergy >= carryCapacity ? 10000 - bDist : bEnergy;
+            const cScore = cEnergy >= carryCapacity ? 10000 - cDist : cEnergy;
+            return cScore > bScore ? curr : best;
         });
         creep.memory.harvestTarget = best.id;
         harvest = Game.getObjectById(creep.memory.harvestTarget);
