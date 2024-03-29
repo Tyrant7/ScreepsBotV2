@@ -154,6 +154,7 @@ class ProductionSpawnHandler extends SpawnHandler {
             miners: 0,
             reservers: 0,
             haulerCarry: 0,
+            builderWork: 0,
         };
 
         existingSpawns.miners = roomInfo.miners.length;
@@ -162,6 +163,11 @@ class ProductionSpawnHandler extends SpawnHandler {
         // We'll have to do something slightly different for haulers that are measured by part counts
         existingSpawns.haulerCarry = roomInfo.haulers.reduce((total, hauler) => {
             return total + hauler.body.filter((p) => p.type === CARRY).length;
+        }, 0);
+
+        // Same for builders
+        existingSpawns.builderWork = roomInfo.builders.reduce((total, builder) => {
+            return total + builder.body.filter((p) => p.type === WORK).length;
         }, 0);
 
         return existingSpawns;
