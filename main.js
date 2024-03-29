@@ -21,6 +21,7 @@ global.DEBUG = {
     trackSpawnUsage: true,
     
     logRemotePlanning: true,
+    logRemoteDropping: true,
     replanRemotesOnReload: false,
     reestimateSpawnUsageOnReload: false,
 

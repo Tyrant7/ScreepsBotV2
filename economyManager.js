@@ -72,7 +72,9 @@ class EconomyManager {
             // Let's be sure to update our estimate so don't drop more than necessary
             worst.active = false;
             base.spawnUsage -= worst.cost;
-            console.log(roomInfo.room.name + " dropping remote: " + worst.source.id);
+            if (DEBUG.logRemoteDropping) {
+                console.log(roomInfo.room.name + " dropping remote: " + worst.source.id);
+            }
         }
         else {
             // Add a remote if we can fit any
@@ -96,7 +98,9 @@ class EconomyManager {
     
                     // Update our estimate so we don't add more than necessary
                     base.spawnUsage += nextRemote.cost;
-                    console.log(roomInfo.room.name + " adding remote: " + nextRemote.source.id);
+                    if (DEBUG.logRemoteDropping) {
+                        console.log(roomInfo.room.name + " adding remote: " + nextRemote.source.id);
+                    }
                 }
             }
         }
