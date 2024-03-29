@@ -82,7 +82,7 @@ class ProductionSpawnHandler extends SpawnHandler {
             if (wantedCarry > existingSpawns.haulerCarry) {
                 return creepMaker.makeHauler(CONSTANTS.maxHaulerLevel, roomInfo.room.energyCapacityAvailable);
             }
-            if (wantedBuilderWork > existingSpawns.builderWork) {
+            if (wantedBuilderWork > existingSpawns.builderWork && roomInfo.builders.length < CONSTANTS.maxBuilderCount) {
                 const builder = creepMaker.makeBuilder(CONSTANTS.smallBuilderLevel, roomInfo.room.energyCapacityAvailable);
                 // Make sure this builder prioritizes building in remotes over our base room
                 builder.memory.remote = true;
