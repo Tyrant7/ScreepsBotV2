@@ -36,8 +36,9 @@ Creep.prototype.betterMoveTo = function(target, options) {
     function getNewPath(startPos, goals) {
         const maxOps = 2000;
         const MAX_ATTEMPTS = 2;
+        let result;
         for (let attempts = 1; attempts <= MAX_ATTEMPTS; attempts++) {
-            const result = PathFinder.search(
+            result = PathFinder.search(
                 startPos, goals, {
                     maxRooms: options.maxRooms,
                     maxOps: maxOps * attempts,
@@ -52,8 +53,8 @@ Creep.prototype.betterMoveTo = function(target, options) {
             }
             return result.path;
         }
-        console.log("No path could be found from " + startPos + " to " + goals.pos + " with range " + goals.range);
-        return null;
+        console.log("No path could be found from " + startPos + " to " + goals.pos + " with range " + goals.range + ". Using incomplete path!");
+        return result.path;
     }
 
     function verifyPath(creep) {
