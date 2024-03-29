@@ -46,13 +46,14 @@ module.exports = {
             if (!remote.active) {
                 continue;
             }
-            const searchCollection = type === STRUCTURE_ROAD
-                ? remote.roads
-                : remote.containers;
-            if (searchCollection.find((r) => 
-                r.x === pos.x && 
-                r.y === pos.y && 
-                r.roomName === pos.roomName)) {
+            const result = type === STRUCTURE_ROAD
+                ? remote.roads.find((r) => r.x === pos.x && 
+                    r.y === pos.y && 
+                    r.roomName === pos.roomName)
+                : remote.container.x === pos.x &&
+                  remote.container.y === pos.y &&
+                  remote.container.roomName === pos.roomName;
+            if (result) {
                 return true;
             }
         }

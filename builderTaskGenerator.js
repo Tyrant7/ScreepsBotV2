@@ -28,16 +28,17 @@ class BuilderTaskGenerator {
                 continue;
             }
 
-            return this.createBuildTask(creep, site);
+            return this.createBuildTask(site);
         }
 
         // If no existing sites, we can start requesting more
         const constructionQueue = roomInfo.getConstructionQueue();
         if (constructionQueue.length) {
             // Get the highest priority site by build priority, then distance
+            const priorities = getBuildPriority(creep);
             const bestSite = constructionQueue.reduce((best, curr) => {
-                const bestPriority = ((buildPriorities[best.type] || 1) * 1000) - estimateTravelTime(creep, best.pos);
-                const currPriority = ((buildPriorities[curr.type] || 1) * 1000) - estimateTravelTime(creep, curr.pos);
+                const bestPriority = ((priorities[best.type] || 1) * 1000) - estimateTravelTime(creep, best.pos);
+                const currPriority = ((priorities[curr.type] || 1) * 1000) - estimateTravelTime(creep, curr.pos);
                 return currPriority > bestPriority ? curr : best;
             });
 
@@ -56,7 +57,7 @@ class BuilderTaskGenerator {
         }]);
     }
 
-    createBuildTask(creep, site) {
+    createBuildTask(site) {
         let actionStack = [function(creep, data) {
             const target = Game.getObjectById(data.targetID);
             if (!target) {
