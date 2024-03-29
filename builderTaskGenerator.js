@@ -33,9 +33,10 @@ class BuilderTaskGenerator {
 
         // If no existing sites, we can start requesting more
         const constructionQueue = roomInfo.getConstructionQueue();
-        if (constructionQueue.length) {
+        const priorities = getBuildPriority(creep);
+        while (constructionQueue.length) {
+
             // Get the highest priority site by build priority, then distance
-            const priorities = getBuildPriority(creep);
             const bestSite = constructionQueue.reduce((best, curr) => {
                 const bestPriority = ((priorities[best.type] || 1) * 1000) - estimateTravelTime(creep, best.pos);
                 const currPriority = ((priorities[curr.type] || 1) * 1000) - estimateTravelTime(creep, curr.pos);
@@ -44,6 +45,13 @@ class BuilderTaskGenerator {
 
             // Create a new site and instruct the creep to move to that room
             const realPos = new RoomPosition(bestSite.pos.x, bestSite.pos.y, bestSite.pos.roomName);
+            if (realPos.lookFor(LOOK_CONSTRUCTION_SITES)[0]) {
+
+                // If there's already a site here, let's get our second best
+                constructionQueue.splice(constructionQueue.indexOf(bestSite), 1);
+                continue;
+            }
+            
             realPos.createConstructionSite(bestSite.type);
             if (bestSite.pos.roomName !== creep.pos.roomName) {
                 return new Task({ roomName: realPos.roomName }, "move", [moveToRoom]);
@@ -64,7 +72,7 @@ class BuilderTaskGenerator {
     }
 
     createBuildTask(site) {
-        let actionStack = [function(creep, data) {
+        const actionStack = [function(creep, data) {
             const target = Game.getObjectById(data.targetID);
             if (!target) {
                 return true;

@@ -7,9 +7,10 @@ module.exports = function estimateTravelTime(creep, pos) {
     }
     const creepRoomPos = roomNameToXY(creep.pos.roomName);
     const posRoomPos = roomNameToXY(pos.roomName);
-    const diffX = (Math.abs(creepRoomPos[0] - posRoomPos[0]) * 50) - 25;
-    const diffY = (Math.abs(creepRoomPos[1] - posRoomPos[1]) * 50) - 25;
-    return Math.max(diffX, diffY);
+    const diffX = (Math.abs(creepRoomPos[0] - posRoomPos[0]) * 50);
+    const diffY = (Math.abs(creepRoomPos[1] - posRoomPos[1]) * 50);
+    const adjustedPos = new RoomPosition(pos.x, pos.y, creep.pos.roomName);
+    return Math.max(diffX, diffY) + creep.pos.getRangeTo(adjustedPos);
 }
 
 // Function to convert room name to coords taken from Screeps Engine
