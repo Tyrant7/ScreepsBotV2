@@ -52,6 +52,7 @@ Creep.prototype.betterMoveTo = function(target, options) {
             }
             return result.path;
         }
+        console.log("No path could be found from " + startPos + " to " + goals.pos + " with range " + goals.range);
         return null;
     }
 

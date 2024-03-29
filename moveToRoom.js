@@ -14,6 +14,7 @@ module.exports = function(creep, data) {
     const moveTarget = controller ? controller.pos : { x: 25, y: 25 };
     const pos = new RoomPosition(moveTarget.x, moveTarget.y, data.roomName);
     creep.moveTo(pos, {
+        range: 24,
         maxRooms: data.maxRooms ? data.maxRooms : 16,
     });
 };
