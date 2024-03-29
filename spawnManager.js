@@ -126,7 +126,7 @@ class ProductionSpawnHandler extends SpawnHandler {
 
             // Since some remotes have the same room, we'll use a set to track the ones we need to reserve
             reservedRooms.add(remote.room);
-            wantedReservers = reservedRooms.length;
+            wantedReservers = reservedRooms.size;
 
             // Add up work
             const buildEnergy = roomInfo.getConstructionQueue().filter((s) => s.pos.roomName === remote.room).reduce((total, curr) => {
