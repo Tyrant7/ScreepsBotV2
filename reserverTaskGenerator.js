@@ -21,11 +21,13 @@ class ReserverTaskGenerator {
             }
             
             // Find the first remote that doesn't have a reserver assigned to it
-            for (const roomName in remotes) {
-                const remote = remotes[roomName];
-                if (!roomInfo.reservers.find((r) => r.memory.targetRoom === roomName)) {
-                    creep.memory.targetRoom = roomName;
-                }
+            // Find the highest priority remote that doesn't have a reserver assigned to it
+            const activeRemotes = remotes.filter((r) => r.active);
+            if (activeRemotes.length) {
+                const targetRemote = activeRemotes.reduce((best, curr) => {
+                    return curr.score / curr.cost > best.score / best.cost ? curr : best;
+                });
+                creep.memory.targetRoom = targetRemote.room;
             }
 
             // If we still don't have a target room, just wait until a reserver dies

@@ -62,7 +62,15 @@ class RoomInfo {
             return this.enemies;
         }
 
-        for (const roomName in base.remotes) {
+        // Get all rooms of our active remotes
+        const remoteRooms = new Set();
+        for (const remote of base.remotes) {
+            if (remote.active) {
+                remoteRooms.add(remote.room);
+            }
+        }
+
+        for (const roomName of remoteRooms) {
             const room = Game.rooms[roomName];
             if (!room) {
                 continue;
@@ -92,12 +100,12 @@ class RoomInfo {
 
         const structures = this.room.find(FIND_STRUCTURES);
         const remotePlans = remoteUtility.getRemotePlans(this.room.name);
-        for (const roomName in remotePlans) {
-            if (!remotePlans[roomName].active) {
+        for (const remote of remotePlans) {
+            if (!remote.active) {
                 continue;
             }
-            if (Game.rooms[roomName]) {
-                structures.push(...Game.rooms[roomName].find(FIND_STRUCTURES, { 
+            if (Game.rooms[remote.room]) {
+                structures.push(...Game.rooms[remote.room].find(FIND_STRUCTURES, { 
                     filter: (s) => remoteUtility.isStructurePlanned(this.room.name, s.pos, s.structureType)
                 }));
             }
@@ -124,22 +132,19 @@ class RoomInfo {
         const unbuilt = [];
 
         const remotes = remoteUtility.getRemotePlans(this.room.name);
-        for (const roomName in remotes) {
-            const remote = remotes[roomName];
+        for (const remote of remotes) {
             if (!remote.active) {
                 continue;
             }
 
             // Start with containers
-            const room = Game.rooms[roomName];
+            const room = Game.rooms[remote.room];
             if (room) {
-                remote.miningSites.forEach((miningSite) => {
-                    const container = miningSite.pos;
-                    const existingContainer = room.lookForAt(LOOK_STRUCTURES, container.x, container.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
-                    if (!existingContainer) {
-                        unbuilt.push({ pos: container, type: STRUCTURE_CONTAINER });
-                    }
-                });
+                const existingContainer = room.lookForAt(LOOK_STRUCTURES, remote.container.x, remote.container.y)
+                    .find((s) => s.structureType === STRUCTURE_CONTAINER);
+                if (!existingContainer) {
+                    unbuilt.push({ pos: remote.container, type: STRUCTURE_CONTAINER });
+                }
             }
 
             // Then roads
@@ -169,7 +174,7 @@ class RoomInfo {
      * - The position of the mining site (place to stand).
      * - The ID of the source to mine.
      */
-    getMiningSites(onlyLocal = false) {
+    getMiningSites() {
         if (this.cachedMiningSpots) {
             return this.cachedMiningSpots;
         }
@@ -193,11 +198,14 @@ class RoomInfo {
         const remotePlans = remoteUtility.getRemotePlans(this.room.name);
         const allMiningSites = [];
         if (remotePlans) {
-            for (const remote in remotePlans) {
-                if (!remotePlans[remote].active) {
+            for (const remote of remotePlans) {
+                if (!remote.active) {
                     continue;
                 }
-                allMiningSites.push(...remotePlans[remote].miningSites);
+                allMiningSites.push({
+                    pos: remote.container,
+                    sourceID: remote.source.id,
+                });
             }
         }
 
@@ -216,14 +224,13 @@ class RoomInfo {
 
     /**
      * Gets the first unreserved mining site.
-     * @param {boolean} onlyLocal Should this consider remote mining sites as well?
      * @returns An object containing some data about the mining site:
      * - The position of the mining site (place to stand).
      * - The ID of the source to mine.
      */
-    getFirstUnreservedMiningSite(onlyLocal = false) {
+    getFirstUnreservedMiningSite() {
         // Sites are conveniently already ordered by priority
-        const sites = this.getMiningSites(onlyLocal);
+        const sites = this.getMiningSites();
 
         // Find the first site where no miner has reserved
         return sites.find((site) => !this.miners.find((m) => m.memory.miningSite && m.memory.miningSite.sourceID === site.sourceID));
@@ -327,8 +334,7 @@ class RoomInfo {
         // Now let's iterate over each remote and add pickup points in them too as long as we can see the room
         const remotePlans = remoteUtility.getRemotePlans(this.room.name);
         if (remotePlans) {
-            for (const key in remotePlans) {
-                const remote = Game.rooms[key];
+            for (const remote of remotePlans) {
                 if (!remote) {
                     continue;
                 }

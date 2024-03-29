@@ -195,7 +195,7 @@ class ProductionSpawnHandler extends SpawnHandler {
         // Note: this array is unsorted so we may end up spawning too many/few reservers early on
         // TODO: FIX //
         const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
-        for (const remote of Object.values(remotes)) {
+        for (const remote of remotes) {
             if (!remote.active) {
                 continue;
             }

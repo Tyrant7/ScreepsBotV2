@@ -46,15 +46,13 @@ class RemoteManager {
     ensurePlansExist(roomInfo) {
         if (!utility.getRemotePlans(roomInfo.room.name) || (RELOAD && DEBUG.replanRemotesOnReload)) {
 
-            // Simplify the plan objects and map the sourceID as a key
-            // Also filter out construction sites on invalid locations (room transitions)
+            // Filter out construction sites on invalid locations (room transitions)
             // and give each remote an activity status
-            const finalPlans = {};
+            const finalPlans = [];
             for (const plan of this.planRemotes(roomInfo)) {
-                const remoteID = remote.source.id;
                 plan.roads = plan.roads.filter((r) => r.x > 0 && r.x < 49 && r.y > 0 && r.y < 49);
                 plan.active = false;
-                finalPlans[remoteID] = plan;
+                finalPlans.push(plan);
             }
             utility.setRemotePlans(roomInfo.room.name, finalPlans);
         }

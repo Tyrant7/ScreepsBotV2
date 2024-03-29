@@ -35,25 +35,27 @@ module.exports = {
         if (!plans) {
             return false;
         }
-        const remote = plans[pos.roomName];
-        if (!remote) {
+
+        if (type !== STRUCTURE_ROAD &&
+            type !== STRUCTURE_CONTAINER) {
             return false;
         }
 
-        let searchCollection;
-        if (type === STRUCTURE_ROAD) {
-            searchCollection = remote.roads;
+        // Very inefficient, might need to // FIX // later
+        for (const remote of plans) {
+            if (!remote.active) {
+                continue;
+            }
+            const searchCollection = type === STRUCTURE_ROAD
+                ? remote.roads
+                : remote.containers;
+            if (searchCollection.find((r) => 
+                r.x === pos.x && 
+                r.y === pos.y && 
+                r.roomName === pos.roomName)) {
+                return true;
+            }
         }
-        else if (type === STRUCTURE_CONTAINER) {
-            searchCollection = remote.containers;
-        }
-
-        if (!searchCollection) {
-            return false;
-        }
-        return !!searchCollection.find((r) => 
-            r.x === pos.x && 
-            r.y === pos.y && 
-            r.roomName === pos.roomName);
+        return false;
     },
 };
