@@ -178,6 +178,9 @@ class EconomyManager {
      * @param {{}[]} remotes Array of remotes planned by that room.
      */
     drawOverlay(roomInfo, remotes, spawnEstimate) {
+        if (!DEBUG.drawOverlay) {
+            return;
+        }
         if (DEBUG.trackSpawnUsage) {
             const spawnDisplay = (Math.round((spawnEstimate) * 1000) / 1000).toFixed(3);
             overlay.addText(roomInfo.room.name, { "Spawn Capacity": spawnDisplay + " / 1" });
@@ -187,7 +190,7 @@ class EconomyManager {
             const remoteDisplay = {};
             for (const remote of remotes) {
                 if (remote.active) {
-                    remoteDisplay[remoteRoom] = " (" + (Math.round(remotes[remoteRoom].score * 1000) / 1000).toFixed(3) + "E/t)";
+                    remoteDisplay[remote.source.id] = " (" + (Math.round(remote.score * 1000) / 1000).toFixed(3) + "E/t)";
                 }
             }
             overlay.addText(roomInfo.room.name, remoteDisplay);

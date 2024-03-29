@@ -73,16 +73,32 @@ class BuilderTaskGenerator {
     }
 }
 
+function getBuildPriority(creep) {
+    return creep.memory.remote
+        ? remoteBuildPriorities
+        : buildPriorities;
+}
+
+// Larger builders in our main room prioritize like this
 const buildPriorities = {
-    [STRUCTURE_STORAGE]: 9,
-    [STRUCTURE_CONTAINER]: 8,
+    [STRUCTURE_STORAGE]: 10,
+    [STRUCTURE_CONTAINER]: 9,
+    [STRUCTURE_EXTENSION]: 8,
     [STRUCTURE_TOWER]: 7,
-    [STRUCTURE_LINK]: 6,
-    [STRUCTURE_EXTENSION]: 5,
-    [STRUCTURE_RAMPART]: 4,
-    [STRUCTURE_LAB]: 3,
+    [STRUCTURE_TERMINAL]: 6,
+    [STRUCTURE_LINK]: 5,
+    [STRUCTURE_LAB]: 4,
+    [STRUCTURE_RAMPART]: 3,
     [STRUCTURE_ROAD]: 2,
     [STRUCTURE_WALL]: 1,
 };
+
+// Smaller remote builders prioritize like this
+const remoteBuildPriorities = {
+    [STRUCTURE_ROAD]: 10,
+    [STRUCTURE_CONTAINER]: 9,
+    [STRUCTURE_LINK]: 8,
+    [STRUCTURE_RAMPART]: 7,
+}
 
 module.exports = BuilderTaskGenerator;

@@ -13,5 +13,6 @@ module.exports = {
     maxUpgraderLevel: 9,
     maxRepairerLevel: 3,
     maxBuilderLevel: 10,
+    smallBuilderLevel: 5,
     maxBuilderCount: 5,
 };

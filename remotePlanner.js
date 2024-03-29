@@ -1,4 +1,4 @@
-const creepMaker = require("creepMakerProduction");
+const creepMaker = require("creepMaker");
 const creepSpawnUtility = require("creepSpawnUtility");
 
 const PLANNING_PLAINS = 5;
@@ -314,6 +314,14 @@ class RemotePlanner {
             upkeep.energy += creepSpawnUtility.getCost(hauler.body) / CREEP_LIFE_TIME;
             upkeep.spawnTime += creepSpawnUtility.getSpawnTime(hauler.body) / CREEP_LIFE_TIME;
         }
+
+        // Then reservers
+        // Rooms have about 1.5 sources on average (just a guess to make our estimates more accurate)
+        const AVG_SOURCES_PER_ROOM = 1.5;
+        const reserver = creepMaker.makeReserver();
+        upkeep.energy += creepSpawnUtility.getCost(reserver.body) / CREEP_CLAIM_LIFE_TIME / AVG_SOURCES_PER_ROOM;
+        upkeep.spawnTime += creepSpawnUtility.getSpawnTime(reserver.body) / CREEP_CLAIM_LIFE_TIME / AVG_SOURCES_PER_ROOM;
+
         return upkeep;
     }
 }
