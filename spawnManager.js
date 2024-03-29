@@ -1,11 +1,6 @@
 const creepMaker = require("creepMaker");
 const remoteUtility = require("remoteUtility");
 
-const crashSpawnHandler = new CrashSpawnHandler();
-const defenseSpawnHandler = new DefenseSpawnHandler();
-const productionSpawnHandler = new ProductionSpawnHandler();
-const usageSpawnHandler = new UsageSpawnHandler();
-
 // 10_000 energy => one build part worth of workers
 const WORK_TO_BUILD_RATIO = 10000;
 
@@ -19,81 +14,6 @@ const REPAIR_THRESHOLDS = {
 
 // We'll need at least this many levels of upgrader missing before we spawn a new one
 const UPGRADER_LEVEL_MARGIN = Math.floor(CONSTANTS.maxUpgraderLevel / 1.5);
-
-class SpawnManager {
-
-    /**
-     * Handles spawning the next needed creep, and returns current spawn usage.
-     * @param {RoomInfo} roomInfo The room to spawn for.
-     * @returns {number} The current spawn usage expressed as a decimal between 0 and 1.
-     */
-    trackSpawns(roomInfo) {
-
-        // Handle our next spawn
-        const inactiveSpawns = roomInfo.spawns.filter((s) => !s.spawning);
-
-        // Limit ourselves to spawning one creep per tick to avoid issues with tracking need
-        if (inactiveSpawns.length) {
-            const next = this.handleNextSpawn(roomInfo);
-            if (next) {
-                // Save the room responsible for this creep and start spawning
-                next.memory.home = roomInfo.room.name;
-                inactiveSpawns[0].spawnCreep(next.body, next.name, { 
-                    memory: next.memory,
-                });
-            }
-        }
-
-        // Visuals
-        for (const spawn of roomInfo.spawns) {
-            if (spawn.spawning) {
-                this.showVisuals(spawn);
-            }
-        }
-
-        // Track our spawn usage
-        return (roomInfo.spawns.length - inactiveSpawns.length) / roomInfo.spawns.length;
-    }
-
-    /**
-     * Gets the next spawn in our priority order.
-     * @param {RoomInfo} roomInfo The room to get spawns for.
-     * @returns {{}} An object with some spawn data.
-     */
-    handleNextSpawn(roomInfo) {
-        const spawnOrder = [
-            crashSpawnHandler,
-            defenseSpawnHandler,
-            productionSpawnHandler,
-            usageSpawnHandler,
-        ];
-        for (const spawnHandler of spawnOrder) {
-            const next = spawnHandler.getNextSpawn(roomInfo);
-            if (next) {
-                return next;
-            }
-        }
-    }
-
-    /**
-     * Shows visuals for this spawn, if spawning.
-     * @param {StructureSpawn} spawn The spawn to show visuals for.
-     */
-    showVisuals(spawn) {
-        try {
-            const spawningCreep = Game.creeps[spawn.spawning.name];
-            const displayName = spawningCreep.name.split(' ')[0] + " " + spawningCreep.name.split(' ')[2];
-            Game.rooms[spawn.pos.roomName].visual.text(
-                displayName,
-                spawn.pos.x,
-                spawn.pos.y - 1,
-                { align: "center", opacity: 0.8 });
-        }
-        catch (e) {
-            console.log("Error when showing spawn visual: " + e);
-        }
-    }
-}
 
 // #region Spawn Handlers
 
@@ -200,7 +120,7 @@ class ProductionSpawnHandler extends SpawnHandler {
                 continue;
             }
 
-            wantedMiners += remote.miningSites.length;
+            wantedMiners += 1;
             wantedCarry += remote.neededHaulerCarry;
 
             // Since some remotes have the same room, we'll use a set to track the ones we need to reserve
@@ -211,7 +131,7 @@ class ProductionSpawnHandler extends SpawnHandler {
             const buildEnergy = roomInfo.getConstructionQueue().filter((s) => s.pos.roomName === remote.room).reduce((total, curr) => {
                 return total + CONSTRUCTION_COST[curr.type];
             }, 0);
-            wantedWork += Math.ceil(buildEnergy / WORK_TO_BUILD_RATIO);
+            wantedBuilderWork += Math.ceil(buildEnergy / WORK_TO_BUILD_RATIO);
 
             // If we're missing anything, let's get to spawning
             const nextSpawn = checkIfSpawn();
@@ -398,5 +318,85 @@ class UsageSpawnHandler extends SpawnHandler {
 }
 
 //#endregion
+
+const crashSpawnHandler = new CrashSpawnHandler();
+const defenseSpawnHandler = new DefenseSpawnHandler();
+const productionSpawnHandler = new ProductionSpawnHandler();
+const usageSpawnHandler = new UsageSpawnHandler();
+
+class SpawnManager {
+
+    /**
+     * Handles spawning the next needed creep, and returns current spawn usage.
+     * @param {RoomInfo} roomInfo The room to spawn for.
+     * @returns {number} The current spawn usage expressed as a decimal between 0 and 1.
+     */
+    trackSpawns(roomInfo) {
+
+        // Handle our next spawn
+        const inactiveSpawns = roomInfo.spawns.filter((s) => !s.spawning);
+
+        // Limit ourselves to spawning one creep per tick to avoid issues with tracking need
+        if (inactiveSpawns.length) {
+            const next = this.handleNextSpawn(roomInfo);
+            if (next) {
+                // Save the room responsible for this creep and start spawning
+                next.memory.home = roomInfo.room.name;
+                inactiveSpawns[0].spawnCreep(next.body, next.name, { 
+                    memory: next.memory,
+                });
+            }
+        }
+
+        // Visuals
+        for (const spawn of roomInfo.spawns) {
+            if (spawn.spawning) {
+                this.showVisuals(spawn);
+            }
+        }
+
+        // Track our spawn usage
+        return (roomInfo.spawns.length - inactiveSpawns.length) / roomInfo.spawns.length;
+    }
+
+    /**
+     * Gets the next spawn in our priority order.
+     * @param {RoomInfo} roomInfo The room to get spawns for.
+     * @returns {{}} An object with some spawn data.
+     */
+    handleNextSpawn(roomInfo) {
+        const spawnOrder = [
+            crashSpawnHandler,
+            defenseSpawnHandler,
+            productionSpawnHandler,
+            usageSpawnHandler,
+        ];
+        for (const spawnHandler of spawnOrder) {
+            const next = spawnHandler.getNextSpawn(roomInfo);
+            if (next) {
+                return next;
+            }
+        }
+    }
+
+    /**
+     * Shows visuals for this spawn, if spawning.
+     * @param {StructureSpawn} spawn The spawn to show visuals for.
+     */
+    showVisuals(spawn) {
+        try {
+            const spawningCreep = Game.creeps[spawn.spawning.name];
+            const displayName = spawningCreep.name.split(' ')[0] + " " + spawningCreep.name.split(' ')[2];
+            Game.rooms[spawn.pos.roomName].visual.text(
+                displayName,
+                spawn.pos.x,
+                spawn.pos.y - 1,
+                { align: "center", opacity: 0.8 });
+        }
+        catch (e) {
+            console.log("Error when showing spawn visual: " + e);
+        }
+    }
+}
 
 module.exports = SpawnManager;

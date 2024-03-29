@@ -71,7 +71,7 @@ class EconomyManager {
             // Let's be sure to update our estimate so don't drop more than necessary
             worst.active = false;
             base.spawnUsage -= worst.cost;
-            console.log(roomInfo.room.name + " dropping remote: " + source.id);
+            console.log(roomInfo.room.name + " dropping remote: " + worst.source.id);
         }
         else {
             // Add a remote if we can fit any
@@ -86,7 +86,7 @@ class EconomyManager {
             }
 
             // Keep adding our highest priority remote until we can't support any additional
-            const nextRemote = getBestRemote(inactiveRemotes, activeRemotes);
+            const nextRemote = this.getBestRemote(inactiveRemotes, activeRemotes);
 
             // Validate adding this remote
             if (base.spawnUsage + nextRemote.cost <= maxSpawnUsage - DROP_THRESHOLD) {
@@ -94,7 +94,7 @@ class EconomyManager {
 
                 // Update our estimate so we don't add more than necessary
                 base.spawnUsage += nextRemote.cost;
-                console.log(roomInfo.room.name + " adding remote: " + source.id);
+                console.log(roomInfo.room.name + " adding remote: " + nextRemote.source.id);
             }
         }
 
@@ -137,7 +137,7 @@ class EconomyManager {
         }
         // Keep adding our highest priority remote until we can't support any additional
         while (inactiveRemotes.length) {
-            const nextRemote = getBestRemote(inactiveRemotes, activeRemotes);
+            const nextRemote = this.getBestRemote(inactiveRemotes, activeRemotes);
 
             // Validate adding this remote
             if (totalSpawnUsage + nextRemote.cost > usageGoal - DROP_THRESHOLD) {

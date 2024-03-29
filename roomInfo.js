@@ -169,7 +169,6 @@ class RoomInfo {
 
     /**
      * Gets an array of all mining sites for this room.
-     * @param {boolean} onlyLocal Should this consider remote mining sites as well?
      * @returns An array of objects, each containing some data about the mining site:
      * - The position of the mining site (place to stand).
      * - The ID of the source to mine.
@@ -188,10 +187,6 @@ class RoomInfo {
                 pos: base.minerContainers[key],
                 sourceID: key,
             });
-        }
-
-        if (onlyLocal) {
-            return miningSpots;
         }
 
         // Get the mining sites for remote rooms
@@ -338,7 +333,10 @@ class RoomInfo {
                 if (!remote) {
                     continue;
                 }
-                addDroppedPoints(remote);
+                const remoteRoom = Game.rooms[remote.room];
+                if (remoteRoom) {
+                    addDroppedPoints(remoteRoom);
+                }
             }
         }
 

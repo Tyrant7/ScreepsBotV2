@@ -157,7 +157,7 @@ class RemotePlanner {
 
             // Each source's cost will be the spawn cost to spawn one miner, plus as many haulers as is needed in CARRY parts
             // const upkeep = spawnHandler.estimateSpawnCost(remote.neededCarry);
-            const upkeep = estimateCreepUpkeep(roomInfo.room.energyCapacityAvailable, remote.neededCarry);
+            const upkeep = this.estimateCreepUpkeep(roomInfo.room.energyCapacityAvailable, remote.neededCarry);
             remote.cost = upkeep.spawnTime;
 
             // Each source's score will be determined with a simple equation of:
@@ -311,8 +311,8 @@ class RemotePlanner {
         while (totalCarry < neededCarry) {
             const newHauler = creepMaker.makeHauler(CONSTANTS.maxHaulerLevel, maxEnergy);
             totalCarry += newHauler.body.filter((p) => p === CARRY);
-            upkeep.energy += creepSpawnUtility.getCost(hauler.body) / CREEP_LIFE_TIME;
-            upkeep.spawnTime += creepSpawnUtility.getSpawnTime(hauler.body) / CREEP_LIFE_TIME;
+            upkeep.energy += creepSpawnUtility.getCost(newHauler.body) / CREEP_LIFE_TIME;
+            upkeep.spawnTime += creepSpawnUtility.getSpawnTime(newHauler.body) / CREEP_LIFE_TIME;
         }
 
         // Then reservers
