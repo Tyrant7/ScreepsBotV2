@@ -35,7 +35,7 @@ class EconomyManager {
         // Run the spawn manager to spawn everything necessary to support what's currently active
         // This number will represent the fraction of total spawns that are active this tick
         // 0.5 and 0.33 respectively for 1/2 and 1/3 spawns active at higher RCLs
-        const spawnUsageThisTick = spawnManager.doSpawns(roomInfo);
+        const spawnUsageThisTick = spawnManager.trackSpawns(roomInfo);
 
         // Let's compare our actual spawn usage to our estimates    
         // Since we don't want to wait too long to see results, 
