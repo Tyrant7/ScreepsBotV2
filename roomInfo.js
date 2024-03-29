@@ -191,25 +191,16 @@ class RoomInfo {
 
         // Get the mining sites for remote rooms
         const remotePlans = remoteUtility.getRemotePlans(this.room.name);
-        const allMiningSites = [];
         if (remotePlans) {
             for (const remote of remotePlans) {
                 if (!remote.active) {
                     continue;
                 }
-                allMiningSites.push({
+                miningSpots.push({
                     pos: remote.container,
                     sourceID: remote.source.id,
                 });
             }
-        }
-
-        // Add 'em
-        for (const miningSite of allMiningSites) {
-            miningSpots.push({
-                pos: miningSite.pos,
-                sourceID: miningSite.sourceID,
-            });
         }
 
         // Cache in case of multiple requests this tick
