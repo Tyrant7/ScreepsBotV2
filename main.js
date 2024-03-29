@@ -10,14 +10,14 @@ global.DEBUG = {
     logTasks: true,
 
     drawOverlay: true,
-    drawRemoteOwnership: true,
-    drawContainerOverlay: true,
+    drawRemoteOwnership: false,
+    drawContainerOverlay: false,
     drawTrafficArrows: false,
 
     trackCPUUsage: true,
     trackRCLProgress: true,
     trackCreepCounts: true,
-    trackRemoteOverlay: true,
+    trackActiveRemotes: true,
     trackSpawnUsage: true,
     
     logRemotePlanning: true,

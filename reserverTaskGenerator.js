@@ -22,7 +22,12 @@ class ReserverTaskGenerator {
             
             // Find the first remote that doesn't have a reserver assigned to it
             // Find the highest priority remote that doesn't have a reserver assigned to it
-            const activeRemotes = remotes.filter((r) => r.active);
+            const activeRemotes = remotes.filter((r) => {
+                const active = r.active;
+                const reserved = activeTasks.find((task) => task.roomName === r.room 
+                    || (Memory.rooms[r.room].controller && task.controllerID === Memory.rooms[r.room].controller.id));
+                return active && !reserved;
+            });
             if (activeRemotes.length) {
                 const targetRemote = activeRemotes.reduce((best, curr) => {
                     return curr.score / curr.cost > best.score / best.cost ? curr : best;

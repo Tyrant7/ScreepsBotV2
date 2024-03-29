@@ -194,7 +194,7 @@ class EconomyManager {
             overlay.addHeading(roomInfo.room.name, "- Spawns -");
             overlay.addText(roomInfo.room.name, { "Spawn Usage": spawnDisplay + " / " + roomInfo.spawns.length });
         }
-        if (DEBUG.trackRemoteOverlay) {
+        if (DEBUG.trackActiveRemotes) {
             const remoteDisplay = {};
             for (const remote of remotes) {
                 if (remote.active) {
