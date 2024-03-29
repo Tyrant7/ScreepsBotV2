@@ -198,7 +198,7 @@ class EconomyManager {
             const remoteDisplay = {};
             for (const remote of remotes) {
                 if (remote.active) {
-                    const key = remote.source.id.substring(0, 8);
+                    const key = remote.source.id.substring(0, 6);
                     remoteDisplay[key] = " (" + (Math.round(remote.score * 1000) / 1000).toFixed(3) + "E/t)";
                 }
             }
