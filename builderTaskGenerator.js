@@ -48,12 +48,18 @@ class BuilderTaskGenerator {
             if (bestSite.pos.roomName !== creep.pos.roomName) {
                 return new Task({ roomName: realPos.roomName }, "move", [moveToRoom]);
             }
+            else {
+                // Come back and search for the site we just created next tick
+                return null;
+            }
         }
 
-        // Otherwise, no task!
-        return new Task({}, "idle", [function(creep, data) { 
+        // Otherwise, no task -> let's wait 5 ticks and try again
+        return new Task({ lastTick: Game.time }, "idle", [function(creep, data) { 
             creep.say("idle");
-            return false; 
+            if (Game.time >= data.lastTick + 5) {
+                return true;
+            }
         }]);
     }
 
