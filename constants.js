@@ -11,7 +11,7 @@ module.exports = {
     },
     maxHaulerLevel: 16,
     maxUpgraderLevel: 9,
-    maxRepairerLevel: 3,
+    maxRepairerLevel: 4,
     maxBuilderLevel: 10,
     smallBuilderLevel: 6,
     maxBuilderCount: 5,

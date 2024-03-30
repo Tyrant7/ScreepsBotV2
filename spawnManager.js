@@ -16,6 +16,9 @@ const REPAIR_THRESHOLDS = {
 // We'll need at least this many levels of upgrader missing before we spawn a new one
 const UPGRADER_LEVEL_MARGIN = Math.floor(CONSTANTS.maxUpgraderLevel / 1.5);
 
+// How many planned structures should we have before we allocate additional repairers
+const PLANNED_STRUCTURE_TO_REPAIRER_RATIO = 450;
+
 // #region Spawn Handlers
 
 class SpawnHandler {
@@ -260,8 +263,14 @@ class UsageSpawnHandler extends SpawnHandler {
     }
 
 
-    trySpawnRepairer(roomInfo) {           
-        if (roomInfo.repairers.length) {
+    trySpawnRepairer(roomInfo) {
+
+        // Allocate X repairers per planned structures
+        const plannedRoads = remoteUtility.getRemotePlans(roomInfo.room.name).reduce((total, curr) => {
+            // N roads + 1 container
+            return total + (curr.active ? curr.roads.length + 1 : 0);
+        }, 0);    
+        if (roomInfo.repairers.length >= 1 + Math.ceil(plannedRoads / PLANNED_STRUCTURE_TO_REPAIRER_RATIO)) {
             return;
         }
     
