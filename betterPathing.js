@@ -99,8 +99,10 @@ Creep.prototype.betterMoveTo = function(target, options) {
     if (path.length) {
         const nextStep = getNextStep(path, this.pos);
         const direction = this.pos.getDirectionTo(nextStep); 
-        drawArrow(this.pos, direction, { color: "#00FF00" });
-        this.move(direction);
+        if (direction) {
+            drawArrow(this.pos, direction, { color: "#00FF00" });
+            this.move(direction);
+        }
     }
 
     // Save our move data
