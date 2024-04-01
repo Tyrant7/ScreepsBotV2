@@ -9,7 +9,7 @@ module.exports = {
      * from accidentally pathing into unwalkable built structures that we had no vision on when we started pathing.
      * @returns {string} The path in serialized form.
      */
-    serializePath: function(path, endPathIfNoVisibility = true) {
+    serializePath: function(path, endPathIfNoVisibility = false) {
         let serializedPath = "";
         if (!path[0]) {
             return serializedPath;
