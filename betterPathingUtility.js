@@ -1,3 +1,5 @@
+const cachedCostMatrices = {};
+
 module.exports = {
     /**
      * Serializes a path as a starting position and array of directions into a single string.
@@ -71,6 +73,31 @@ module.exports = {
     },
 
     /**
+     * Pathfinds from a starting position into an existing path, and returns the result.
+     * @param {RoomPosition} fromPos The position to pathfind from.
+     * @param {RoomPosition[]} targetPath The path to pathfind into.
+     * @returns {string} The final conjoined serialized path.
+     */
+    prependPath: function(fromPos, targetPath) {
+        // First, let's find the path into our existing path
+        const path = this.getNewPath(fromPos, targetPath);
+        
+        // Iterate backwards over our target path until we hit the final position in our new path
+        const followupPositions = [];
+        for (const point of targetPath.reverse()) {
+            if (point.isEqualTo(path.slice(-1))) {
+                break;
+            }
+            followupPositions.push(point);
+        }
+
+        // Now we have our target path in reverse, let's flip it the right way
+        // And append it to our initial path
+        const finalPath = path.concat(followupPositions.reverse());
+        return this.serializePath(finalPath, false);
+    },
+
+    /**
      * Gets the position in the given direction, excluding roomName.
      * @param {RoomPosition} startPos The starting position.
      * @param {DirectionConstant} direction The direction to go in.
@@ -91,4 +118,54 @@ module.exports = {
         const newY = (startPos.y + directions[direction][1]) % 50;
         return { x: newX, y: newY };
     },
-}
+
+    getNewPath: function(startPos, goals) {
+        const maxOps = 2000;
+        const MAX_ATTEMPTS = 2;
+        let result;
+        for (let attempts = 1; attempts <= MAX_ATTEMPTS; attempts++) {
+            result = PathFinder.search(
+                startPos, goals, {
+                    maxRooms: options.maxRooms,
+                    maxOps: maxOps * attempts,
+                    plainCost: 2,
+                    swampCost: 10,
+                    roomCallback: this.getCachedCostMatrix,
+                }
+            );
+            if (result.incomplete) {
+                // Raise maxOps and try again
+                continue;
+            }
+            return result.path;
+        }
+        // console.log("No path could be found from " + startPos + " to " + goals.pos + " with range " + goals.range + ". Using incomplete path!");
+        return result.path;
+    },
+
+    getCachedCostMatrix: function(roomName) {
+        if (cachedCostMatrices[roomName] && cachedCostMatrices[roomName].tick === Game.time) {
+            return cachedCostMatrices[roomName].costs;
+        }
+
+        const matrix = new PathFinder.CostMatrix();
+        const room = Game.rooms[roomName];
+        if (!room) {
+            return matrix;
+        }
+
+        // Simply avoid unwalkable structures
+        room.find(FIND_STRUCTURES).forEach((s) => {
+            if (s.structureType === STRUCTURE_ROAD) {
+                matrix.set(s.pos.x, s.pos.y, 1);
+            }
+            else if (s.structureType !== STRUCTURE_CONTAINER &&
+                    (s.structureType !== STRUCTURE_RAMPART || !s.my)) {
+                matrix.set(s.pos.x, s.pos.y, 255);
+            }
+        });
+
+        cachedCostMatrices[roomName] = { tick: Game.time, costs: matrix };
+        return matrix;
+    },
+};

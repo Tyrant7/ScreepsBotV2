@@ -34,28 +34,8 @@ Creep.prototype.moveTo = function(target, options = {}) {
 }
 Creep.prototype.betterMoveTo = function(target, options) {
 
-    function getNewPath(startPos, goals) {
-        const maxOps = 2000;
-        const MAX_ATTEMPTS = 2;
-        let result;
-        for (let attempts = 1; attempts <= MAX_ATTEMPTS; attempts++) {
-            result = PathFinder.search(
-                startPos, goals, {
-                    maxRooms: options.maxRooms,
-                    maxOps: maxOps * attempts,
-                    plainCost: 2,
-                    swampCost: 10,
-                    roomCallback: getCachedCostMatrix,
-                }
-            );
-            if (result.incomplete) {            
-                // Raise maxOps and try again
-                continue;
-            }
-            return utility.serializePath(result.path);
-        }
-        // console.log("No path could be found from " + startPos + " to " + goals.pos + " with range " + goals.range + ". Using incomplete path!");
-        return utility.serializePath(result.path);
+    function newPath(creep) {
+        return utility.serializePath(utility.getNewPath(creep.pos, { pos: target, range: options.range }), true);
     }
 
     function verifyPath(creep) {
@@ -68,13 +48,13 @@ Creep.prototype.betterMoveTo = function(target, options) {
         // If we don't have valid move data, let's repath
         const moveData = creep.memory._move;
         if (!moveData || !moveData.path || !moveData.path.length) {
-            return getNewPath(creep.pos, { pos: target, range: options.range });
+            return newPath(creep);
         }
 
         // Make sure our destination is still within range of our target
         if (target.getRangeTo(moveData.dest.x, moveData.dest.y) > options.range ||
             target.roomName !== moveData.dest.roomName) {
-            return getNewPath(creep.pos, { pos: target, range: options.range });
+            return newPath(creep);
         }
 
         // If we moved last time, we should be right on our path
@@ -85,7 +65,7 @@ Creep.prototype.betterMoveTo = function(target, options) {
 
         // Something went wrong with our pathing
         if (creep.pos.getRangeTo(nextStep) > 1) {
-            return getNewPath(creep.pos, { pos: target, range: options.range });
+            return newPath(creep);
         }
 
         return moveData.path;
@@ -214,33 +194,4 @@ function drawArrow(pos, direction, style) {
     const x = target.x - ((target.x - pos.x) * 0.5);
     const y = target.y - ((target.y - pos.y) * 0.5);
     Game.rooms[pos.roomName].visual.line(pos.x, pos.y, x, y, style);
-}
-
-let cachedCostMatrices = {};
-
-function getCachedCostMatrix(roomName) {
-    if (cachedCostMatrices[roomName] && cachedCostMatrices[roomName].tick === Game.time) {
-        return cachedCostMatrices[roomName].costs;
-    }
-
-    const matrix = new PathFinder.CostMatrix();
-
-    const room = Game.rooms[roomName];
-    if (!room) {
-        return matrix;
-    }
-
-    // Simply avoid unwalkable structures
-    room.find(FIND_STRUCTURES).forEach((s) => {
-        if (s.structureType === STRUCTURE_ROAD) {
-            matrix.set(s.pos.x, s.pos.y, 1);
-        }
-        else if (s.structureType !== STRUCTURE_CONTAINER &&
-                (s.structureType !== STRUCTURE_RAMPART || !s.my)) {
-            matrix.set(s.pos.x, s.pos.y, 255);
-        }
-    });
-
-    cachedCostMatrices[roomName] = { tick: Game.time, costs: matrix };
-    return matrix;
 }
