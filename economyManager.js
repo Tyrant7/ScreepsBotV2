@@ -4,6 +4,9 @@ const SpawnManager = require("spawnManager");
 const remoteManager = new RemoteManager();
 const spawnManager = new SpawnManager();
 
+const creepSpawnUtility = require("creepSpawnUtility");
+const creepMaker = require("creepMaker");
+
 const remoteUtility = require("remoteUtility");
 const overlay = require("overlay");
 
@@ -73,7 +76,7 @@ class EconomyManager {
             worst.active = false;
             base.spawnUsage -= worst.cost;
             if (DEBUG.logRemoteDropping) {
-                console.log(roomInfo.room.name + " dropping remote: " + worst.source.id);
+                console.log(roomInfo.room.name + " dropping remote: " + worst.source.id + " (" + nextRemote.room + ")");
             }
         }
         else {
@@ -99,7 +102,7 @@ class EconomyManager {
                     // Update our estimate so we don't add more than necessary
                     base.spawnUsage += nextRemote.cost;
                     if (DEBUG.logRemoteDropping) {
-                        console.log(roomInfo.room.name + " adding remote: " + nextRemote.source.id);
+                        console.log(roomInfo.room.name + " adding remote: " + nextRemote.source.id + " (" + nextRemote.room + ")");
                     }
                 }
             }
@@ -168,6 +171,13 @@ class EconomyManager {
      * @returns {{}} The best fit remote currently available.
      */
     getBestRemote(inactiveRemotes, activeRemotes) {
+
+        // Let's make sure to include the cost of a reserver if we aren't already reserving the remote's room
+        const reservedRooms = [];
+        activeRemotes.forEach((r) => {
+            reservedRooms.push(r.room);
+        });
+        const reserverCost = creepSpawnUtility.getSpawnTime(creepMaker.makeReserver().body);
         return inactiveRemotes.filter((r) => {
             // Ensure we meet the dependancies of this remote
             for (const depend of r.dependants) {
@@ -176,7 +186,11 @@ class EconomyManager {
                 }
             }
             return true;
-        }).reduce((best, curr) => curr.score / curr.cost > best.score / best.cost ? curr : best);
+        }).reduce((best, curr) => {
+            const cPenalty = reservedRooms.includes(curr.room) ? 0 : reserverCost;
+            const bPenalty = reservedRooms.includes(best.room) ? 0 : reserverCost;
+            return curr.score / (curr.cost + cPenalty) > best.score / (best.cost + bPenalty) ? curr : best;
+        });
     }
 
     /**
