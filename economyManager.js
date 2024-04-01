@@ -76,7 +76,7 @@ class EconomyManager {
             worst.active = false;
             base.spawnUsage -= worst.cost;
             if (DEBUG.logRemoteDropping) {
-                console.log(roomInfo.room.name + " dropping remote: " + worst.source.id + " (" + nextRemote.room + ")");
+                console.log(roomInfo.room.name + " dropping remote: " + worst.source.id + " (" + worst.room + ")");
             }
         }
         else {
