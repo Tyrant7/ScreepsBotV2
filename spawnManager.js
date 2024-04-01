@@ -189,6 +189,7 @@ class UsageSpawnHandler extends SpawnHandler {
             // e.g. future mineral harvesters, etc.
 
             this.trySpawnUpgrader,
+            this.trySpawnMineralMiner,
         ];
 
         // Loop over our spawn handlers in order of priority
@@ -262,7 +263,6 @@ class UsageSpawnHandler extends SpawnHandler {
         }
     }
 
-
     trySpawnRepairer(roomInfo) {
 
         // Allocate X repairers per planned structures
@@ -328,6 +328,13 @@ class UsageSpawnHandler extends SpawnHandler {
             // Otherwise, let's always spawn a max size one
             return creepMaker.makeBuilder(CONSTANTS.maxBuilderLevel, roomInfo.room.energyCapacityAvailable);
         }
+    }
+
+    trySpawnMineralMiner(roomInfo) {
+        if (roomInfo.mineralMiners.length > 0) {
+            return;
+        }
+        return creepMaker.makeMineralMiner(1, roomInfo.room.energyCapacityAvailable);
     }
 
     //#endregion

@@ -44,7 +44,7 @@ module.exports = {
         for (let i = 0; i < desiredLevel; i++) {
             lvl = i + 1;
             body.push(MOVE, CARRY, CARRY);
-            if (creepSpawnUtility.getCost(body) > energy || body.length > 50) {
+            if (creepSpawnUtility.getCost(body) > energy || body.length > MAX_CREEP_SIZE) {
                 body.pop();
                 body.pop();
                 body.pop();
@@ -76,7 +76,7 @@ module.exports = {
         while (lvl < desiredLevel) {
             lvl++;
             body.push(...[MOVE, WORK, WORK, WORK, WORK]);
-            if (creepSpawnUtility.getCost(body) > energy || body.length > 50) {
+            if (creepSpawnUtility.getCost(body) > energy || body.length > MAX_CREEP_SIZE) {
                 lvl--;
                 body.pop();
                 body.pop();
@@ -96,7 +96,7 @@ module.exports = {
         let body = builderParts;
         let lvl = 1;
         const levelCost = creepSpawnUtility.getCost(body);
-        while (lvl < desiredLevel && (lvl + 1) * levelCost <= energy && body.length <= 50 - builderParts.length) {
+        while (lvl < desiredLevel && (lvl + 1) * levelCost <= energy && body.length <= MAX_CREEP_SIZE - builderParts.length) {
             lvl++;
             body = body.concat(builderParts);
         }
@@ -123,6 +123,27 @@ module.exports = {
         return { body: body, 
                  name: "Repairer " + Game.time + " [" + lvl + "]",
                  memory: { role: CONSTANTS.roles.repairer }};
+    },
+
+    makeMineralMiner: function(desiredLevel, energy) {
+        let body = [];
+        let lvl = 0;
+        while (lvl < desiredLevel) {
+            lvl++;
+            body.push(...[MOVE, WORK, WORK, WORK, WORK]);
+            if (creepSpawnUtility.getCost(body) > energy || body.length > MAX_CREEP_SIZE) {
+                lvl--;
+                body.pop();
+                body.pop();
+                body.pop();
+                body.pop();
+                body.pop();
+                break;
+            }
+        }
+        return { body: body, 
+                 name: "Excavator " + Game.time + " [" + lvl + "]",
+                 memory: { role: CONSTANTS.roles.mineralMiner }};
     },
 
     //#endregion

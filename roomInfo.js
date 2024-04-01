@@ -221,10 +221,15 @@ class RoomInfo {
         const mineralSpots = [];
         const base = Memory.bases[this.room.name];
         for (const key in base.mineralContainers) {
-            mineralSpots.push({
-                pos: base.mineralContainers[key],
-                mineralID: key,
-            });
+            const mineral = Game.getObjectById(key);
+            const extractor = mineral.pos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_EXTRACTOR);
+            if (extractor) {
+                mineralSpots.push({
+                    pos: base.mineralContainers[key],
+                    mineralID: key,
+                    extractorID: extractor.id,
+                });
+            }
         }
         return mineralSpots;
     }

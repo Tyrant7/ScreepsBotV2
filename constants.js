@@ -8,6 +8,7 @@ module.exports = {
         scout: "scout",
         reserver: "reserver",
         defender: "defender",
+        mineralMiner: "mineral_miner",
     },
     maxHaulerLevel: 16,
     maxUpgraderLevel: 9,
@@ -16,4 +17,5 @@ module.exports = {
     smallBuilderLevel: 6,
     maxBuilderCount: 5,
     maxScouts: 0,
+    maxMineralMinerLevel: 8,
 };

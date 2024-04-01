@@ -49,6 +49,7 @@ const RepairerManager = require("repairerManager");
 const BuilderManager = require("builderManager");
 const ReserverManager = require("reserverManager");
 const DefenderManager = require("defenderManager");
+const MineralMinerManager = require("mineralMinerManager");
 
 // Mapping
 const creepRoleMap = {
@@ -60,6 +61,7 @@ const creepRoleMap = {
     [CONSTANTS.roles.builder]: new BuilderManager(),
     [CONSTANTS.roles.reserver]: new ReserverManager(),
     [CONSTANTS.roles.defender]: new DefenderManager(),
+    [CONSTANTS.roles.mineralMiner]: new MineralMinerManager(),
 };
 
 // Economy
