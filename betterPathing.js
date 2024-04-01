@@ -53,7 +53,7 @@ Creep.prototype.betterMoveTo = function(target, options) {
             }
             return result.path;
         }
-        console.log("No path could be found from " + startPos + " to " + goals.pos + " with range " + goals.range + ". Using incomplete path!");
+        // console.log("No path could be found from " + startPos + " to " + goals.pos + " with range " + goals.range + ". Using incomplete path!");
         return result.path;
     }
 
@@ -70,15 +70,14 @@ Creep.prototype.betterMoveTo = function(target, options) {
             return getNewPath(creep.pos, { pos: target, range: options.range });
         }
 
-        // Make sure our path ends within range of our target
-        const path = moveData.path;
-        const lastNode = path.slice(-1);
-        if (target.getRangeTo(lastNode.x, lastNode.y) <= options.range ||
+        // Make sure our destination is still within range of our target
+        if (target.getRangeTo(moveData.dest.x, moveData.dest.y) <= options.range ||
             target.roomName !== moveData.dest.roomName) {
             return getNewPath(creep.pos, { pos: target, range: options.range });
         }
 
         // If we moved last time, we should be right on our path
+        const path = moveData.path;
         const nextStep = new RoomPosition(path[0].x, path[0].y, path[0].roomName);
         if (creep.pos.isEqualTo(nextStep)) {
             return moveData.path.slice(1);
