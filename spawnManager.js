@@ -286,7 +286,7 @@ class UsageSpawnHandler extends SpawnHandler {
 
     trySpawnScout(roomInfo) {
         // Don't need more than one scout per room
-        if (roomInfo.scouts.length) {
+        if (roomInfo.scouts.length >= CONSTANTS.maxScouts) {
             return;
         }
         return creepMaker.makeScout();
