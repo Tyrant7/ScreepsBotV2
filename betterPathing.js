@@ -51,10 +51,10 @@ Creep.prototype.betterMoveTo = function(target, options) {
                 // Raise maxOps and try again
                 continue;
             }
-            return result.path;
+            return serializePath(result.path);
         }
         // console.log("No path could be found from " + startPos + " to " + goals.pos + " with range " + goals.range + ". Using incomplete path!");
-        return result.path;
+        return serializePath(result.path);
     }
 
     function verifyPath(creep) {
@@ -66,25 +66,27 @@ Creep.prototype.betterMoveTo = function(target, options) {
 
         // If we don't have valid move data, let's repath
         const moveData = creep.memory._move;
-        if (!moveData || !moveData.path || !moveData.path.length || moveData.room !== creep.room.name) {
+        if (!moveData || !moveData.path || !moveData.path.length) {
+            console.log(creep.name + " reset 0");
             return getNewPath(creep.pos, { pos: target, range: options.range });
         }
 
         // Make sure our destination is still within range of our target
-        if (target.getRangeTo(moveData.dest.x, moveData.dest.y) <= options.range ||
+        if (target.getRangeTo(moveData.dest.x, moveData.dest.y) > options.range ||
             target.roomName !== moveData.dest.roomName) {
+                console.log(creep.name + " reset 1");
             return getNewPath(creep.pos, { pos: target, range: options.range });
         }
 
         // If we moved last time, we should be right on our path
-        const path = moveData.path;
-        const nextStep = new RoomPosition(path[0].x, path[0].y, path[0].roomName);
+        const nextStep = getNextStep(moveData.path, creep.pos);
         if (creep.pos.isEqualTo(nextStep)) {
-            return moveData.path.slice(1);
+            return progressPath(moveData.path, creep.pos);
         }
 
         // Something went wrong with our pathing
         if (creep.pos.getRangeTo(nextStep) > 1) {
+            console.log(creep.name + " reset 2");
             return getNewPath(creep.pos, { pos: target, range: options.range });
         }
 
@@ -97,8 +99,8 @@ Creep.prototype.betterMoveTo = function(target, options) {
     }
 
     const path = verifyPath(this);
-    if (path && path.length) {
-        const nextStep = new RoomPosition(path[0].x, path[0].y, path[0].roomName);
+    if (path.length) {
+        const nextStep = getNextStep(path, this.pos);
         const direction = this.pos.getDirectionTo(nextStep); 
         drawArrow(this.pos, direction, { color: "#00FF00" });
         this.move(direction);
@@ -111,7 +113,6 @@ Creep.prototype.betterMoveTo = function(target, options) {
     }
     this.memory._move.dest = target;
     this.memory._move.path = path;
-    this.memory._move.room = this.room.name;
 }
 Creep.prototype.wrappedMove = Creep.prototype.move;
 Creep.prototype.move = function(direction) {
@@ -139,10 +140,10 @@ Creep.prototype.shoveIfNecessary = function(targetPos) {
         }
 
         // Because shoving moves the creep, this will happen recursively
-        blockingCreep.requestShove(this);
+        blockingCreep.requestShove();
     }
 }
-Creep.prototype.requestShove = function(shover) {
+Creep.prototype.requestShove = function() {
 
     // Reusable utility method to ensure if a spot is walkable
     const terrain = Game.map.getRoomTerrain(this.room.name);
@@ -227,11 +228,9 @@ function getPosInDirection(startPos, direction) {
         [LEFT]:         [-1, 0],
         [TOP_LEFT]:     [-1,-1],
     }
-    const newX = startPos.x + directions[direction][0];
-    const newY = startPos.y + directions[direction][1];
-    if (newX > 0 && newX < 49 && newY > 0 && newY < 49) {
-        return new RoomPosition(newX, newY, startPos.roomName);
-    }
+    const newX = (startPos.x + directions[direction][0]) % 50;
+    const newY = (startPos.y + directions[direction][1]) % 50;
+    return { x: newX, y: newY };
 }
 
 let cachedCostMatrices = {};
@@ -261,4 +260,75 @@ function getCachedCostMatrix(roomName) {
 
     cachedCostMatrices[roomName] = { tick: Game.time, costs: matrix };
     return matrix;
+}
+
+/**
+ * Serializes a path as a starting position and array of directions into a single string.
+ * @param {RoomPosition[]} path The path to serialize.
+ * @param {boolean} endPathIfNoVisibility A flag telling us to end the path once we enter a new room with no visibility.
+ * Disable this setting if we're using a cached path. If we're pathing normally we'll usually want this enabled to prevent us
+ * from accidentally pathing into unwalkable built structures that we had no vision on when we started pathing.
+ * @returns {string} The path in serialized form.
+ */
+function serializePath(path, endPathIfNoVisibility) {
+    let serializedPath = "";
+    if (!path[0]) {
+        return serializedPath;
+    }
+
+    // Serialize our starting position
+    serializedPath += path[0].x < 10 ? "0" + path[0].x : path[0].x.toString();
+    serializedPath += path[0].y < 10 ? "0" + path[0].y : path[0].y.toString();
+
+    // Create an array of directions to follow from here
+    let lastPos = path[0];
+    for (const pos of path) {
+        if (pos === lastPos) {
+            continue;
+        }
+        serializedPath += lastPos.getDirectionTo(pos);
+        lastPos = pos;
+        if (endPathIfNoVisibility && !Game.rooms[pos.roomName]) {
+            break;
+        }
+    }
+    return serializedPath;
+}
+
+/**
+ * Gets the next step in the path. 
+ * @param {string} serializedPath The serialized path to step through.
+ * @param {RoomPosition} currentPos The position of the creep following the path. Used for determining the next room. 
+ * @returns {RoomPosition} The next position to move to in the path.
+ */
+function getNextStep(serializedPath, currentPos) {
+    const nextX = parseInt(serializedPath.substring(0, 2));
+    const nextY = parseInt(serializedPath.substring(2, 4));
+    return new RoomPosition(nextX, nextY, currentPos.roomName);
+}
+
+/**
+ * Advances the path by one step, and returns it.
+ * @param {string} serializedPath The path to advance.
+ * @param {RoomPosition} currentPos The position of the creep following the path. Used for determining the next room. 
+ * @returns {string} The serialized path, progressed one step.
+ */
+function progressPath(serializedPath, currentPos) {
+    // First identify our next position
+    const lastPos = getNextStep(serializedPath, currentPos);
+
+    // Then cut our next step out of our path
+    serializedPath = serializedPath.substring(4);
+    if (!serializedPath.length) {
+        return "";
+    }
+
+    // Finally, append our next position to our path
+    const nextPos = getPosInDirection(lastPos, serializedPath[0]);
+    const nextX = nextPos.x < 10 ? "0" + nextPos.x : nextPos.x.toString();
+    const nextY = nextPos.y < 10 ? "0" + nextPos.y : nextPos.y.toString();
+    const prefix = nextX + nextY;
+
+    // return our new position and directions
+    return prefix + serializedPath.substring(1);
 }
