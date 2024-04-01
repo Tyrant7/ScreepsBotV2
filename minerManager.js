@@ -1,8 +1,8 @@
+const CreepManager = require("creepManager");
 const Task = require("task");
 
-class MinerTaskGenerator {
-
-    run(creep, roomInfo, activeTasks) {
+class MinerManager extends CreepManager {
+    createTask(creep, roomInfo) {
 
         // Generate default miner behaviour -> miners only behave in one specific way
         const actionStack = [];
@@ -70,4 +70,4 @@ class MinerTaskGenerator {
     }
 }
 
-module.exports = MinerTaskGenerator;
+module.exports = MinerManager;

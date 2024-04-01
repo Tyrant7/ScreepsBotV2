@@ -1,10 +1,10 @@
+const CreepManager = require("creepManager");
 const Task = require("task");
-const moveToRoom = require("moveToRoom");
 const scoutingUtility = require("scoutingUtility");
 
-class ScoutTaskGenerator {
+class ScoutManager extends CreepManager {
 
-    run(creep, roomInfo, activeTasks) {
+    createTask(creep, roomInfo) {
 
         // Let's generate a new 'explore' task for the closest room within an arbitrary range to the creep's current room
         const targetName = scoutingUtility.searchForUnexploredRoomsNearby(creep.room.name, 3) 
@@ -27,7 +27,7 @@ class ScoutTaskGenerator {
             }
             else {
                 data.maxRooms = 3;
-                moveToRoom(creep, data);
+                this.basicActions.moveToRoom(creep, data);
                 creep.say("🔭", true);
             }
 
@@ -119,4 +119,4 @@ class ScoutTaskGenerator {
     }
 }
 
-module.exports = ScoutTaskGenerator;
+module.exports = ScoutManager;

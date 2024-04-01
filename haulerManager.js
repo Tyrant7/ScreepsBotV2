@@ -1,20 +1,21 @@
+const CreepManager = require("creepManager");
 const Task = require("task");
 const estimateTravelTime = require("estimateTravelTime");
 
-class HaulerTaskGenerator {
+class HaulerManager extends CreepManager {
 
-    run(creep, roomInfo, activeTasks) {
+    createTask(creep, roomInfo) {
 
         // Generate some tasks for haulers
         // Tasks are quite simple: pickup and dropoff
 
         if (creep.store[RESOURCE_ENERGY]) {
-            return this.dropoffTaskLogistics(creep, roomInfo, activeTasks);
+            return this.dropoffTaskLogistics(creep, roomInfo);
         }
-        return this.pickupTaskLogistics(creep, roomInfo, activeTasks);
+        return this.pickupTaskLogistics(creep, roomInfo);
     }
 
-    pickupTaskLogistics(creep, roomInfo, activeTasks) {
+    pickupTaskLogistics(creep, roomInfo) {
 
         // Persist through global resets
         if (creep.memory.reservedPickup) {
@@ -34,7 +35,7 @@ class HaulerTaskGenerator {
         // Factor in the amount we've already reserved from each pickup point
         const pickupPoints = roomInfo.getEnergyPickupPoints();
         pickupPoints.forEach((point) => {
-            const amountReserved = activeTasks.reduce((total, task) => {
+            const amountReserved = Object.values(this.activeTasks).reduce((total, task) => {
                 if (task.tag !== "pickup") {
                     return total;
                 }
@@ -91,7 +92,7 @@ class HaulerTaskGenerator {
         return new Task(reserved, "pickup", actionStack);
     }
 
-    dropoffTaskLogistics(creep, roomInfo, activeTasks) {
+    dropoffTaskLogistics(creep, roomInfo) {
         
         // Persist through global resets
         if (creep.memory.reservedDropoff) {
@@ -103,7 +104,7 @@ class HaulerTaskGenerator {
 
         // Lower the value of already reserved dropoff points 
         dropoffPoints.forEach((point) => {
-            const amountReserved = activeTasks.reduce((total, task) => {
+            const amountReserved = Object.values(this.activeTasks).reduce((total, task) => {
                 if (task.tag !== "dropoff") {
                     return total;
                 }
@@ -198,4 +199,4 @@ class HaulerTaskGenerator {
     }
 }
 
-module.exports = HaulerTaskGenerator;
+module.exports = HaulerManager;

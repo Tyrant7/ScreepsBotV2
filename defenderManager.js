@@ -1,16 +1,16 @@
+const CreepManager = require("creepManager");
 const Task = require("task");
-const moveToRoom = require("moveToRoom");
 
-class DefenderTaskGenerator {
+class DefenderManager extends CreepManager {
 
-    run(creep, roomInfo, activeTasks) {
+    createTask(creep, roomInfo) {
 
         // Find our enemies
         const enemies = roomInfo.getEnemies();
         if (enemies.length === 0) {
             // Follow our enemy if they're still in one of our rooms
             if (creep.memory.lastSeen && creep.pos.roomName !== creep.memory.lastSeen) {
-                const actionStack = [moveToRoom];
+                const actionStack = [this.basicActions.moveToRoom];
                 return new Task({ roomName: creep.memory.lastSeen }, "pursue", actionStack);
             }
             return null;
@@ -65,4 +65,4 @@ class DefenderTaskGenerator {
     }
 }
 
-module.exports = DefenderTaskGenerator;
+module.exports = DefenderManager;

@@ -1,15 +1,15 @@
+const CreepManager = require("creepManager");
 const Task = require("task");
 
-class UpgraderTaskGenerator {
+class UpgraderManager extends CreepManager {
 
     /**
      * Generates an "upgrade" task for this upgrader.
      * @param {Creep} creep The creep to create tasks for.
      * @param {RoomInfo} roomInfo The info object associated with the home room of the creep to generate tasks for.
-     * @param {Task[]} activeTasks List of current reserver tasks to take into consideration when finding a new task.
      * @returns An upgrade task.
      */
-    run(creep, roomInfo, activeTasks) {
+    createTask(creep, roomInfo) {
 
         const actionStack = []
         actionStack.push(function(creep, data) {
@@ -52,4 +52,4 @@ class UpgraderTaskGenerator {
     }
 }
 
-module.exports = UpgraderTaskGenerator;
+module.exports = UpgraderManager;

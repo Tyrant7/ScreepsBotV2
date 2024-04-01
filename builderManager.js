@@ -1,21 +1,19 @@
+const CreepManager = require("creepManager");
 const Task = require("task");
-const harvest = require("harvest");
 const estimateTravelTime = require("estimateTravelTime");
-const moveToRoom = require("moveToRoom");
 
-class BuilderTaskGenerator {
+class BuilderManager extends CreepManager {
 
     /**
      * Creates a build task.
      * @param {Creep} creep The creep to create tasks for.
      * @param {RoomInfo} roomInfo The info object associated with the room to generate tasks for.
-     * @param {Task[]} activeTasks List of current builder tasks to take into consideration when finding a new task.
      * @returns The best fitting task object for this creep.
      */
-    run(creep, roomInfo, activeTasks) {
+    createTask(creep, roomInfo) {
 
         if (!creep.store[RESOURCE_ENERGY]) {
-            return new Task({}, "harvest", [harvest]);
+            return new Task({}, "harvest", [this.basicActions.seekEnergy]);
         }
 
         // Start by allocating to existing sites
@@ -23,7 +21,7 @@ class BuilderTaskGenerator {
         for (const site of sites) {
 
             // Don't allow more than one build task per site
-            const existingTasks = activeTasks.filter((task) => task && task.data.targetID === site.id);
+            const existingTasks = Object.values(this.activeTasks).filter((task) => task && task.data.targetID === site.id);
             if (existingTasks.length) {
                 continue;
             }
@@ -53,7 +51,7 @@ class BuilderTaskGenerator {
             
             realPos.createConstructionSite(bestSite.type);
             if (bestSite.pos.roomName !== creep.pos.roomName) {
-                return new Task({ roomName: realPos.roomName }, "move", [moveToRoom]);
+                return new Task({ roomName: realPos.roomName }, "move", [this.basicActions.moveToRoom]);
             }
             else {
                 // Come back and search for the site we just created next tick
@@ -115,4 +113,4 @@ const remoteBuildPriorities = {
     [STRUCTURE_RAMPART]: 7,
 }
 
-module.exports = BuilderTaskGenerator;
+module.exports = BuilderManager;

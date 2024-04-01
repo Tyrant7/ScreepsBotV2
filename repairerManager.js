@@ -1,21 +1,18 @@
+const CreepManager = require("creepManager");
 const Task = require("task");
-const harvest = require("harvest");
-const estimateTravelTime = require("estimateTravelTime");
-const profiler = require("profiler");
 
-class RepairerTaskGenerator {
+class RepairerManager extends CreepManager {
 
     /**
      * Creates a new best-fitting task for this creep.
      * @param {Creep} creep The creep to create tasks for.
      * @param {RoomInfo} roomInfo The info object associated with the room to generate tasks for.
-     * @param {Task[]} activeTasks List of current repairer tasks to take into consideration when finding a new task.
      * @returns The best fitting task object for this creep.
      */
-    run(creep, roomInfo, activeTasks) {
+    createTask(creep, roomInfo) {
 
         if (!creep.store[RESOURCE_ENERGY]) {
-            return new Task({}, "harvest", [harvest]);
+            return new Task({}, "harvest", [this.basicActions.seekEnergy]);
         }
 
         // On the first task, we'll search for the lowest health structure we currently have
@@ -89,4 +86,4 @@ const repairThresholds = {
     [STRUCTURE_ROAD]: 0.8,
 };
 
-module.exports = RepairerTaskGenerator;
+module.exports = RepairerManager;

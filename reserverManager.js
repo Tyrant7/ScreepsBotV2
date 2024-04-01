@@ -1,17 +1,16 @@
+const CreepManager = require("creepManager");
 const Task = require("task");
-const moveToRoom = require("moveToRoom");
 const remoteUtility = require("remoteUtility");
 
-class ReserverTaskGenerator {
+class ReserverManager extends CreepManager {
 
     /**
      * Generates a "reserve" task for this reserver.
      * @param {Creep} creep The creep to create tasks for.
      * @param {RoomInfo} roomInfo The info object associated with the home room of the creep to generate tasks for.
-     * @param {Task[]} activeTasks List of current reserver tasks to take into consideration when finding a new task.
      * @returns The best fitting task for this creep.
      */
-    run(creep, roomInfo, activeTasks) {
+    createTask(creep, roomInfo) {
 
         // Assign this reserver to the highest priority remote currently without a reserver
         if (!creep.memory.targetRoom) {
@@ -24,7 +23,7 @@ class ReserverTaskGenerator {
             // Find the highest priority remote that doesn't have a reserver assigned to it
             const activeRemotes = remotes.filter((r) => {
                 const active = r.active;
-                const reserved = activeTasks.find((task) => task.data.roomName === r.room 
+                const reserved = Object.values(this.activeTasks).find((task) => task.data.roomName === r.room 
                     || (Memory.rooms[r.room].controller && task.data.controllerID === Memory.rooms[r.room].controller.id));
                 return active && !reserved;
             });
@@ -55,9 +54,9 @@ class ReserverTaskGenerator {
         }
 
         // If we're not in the room yet, let's get over there
-        const actionStack = [moveToRoom];
+        const actionStack = [this.basicActions.moveToRoom];
         return new Task({ roomName: creep.memory.targetRoom }, "move", actionStack);
     }
 }
 
-module.exports = ReserverTaskGenerator;
+module.exports = ReserverManager;

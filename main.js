@@ -32,46 +32,34 @@ global.RELOAD = true;
 // Extensions
 require("betterPathing");
 
+// Data
+const RoomInfo = require("roomInfo");
+
 // Managers
-const CreepManager = require("creepManager");
 const EconomyManager = require("economyManager");
 const TowerManager = require("towerManager");
 const ColonyConstructionManager = require("colonyConstructionManager");
 
-// Data
-const RoomInfo = require("roomInfo");
-
 // Tasks
-const HaulerTaskGenerator = require("haulerTaskGenerator");
-const MinerTaskGenerator = require("minerTaskGenerator");
-const UpgraderTaskGenerator = require("upgraderTaskGenerator");
-const ScoutTaskGenerator = require("scoutTaskGenerator");
-const RepairerTaskGenerator = require("repairerTaskGenerator");
-const BuilderTaskGenerator = require("builderTaskGenerator");
-
-const ReserverTaskGenerator = require("reserverTaskGenerator");
-const DefenderTaskGenerator = require("defenderTaskGenerator");
-
-const haulerManager = new CreepManager(new HaulerTaskGenerator());
-const minerManager = new CreepManager(new MinerTaskGenerator());
-const upgraderManager = new CreepManager(new UpgraderTaskGenerator());
-const scoutManager = new CreepManager(new ScoutTaskGenerator());
-const repairerManager = new CreepManager(new RepairerTaskGenerator());
-const builderManager = new CreepManager(new BuilderTaskGenerator());
-
-const reserverManager = new CreepManager(new ReserverTaskGenerator());
-const defenderManager = new CreepManager(new DefenderTaskGenerator());
+const HaulerManager = require("haulerManager");
+const MinerManager = require("minerManager");
+const UpgraderManager = require("upgraderManager");
+const ScoutManager = require("scoutManager");
+const RepairerManager = require("repairerManager");
+const BuilderManager = require("builderManager");
+const ReserverManager = require("reserverManager");
+const DefenderManager = require("defenderManager");
 
 // Mapping
 const creepRoleMap = {
-    [CONSTANTS.roles.hauler]: haulerManager,
-    [CONSTANTS.roles.miner]: minerManager,
-    [CONSTANTS.roles.upgrader]: upgraderManager,
-    [CONSTANTS.roles.scout]: scoutManager,
-    [CONSTANTS.roles.repairer]: repairerManager,
-    [CONSTANTS.roles.builder]: builderManager,
-    [CONSTANTS.roles.reserver]: reserverManager,
-    [CONSTANTS.roles.defender]: defenderManager,
+    [CONSTANTS.roles.hauler]: new HaulerManager(),
+    [CONSTANTS.roles.miner]: new MinerManager(),
+    [CONSTANTS.roles.upgrader]: new UpgraderManager(),
+    [CONSTANTS.roles.scout]: new ScoutManager(),
+    [CONSTANTS.roles.repairer]: new RepairerManager(),
+    [CONSTANTS.roles.builder]: new BuilderManager(),
+    [CONSTANTS.roles.reserver]: new ReserverManager(),
+    [CONSTANTS.roles.defender]: new DefenderManager(),
 };
 
 // Economy
