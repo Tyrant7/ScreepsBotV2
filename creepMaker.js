@@ -60,7 +60,7 @@ module.exports = {
         // It's technically possible with 1 CLAIM 1 MOVE, but give it extra to account for 
         // imperfections in pathing and spawning priorities
         return {
-            body: [MOVE, MOVE, CLAIM, CLAIM],
+            body: [MOVE, CLAIM, MOVE, CLAIM],
             name: "Reserver " + Game.time + " [2]",
             memory: { role: CONSTANTS.roles.reserver },
         };
