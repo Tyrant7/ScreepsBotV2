@@ -5,8 +5,11 @@ class ColonyConstructionManager {
             this.placeUpgraderContainer(roomInfo);
         }
 
-        roomInfo.getSources().forEach((source) => {
+        roomInfo.sources.forEach((source) => {
             this.placeMinerContainer(source);
+        });
+        roomInfo.minerals.forEach((mineral) => {
+            this.placeMineralContainer(mineral);
         });
     }
 
@@ -64,14 +67,34 @@ class ColonyConstructionManager {
     }
 
     placeMinerContainer(source) {
+        const containerPos = this.placeContainer(source.pos);
+        if (Memory.bases[source.pos.roomName]) {
+            if (!Memory.bases[source.pos.roomName].minerContainers) {
+                Memory.bases[source.pos.roomName].minerContainers = {};
+            }
+            Memory.bases[source.pos.roomName].minerContainers[source.id] = containerPos;
+        }
+    }
 
-        // Find the position adjacent to this source that's also adjacent to the most walls,
+    placeMineralContainer(mineral) {
+        const containerPos = this.placeContainer(mineral.pos);
+        if (Memory.bases[mineral.pos.roomName]) {
+            if (!Memory.bases[mineral.pos.roomName].mineralContainers) {
+                Memory.bases[mineral.pos.roomName].mineralContainers = {};
+            }
+            Memory.bases[mineral.pos.roomName].mineralContainers[mineral.id] = containerPos;
+        }
+    }
+
+    placeContainer(forPos) {
+
+        // Find the position adjacent to the target that's also adjacent to the most walls,
         // while still being walkable in order to keep miners out of the way
 
         function getAdjacentPositions(pos) {
             const positions = [];
-            for (let x = -1; x < 1; x++) {
-                for (let y = -1; y < 1; y++) {
+            for (let x = -1; x <= 1; x++) {
+                for (let y = -1; y <= 1; y++) {
                     const realX = pos.x + x;
                     const realY = pos.y + y;
                     if (realX <= 0 || realX >= 49 || realY <= 0 || realY >= 49) {
@@ -83,36 +106,23 @@ class ColonyConstructionManager {
             return positions;
         }
 
-        function logPositionToMemory(pos) {
-            if (Memory.bases[sourcePos.roomName]) {
-                if (!Memory.bases[sourcePos.roomName].minerContainers) {
-                    Memory.bases[sourcePos.roomName].minerContainers = {};
-                }
-                Memory.bases[sourcePos.roomName].minerContainers[source.id] = pos;
-            }
-        }
-
-        const sourcePos = source.pos;
-
         // Get all adjacent positions to the source
-        const adjacent = getAdjacentPositions(sourcePos);
+        const adjacent = getAdjacentPositions(forPos);
 
         // If we already have a container here, let's exit early, no need to plan
         for (const pos of adjacent) {
             const sites = pos.lookFor(LOOK_CONSTRUCTION_SITES);
             if (sites.length && sites[0].structureType === STRUCTURE_CONTAINER) {
-                logPositionToMemory(pos);
-                return;
+                return pos;
             }
             const containers = pos.lookFor(LOOK_STRUCTURES).filter((s) => s.structureType === STRUCTURE_CONTAINER);
             if (containers.length) {
-                logPositionToMemory(pos);
-                return;
+                return pos;
             }
         }
 
         // Now we'll look for the best position by ranking each one based on how many walls are next to it
-        const terrain = Game.map.getRoomTerrain(sourcePos.roomName);
+        const terrain = Game.map.getRoomTerrain(forPos.roomName);
         const bestPosition = adjacent.reduce((best, curr) => {
             if (terrain.get(curr.x, curr.y) === TERRAIN_MASK_WALL) {
                 return best;
@@ -139,8 +149,8 @@ class ColonyConstructionManager {
         }
 
         // Let's record the container in memory and create the construction site
-        logPositionToMemory(bestPosition);
         bestPosition.createConstructionSite(STRUCTURE_CONTAINER);
+        return bestPosition;
     }
 }
 

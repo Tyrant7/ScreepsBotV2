@@ -97,7 +97,7 @@ class ProductionSpawnHandler extends SpawnHandler {
         const existingSpawns = this.getExistingSpawns(roomInfo);
 
         // Main room first
-        let wantedMiners = roomInfo.getSources().length;
+        let wantedMiners = roomInfo.sources.length;
         let wantedReservers = 0;
         let wantedCarry = roomInfo.getMaxIncome();
         let reservedRooms = new Set();

@@ -30,21 +30,12 @@ class RoomInfo {
 
         this.spawns = room.find(FIND_MY_SPAWNS);
         this.constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES);
-    }
-
-    /**
-     * Finds the sources in this room and caches them for future calls.
-     * @returns An array of Source objects.
-     */
-    getSources() {
-        if (this.sources) {
-            return this.sources;
-        }
-        return this.room.find(FIND_SOURCES);
+        this.sources = this.room.find(FIND_SOURCES);
+        this.minerals = this.room.find(FIND_MINERALS);
     }
 
     getMaxIncome() {
-        return this.getSources().reduce((total, source) => total + (source.energyCapacity / ENERGY_REGEN_TIME), 0);
+        return this.sources.reduce((total, source) => total + (source.energyCapacity / ENERGY_REGEN_TIME), 0);
     }
 
     /**
@@ -220,6 +211,22 @@ class RoomInfo {
 
         // Find the first site where no miner has reserved
         return sites.find((site) => !this.miners.find((m) => m.memory.miningSite && m.memory.miningSite.sourceID === site.sourceID));
+    }
+
+    /**
+     * An array of all mineral sites in this room.
+     * @returns An object on mineral sites, each containing a container position and mineral ID.
+     */
+    getMineralSites() {
+        const mineralSpots = [];
+        const base = Memory.bases[this.room.name];
+        for (const key in base.mineralContainers) {
+            mineralSpots.push({
+                pos: base.mineralContainers[key],
+                mineralID: key,
+            });
+        }
+        return mineralSpots;
     }
 
     // #endregion
