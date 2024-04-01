@@ -32,6 +32,9 @@ Creep.prototype.moveTo = function(target, options = {}) {
     if (options.swampCost === undefined) {
         options.swampCost = 10;
     }
+    if (options.maxOps === undefined) {
+        options.maxOps = 2000;
+    }
 
     // Save our shove target in case we get shoved
     profiler.startSample(this.name + " moveTo");
@@ -81,7 +84,6 @@ Creep.prototype.betterMoveTo = function(target, options) {
     if (this.spawning) {
         return;
     }
-
     const path = verifyPath(this);
     if (path.length) {
         const nextStep = utility.getNextStep(path, this.pos);
@@ -91,7 +93,6 @@ Creep.prototype.betterMoveTo = function(target, options) {
             this.move(direction);
         }
     }
-
     // Save our move data
     this.memory._shoveTarget = target;
     if (!this.memory._move) {

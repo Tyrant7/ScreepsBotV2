@@ -95,14 +95,13 @@ module.exports = {
     },
 
     getNewPath: function(startPos, goals, options) {
-        const maxOps = 2000;
         const MAX_ATTEMPTS = 2;
         let result;
         for (let attempts = 1; attempts <= MAX_ATTEMPTS; attempts++) {
             result = PathFinder.search(
                 startPos, goals, {
                     maxRooms: options.maxRooms,
-                    maxOps: maxOps * attempts,
+                    maxOps: options.maxOps * attempts,
                     plainCost: options.plainCost,
                     swampCost: options.swampCost,
                     roomCallback: this.getCachedCostMatrix,
