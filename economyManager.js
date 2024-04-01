@@ -12,6 +12,7 @@ const overlay = require("overlay");
 
 const REACTION_SPEED = CREEP_LIFE_TIME;
 const DROP_THRESHOLD = 0.05;
+const ADD_THRESHOLD = 0.075;
 
 class EconomyManager {
 
@@ -79,7 +80,7 @@ class EconomyManager {
                 console.log(roomInfo.room.name + " dropping remote: " + worst.source.id + " (" + worst.room + ")");
             }
         }
-        else {
+        else if (base.spawnUsage < maxSpawnUsage - ADD_THRESHOLD) {
             // Add a remote if we can fit any
             const inactiveRemotes = [];
             const activeRemotes = [];
@@ -96,7 +97,7 @@ class EconomyManager {
                 const nextRemote = this.getBestRemote(inactiveRemotes, activeRemotes);
 
                 // Validate adding this remote
-                if (base.spawnUsage + nextRemote.cost <= maxSpawnUsage - DROP_THRESHOLD) {
+                if (base.spawnUsage + nextRemote.cost <= maxSpawnUsage - ADD_THRESHOLD) {
                     nextRemote.active = true;
     
                     // Update our estimate so we don't add more than necessary
