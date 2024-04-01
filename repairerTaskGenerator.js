@@ -1,6 +1,7 @@
 const Task = require("task");
 const harvest = require("harvest");
 const estimateTravelTime = require("estimateTravelTime");
+const profiler = require("profiler");
 
 class RepairerTaskGenerator {
 
@@ -31,26 +32,29 @@ class RepairerTaskGenerator {
             return this.createRepairTask(lowest);
         }
 
-        // After the first pass, we'll sort by a mix of distance and HP
-        const neededRepairs = roomInfo.getWantedStructures().filter((s) => s.hits < s.hitsMax);
+        // After the first pass, we'll search for the lowest structure in our current room
+        const neededRepairs = creep.room.find(FIND_STRUCTURES).filter((s) => {
+            // Don't bother will ramparts or walls since it will suck up so much energy to repair them
+            if ((s.structureType === STRUCTURE_WALL ||
+                s.structureType === STRUCTURE_RAMPART) &&
+                s.hits / s.hitsMax >= repairThresholds[s.structureType]) {
+                return false;
+            }
+            return s.hits < s.hitsMax;
+        });
         if (neededRepairs.length) {
-            const bestFit = neededRepairs.reduce((best, curr) => {
-
-                // Don't bother will ramparts or walls since it will suck up so much energy to repair them
-                if ((curr.structureType === STRUCTURE_WALL ||
-                    curr.structureType === STRUCTURE_RAMPART) &&
-                    curr.hits / curr.hitsMax >= repairThresholds[curr.structureType]) {
-                    return best;
-                }
-
-                // Simply sort by distance times the fraction of health the structure current has -> closer is better
-                const bestRepairNeed = estimateTravelTime(creep, best.pos) 
-                    * Math.pow((best.hits / (best.hitsMax * (repairThresholds[best.structureType] || 1))), 3);
-                const currRepairNeed = estimateTravelTime(creep, curr.pos) 
-                    * Math.pow((curr.hits / (curr.hitsMax * (repairThresholds[curr.structureType] || 1))), 3);
-                return currRepairNeed < bestRepairNeed ? curr : best;
-            }, neededRepairs[0]);
+            const mapped = neededRepairs.map((s) => {
+                // Simply sort by distance times the fraction of health the structure current has -> closer = lower score = better
+                const score = creep.pos.getRangeTo(s.pos)
+                    * Math.pow((s.hits / (s.hitsMax * (repairThresholds[s.structureType] || 1))), 3);
+                return { structure: s, score: score };
+            });
+            const bestFit = mapped.reduce((best, curr) => curr.score < best.score ? curr : best, mapped[0]).structure;
             return this.createRepairTask(bestFit);
+        }
+        else {
+            // If none need repairing, let's search through all of our structures again
+            creep.memory.firstPass = false;
         }
     }
 

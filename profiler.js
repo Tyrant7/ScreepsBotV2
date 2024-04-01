@@ -32,7 +32,7 @@ class Profiler {
         if (!DEBUG.runProfiler) {
             return;
         }
-        const MAX_MESSAGE_LENGTH = 40;
+        const MAX_MESSAGE_LENGTH = 50;
         const DECIMAL_PLACES = 5; 
 
         let parentIndent = 0;
