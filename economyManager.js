@@ -10,9 +10,9 @@ const creepMaker = require("creepMaker");
 const remoteUtility = require("remoteUtility");
 const overlay = require("overlay");
 
-const REACTION_SPEED = CREEP_LIFE_TIME;
-const DROP_THRESHOLD = 0.05;
-const ADD_THRESHOLD = 0.075;
+const REACTION_SPEED = CREEP_LIFE_TIME / 2;
+const DROP_THRESHOLD = 0.06;
+const ADD_THRESHOLD = 0.085;
 
 class EconomyManager {
 
