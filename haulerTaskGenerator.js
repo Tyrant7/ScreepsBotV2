@@ -79,7 +79,10 @@ class HaulerTaskGenerator {
                 return true;
             }
             else if (intentResult === ERR_NOT_IN_RANGE) {
-                creep.moveTo(pickupObject);
+                creep.moveTo(pickupObject, {
+                    plainCost: 10,
+                    swampCost: 50,
+                });
             }
             return false;
         }];
@@ -176,7 +179,10 @@ class HaulerTaskGenerator {
                 return true;
             }
             else if (intentResult === ERR_NOT_IN_RANGE) {
-                creep.moveTo(target);
+                creep.moveTo(target, {
+                    plainCost: 10,
+                    swampCost: 50,
+                });
             }
             return false;
         }];

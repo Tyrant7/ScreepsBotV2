@@ -23,8 +23,14 @@ Creep.prototype.moveTo = function(target, options = {}) {
     if (options.range === undefined) {
         options.range = 1;
     }
-    if (!options.maxRooms === undefined) {
-        options.maxRooms = 4;
+    if (options.maxRooms === undefined) {
+        options.maxRooms = 6;
+    }
+    if (options.plainCost === undefined) {
+        options.plainCost = 2;
+    }
+    if (options.swampCost === undefined) {
+        options.swampCost = 10;
     }
 
     // Save our shove target in case we get shoved
@@ -35,7 +41,7 @@ Creep.prototype.moveTo = function(target, options = {}) {
 Creep.prototype.betterMoveTo = function(target, options) {
 
     function newPath(creep) {
-        return utility.serializePath(utility.getNewPath(creep.pos, { pos: target, range: options.range }), true);
+        return utility.serializePath(utility.getNewPath(creep.pos, { pos: target, range: options.range }, options));
     }
 
     function verifyPath(creep) {

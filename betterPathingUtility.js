@@ -9,7 +9,7 @@ module.exports = {
      * from accidentally pathing into unwalkable built structures that we had no vision on when we started pathing.
      * @returns {string} The path in serialized form.
      */
-    serializePath: function(path, endPathIfNoVisibility) {
+    serializePath: function(path, endPathIfNoVisibility = true) {
         let serializedPath = "";
         if (!path[0]) {
             return serializedPath;
@@ -73,31 +73,6 @@ module.exports = {
     },
 
     /**
-     * Pathfinds from a starting position into an existing path, and returns the result.
-     * @param {RoomPosition} fromPos The position to pathfind from.
-     * @param {RoomPosition[]} targetPath The path to pathfind into.
-     * @returns {string} The final conjoined serialized path.
-     */
-    prependPath: function(fromPos, targetPath) {
-        // First, let's find the path into our existing path
-        const path = this.getNewPath(fromPos, targetPath);
-        
-        // Iterate backwards over our target path until we hit the final position in our new path
-        const followupPositions = [];
-        for (const point of targetPath.reverse()) {
-            if (point.isEqualTo(path.slice(-1))) {
-                break;
-            }
-            followupPositions.push(point);
-        }
-
-        // Now we have our target path in reverse, let's flip it the right way
-        // And append it to our initial path
-        const finalPath = path.concat(followupPositions.reverse());
-        return this.serializePath(finalPath, false);
-    },
-
-    /**
      * Gets the position in the given direction, excluding roomName.
      * @param {RoomPosition} startPos The starting position.
      * @param {DirectionConstant} direction The direction to go in.
@@ -119,7 +94,7 @@ module.exports = {
         return { x: newX, y: newY };
     },
 
-    getNewPath: function(startPos, goals) {
+    getNewPath: function(startPos, goals, options) {
         const maxOps = 2000;
         const MAX_ATTEMPTS = 2;
         let result;
@@ -128,8 +103,8 @@ module.exports = {
                 startPos, goals, {
                     maxRooms: options.maxRooms,
                     maxOps: maxOps * attempts,
-                    plainCost: 2,
-                    swampCost: 10,
+                    plainCost: options.plainCost,
+                    swampCost: options.swampCost,
                     roomCallback: this.getCachedCostMatrix,
                 }
             );
