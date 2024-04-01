@@ -67,14 +67,12 @@ Creep.prototype.betterMoveTo = function(target, options) {
         // If we don't have valid move data, let's repath
         const moveData = creep.memory._move;
         if (!moveData || !moveData.path || !moveData.path.length) {
-            console.log(creep.name + " reset 0");
             return getNewPath(creep.pos, { pos: target, range: options.range });
         }
 
         // Make sure our destination is still within range of our target
         if (target.getRangeTo(moveData.dest.x, moveData.dest.y) > options.range ||
             target.roomName !== moveData.dest.roomName) {
-                console.log(creep.name + " reset 1");
             return getNewPath(creep.pos, { pos: target, range: options.range });
         }
 
@@ -86,7 +84,6 @@ Creep.prototype.betterMoveTo = function(target, options) {
 
         // Something went wrong with our pathing
         if (creep.pos.getRangeTo(nextStep) > 1) {
-            console.log(creep.name + " reset 2");
             return getNewPath(creep.pos, { pos: target, range: options.range });
         }
 
