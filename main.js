@@ -130,7 +130,7 @@ module.exports.loop = function() {
         if (DEBUG.trackRCLProgress) {
             overlay.addHeading(info.room.name, "- RCL -");
             const averageRCL = trackStats.trackRCL(info.room.name);
-            overlay.addText(info.room.name, { "RCL Per Tick": (Math.round(averageRCL * 1000) / 1000).toFixed(3) });
+            overlay.addText(info.room.name, { "RCL Per Tick": averageRCL.toFixed(3) });
             const neededEnergyToNextRCL = info.room.controller.progressTotal - info.room.controller.progress;
             const ticksUntilNextRCL = Math.floor(neededEnergyToNextRCL / averageRCL);
             overlay.addText(info.room.name, { "Next RCL In": ticksUntilNextRCL});

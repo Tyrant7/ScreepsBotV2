@@ -204,7 +204,7 @@ class EconomyManager {
         }
 
         if (DEBUG.trackSpawnUsage) {
-            const spawnDisplay = (Math.round((spawnEstimate) * 1000) / 1000).toFixed(3);
+            const spawnDisplay = spawnEstimate.toFixed(3);
             overlay.addHeading(roomInfo.room.name, "- Spawns -");
             overlay.addText(roomInfo.room.name, { "Spawn Usage": spawnDisplay + " / " + roomInfo.spawns.length });
         }
@@ -213,7 +213,7 @@ class EconomyManager {
             for (const remote of remotes) {
                 if (remote.active) {
                     const key = remote.source.id.substring(0, 6);
-                    remoteDisplay[key] = " (" + (Math.round(remote.score * 1000) / 1000).toFixed(3) + "E/t)";
+                    remoteDisplay[key] = " (" + remote.score.toFixed(3) + "E/t)";
                 }
             }
             overlay.addHeading(roomInfo.room.name, "- Remotes -");
