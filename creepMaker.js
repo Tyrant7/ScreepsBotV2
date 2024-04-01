@@ -8,7 +8,7 @@ module.exports = {
     //#region Energy Production
 
     makeMiner: function(energy) {
-        let body = [MOVE, MOVE, MOVE];
+        let body = [MOVE, MOVE, MOVE, CARRY];
         let lvl = 0;
         for (let i = 0; i < MINER_WORK; i++) {
             lvl++;

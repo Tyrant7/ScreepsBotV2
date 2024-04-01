@@ -18,9 +18,33 @@ class MinerTaskGenerator {
                 });
             }
 
-            // Mine our source
+            // Repair our container
             const source = Game.getObjectById(miningSite.sourceID);
-            if (creep.pos.getRangeTo(source) <= 1) {
+            if (!source.energy && creep.pos.isEqualTo(sitePos)) {
+
+                // Repair our container
+                if (creep.store[RESOURCE_ENERGY]) {
+                    const container = sitePos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER);
+                    if (container && container.hits < container.hitsMax) {
+                        creep.repair(container);
+                    }
+                }
+                // Pickup some energy
+                else {
+                    const dropped = sitePos.lookFor(LOOK_RESOURCES).find((r) => r.resourceType === RESOURCE_ENERGY);
+                    if (dropped) {
+                        creep.pickup(dropped);
+                    }
+                    else {
+                        const container = sitePos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER);
+                        if (container && container.store[RESOURCE_ENERGY]) {
+                            creep.withdraw(container, RESOURCE_ENERGY);
+                        }
+                    }
+                }
+            }
+            // Mine our source
+            else if (creep.pos.getRangeTo(source) <= 1) {
                 creep.harvest(source);
             }
 
