@@ -162,8 +162,9 @@ module.exports.loop = function() {
     }
     profiler.endSample("Creeps");
 
-    // Track CPU usage
-    if (DEBUG.trackCPUUsage) {
+    // Track CPU usage 
+    // (don't track reload because it leads to innacurate averages which take a long time to equalize)
+    if (DEBUG.trackCPUUsage && !RELOAD) {
         const rollingAverage = trackStats.trackCPU();
         for (const info of Object.values(roomInfos)) {
             overlay.addHeading(info.room.name, "- CPU Usage -");
