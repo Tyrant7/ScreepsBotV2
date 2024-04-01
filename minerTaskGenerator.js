@@ -20,7 +20,7 @@ class MinerTaskGenerator {
 
             // Repair our container
             const source = Game.getObjectById(miningSite.sourceID);
-            if (!source.energy && creep.pos.isEqualTo(sitePos)) {
+            if (source && !source.energy && creep.pos.isEqualTo(sitePos)) {
 
                 // Repair our container
                 if (creep.store[RESOURCE_ENERGY]) {
