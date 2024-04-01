@@ -168,8 +168,8 @@ module.exports.loop = function() {
         for (const info of Object.values(roomInfos)) {
             overlay.addHeading(info.room.name, "- CPU Usage -");
             overlay.addText(info.room.name, { 
-                "Average CPU": (Math.round(rollingAverage * 1000) / 1000).toFixed(3),
-                "Last CPU": (Math.round(Game.cpu.getUsed() * 1000) / 1000).toFixed(3),
+                "Average CPU": rollingAverage.toFixed(3),
+                "Last CPU": Game.cpu.getUsed().toFixed(3),
             });
         }
     }
