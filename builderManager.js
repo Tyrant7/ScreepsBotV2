@@ -94,6 +94,7 @@ function getBuildPriority(creep) {
 
 // Larger builders in our main room prioritize like this
 const buildPriorities = {
+    [STRUCTURE_SPAWN]: 11,
     [STRUCTURE_STORAGE]: 10,
     [STRUCTURE_CONTAINER]: 9,
     [STRUCTURE_EXTENSION]: 8,
@@ -108,6 +109,7 @@ const buildPriorities = {
 
 // Smaller remote builders prioritize like this
 const remoteBuildPriorities = {
+    [STRUCTURE_SPAWN]: 11,
     [STRUCTURE_ROAD]: 10,
     [STRUCTURE_CONTAINER]: 9,
     [STRUCTURE_LINK]: 8,
