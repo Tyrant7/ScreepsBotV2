@@ -145,10 +145,11 @@ Creep.prototype.requestShove = function() {
     function isObstructed(room, pos) {
         // Terrain block
         return terrain.get(pos.x, pos.y) === TERRAIN_MASK_WALL ||
-        // Unwalkable structure
-               room.lookForAt(LOOK_STRUCTURES, pos).find(
+        // Unwalkable structure + construction sites
+                room.lookForAt(LOOK_STRUCTURES, pos).concat(room.lookForAt(LOOK_CONSTRUCTION_SITES, pos)).find(
                     (s) => s.structureType !== STRUCTURE_ROAD && s.structureType !== STRUCTURE_CONTAINER &&
-                           (s.structureType !== STRUCTURE_RAMPART && s.my));
+                           (s.structureType !== STRUCTURE_RAMPART && s.my)
+                );
     }
 
     // Find all valid adjacent spaces
@@ -384,8 +385,8 @@ const matrixHandler = {
             return matrix;
         }
     
-        // Simply avoid unwalkable structures
-        room.find(FIND_STRUCTURES).forEach((s) => {
+        // Simply avoid unwalkable structures + construction sites
+        room.find(FIND_STRUCTURES).concat(room.find(FIND_CONSTRUCTION_SITES)).forEach((s) => {
             if (s.structureType === STRUCTURE_ROAD) {
                 matrix.set(s.pos.x, s.pos.y, 1);
             }
