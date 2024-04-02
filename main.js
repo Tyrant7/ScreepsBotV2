@@ -5,14 +5,14 @@ Tyrant Bot V2
 */
 
 // Make sure some essential objects are initialized
+if (!Memory.creeps) {
+    Memory.creeps = {};
+}
 if (!Memory.rooms) {
     Memory.rooms = {};
 }
 if (!Memory.bases) {
     Memory.bases = {};
-}
-if (!Memory.creeps) {
-    Memory.creeps = {};
 }
 
 // Globals
@@ -103,6 +103,9 @@ module.exports.loop = function() {
     for (const room in Game.rooms) {
         if (!Game.rooms[room].controller || !Game.rooms[room].controller.my) {
             continue;
+        }
+        if (!Memory.bases[room]) {
+            Memory.bases[room] = {};
         }
 
         roomInfos[room] = new RoomInfo(Game.rooms[room]);

@@ -34,7 +34,7 @@ module.exports = {
         lvl--;
         body.pop();
         return { body: body, 
-                 name: "Recovery Miner " + Game.time + " [" + lvl + "]",
+                 name: "Recovery_Miner " + Game.time + " [" + lvl + "]",
                  memory: { role: CONSTANTS.roles.miner }};
     },
 

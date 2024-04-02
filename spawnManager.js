@@ -2,7 +2,7 @@ const creepMaker = require("./creepMaker");
 const remoteUtility = require("./remoteUtility");
 const creepSpawnUtility = require("./creepSpawnUtility");
 
-// 10_000 energy => one build part worth of workers
+// 10_000 energy -> one build part worth of workers
 const WORK_TO_BUILD_RATIO = 10000;
 
 // Don't be too concerned unless these structures get extra low since they decay naturally

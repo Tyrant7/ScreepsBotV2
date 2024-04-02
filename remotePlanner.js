@@ -222,7 +222,7 @@ class RemotePlanner {
      */
     isValidRemote(roomName) {
         const remoteInfo = Memory.rooms[roomName];
-        if (!remoteInfo.lastVisit) {
+        if (!remoteInfo || !remoteInfo.lastVisit) {
             return false;
         }
 
