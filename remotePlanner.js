@@ -177,6 +177,9 @@ class RemotePlanner {
             remote.score = sourceEnergy - (spawnEnergy + containerMaintenance + roadMaintenance);
         }
 
+        // Filter out remotes that are impossible to profit from
+        const finalRemotes = remotes.filter((remote) => remote.score > 0);
+
         // As a final note:
         // When deciding which remotes to mine, we should always take the remote with the best score/cost ratio 
         // However, we cannot take remotes that do not have their dependancies met
@@ -186,7 +189,7 @@ class RemotePlanner {
         // We'll naturally go with the 20 tiles remote, because its cost only considers those 5 tiles of additional road, however
         // we could not have chosen that technically cheaper (remember that it only costs 5 tiles of road, instead of 15) 
         // remote first, since the 15 tile remote it depended on was not activated yet
-        return remotes;
+        return finalRemotes;
     }
 
     /**
