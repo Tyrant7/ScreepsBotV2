@@ -192,6 +192,11 @@ class UsageSpawnHandler extends SpawnHandler {
             this.trySpawnMineralMiner,
         ];
 
+        // For us to attempt an upgrader first if we're in danger of downgrade
+        if (roomInfo.room.controller.ticksToDowngrade <= CONSTANTS.controllerDowngradeDangerLevel) {
+            spawnOrder.shift(this.trySpawnUpgrader);
+        }
+
         // Loop over our spawn handlers in order of priority
         for (const getNextSpawn of spawnOrder) {
             const next = getNextSpawn(roomInfo);
@@ -331,10 +336,10 @@ class UsageSpawnHandler extends SpawnHandler {
     }
 
     trySpawnMineralMiner(roomInfo) {
-        if (roomInfo.mineralMiners.length > 0) {
+        if (roomInfo.mineralMiners.length) {
             return;
         }
-        return creepMaker.makeMineralMiner(1, roomInfo.room.energyCapacityAvailable);
+        return creepMaker.makeMineralMiner(CONSTANTS.maxMineralMinerLevel, roomInfo.room.energyCapacityAvailable);
     }
 
     //#endregion

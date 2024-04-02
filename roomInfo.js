@@ -31,7 +31,7 @@ class RoomInfo {
         this.spawns = room.find(FIND_MY_SPAWNS);
         this.constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES);
         this.sources = this.room.find(FIND_SOURCES);
-        this.minerals = this.room.find(FIND_MINERALS);
+        this.mineral = this.room.find(FIND_MINERALS)[0];
     }
 
     getMaxIncome() {

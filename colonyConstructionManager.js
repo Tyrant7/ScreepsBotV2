@@ -8,9 +8,9 @@ class ColonyConstructionManager {
         roomInfo.sources.forEach((source) => {
             this.placeMinerContainer(source);
         });
-        roomInfo.minerals.forEach((mineral) => {
-            this.placeMineralContainer(mineral);
-        });
+        if (roomInfo.mineral) {
+            this.placeMineralContainer(roomInfo.mineral);
+        }
     }
 
     placeUpgraderContainer(roomInfo) {
