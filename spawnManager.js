@@ -256,7 +256,10 @@ class UsageSpawnHandler extends SpawnHandler {
         }, 0);
         const usableIncome = estimatedIncome - neededToBuild;
 
-        const wantedLevels = estimateNeededUpgraders(roomInfo, usableIncome);
+        // If we're RCL 8, there's a limit of how much we can upgrade
+        const finalUsableIncome = Math.max(Math.min(usableIncome, CONTROLLER_MAX_UPGRADE_PER_TICK), 0)
+
+        const wantedLevels = estimateNeededUpgraders(roomInfo, finalUsableIncome);
         const actualLevels = creepSpawnUtility.getPredictiveCreeps(roomInfo.upgraders).map((u) => {
             return u.body.filter((p) => p.type === MOVE).length;
         });
