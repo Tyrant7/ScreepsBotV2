@@ -17,23 +17,21 @@ class BuilderManager extends CreepManager {
         }
 
         // Start by allocating to existing sites
+        const priorities = getBuildPriority(creep);
         const sites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
-        for (const site of sites) {
-
-            // Don't allow more than one build task per site
-            const existingTasks = Object.values(this.activeTasks).filter((task) => task && task.data.targetID === site.id);
-            if (existingTasks.length) {
-                continue;
-            }
-
-            return this.createBuildTask(site);
+        if (sites.length) {
+            const bestSite = sites.reduce((best, curr) => {
+                const bestPriority = ((priorities[best.structureType] || 1) * 1000) - creep.pos.getRangeTo(best.pos);
+                const currPriority = ((priorities[curr.structureType] || 1) * 1000) - creep.pos.getRangeTo(curr.pos);
+                return currPriority > bestPriority ? curr : best;
+            });
+            return this.createBuildTask(bestSite);
         }
 
         // If no existing sites, we can start requesting more
         const constructionQueue = roomInfo.getConstructionQueue();
         if (constructionQueue.length) {
             // Get the highest priority site by build priority, then distance
-            const priorities = getBuildPriority(creep);
             const bestSite = constructionQueue.reduce((best, curr) => {
                 const bestPriority = ((priorities[best.type] || 1) * 1000) - estimateTravelTime(creep, best.pos);
                 const currPriority = ((priorities[curr.type] || 1) * 1000) - estimateTravelTime(creep, curr.pos);
