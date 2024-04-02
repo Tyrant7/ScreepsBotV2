@@ -43,17 +43,14 @@ class CrashSpawnHandler extends SpawnHandler {
         if (roomInfo.miners.length) {
 
             // Make sure we can afford any hauler at all
-            const hauler = creepMaker.makeHauler(CONSTANTS.maxHaulerlevel, roomInfo.energyAvailable);
-            if (hauler && hauler.body.length) {
+            const hauler = creepMaker.makeHauler(CONSTANTS.maxHaulerLevel, Math.max(roomInfo.room.energyAvailable, SPAWN_ENERGY_START));
+            if (hauler.body.length) {
                 return hauler;
             }
         }
-        // We have no miner
         else {
-            const miner = creepMaker.makeRecoveryMiner(roomInfo.room.energyCapacityAvailable);
-            if (miner) {
-                return miner;
-            }
+            // We have no miner
+            return creepMaker.makeRecoveryMiner(roomInfo.room.energyCapacityAvailable);
         }
     }
 }
