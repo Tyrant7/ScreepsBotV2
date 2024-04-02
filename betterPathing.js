@@ -178,8 +178,8 @@ Creep.prototype.requestShove = function() {
     const shoveTarget = this.memory._shoveTarget;
     const scoredSpaces = adjacentSpaces.map((space) => {
         return {
-             // We'll move to spaces with other creeps last
-            score: space.lookFor(LOOK_CREEPS)[0] ? 100 : 0 +
+             // Discourage moving to spaces with creeps
+            score: space.lookFor(LOOK_CREEPS)[0] ? 1 : 0 +
      
             // If we have a target, let's move towards them, but limit the range to a minimum of 1
             // since we don't necessarily want to be pushed directly into our target most of the time
