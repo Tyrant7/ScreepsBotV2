@@ -45,7 +45,6 @@ class RemoteManager {
      */
     ensurePlansExist(roomInfo) {
         if (!utility.getRemotePlans(roomInfo.room.name) || (RELOAD && DEBUG.replanRemotesOnReload)) {
-
             const plans = this.planRemotes(roomInfo);
 
             // First, create costmatrices for remote creeps using better pathing system

@@ -33,6 +33,9 @@ class EconomyManager {
             return;
         }
 
+        // Ensure valid remote plans
+        remoteManager.ensurePlansExist(roomInfo);
+
         // We're get our estimated remotes that we can support the first time that this is run
         // After that we'll just get back our cached estimated spawn usage which we manipulate directly further down
         const lastSpawnEstimate = this.estimateSpawnUsage(roomInfo);

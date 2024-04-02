@@ -328,6 +328,7 @@ const utility = {
                         }
                         const matrix = matrixHandler.getCachedMatrix(options.pathSet, roomName);
                         if (matrix) {
+                            console.log("woohoo!");
                             return matrix;
                         }
                         // We can longer guarantee a completely visible path after generating a default matrix
