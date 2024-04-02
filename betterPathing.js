@@ -319,7 +319,7 @@ const utility = {
             result = PathFinder.search(
                 startPos, goals, {
                     maxRooms: options.maxRooms * attempts,
-                    maxOps: options.maxOps * attempts * attempts,
+                    maxOps: options.maxOps * attempts,
                     plainCost: options.plainCost,
                     swampCost: options.swampCost,
                     roomCallback: function(roomName) {
