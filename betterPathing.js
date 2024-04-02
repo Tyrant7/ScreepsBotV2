@@ -175,25 +175,28 @@ Creep.prototype.requestShove = function() {
         return;
     }
 
-    // Let's make sure we resort to spaces with other creeps last
-    adjacentSpaces.sort((a, b) => {
-        return a.lookFor(LOOK_CREEPS)[0] ? 1 : 0;
+    const shoveTarget = this.memory._shoveTarget;
+    const scoredSpaces = adjacentSpaces.map((space) => {
+        return {
+             // We'll move to spaces with other creeps last
+            score: space.lookFor(LOOK_CREEPS)[0] ? 100 : 0 +
+     
+            // If we have a target, let's move towards them, but limit the range to a minimum of 1
+            // since we don't necessarily want to be pushed directly into our target most of the time
+            // If we don't have a target, let's assign a random weight to this position
+            shoveTarget 
+                ? Math.max(space.getRangeTo(shoveTarget.x, shoveTarget.y), 1)
+                : Math.random(),
+
+            pos: space,
+        };
     });
 
-    // Big ugly code block :)
-    const shoveTarget = this.memory._shoveTarget;
-    const chosenSpace = shoveTarget 
-        // Let's make sure we're within range of our target
-        ? adjacentSpaces.reduce((closest, curr) => {
-            // Limit the range to a minimum of 1 since we don't necessarily want to be pushed
-            // Direction into our target most of the time
-            const currDist = Math.max(curr.getRangeTo(shoveTarget.x, shoveTarget.y), 1);
-            const closestDist = Math.max(closest.getRangeTo(shoveTarget.x, shoveTarget.y), 1);
-            return currDist < closestDist ? curr : closest;
-        }, adjacentSpaces[0])
-        // If we don't have somewhere we want to be near, let's just move somewhere random
-        : adjacentSpaces[Math.floor(Math.random() * adjacentSpaces.length)];
-     
+    // Find our lowest scoring space (measured by distance to target)
+    chosenSpace = scoredSpaces.reduce((lowest, curr) => {
+        return curr.score < lowest.score ? curr : lowest;
+    }).pos;
+
     drawArrow(this.pos, this.pos.getDirectionTo(chosenSpace), { color: "#FF0000" });
     this.move(this.pos.getDirectionTo(chosenSpace));
 }
