@@ -250,19 +250,20 @@ class UsageSpawnHandler extends SpawnHandler {
             return total + (curr.active ? curr.score : 0);
         }, 0);
 
-        // Don't use too much energy that builders need
-        const neededToBuild = roomInfo.constructionSites.reduce((total, curr) => {
-            return total + curr.progressTotal - curr.progress;
-        }, 0);
-        const usableIncome = estimatedIncome - neededToBuild;
-
         // If we're RCL 8, there's a limit of how much we can upgrade
-        const finalUsableIncome = Math.max(Math.min(usableIncome, CONTROLLER_MAX_UPGRADE_PER_TICK), 0)
+        const isMaxRCL = roomInfo.room.controller.level === 8;
+        const maxUpgrade = isMaxRCL ? CONTROLLER_MAX_UPGRADE_PER_TICK : Infinity;
+        const finalUsableIncome = Math.max(Math.min(estimatedIncome, maxUpgrade), 0)
 
         const wantedLevels = estimateNeededUpgraders(roomInfo, finalUsableIncome);
         const actualLevels = creepSpawnUtility.getPredictiveCreeps(roomInfo.upgraders).map((u) => {
             return u.body.filter((p) => p.type === MOVE).length;
         });
+
+        // Always have an upgrader at max RCL. It will be smaller than our margin
+        if (isMaxRCL && !roomInfo.upgraders.length && wantedLevels > 0) {
+            return creepMaker.makeUpgrader(wantedLevels, roomInfo.room.energyCapacityAvailable);
+        }
 
         // We don't want to spawn a ton of smaller upgraders as our economy grows though,
         // so we'll leave a margin of difference between our wanted and existing counts
