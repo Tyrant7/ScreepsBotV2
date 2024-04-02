@@ -35,12 +35,14 @@ class HaulerManager extends CreepManager {
         // Factor in the amount we've already reserved from each pickup point
         const pickupPoints = roomInfo.getEnergyPickupPoints();
         pickupPoints.forEach((point) => {
-            const amountReserved = Object.values(this.activeTasks).reduce((total, task) => {
-                if (task.tag !== "pickup") {
-                    return total;
-                }
-                return total + (task.data.id === point.id ? task.data.amount : 0);
-            }, 0);
+            // Haulers with no task will be mapped to null
+            // Make sure to double check that haulers actually have tasks assigned to them before assuming they have a tag
+            const tasks = Object.values(this.activeTasks).filter((task) => task && task.tag === "pickup");
+            const amountReserved = tasks.length 
+                ? tasks.reduce((total, task) => {
+                    return total + (task.data.id === point.id ? task.data.amount : 0);
+                }, 0)
+                : 0;
             point.amount -= amountReserved;
         });
 
@@ -103,12 +105,12 @@ class HaulerManager extends CreepManager {
 
         // Lower the value of already reserved dropoff points 
         dropoffPoints.forEach((point) => {
-            const amountReserved = Object.values(this.activeTasks).reduce((total, task) => {
-                if (task.tag !== "dropoff") {
-                    return total;
-                }
-                return total + (task.data.id === point.id ? task.data.amount : 0);
-            }, 0);
+            const tasks = Object.values(this.activeTasks).filter((task) => task && task.tag === "dropoff");
+            const amountReserved = tasks.length 
+                ? tasks.reduce((total, task) => {
+                    return total + (task.data.id === point.id ? task.data.amount : 0);
+                }, 0)
+                : 0;
             point.amount -= amountReserved;
         });
 
