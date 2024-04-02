@@ -29,13 +29,10 @@ class CreepManager {
                     // Containers
                     let sources = creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0 });
 
-                    // Add dropped resources that are on containers or container sites to account for miners who don't have their containers built yet and overflows
-                    // Also include resource piles that are more than our inventory in size
+                    // Include resource piles that are more than our inventory in size
                     sources.push(...creep.room.find(FIND_DROPPED_RESOURCES, { 
                         filter: (r) => r.resourceType === RESOURCE_ENERGY 
-                        && ((r.pos.lookFor(LOOK_CONSTRUCTION_SITES).find((s) => s.structureType === STRUCTURE_CONTAINER)
-                        || r.pos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER)) 
-                        || r.amount >= creep.store.getCapacity(RESOURCE_ENERGY))
+                        && r.amount >= creep.store.getCapacity(RESOURCE_ENERGY)
                     }));
 
                     // We can allow ourselves to target planted haulers
@@ -44,13 +41,14 @@ class CreepManager {
                     }));
 
                     // Storage
-                    if (creep.room.storage && creep.room.storage.store[RESOURCE_ENERGY] > 0) {
+                    if (creep.room.storage && creep.room.storage.store[RESOURCE_ENERGY] > creep.store.getCapacity()) {
                         sources.push(creep.room.storage);
                     }
-                    
-                    // Let's also add sources, if we can mine
-                    if (creep.body.find((p) => p.type === WORK)) {
-                        sources.push(...creep.room.find(FIND_SOURCES, { filter: (s) => s.energy > 0 }));
+                    else {                        
+                        // Let's also add sources, if we can mine and we're not in our a base
+                        if (creep.body.find((p) => p.type === WORK)) {
+                            sources.push(...creep.room.find(FIND_SOURCES, { filter: (s) => s.energy > 0 }));
+                        }
                     }
 
                     // Still nothing, let's just wait
