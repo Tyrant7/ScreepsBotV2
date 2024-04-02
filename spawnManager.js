@@ -212,12 +212,13 @@ class UsageSpawnHandler extends SpawnHandler {
 
         /**
         * Estimates the needed amount of upgraders in levels
-        * to use as close to the required amount of energy as possible without going over.
+        * to use as close to the required amount of energy as possible.
         * @param {RoomInfo} roomInfo The base to spawn for.
         * @param {number} energyToUse The target amount of energy to use.
+        * @param {boolean} allowOver Should we allow ourselves to go one level over our energy goal?
         * @returns {number} The total level of needed upgraders required to meet the energy goal.
         */
-        function estimateNeededUpgraders(roomInfo, energyToUse) {
+        function estimateNeededUpgraders(roomInfo, energyToUse, allowOver) {
             for (let level = 1; true; level++) {
     
                 let levelUsage = 0;
@@ -232,7 +233,7 @@ class UsageSpawnHandler extends SpawnHandler {
     
                     // Once we go over our threshold, we know that we can fit n-1 upgrader levels
                     if (levelUsage > energyToUse) {
-                        return level - 1;
+                        return allowOver ? level : level - 1;
                     }
     
                     remainingLevel -= CONSTANTS.maxUpgraderLevel;
@@ -255,7 +256,8 @@ class UsageSpawnHandler extends SpawnHandler {
         const maxUpgrade = isMaxRCL ? CONTROLLER_MAX_UPGRADE_PER_TICK : Infinity;
         const finalUsableIncome = Math.max(Math.min(estimatedIncome, maxUpgrade), 0)
 
-        const wantedLevels = estimateNeededUpgraders(roomInfo, finalUsableIncome);
+        // If we're at max RCL, it's better for GCL to go over than under
+        const wantedLevels = estimateNeededUpgraders(roomInfo, finalUsableIncome, isMaxRCL);
         const actualLevels = creepSpawnUtility.getPredictiveCreeps(roomInfo.upgraders).map((u) => {
             return u.body.filter((p) => p.type === MOVE).length;
         });
