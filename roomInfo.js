@@ -1,4 +1,4 @@
-const remoteUtility = require("remoteUtility");
+const remoteUtility = require("./remoteUtility");
 
 class RoomInfo {
 

@@ -1,5 +1,5 @@
-const CreepManager = require("creepManager");
-const Task = require("task");
+const CreepManager = require("./creepManager");
+const Task = require("./task");
 
 class UpgraderManager extends CreepManager {
 

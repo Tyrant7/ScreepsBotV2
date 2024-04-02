@@ -1,9 +1,9 @@
-const RemotePlanner = require("remotePlanner");
+const RemotePlanner = require("./remotePlanner");
 const remotePlanner = new RemotePlanner();
 
-const utility = require("remoteUtility");
+const utility = require("./remoteUtility");
 
-const overlay = require("overlay");
+const overlay = require("./overlay");
 
 class RemoteManager {
 

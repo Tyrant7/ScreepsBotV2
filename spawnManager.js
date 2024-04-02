@@ -1,6 +1,6 @@
-const creepMaker = require("creepMaker");
-const remoteUtility = require("remoteUtility");
-const creepSpawnUtility = require("creepSpawnUtility");
+const creepMaker = require("./creepMaker");
+const remoteUtility = require("./remoteUtility");
+const creepSpawnUtility = require("./creepSpawnUtility");
 
 // 10_000 energy => one build part worth of workers
 const WORK_TO_BUILD_RATIO = 10000;

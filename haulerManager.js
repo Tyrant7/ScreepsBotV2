@@ -1,6 +1,6 @@
-const CreepManager = require("creepManager");
-const Task = require("task");
-const estimateTravelTime = require("estimateTravelTime");
+const CreepManager = require("./creepManager");
+const Task = require("./task");
+const estimateTravelTime = require("./estimateTravelTime");
 
 class HaulerManager extends CreepManager {
 

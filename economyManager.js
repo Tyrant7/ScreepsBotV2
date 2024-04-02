@@ -1,14 +1,14 @@
-const RemoteManager = require("remoteManager");
-const SpawnManager = require("spawnManager");
+const RemoteManager = require("./remoteManager");
+const SpawnManager = require("./spawnManager");
 
 const remoteManager = new RemoteManager();
 const spawnManager = new SpawnManager();
 
-const creepSpawnUtility = require("creepSpawnUtility");
-const creepMaker = require("creepMaker");
+const creepSpawnUtility = require("./creepSpawnUtility");
+const creepMaker = require("./creepMaker");
 
-const remoteUtility = require("remoteUtility");
-const overlay = require("overlay");
+const remoteUtility = require("./remoteUtility");
+const overlay = require("./overlay");
 
 const REACTION_SPEED = CREEP_LIFE_TIME / 2;
 const DROP_THRESHOLD = 0.06;

@@ -1,5 +1,5 @@
-const CreepManager = require("creepManager");
-const Task = require("task");
+const CreepManager = require("./creepManager");
+const Task = require("./task");
 
 class MinerManager extends CreepManager {
     createTask(creep, roomInfo) {

@@ -1,5 +1,5 @@
-const creepMaker = require("creepMaker");
-const creepSpawnUtility = require("creepSpawnUtility");
+const creepMaker = require("./creepMaker");
+const creepSpawnUtility = require("./creepSpawnUtility");
 
 const PLANNING_PLAINS = 5;
 const PLANNING_SWAMP = 8;

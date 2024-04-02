@@ -1,6 +1,6 @@
-const CreepManager = require("creepManager");
-const Task = require("task");
-const remoteUtility = require("remoteUtility");
+const CreepManager = require("./creepManager");
+const Task = require("./task");
+const remoteUtility = require("./remoteUtility");
 
 class ReserverManager extends CreepManager {
 

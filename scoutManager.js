@@ -1,6 +1,6 @@
-const CreepManager = require("creepManager");
-const Task = require("task");
-const scoutingUtility = require("scoutingUtility");
+const CreepManager = require("./creepManager");
+const Task = require("./task");
+const scoutingUtility = require("./scoutingUtility");
 
 class ScoutManager extends CreepManager {
 

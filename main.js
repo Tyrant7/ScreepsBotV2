@@ -5,7 +5,7 @@ Tyrant Bot V2
 */
 
 // Globals
-global.CONSTANTS = require("constants");
+global.CONSTANTS = require("./constants");
 global.DEBUG = {
     logTasks: true,
 
@@ -29,26 +29,26 @@ global.DEBUG = {
 global.RELOAD = true;
 
 // Extensions
-global.betterPathing = require("betterPathing");
+global.betterPathing = require("./betterPathing");
 
 // Data
-const RoomInfo = require("roomInfo");
+const RoomInfo = require("./roomInfo");
 
 // Managers
-const EconomyManager = require("economyManager");
-const TowerManager = require("towerManager");
-const ColonyConstructionManager = require("colonyConstructionManager");
+const EconomyManager = require("./economyManager");
+const TowerManager = require("./towerManager");
+const ColonyConstructionManager = require("./colonyConstructionManager");
 
 // Tasks
-const HaulerManager = require("haulerManager");
-const MinerManager = require("minerManager");
-const UpgraderManager = require("upgraderManager");
-const ScoutManager = require("scoutManager");
-const RepairerManager = require("repairerManager");
-const BuilderManager = require("builderManager");
-const ReserverManager = require("reserverManager");
-const DefenderManager = require("defenderManager");
-const MineralMinerManager = require("mineralMinerManager");
+const HaulerManager = require("./haulerManager");
+const MinerManager = require("./minerManager");
+const UpgraderManager = require("./upgraderManager");
+const ScoutManager = require("./scoutManager");
+const RepairerManager = require("./repairerManager");
+const BuilderManager = require("./builderManager");
+const ReserverManager = require("./reserverManager");
+const DefenderManager = require("./defenderManager");
+const MineralMinerManager = require("./mineralMinerManager");
 
 // Mapping
 const creepRoleMap = {
@@ -73,9 +73,9 @@ const towerManager = new TowerManager();
 const constructionManager = new ColonyConstructionManager();
 
 // Stats and Debug
-const overlay = require("overlay");
-const trackStats = require("trackStats");
-const profiler = require("profiler");
+const overlay = require("./overlay");
+const trackStats = require("./trackStats");
+const profiler = require("./profiler");
 
 module.exports.loop = function() {
 
