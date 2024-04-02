@@ -1,10 +1,7 @@
 class ColonyConstructionManager {
     
     run(roomInfo) {
-        if (roomInfo.room.controller.level >= 2) {
-            this.placeUpgraderContainer(roomInfo);
-        }
-
+        this.placeUpgraderContainer(roomInfo);
         roomInfo.sources.forEach((source) => {
             this.placeMinerContainer(source);
         });

@@ -45,6 +45,7 @@ module.exports = {
             lvl = i + 1;
             body.push(MOVE, CARRY, CARRY);
             if (creepSpawnUtility.getCost(body) > energy || body.length > MAX_CREEP_SIZE) {
+                lvl--;
                 body.pop();
                 body.pop();
                 body.pop();
@@ -75,7 +76,7 @@ module.exports = {
         let lvl = 0;
         while (lvl < desiredLevel) {
             lvl++;
-            body.push(...[MOVE, WORK, WORK, WORK, WORK]);
+            body.push(MOVE, WORK, WORK, WORK, WORK);
             if (creepSpawnUtility.getCost(body) > energy || body.length > MAX_CREEP_SIZE) {
                 lvl--;
                 body.pop();
