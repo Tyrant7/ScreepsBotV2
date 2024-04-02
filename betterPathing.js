@@ -193,7 +193,7 @@ Creep.prototype.requestShove = function() {
     });
 
     // Find our lowest scoring space (measured by distance to target)
-    chosenSpace = scoredSpaces.reduce((lowest, curr) => {
+    const chosenSpace = scoredSpaces.reduce((lowest, curr) => {
         return curr.score < lowest.score ? curr : lowest;
     }).pos;
 
