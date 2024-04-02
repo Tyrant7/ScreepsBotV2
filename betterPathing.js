@@ -179,7 +179,7 @@ Creep.prototype.requestShove = function() {
     const scoredSpaces = adjacentSpaces.map((space) => {
         return {
              // Discourage moving to spaces with creeps
-            score: space.lookFor(LOOK_CREEPS)[0] ? 1 : 0 +
+            score: space.lookFor(LOOK_CREEPS)[0] ? 3 : 0 +
      
             // If we have a target, let's move towards them, but limit the range to a minimum of 1
             // since we don't necessarily want to be pushed directly into our target most of the time
