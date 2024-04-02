@@ -27,7 +27,7 @@ class ScoutManager extends CreepManager {
             }
             else {
                 data.maxRooms = 3;
-                this.basicActions.moveToRoom(creep, data);
+                data.moveToRoom(creep, data);
                 creep.say("🔭", true);
             }
 
@@ -115,7 +115,7 @@ class ScoutManager extends CreepManager {
             }
         });
 
-        return new Task({ roomName: targetName }, "explore", actionStack);
+        return new Task({ moveToRoom: this.basicActions.moveToRoom, roomName: targetName }, "explore", actionStack);
     }
 }
 

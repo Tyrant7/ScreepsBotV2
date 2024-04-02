@@ -19,7 +19,7 @@ module.exports = {
     maxBuilderLevel: 10,
     smallBuilderLevel: 6,
     maxBuilderCount: 5,
-    maxScouts: 2,
+    maxScouts: 1,
     maxMineralMinerLevel: 8,
     controllerDowngradeDangerLevel: 5000,
 };
