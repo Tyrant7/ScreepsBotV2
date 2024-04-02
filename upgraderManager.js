@@ -27,6 +27,7 @@ class UpgraderManager extends CreepManager {
             const range = otherUpgrader ? 1 : 0;
             if (creep.pos.getRangeTo(upgraderContainerPos) > range) {
                 creep.moveTo(upgraderContainerPos, {
+                    range: range,
                     maxRooms: 1,
                 });
             }
