@@ -45,16 +45,34 @@ class RemoteManager {
      */
     ensurePlansExist(roomInfo) {
         if (!utility.getRemotePlans(roomInfo.room.name) || (RELOAD && DEBUG.replanRemotesOnReload)) {
-            const plans = this.planRemotes(roomInfo);
+            // Then, filter out construction sites on invalid locations (room transitions)
+            // and give each remote an activity status
+            const finalPlans = [];
+            for (const plan of this.planRemotes(roomInfo)) {
+                plan.roads = plan.roads.filter((r) => r.x > 0 && r.x < 49 && r.y > 0 && r.y < 49);
+                plan.active = false;
+                finalPlans.push(plan);
+            }
+            
+            utility.setRemotePlans(roomInfo.room.name, finalPlans);
+        }
 
-            // First, create costmatrices for remote creeps using better pathing system
+        if (RELOAD) {
+            // Let's regenerate our costmatrices for remote creeps using the better pathing system
             const matricesByRoom = {};
+
+            // Since roads have been filtered out of room edges and we're using those to draw our paths,
+            // we can't mark them as unwalkable
             const unwalkableMatrix = new PathFinder.CostMatrix();
             for (let x = 0; x < 50; x++) {
                 for (let y = 0; y < 50; y++) {
+                    if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
+                        continue;
+                    }
                     unwalkableMatrix.set(x, y, 255);
                 }
             }
+            const plans = utility.getRemotePlans(roomInfo.room.name);
             for (const plan of plans) {
                 for (const road of plan.roads) {
                     // Skip generating a matrix for our base since
@@ -67,22 +85,13 @@ class RemoteManager {
                     }
                     matricesByRoom[road.roomName].set(road.x, road.y, 1);
                 }
+                matricesByRoom[plan.container.roomName].set(plan.container.x, plan.container.y, 2);
             }
             for (const roomName in matricesByRoom) {
                 betterPathing.cacheMatrix(matricesByRoom[roomName], CONSTANTS.pathSets.remote, roomName);
             }
-
-            // Then, filter out construction sites on invalid locations (room transitions)
-            // and give each remote an activity status
-            const finalPlans = [];
-            for (const plan of plans) {
-                plan.roads = plan.roads.filter((r) => r.x > 0 && r.x < 49 && r.y > 0 && r.y < 49);
-                plan.active = false;
-                finalPlans.push(plan);
-            }
-            
-            utility.setRemotePlans(roomInfo.room.name, finalPlans);
         }
+
         return utility.getRemotePlans(roomInfo.room.name);
     }
 

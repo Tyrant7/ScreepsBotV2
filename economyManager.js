@@ -128,7 +128,7 @@ class EconomyManager {
 
         // If we already have estimates, just use those
         const base = Memory.bases[roomInfo.room.name];
-        if (base.spawnUsage && !(RELOAD && DEBUG.reestimateSpawnUsageOnReload)) {
+        if (base.spawnUsage && !(RELOAD && DEBUG.replanRemotesOnReload)) {
             return base.spawnUsage;
         }
 

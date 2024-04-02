@@ -137,7 +137,7 @@ class CreepManager {
             
                 const pos = new RoomPosition(25, 25, data.roomName);
                 creep.moveTo(pos, {
-                    range: 24,
+                    range: 23,
                     maxRooms: data.maxRooms ? data.maxRooms : 16,
                 });
                 return false;

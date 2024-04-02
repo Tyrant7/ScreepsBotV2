@@ -323,17 +323,12 @@ const utility = {
                     plainCost: options.plainCost,
                     swampCost: options.swampCost,
                     roomCallback: function(roomName) {
-                        if (!options.pathSet) {
-                            return matrixHandler.generateDefaultCostMatrix(roomName);
+                        if (options.pathSet) {
+                            const matrix = matrixHandler.getCachedMatrix(options.pathSet, roomName);
+                            if (matrix) {
+                                return matrix;
+                            }
                         }
-                        const matrix = matrixHandler.getCachedMatrix(options.pathSet, roomName);
-                        if (matrix) {
-                            console.log("woohoo!");
-                            return matrix;
-                        }
-                        // We can longer guarantee a completely visible path after generating a default matrix
-                        // So we'll check for completeness when serializing
-                        endPathIfNoVisibility = true;
                         return matrixHandler.generateDefaultCostMatrix(roomName);
                     },
                 },
@@ -352,6 +347,7 @@ const utility = {
 
 //#region Matrix Management
 
+const cachedCostMatrices = {};
 const matrixHandler = {
     
     /**
@@ -361,13 +357,10 @@ const matrixHandler = {
      * @param {string} roomName The name of the room that this matrix is for.
      */
     cacheMatrix: function(matrix, setName, roomName) {
-        if (!Memory.betterPathing) {
-            Memory.betterPathing = {};
+        if (!cachedCostMatrices[setName]) {
+            cachedCostMatrices[setName] = {};
         }
-        if (!Memory.betterPathing[setName]) {
-            Memory.betterPathing[setName] = {};
-        }
-        Memory.betterPathing[setName][roomName] = matrix.serialize();
+        cachedCostMatrices[setName][roomName] = matrix;
     },
 
     /**
@@ -378,16 +371,10 @@ const matrixHandler = {
      * Undefined if none exists.
      */
     getCachedMatrix: function(setName, roomName) {
-        if (!Memory.betterPathing) {
+        if (!cachedCostMatrices[setName]) {
             return;
         }
-        if (!Memory.betterPathing[setName]) {
-            return;
-        }
-        if (!Memory.betterPathing[setName][roomName]) {
-            return;
-        }
-        return PathFinder.CostMatrix.deserialize(Memory.betterPathing[setName][roomName]);
+        return cachedCostMatrices[setName][roomName];
     },
 
     generateDefaultCostMatrix: function(roomName) {
