@@ -4,6 +4,17 @@ Tyrant Bot V2
 
 */
 
+// Let's make sure some essential objects are initialized
+if (!Memory.rooms) {
+    Memory.rooms = {};
+}
+if (!Memory.bases) {
+    Memory.bases = {};
+}
+if (!Memory.creeps) {
+    Memory.creeps = {};
+}
+
 // Globals
 global.CONSTANTS = require("./constants");
 global.DEBUG = {
@@ -85,14 +96,6 @@ module.exports.loop = function() {
         if (Game.cpu.bucket >= 10000) {
             Game.cpu.generatePixel();
         }
-    }
-
-    // Let's make sure some essential objects are initialized
-    if (!Memory.rooms) {
-        Memory.rooms = {};
-    }
-    if (!Memory.bases) {
-        Memory.bases = {};
     }
     
     // Initialize our info map
