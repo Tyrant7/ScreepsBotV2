@@ -33,8 +33,8 @@ class BuilderManager extends CreepManager {
         if (constructionQueue.length) {
             // Get the highest priority site by build priority, then distance
             const bestSite = constructionQueue.reduce((best, curr) => {
-                const bestPriority = ((priorities[best.type] || 1) * 1000) - estimateTravelTime(creep, best.pos);
-                const currPriority = ((priorities[curr.type] || 1) * 1000) - estimateTravelTime(creep, curr.pos);
+                const bestPriority = ((priorities[best.type] || 1) * 1000) - estimateTravelTime(creep.pos, best.pos);
+                const currPriority = ((priorities[curr.type] || 1) * 1000) - estimateTravelTime(creep.pos, curr.pos);
                 return currPriority > bestPriority ? curr : best;
             });
 

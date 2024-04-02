@@ -45,7 +45,7 @@ class HaulerManager extends CreepManager {
         });
 
         function getPriority(point) {
-            const myDistance = estimateTravelTime(creep, point.pos);
+            const myDistance = estimateTravelTime(creep.pos, point.pos);
             return point.amount + (point.fillrate * Math.max(myDistance - point.ticksUntilBeginFilling, 0));
         }
 

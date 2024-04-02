@@ -1,4 +1,5 @@
 const remoteUtility = require("./remoteUtility");
+const estimateTravelTime = require("./estimateTravelTime");
 
 class RoomInfo {
 
@@ -200,14 +201,16 @@ class RoomInfo {
     }
 
     /**
-     * Gets the first unreserved mining site.
+     * Gets the first unreserved mining site, sorting by estimated distance.
+     * @param {RoomPosition} pos The position to order the sites by distance to.
      * @returns An object containing some data about the mining site:
      * - The position of the mining site (place to stand).
      * - The ID of the source to mine.
      */
-    getFirstUnreservedMiningSite() {
-        // Sites are conveniently already ordered by priority
-        const sites = this.getMiningSites();
+    getFirstUnreservedMiningSite(pos) {
+        const sites = this.getMiningSites().sort((a, b) => {
+            return estimateTravelTime(pos, a.pos) - estimateTravelTime(pos, b.pos);
+        });
 
         // Find the first site where no miner has reserved
         return sites.find((site) => !this.miners.find((m) => m.memory.miningSite && m.memory.miningSite.sourceID === site.sourceID));

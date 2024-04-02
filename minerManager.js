@@ -57,7 +57,7 @@ class MinerManager extends CreepManager {
             return new Task(creep.memory.miningSite, "mine", actionStack);
         }
 
-        const unreserved = roomInfo.getFirstUnreservedMiningSite();
+        const unreserved = roomInfo.getFirstUnreservedMiningSite(creep.pos);
         if (!unreserved) {
             // Wait for an opening
             // TODO //

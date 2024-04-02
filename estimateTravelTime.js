@@ -1,14 +1,14 @@
 // Range can't easily be calculated between rooms, unfortunately, so we'll just estimate
-module.exports = function estimateTravelTime(creep, pos) {
+module.exports = function estimateTravelTime(pos1, pos2) {
 
     // Don't need to estimate
-    if (creep.pos.roomName === pos.roomName) {
-        return creep.pos.getRangeTo(pos);
+    if (pos1.roomName === pos2.roomName) {
+        return pos1.getRangeTo(pos2);
     }
-    const creepRoomPos = roomNameToXY(creep.pos.roomName);
-    const posRoomPos = roomNameToXY(pos.roomName);
-    const diffX = (Math.abs(creepRoomPos[0] - posRoomPos[0]) * 50);
-    const diffY = (Math.abs(creepRoomPos[1] - posRoomPos[1]) * 50);
+    const pos1RoomPos = roomNameToXY(pos1.roomName);
+    const pos2RoomPos = roomNameToXY(pos2.roomName);
+    const diffX = (Math.abs(pos1RoomPos[0] - pos2RoomPos[0]) * 50);
+    const diffY = (Math.abs(pos1RoomPos[1] - pos2RoomPos[1]) * 50);
     return Math.max(diffX, diffY);
 }
 
