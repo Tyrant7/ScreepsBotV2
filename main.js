@@ -4,7 +4,7 @@ Tyrant Bot V2
 
 */
 
-// Let's make sure some essential objects are initialized
+// Make sure some essential objects are initialized
 if (!Memory.rooms) {
     Memory.rooms = {};
 }
