@@ -389,6 +389,14 @@ class RoomInfo {
         if (upgraderContainer) {
             addDropoffPoint(upgraderContainer);
         }
+        else {
+            // If one doesn't exist, add the controller directly
+            dropoffPoints.push({
+                pos: this.room.controller.pos,
+                amount: Infinity,
+                id: this.room.controller.id,
+            });
+        }
 
         // Finally, add the storage, if one exists
         const storage = this.room.storage;

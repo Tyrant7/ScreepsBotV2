@@ -169,6 +169,14 @@ class HaulerManager extends CreepManager {
                 target = Game.getObjectById(reserved.id);
             }
 
+            // Our target might not be able to store things, let's simply walk to it and plant ourselves
+            if (target && !target.store) {
+                creep.moveTo(target, {
+                    pathSet: CONSTANTS.pathSets.remote,
+                });
+                return creep.store[RESOURCE_ENERGY] > 0;
+            }
+ 
             if (!target || !target.store.getFreeCapacity(RESOURCE_ENERGY)) {
                 delete creep.memory.reservedDropoff;
                 return true;
