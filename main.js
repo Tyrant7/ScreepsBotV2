@@ -30,7 +30,7 @@ global.DEBUG = {
 global.RELOAD = true;
 
 // Extensions
-require("betterPathing");
+global.betterPathing = require("betterPathing");
 
 // Data
 const RoomInfo = require("roomInfo");
@@ -80,20 +80,20 @@ const profiler = require("profiler");
 
 module.exports.loop = function() {
 
-    // Let's make sure some essential objects are initialized
-    if (!Memory.rooms) {
-        Memory.rooms = {};
-    }
-    if (!Memory.bases) {
-        Memory.bases = {};
-    }
-
     // Passive pixel generation
     // Disabled on most servers
     if (Game.cpu.generatePixel) {
         if (Game.cpu.bucket >= 10000) {
             Game.cpu.generatePixel();
         }
+    }
+
+    // Let's make sure some essential objects are initialized
+    if (!Memory.rooms) {
+        Memory.rooms = {};
+    }
+    if (!Memory.bases) {
+        Memory.bases = {};
     }
     
     // Initialize our info map

@@ -131,16 +131,13 @@ class CreepManager {
                                         creep.pos.y >= 49 ||
                                         creep.pos.y <= 0;
             
-                if (!Memory.rooms[data.roomName] || (creep.room.name === data.roomName && !leavingOrEntering)) {
+                if (creep.room.name === data.roomName && !leavingOrEntering) {
                     return true;
                 }
             
-                const controller = Memory.rooms[data.roomName].controller;
-                const moveTarget = controller ? controller.pos : { x: 25, y: 25 };
-                const range = controller ? 1 : 24;
-                const pos = new RoomPosition(moveTarget.x, moveTarget.y, data.roomName);
+                const pos = new RoomPosition(25, 25, data.roomName);
                 creep.moveTo(pos, {
-                    range: range,
+                    range: 24,
                     maxRooms: data.maxRooms ? data.maxRooms : 16,
                 });
                 return false;

@@ -70,6 +70,7 @@ class RepairerManager extends CreepManager {
             else {
                 creep.moveTo(target, {
                     range: 3,
+                    pathSet: CONSTANTS.pathSets.remote,
                 });
             }
             return creep.store[RESOURCE_ENERGY] === 0 || target.hits === target.hitsMax;

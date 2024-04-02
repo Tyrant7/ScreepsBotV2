@@ -15,6 +15,7 @@ class MinerManager extends CreepManager {
             if (creep.pos.getRangeTo(sitePos) > 0) {
                 creep.moveTo(sitePos, {
                     range: 0,
+                    pathSet: CONSTANTS.pathSets.remote,
                 });
             }
 

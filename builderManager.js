@@ -77,6 +77,7 @@ class BuilderManager extends CreepManager {
             if (creep.build(target) === ERR_NOT_IN_RANGE) {
                 creep.moveTo(target, {
                     range: 2,
+                    pathSet: CONSTANTS.pathSets.remote,
                 });
             }
             return creep.store[RESOURCE_ENERGY] === 0;

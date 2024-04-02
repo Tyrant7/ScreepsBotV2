@@ -10,6 +10,9 @@ module.exports = {
         defender: "defender",
         mineralMiner: "mineral_miner",
     },
+    pathSets: {
+        remote: "remote",
+    },
     maxHaulerLevel: 16,
     maxUpgraderLevel: 9,
     maxRepairerLevel: 4,

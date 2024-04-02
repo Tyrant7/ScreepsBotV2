@@ -81,8 +81,7 @@ class HaulerManager extends CreepManager {
             }
             else if (intentResult === ERR_NOT_IN_RANGE) {
                 creep.moveTo(pickupObject, {
-                    plainCost: 10,
-                    swampCost: 50,
+                    pathSet: CONSTANTS.pathSets.remote,
                 });
             }
             return false;
@@ -181,8 +180,7 @@ class HaulerManager extends CreepManager {
             }
             else if (intentResult === ERR_NOT_IN_RANGE) {
                 creep.moveTo(target, {
-                    plainCost: 10,
-                    swampCost: 50,
+                    pathSet: CONSTANTS.pathSets.remote,
                 });
             }
             return false;

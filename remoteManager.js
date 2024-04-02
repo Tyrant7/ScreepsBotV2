@@ -46,14 +46,42 @@ class RemoteManager {
     ensurePlansExist(roomInfo) {
         if (!utility.getRemotePlans(roomInfo.room.name) || (RELOAD && DEBUG.replanRemotesOnReload)) {
 
-            // Filter out construction sites on invalid locations (room transitions)
+            const plans = this.planRemotes(roomInfo);
+
+            // First, create costmatrices for remote creeps using better pathing system
+            const matricesByRoom = {};
+            const unwalkableMatrix = new PathFinder.CostMatrix();
+            for (let x = 0; x < 50; x++) {
+                for (let y = 0; y < 50; y++) {
+                    unwalkableMatrix.set(x, y, 255);
+                }
+            }
+            for (const plan of plans) {
+                for (const road of plan.roads) {
+                    // Skip generating a matrix for our base since
+                    // we want to be able to path freely through our base's room
+                    if (road.roomName === roomInfo.room.name) {
+                        continue;
+                    }
+                    if (!matricesByRoom[road.roomName]) {
+                        matricesByRoom[road.roomName] = unwalkableMatrix.clone();
+                    }
+                    matricesByRoom[road.roomName].set(road.x, road.y, 1);
+                }
+            }
+            for (const roomName in matricesByRoom) {
+                betterPathing.cacheMatrix(matricesByRoom[roomName], CONSTANTS.pathSets.remote, roomName);
+            }
+
+            // Then, filter out construction sites on invalid locations (room transitions)
             // and give each remote an activity status
             const finalPlans = [];
-            for (const plan of this.planRemotes(roomInfo)) {
+            for (const plan of plans) {
                 plan.roads = plan.roads.filter((r) => r.x > 0 && r.x < 49 && r.y > 0 && r.y < 49);
                 plan.active = false;
                 finalPlans.push(plan);
             }
+            
             utility.setRemotePlans(roomInfo.room.name, finalPlans);
         }
         return utility.getRemotePlans(roomInfo.room.name);
