@@ -62,26 +62,27 @@ class EconomyManager {
 
             // Drop a remote each tick until our spawn usage is under the threshold
             const activeRemotes = remotes.filter((r) => r.active);
-
-            // We don't want to drop a remote that another one depends on, so let's filter for that
-            const nonDependants = [];
-            for (const remote of activeRemotes) {
-                if (activeRemotes.find((r) => r.dependants.includes(remote.source.id))) {
-                    continue;
+            if (activeRemotes.length) {
+                // We don't want to drop a remote that another one depends on, so let's filter for that
+                const nonDependants = [];
+                for (const remote of activeRemotes) {
+                    if (activeRemotes.find((r) => r.dependants.includes(remote.source.id))) {
+                        continue;
+                    }
+                    nonDependants.push(remote);
                 }
-                nonDependants.push(remote);
-            }
 
-            // Now let's simply drop the worst non-dependant
-            const worst = nonDependants.reduce((worst, curr) => {
-                return worst.score / worst.cost > curr.score / curr.cost ? curr : worst;
-            });
+                // Now let's simply drop the worst non-dependant
+                const worst = nonDependants.reduce((worst, curr) => {
+                    return worst.score / worst.cost > curr.score / curr.cost ? curr : worst;
+                });
 
-            // Let's be sure to update our estimate so don't drop more than necessary
-            worst.active = false;
-            base.spawnUsage -= worst.cost;
-            if (DEBUG.logRemoteDropping) {
-                console.log(roomInfo.room.name + " dropping remote: " + worst.source.id + " (" + worst.room + ")");
+                // Let's be sure to update our estimate so don't drop more than necessary
+                worst.active = false;
+                base.spawnUsage -= worst.cost;
+                if (DEBUG.logRemoteDropping) {
+                    console.log(roomInfo.room.name + " dropping remote: " + worst.source.id + " (" + worst.room + ")");
+                }
             }
         }
         else if (base.spawnUsage < maxSpawnUsage - ADD_THRESHOLD) {

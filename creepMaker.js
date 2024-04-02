@@ -92,6 +92,12 @@ module.exports = {
                  memory: { role: CONSTANTS.roles.upgrader }};
     },
 
+    makeMiniUpgrader: function() {
+        return { body: [CARRY, MOVE, WORK, WORK], 
+                 name: "Mini_Upgrader " + Game.time + " [1]",
+                 memory: { role: CONSTANTS.roles.upgrader }};
+    },
+
     makeBuilder: function(desiredLevel, energy) {
         const builderParts = [WORK, CARRY, MOVE];
         let body = builderParts;

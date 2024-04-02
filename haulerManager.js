@@ -34,6 +34,12 @@ class HaulerManager extends CreepManager {
 
         // Factor in the amount we've already reserved from each pickup point
         const pickupPoints = roomInfo.getEnergyPickupPoints();
+
+        // Wait for a valid pickup point
+        if (!pickupPoints.length) {
+            return null;
+        }
+
         pickupPoints.forEach((point) => {
             // Haulers with no task will be mapped to null
             // Make sure to double check that haulers actually have tasks assigned to them before assuming they have a tag
@@ -169,10 +175,9 @@ class HaulerManager extends CreepManager {
                 target = Game.getObjectById(reserved.id);
             }
 
-            // Our target might not be able to store things, let's simply walk to it and plant ourselves
+            // Some targets might not store things, just go to them and wait
             if (target && !target.store) {
                 creep.moveTo(target, {
-                    range: target.structureType === STRUCTURE_CONTROLLER ? 3 : 1,
                     pathSet: CONSTANTS.pathSets.remote,
                 });
                 return creep.store[RESOURCE_ENERGY] > 0;

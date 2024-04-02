@@ -181,7 +181,6 @@ class UsageSpawnHandler extends SpawnHandler {
     getNextSpawn(roomInfo) {
         const spawnOrder = [
             this.trySpawnRepairer,
-            this.trySpawnScout,
             this.trySpawnBuilder,
 
             // Other types of creep spawns that would be regular, but not contribute to
@@ -189,6 +188,7 @@ class UsageSpawnHandler extends SpawnHandler {
             // e.g. future mineral harvesters, etc.
 
             this.trySpawnUpgrader,
+            this.trySpawnScout,
             this.trySpawnMineralMiner,
         ];
 
@@ -210,6 +210,11 @@ class UsageSpawnHandler extends SpawnHandler {
 
     trySpawnUpgrader(roomInfo) {
 
+        // Special upgraders for starting out
+        if (roomInfo.room.energyCapacityAvailable <= SPAWN_ENERGY_START) {
+            return creepMaker.makeMiniUpgrader();
+        }
+        
         /**
         * Estimates the needed amount of upgraders in levels
         * to use as close to the required amount of energy as possible.
@@ -241,22 +246,17 @@ class UsageSpawnHandler extends SpawnHandler {
             }
         }
 
-        // Upgraders won't be able to do much without their container
-        if (!roomInfo.getUpgraderContainer()) {
-            return;
-        }
-
         // Simply, we're going to spawn enough upgraders to use our income
         const estimatedIncome = remoteUtility.getRemotePlans(roomInfo.room.name).reduce((total, curr) => {
             return total + (curr.active ? curr.score : 0);
-        }, 0);
+        }, 0) + roomInfo.getMaxIncome();
 
         // If we're RCL 8, there's a limit of how much we can upgrade
         const isMaxRCL = roomInfo.room.controller.level === 8;
         const maxUpgrade = isMaxRCL ? CONTROLLER_MAX_UPGRADE_PER_TICK : Infinity;
         const finalUsableIncome = Math.max(Math.min(estimatedIncome, maxUpgrade), 0)
 
-        // If we're at max RCL, it's better for GCL to go over than under
+        // If we're at max RCL, it's better for our GCL to upgrade over our limit than under
         const wantedLevels = estimateNeededUpgraders(roomInfo, finalUsableIncome, isMaxRCL);
         const actualLevels = creepSpawnUtility.getPredictiveCreeps(roomInfo.upgraders).map((u) => {
             return u.body.filter((p) => p.type === MOVE).length;
@@ -275,6 +275,11 @@ class UsageSpawnHandler extends SpawnHandler {
     }
 
     trySpawnRepairer(roomInfo) {
+
+        // Don't need repairers so early
+        if (roomInfo.room.controller.level <= 2) {
+            return;
+        }
 
         // Allocate X repairers per planned structures
         const plannedRoads = remoteUtility.getRemotePlans(roomInfo.room.name).reduce((total, curr) => {
@@ -304,6 +309,11 @@ class UsageSpawnHandler extends SpawnHandler {
     }
 
     trySpawnBuilder(roomInfo) {
+        // Don't need builders so early
+        if (roomInfo.room.controller.level <= 1) {
+            return;
+        }
+
         // Don't allow us to exceed a hard max of builders
         if (roomInfo.builders.length >= CONSTANTS.maxBuilderCount) {
             return;

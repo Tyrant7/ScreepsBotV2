@@ -41,7 +41,7 @@ class UpgraderManager extends CreepManager {
                 if (creep.store[RESOURCE_ENERGY] <= energyUsage) {
                     const container = creep.room.lookForAt(LOOK_STRUCTURES, upgraderContainerPos.x, upgraderContainerPos.y).find(
                         (s) => s.structureType === STRUCTURE_CONTAINER);
-                    if (container.store[RESOURCE_ENERGY]) {
+                    if (container && container.store[RESOURCE_ENERGY]) {
                         creep.withdraw(container, RESOURCE_ENERGY);
                     }
                 }
