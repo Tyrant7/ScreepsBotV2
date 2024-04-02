@@ -19,6 +19,9 @@ const UPGRADER_LEVEL_MARGIN = Math.floor(CONSTANTS.maxUpgraderLevel / 1.5);
 // How many planned structures should we have before we allocate additional repairers
 const PLANNED_STRUCTURE_TO_REPAIRER_RATIO = 450;
 
+// Static reserver cost to determine how much energy capacity we can start reserving at
+const RESERVER_COST = creepSpawnUtility.getCost(creepMaker.makeReserver().body);
+
 // #region Spawn Handlers
 
 class SpawnHandler {
@@ -79,7 +82,7 @@ class ProductionSpawnHandler extends SpawnHandler {
             if (wantedMiners > existingSpawns.miners) {
                 return creepMaker.makeMiner(roomInfo.room.energyCapacityAvailable);
             }
-            if (wantedReservers > existingSpawns.reservers) {
+            if (wantedReservers > existingSpawns.reservers && roomInfo.room.energyCapacityAvailable >= RESERVER_COST) {
                 return creepMaker.makeReserver();
             }
             if (wantedCarry > existingSpawns.haulerCarry) {
