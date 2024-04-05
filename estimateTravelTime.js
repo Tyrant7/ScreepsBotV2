@@ -5,10 +5,10 @@ module.exports = function estimateTravelTime(pos1, pos2) {
     if (pos1.roomName === pos2.roomName) {
         return pos1.getRangeTo(pos2);
     }
-    const pos1RoomPos = roomNameToXY(pos1.roomName);
-    const pos2RoomPos = roomNameToXY(pos2.roomName);
-    const diffX = (Math.abs(pos1RoomPos[0] - pos2RoomPos[0]) * 50);
-    const diffY = (Math.abs(pos1RoomPos[1] - pos2RoomPos[1]) * 50);
+    const pos1RoomPos = roomNameToXY(pos1.roomName) * 50;
+    const pos2RoomPos = roomNameToXY(pos2.roomName) * 50;
+    const diffX = Math.abs(pos1RoomPos[0] + pos1.x) - (pos2RoomPos[0] + pos2.x);
+    const diffY = Math.abs(pos1RoomPos[1] + pos1.y) - (pos2RoomPos[1] + pos2.y);
     return Math.max(diffX, diffY);
 }
 
