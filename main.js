@@ -44,6 +44,7 @@ global.betterPathing = require("./betterPathing");
 
 // Data
 const RoomInfo = require("./roomInfo");
+const roomInfos = {};
 
 // Managers
 const EconomyManager = require("./economyManager");
@@ -98,8 +99,7 @@ module.exports.loop = function() {
         }
     }
     
-    // Initialize our info map
-    const roomInfos = {};
+    // Initialize our colonies
     for (const room in Game.rooms) {
         if (!Game.rooms[room].controller || !Game.rooms[room].controller.my) {
             continue;
@@ -107,8 +107,10 @@ module.exports.loop = function() {
         if (!Memory.bases[room]) {
             Memory.bases[room] = {};
         }
-
-        roomInfos[room] = new RoomInfo(Game.rooms[room]);
+        if (!roomInfos[room]) {
+            roomInfos[room] = new RoomInfo(Game.rooms[room]);
+        }
+        roomInfos[room].initializeTickInfo();
         const info = roomInfos[room];
 
         // Handle economy (remotes and spawns)

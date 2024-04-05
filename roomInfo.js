@@ -3,11 +3,23 @@ const estimateTravelTime = require("./estimateTravelTime");
 
 class RoomInfo {
 
+    /**
+     * Initializes some data for this room that is guaranteed to be persistent between ticks.
+     * @param {*} room 
+     */
     constructor(room) {
         this.room = room;
+        this.sources = this.room.find(FIND_SOURCES);
+        this.mineral = this.room.find(FIND_MINERALS)[0];
+    }
+
+    /**
+     * Initializes some data for this room that is not guaranteed to be persistent between ticks.
+     */
+    initializeTickInfo() {
 
         // Find all creeps that this room is responsible for, not just ones in it
-        this.creeps = Object.values(Game.creeps).filter((c) => c.memory.home === room.name);
+        this.creeps = Object.values(Game.creeps).filter((c) => c.memory.home === this.room.name);
 
         // Dynamically intialize an array for each role
         for (const role in CONSTANTS.roles) {
@@ -29,10 +41,8 @@ class RoomInfo {
             }
         });
 
-        this.spawns = room.find(FIND_MY_SPAWNS);
-        this.constructionSites = room.find(FIND_MY_CONSTRUCTION_SITES);
-        this.sources = this.room.find(FIND_SOURCES);
-        this.mineral = this.room.find(FIND_MINERALS)[0];
+        this.spawns = this.room.find(FIND_MY_SPAWNS);
+        this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES);
     }
 
     getMaxIncome() {
