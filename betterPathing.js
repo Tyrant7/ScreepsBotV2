@@ -26,23 +26,7 @@ Creep.prototype.moveTo = function(target, options = {}) {
         registryTick = Game.time;
     }
 
-    // Make sure we include these options
-    // Must explicitly check undefined since 0 will evaluate to false
-    if (options.range === undefined) {
-        options.range = 1;
-    }
-    if (options.maxRooms === undefined) {
-        options.maxRooms = 6;
-    }
-    if (options.plainCost === undefined) {
-        options.plainCost = 2;
-    }
-    if (options.swampCost === undefined) {
-        options.swampCost = 10;
-    }
-    if (options.maxOps === undefined) {
-        options.maxOps = 2000;
-    }
+    options = utility.ensureDefaultOptions(options);
 
     // Save our shove target in case we get shoved
     profiler.startSample(this.name + " moveTo");
@@ -52,7 +36,10 @@ Creep.prototype.moveTo = function(target, options = {}) {
 Creep.prototype.betterMoveTo = function(target, options) {
 
     function newPath(creep) {
-        return utility.getNewPath(creep.pos, { pos: target, range: options.range }, options);
+
+        // If we use a custom matrix set, it's safe to assume we know where we're pathing
+        const endPathIfNoVisibility = !options.pathSet;
+        return this.serializePath(utility.getNewPath(creep.pos, { pos: target, range: options.range }, options), endPathIfNoVisibility);
     }
 
     function verifyPath(creep) {
@@ -103,11 +90,10 @@ Creep.prototype.betterMoveTo = function(target, options) {
     }
     // Save our move data
     this.memory._shoveTarget = target;
-    if (!this.memory._move) {
-        this.memory._move = {};
-    }
-    this.memory._move.dest = target;
-    this.memory._move.path = path;
+    this.memory._move = {
+        dest: target,
+        path: path,
+    };
 }
 Creep.prototype.wrappedMove = Creep.prototype.move;
 Creep.prototype.move = function(direction) {
@@ -200,6 +186,32 @@ Creep.prototype.requestShove = function() {
 
     drawArrow(this.pos, this.pos.getDirectionTo(chosenSpace), { color: "#FF0000" });
     this.move(this.pos.getDirectionTo(chosenSpace));
+}
+/**
+ * Finds the closest goal to this creep.
+ * @param {RoomPosition[] | {pos: RoomPosition}[]} goals A an array of RoomPositions or any objects with a pos property.
+ * @param {{}} options Pathfinding options.
+ * @returns {{closestGoal: any, path: RoomPosition[]}} An object containing the chosen goal, as well as a path.
+ */
+Creep.prototype.betterFindClosestByPath = function(goals, options = {}) {
+
+    // Find a path to the closest goal
+    options = utility.ensureDefaultOptions(options);
+    const path = utility.getNewPath(this.pos, goals, options);
+
+    // Figure out which goal we pathed to
+    const closestGoal = goals.find((goal) => goal.pos.getRangeTo(path.slice(-1)) <= options.range);
+    return {
+        goal: closestGoal,
+        path: path,
+    };
+}
+Creep.prototype.injectPath = function(path, target) {
+    this.memory._shoveTarget = target;
+    this.memory._move = {
+        dest: target,
+        path: utility.serializePath(path),
+    };
 }
 
 // Debug
@@ -317,8 +329,6 @@ const utility = {
     getNewPath: function(startPos, goals, options) {
         const MAX_ATTEMPTS = 2;
         let attempts = 1;
-        // If we use a custom matrix set, it's safe to assume we know where we're pathing
-        let endPathIfNoVisibility = !options.pathSet;
         let result;
         while (attempts <= MAX_ATTEMPTS) {
             result = PathFinder.search(
@@ -344,7 +354,28 @@ const utility = {
             // Raise maxOps and try again
             attempts++;
         }
-        return this.serializePath(result.path, endPathIfNoVisibility);
+        return result.path;
+    },
+
+    ensureDefaultOptions: function(options) {
+        // Make sure we include these options
+        // Must explicitly check undefined since 0 will evaluate to false
+        if (options.range === undefined) {
+            options.range = 1;
+        }
+        if (options.maxRooms === undefined) {
+            options.maxRooms = 6;
+        }
+        if (options.plainCost === undefined) {
+            options.plainCost = 2;
+        }
+        if (options.swampCost === undefined) {
+            options.swampCost = 10;
+        }
+        if (options.maxOps === undefined) {
+            options.maxOps = 2000;
+        }
+        return options;
     },
 };
 

@@ -11,6 +11,10 @@ class RoomInfo {
         this.room = room;
         this.sources = this.room.find(FIND_SOURCES);
         this.mineral = this.room.find(FIND_MINERALS)[0];
+
+        // These will be objects mapping game IDs to request objects
+        this._pickupRequests = {};
+        this._dropoffRequests = {};
     }
 
     /**
@@ -252,171 +256,116 @@ class RoomInfo {
     // #region Hauling
 
     /**
-     * Gets an array of all energy pickup points for this room, including in remotes.
-     * Does not include storage as that will only be used under special conditions defined by creep roles individually.
-     * @returns An array of objects, each containing some data about the pickup point:
-     * - The position of the pickup point.
-     * - The amount of energy.
-     * - The fillrate of the pickup, positive for containers, negative for dropped energy.
-     * - The ticks until this pickup point will be affected by the fillrate.
-     *   Used when a miner has been assigned to a container but hasn't yet reached the mining site.
-     * - The ID of the pickup object.
+     * Creates a pickup request for haulers with the given parameters.
+     * @param {ResourceConstant} resourceType The type of resource.
+     * @param {number} amount The amount.
+     * @param {number} fillrate The approximate rate at which the resource will accumulate at the pickup location.
+     * Can be negative if resource will decay.
+     * @param {number} ticksUntilBeginFilling The approximate number of ticks until the filling will start. 
+     * Use if request will expire or if there will be a delay before filling.
+     * @param {string} ownerID The game ID of the object requesting a pickup.
      */
-    getEnergyPickupPoints() {
-        if (this.cachedEnergyPickupPoints) {
-            return this.cachedEnergyPickupPoints;
-        }
-
-        // Declare a reusable function that adds all dropped energy in a particular room that we can see
-        const pickupPoints = [];
-        function addDroppedPoints(room) {
-            room.find(FIND_DROPPED_RESOURCES, { filter: { resourceType: RESOURCE_ENERGY }}).forEach((drop) => {
-                pickupPoints.push({
-                    pos: drop.pos,
-                    amount: drop.amount,
-                    fillrate: -Math.ceil(drop.amount / ENERGY_DECAY),
-                    ticksUntilBeginFilling: 0, 
-                    id: drop.id,
-                });
-            });
-            room.find(FIND_TOMBSTONES).filter((t) => t.store[RESOURCE_ENERGY]).forEach((tombstone) => {
-                pickupPoints.push({
-                    pos: tombstone.pos,
-                    amount: tombstone.store[RESOURCE_ENERGY],
-                    fillrate: -tombstone.store[RESOURCE_ENERGY],
-                    ticksUntilBeginFilling: tombstone.ticksToDecay,
-                    id: tombstone.id,
-                });
-            });
-        }
-
-        // Add all mining sites as valid pickup points
-        for (const site of this.getMiningSites()) {
-            const room = Game.rooms[site.pos.roomName];
-            if (!room) {
-                continue;
-            }
-            const container = room.lookForAt(LOOK_STRUCTURES, site.pos.x, site.pos.y).find((s) => s.structureType === STRUCTURE_CONTAINER);
-            if (!container) {
-                continue;
-            }
-
-            // Calculate the fillrate of this container
-            const assignedMiner = this.miners.find((m) => m.memory.miningSite && m.memory.miningSite.sourceID === site.sourceID);
-            const fillrate = assignedMiner
-                ? (SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME)
-                // Container won't fill if we don't have a miner assigned to it
-                : 0;
-            const ticksUntil = assignedMiner 
-                ? assignedMiner.pos.getRangeTo(site.pos) 
-                : 0;
-
-            pickupPoints.push({
-                pos: site.pos,
-                amount: container.store[RESOURCE_ENERGY],
-                fillrate: fillrate,
-                ticksUntilBeginFilling: ticksUntil,
-                id: container.id,
-            });
-        }
-
-        // Add the storage, only if we have somewhere to put the energy 
-        // to avoid repetitively taking energy in and out of the storage
-        const dropoffPoints = this.getEnergyDropoffPoints();
-
-        // In this case, two points will always be active
-        // Storage and upgrader container
-        if (dropoffPoints.length > 2) {
-            const storage = this.room.storage;
-            if (storage) {
-                pickupPoints.push({
-                    pos: storage.pos,
-                    amount: storage.store[RESOURCE_ENERGY],
-                    fillrate: 0,
-                    ticksUntilBeginFilling: 0,
-                    id: storage.id,
-                });
-            }
-        }
-
-        // Add dropped energy
-        addDroppedPoints(this.room);
-
-        // Now let's iterate over each remote and add pickup points in them too as long as we can see the room
-        const remotePlans = remoteUtility.getRemotePlans(this.room.name);
-        if (remotePlans) {
-            for (const remote of remotePlans) {
-                if (!remote) {
-                    continue;
-                }
-                const remoteRoom = Game.rooms[remote.room];
-                if (remoteRoom) {
-                    addDroppedPoints(remoteRoom);
-                }
-            }
-        }
-
-        // Cache in case of multiple requests this tick
-        this.cachedEnergyPickupPoints = pickupPoints;
-        return pickupPoints;
+    createPickupRequest(resourceType, amount, fillrate, ticksUntilBeginFilling, ownerID) {
+        this._pickupRequests[ownerID] = {
+            resourceType,
+            amount,
+            fillrate,
+            ticksUntilBeginFilling,
+            ownerID,
+            assignedHauler: null,
+        };
     }
 
     /**
-     * Gets an array of all energy dropoff points for this room, including in remotes.
-     * @returns An array of objects, each containing some data about the dropoff point:
-     * - The position of the dropoff point.
-     * - The amount of energy needed.
-     * - The ID of the dropoff object.
+     * Creates a dropoff request for haulers with the given parameters.
+     * @param {ResourceConstant} resourceType The type of resource.
+     * @param {number} amount The amount.
+     * @param {string} ownerID The game ID of the structure/creep requesting a dropoff.
      */
-    getEnergyDropoffPoints() {
-        if (this.cachedEnergyDropoffPoints) {
-            return this.cachedEnergyDropoffPoints;
-        }
+    createDropoffRequest(resourceType, amount, ownerID) {
+        this._dropoffRequests[ownerID] = {
+            resourceType,
+            amount,
+            ownerID,
+            assignedHauler: null,
+        };
+    }
 
-        const dropoffPoints = [];
-        function addDropoffPoint(structure) {
-            if (!structure.store.getFreeCapacity(RESOURCE_ENERGY)) {
-                return;
+    /**
+     * Gets an existing pickup request for the given owner, if one exists.
+     * @param {string} ownerID The game ID of the owner of the request.
+     * @returns The matching pickup request. Undefined if none exists.
+     */
+    getExistingPickupRequest(ownerID) {
+        return this._pickupRequests[ownerID];
+    }
+
+    /**
+     * Gets an existing dropoff request for the given owner, if one exists.
+     * @param {string} ownerID The game ID of the owner of the request.
+     * @returns The matching dropoff request. Undefined if none exists.
+     */
+    getExistingDropoffRequest(ownerID) {
+        return this._dropoffRequests[ownerID];
+    }
+
+    /**
+     * Runs a cleanup to ensure valid pickup requests, then returns an array of remaining pickup requests.
+     * @returns {{}[]} An array of pickup requests.
+     */
+    getPickupRequests() {
+        // Cleanup our requests by removing invalid ones and unmarking ones where the hauler has died
+        for (const owner in this._pickupRequests) {
+            if (Game.getObjectById(owner)) {
+                if (!Game.getObjectById(this._pickupRequests[owner].assignedHauler)) {
+                    this._pickupRequests[owner].assignedHauler = null;
+                }
+                continue;
             }
-            dropoffPoints.push({
-                pos: structure.pos,
-                amount: structure.store.getFreeCapacity(RESOURCE_ENERGY),
-                id: structure.id,
-            });
+            delete this._pickupRequests[owner];
         }
+        return Object.values(this._pickupRequests);
+    }
 
-        // Add all extensions, spawns, and towers
-        this.room.find(FIND_MY_STRUCTURES, { filter: (s) => {
-            return s.structureType == STRUCTURE_EXTENSION || 
-                   s.structureType == STRUCTURE_SPAWN || 
-                   s.structureType == STRUCTURE_TOWER;
-        }}).forEach((structure) => {
-            addDropoffPoint(structure);
+    /**
+     * Runs a cleanup to ensure valid dropoff requests, then returns an array of remaining dropoff requests
+     * matching the resource type.
+     * @param {ResourceConstant} resourceType The type of resource.
+     * @returns {{}[]} An array of dropoff requests matching the resource type.
+     */
+    getDropoffRequests(resourceType) {
+        for (const owner in this._dropoffRequests) {
+            if (Game.getObjectById(owner)) {
+                if (!Game.getObjectById(this._pickupRequests[owner].assignedHauler)) {
+                    this._pickupRequests[owner].assignedHauler = null;
+                }
+                continue;
+            }
+            delete this._dropoffRequests[owner];
+        }
+        // Filter for the correct request type
+        return Object.values(this._dropoffRequests).filter((request) => {
+            return request.resourceType === resourceType ||
+                request.resourceType === RESOURCES_ALL;
         });
+    }
 
-        // Also add the upgrader's container, if one exists
-        const upgraderContainer = this.getUpgraderContainer();
-        if (upgraderContainer) {
-            addDropoffPoint(upgraderContainer);
-        }
-        else {
-            // If one doesn't exist, add the controller directly
-            dropoffPoints.push({
-                pos: this.room.controller.pos,
-                amount: Infinity,
-                id: this.room.controller.id,
-            });
-        }
+    /**
+     * Marks a pickup request as active.
+     * @param {string} ownerID The ID of the object responsible for the request.
+     * @param {string} haulerID The ID of the hauler who accepted the request. 
+     */
+    acceptPickupRequest(ownerID, haulerID) {
+        this._pickupRequests[ownerID].assignedHauler = haulerID;
+    }
 
-        // Finally, add the storage, if one exists
-        const storage = this.room.storage;
-        if (storage) {
-            addDropoffPoint(storage);
-        }
-
-        // Cache in case of multiple requests this tick
-        this.cachedEnergyDropoffPoints = dropoffPoints;
-        return dropoffPoints;
+    /**
+     * Marks a dropoff request as active.
+     * @param {string} ownerID The ID of the object responsible for the request.
+     * @param {string} haulerID The ID of the hauler who accepted the request. 
+     */
+    acceptDropoffRequest(ownerID, haulerID) {
+        this._dropoffRequests[ownerID].assignedHauler = haulerID;
     }
 
     // #endregion
