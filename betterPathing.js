@@ -201,7 +201,9 @@ Creep.prototype.betterFindClosestByPath = function(goals, options = {}) {
     options.warnOnIncompletePath = true;
     const path = utility.getNewPath(this.pos, goals, options);
 
-    const closestGoal = path.slice(-1)[0].findInRange(goals.map((goal) => goal.pos), 1)[0];
+    // If we have no path, then use our own position
+    const lastPos = path.slice(-1)[0] || this.pos;
+    const closestGoal = lastPos.findInRange(goals.map((goal) => goal.pos), 1)[0];
     if (!closestGoal) {
         return;
     }
