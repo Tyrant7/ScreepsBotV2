@@ -61,27 +61,30 @@ class HaulerManager extends CreepManager {
 
             // Create goals for all dropoff targets with no haulers or at least one hauler further than us
             for (const id of dropoff.dropoffIDs) {
-                goals.push({
-                    pos: Game.getObjectById(id).pos,
-                    dropoff: dropoff,
-                });
+                goals.push({ pos: Game.getObjectById(id).pos, range: 1 });
             }
         }
 
         while (goals.length) {
             // Let's get the closest dropoff point by path
-            const closestDropoffAndPath = creep.betterFindClosestByPath(validDropoffs);
-            if (!closestDropoffAndPath) {
+            const closestGoalAndPath = creep.betterFindClosestByPath(goals, {
+                pathSet: CONSTANTS.pathSets.remote
+            });
+
+            if (!closestGoalAndPath) {
                 creep.say("No drop");
                 console.log("No dropoff request found for creep " + creep.name);
                 return null;
             }
             
             // If there aren't enough haulers assigned to this request, let's skip trying to steal it
-            const closestDropoff = closestDropoffAndPath.goal.dropoff;
+            const closestDropoff = validDropoffs.find((dropoff) => 
+                dropoff.dropoffIDs.find((id) => 
+                    Game.getObjectById(id).pos.isEqualTo(closestGoalAndPath.goal)));
             if (!closestDropoff.hasEnough) {
                 // We're clear -> let's accept the order and start on our path
-                return acceptOrder(closestDropoff, closestDropoff.goal.pos, closestDropoffAndPath.path);
+                const orderInfo = acceptOrder(closestDropoff, closestGoalAndPath.goal, closestGoalAndPath.path);
+                return this.createDropoffTask(creep, orderInfo);
             }
 
             for (const assignedID of closestDropoff.assignedHaulers) {
@@ -90,17 +93,17 @@ class HaulerManager extends CreepManager {
                 const assignedHauler = Game.getObjectById(assignedID);
                 if (!assignedHauler || !assignedHauler.hasShorterPath(path)) {
                     // Steal the order
-                    const newTask = acceptOrder(closestDropoff, closestDropoff.goal.pos, closestDropoffAndPath.path);
+                    const orderInfo = acceptOrder(closestDropoff, closestDropoff.goal.pos, closestGoalAndPath.path);
 
                     // Give a new task recursively for the other hauler
                     delete assignedHauler.memory.dropoff;
                     this.createTask(assignedHauler, roomInfo);
-                    return newTask;
+                    return this.createDropoffTask(creep, orderInfo);
                 }
             }
 
             // If we couldn't steal, let's remove this goal and try again
-            goals = goals.filter((goal) => goal !== closestDropoffAndPath.goal);
+            goals = goals.filter((goal) => goal !== closestGoalAndPath.goal);
         }
 
         function acceptOrder(dropoff, pos, path) {
@@ -109,12 +112,11 @@ class HaulerManager extends CreepManager {
 
             // Let's construct the object we want to store in memory
             // We only care about the dropoff point we selected, plus the amount and resourceType
-            const reserved = {
+            return {
                 amount: dropoff.amount,
                 resourceType: dropoff.resourceType,
                 id: dropoff.dropoffIDs.find((id) => Game.getObjectById(id).pos.isEqualTo(pos)),
             };
-            return createDropoffTask(creep, reserved);
         }
     }
 
@@ -153,24 +155,29 @@ class HaulerManager extends CreepManager {
 
         // Same idea as dropoff points, except each pickup only has only location 
         // and it's built-in to the object already
-        let goals = validPickups.filter((pickup) => {
+        let goals = [];
+        for (const pickup of validPickups) {
+            // Only try to filter if this pickup has enough haulers
+            if (pickup.hasEnough) {
+                const furtherHauler = pickup.assignedHaulers.find((id) => {
+                    const hauler = Game.getObjectById(id);
+                    return hauler && hauler.getPathLength() > creep.pos.getRangeTo(pickup.pos);
+                });
 
-            // Don't bother trying to filter if this pickup doesn't have enough haulers yet
-            if (!pickup.hasEnough) {
-                return true;
+                // All haulers are closer than us, so there's no point in trying this target
+                if (!furtherHauler) {
+                    continue;
+                }
             }
-
-            // Filter using the same range technique
-            return !!pickup.assignedHaulers.find((id) => {
-                const hauler = Game.getObjectById(id);
-                return hauler && hauler.getPathLength() > creep.pos.getRangeTo(pickup.pos);
-            });
-        });
+            goals.push({ pos: pickup.pos, range: 1 });
+        }
 
         while (goals.length) {
 
             // Path to closest goal
-            const closestPickupAndPath = creep.betterFindClosestByPath(validPickups);
+            const closestPickupAndPath = creep.betterFindClosestByPath(goals, {
+                pathSet: CONSTANTS.pathSets.remote,
+            });
             if (!closestPickupAndPath) {
                 creep.say("No pick");
                 console.log("No pickup request found for creep " + creep.name);
@@ -178,9 +185,11 @@ class HaulerManager extends CreepManager {
             }
 
             // If there aren't enough haulers assigned to this request, let's skip trying to steal it
-            const closestPickup = closestPickupAndPath.goal;
+            const closestPickup = validPickups.find((pickup) => 
+                pickup.pos.isEqualTo(closestPickupAndPath.goal));
             if (!closestPickup.hasEnough) {
-                return acceptOrder(closestPickup, closestPickupAndPath.path);
+                const orderInfo = acceptOrder(closestPickup, closestPickupAndPath.path);
+                return this.createPickupTask(creep, orderInfo);
             }
 
             for (const assignedID of closestPickup.assignedHaulers) {
@@ -189,13 +198,12 @@ class HaulerManager extends CreepManager {
                 const assignedHauler = Game.getObjectById(assignedID);
                 if (!assignedHauler || !assignedHauler.hasShorterPath(path)) {
                     // Steal the order
-                    const newTask = acceptOrder(closestPickup, closestPickupAndPath.path);
-
+                    const orderInfo = acceptOrder(closestPickup, closestPickupAndPath.path);
 
                     // Give a new task recursively for the other hauler
                     delete assignedHauler.memory.pickup;
                     this.createTask(assignedHauler, roomInfo);
-                    return newTask;
+                    return this.createPickupTask(creep, orderInfo);
                 }
             }
 
@@ -209,11 +217,10 @@ class HaulerManager extends CreepManager {
 
             // Let's construct the object we want to store in memory
             // We only care about the pickup point and amount
-            const reserved = {
+            return {
                 amount: pickup.amount,
                 pos: pickup.pos,
             };
-            return createPickupTask(creep, reserved);
         }
     }
 
@@ -238,7 +245,7 @@ class HaulerManager extends CreepManager {
             }
 
             // Pickup!
-            if (creep.getRangeTo(targetPos) <= 1) {
+            if (creep.pos.getRangeTo(targetPos) <= 1) {
 
                 // Pickup dropped resources first
                 const dropped = pickupsAtLocation.find((p) => p.type === LOOK_RESOURCES).resource;

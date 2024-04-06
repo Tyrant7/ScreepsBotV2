@@ -84,6 +84,10 @@ const towerManager = new TowerManager();
 // Construction
 const constructionManager = new ColonyConstructionManager();
 
+// Hauling
+const BasicHaulingRequester = require("./basicHaulingRequester");
+const haulingRequester = new BasicHaulingRequester();
+
 // Stats and Debug
 const overlay = require("./overlay");
 const trackStats = require("./trackStats");
@@ -135,6 +139,9 @@ module.exports.loop = function() {
 
         // Defense
         towerManager.run(info);
+
+        // Hauling requests
+        haulingRequester.generateBasicRequests(info);
     }
 
     // Run creeps
@@ -142,6 +149,11 @@ module.exports.loop = function() {
     for (const name in Memory.creeps) {
         const creep = Game.creeps[name];
         if (creep) {
+
+            // Skip haulers until the end
+            if (creep.memory.role === CONSTANTS.roles.hauler) {
+                continue;
+            }
 
             // Map the creep's role to its appropriate manager and run behaviour
             if (creepRoleMap[creep.memory.role]) {
@@ -155,6 +167,14 @@ module.exports.loop = function() {
         }
         else {
             creepDeath(name);
+        }
+    }
+    // We'll process all haulers after ordinary creeps, in case other creeps created orders this tick 
+    for (const info of Object.values(roomInfos)) {
+        for (const hauler of info.haulers) {
+            profiler.startSample(hauler.name);
+            creepRoleMap[hauler.memory.role].processCreep(hauler, info);
+            profiler.endSample(hauler.name);
         }
     }
     profiler.endSample("Creeps");

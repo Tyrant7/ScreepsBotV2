@@ -1,5 +1,6 @@
 const CreepManager = require("./creepManager");
 const Task = require("./task");
+const RoomInfo = require("./roomInfo");
 
 class UpgraderManager extends CreepManager {
 
@@ -41,8 +42,25 @@ class UpgraderManager extends CreepManager {
                 if (creep.store[RESOURCE_ENERGY] <= energyUsage) {
                     const container = creep.room.lookForAt(LOOK_STRUCTURES, upgraderContainerPos.x, upgraderContainerPos.y).find(
                         (s) => s.structureType === STRUCTURE_CONTAINER);
-                    if (container && container.store[RESOURCE_ENERGY]) {
-                        creep.withdraw(container, RESOURCE_ENERGY);
+                    if (container) {
+                        if (container.store[RESOURCE_ENERGY]) {
+                            creep.withdraw(container, RESOURCE_ENERGY);
+                        }
+
+                        // Request energy for our container
+                        roomInfo.createDropoffRequest(
+                            container.store.getFreeCapacity(),
+                            RESOURCE_ENERGY,
+                            [container.id],
+                        );
+                    }
+                    else {
+                        // Request energy for ourself, if our container doesn't exist yet
+                        roomInfo.createDropoffRequest(
+                            creep.store.getFreeCapacity(),
+                            RESOURCE_ENERGY,
+                            [creep.id],
+                        );
                     }
                 }
             }

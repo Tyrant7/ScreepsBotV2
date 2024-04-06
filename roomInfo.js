@@ -266,13 +266,24 @@ class RoomInfo {
      * if the energy is greater than or equal to the requesting hauler's carry capacity.
      * @param {RoomPosition} pos The position of the resources to pickup.
      */
-    createPickupRequest(amount, fillrate, isSource, pos) {
+    createPickupRequest(amount, resourceType, fillrate, isSource, pos) {
+
+        // If a pickup request already exists for this position, let's group it
+        const existingRequest = this._pickupRequests.find((request) => {
+            return request.pos.isEqualTo(pos) && request.resourceType === resourceType;
+        });
+        if (existingRequest) {
+            existingRequest.amount += amount;
+            existingRequest.fillrate += fillrate;
+            return;
+        }
+
         // Search for haulers currently assigned to this job
         const assignedHaulers = this.haulers.filter((h) => {
             return h.memory.pickup && 
-                h.memory.pick.pos.x === pos.x &&
-                h.memory.pick.pos.y === pos.y &&
-                h.memory.pick.pos.roomName === pos.roomName;
+                h.memory.pickup.pos.x === pos.x &&
+                h.memory.pickup.pos.y === pos.y &&
+                h.memory.pickup.pos.roomName === pos.roomName;
         }).map((h) => h.id);
         this._pickupRequests.push({
             amount,
@@ -288,7 +299,8 @@ class RoomInfo {
      * Creates a dropoff request for haulers with the given parameters.
      * @param {ResourceConstant} resourceType The type of resource.
      * @param {number} amount The amount.
-     * @param {string} ownerID The game ID of the structure/creep requesting a dropoff.
+     * @param {string[]} dropoffIDs The game IDs of the structures/creeps requesting a dropoff. 
+     * Pass multiple if multiple dropoff points are acceptable (primarily for link usage).
      */
     createDropoffRequest(amount, resourceType, dropoffIDs) {
         const assignedHaulers = this.haulers.filter((h) => h.memory.dropoff && dropoffIDs.includes(h.memory.dropoff.id)).map((h) => h.id);

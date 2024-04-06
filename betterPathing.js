@@ -39,7 +39,7 @@ Creep.prototype.betterMoveTo = function(target, options) {
 
         // If we use a custom matrix set, it's safe to assume we know where we're pathing
         const endPathIfNoVisibility = !options.pathSet;
-        return this.serializePath(utility.getNewPath(creep.pos, { pos: target, range: options.range }, options), endPathIfNoVisibility);
+        return utility.serializePath(utility.getNewPath(creep.pos, { pos: target, range: options.range }, options), endPathIfNoVisibility);
     }
 
     function verifyPath(creep) {
@@ -201,7 +201,7 @@ Creep.prototype.betterFindClosestByPath = function(goals, options = {}) {
     options.warnOnIncompletePath = true;
     const path = utility.getNewPath(this.pos, goals, options);
 
-    const closestGoal = this.pos.findInRange(goals, 1)[0];
+    const closestGoal = path.slice(-1)[0].findInRange(goals.map((goal) => goal.pos), 1)[0];
     if (!closestGoal) {
         return;
     }
