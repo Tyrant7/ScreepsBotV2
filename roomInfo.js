@@ -258,8 +258,8 @@ class RoomInfo {
 
     /**
      * Creates a pickup request for haulers with the given parameters. Pickup requests under the same position will be grouped.
-     * @param {ResourceConstant} resourceType The type of resource.
      * @param {number} amount The amount.
+     * @param {ResourceConstant} resourceType The type of resource.
      * @param {number} fillrate The approximate rate at which the resource will accumulate at the pickup location.
      * Can be negative if resource will decay.
      * @param {boolean} isSource Is this request under a source? If yes, it will only be returned 
@@ -276,6 +276,7 @@ class RoomInfo {
         }).map((h) => h.id);
         this._pickupRequests.push({
             amount,
+            resourceType,
             fillrate,
             isSource,
             pos,
