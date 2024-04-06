@@ -94,8 +94,8 @@ function getBuildPriority(creep) {
 const buildPriorities = {
     [STRUCTURE_SPAWN]: 11,
     [STRUCTURE_STORAGE]: 10,
-    [STRUCTURE_CONTAINER]: 9,
-    [STRUCTURE_EXTENSION]: 8,
+    [STRUCTURE_EXTENSION]: 9,
+    [STRUCTURE_CONTAINER]: 8,
     [STRUCTURE_TOWER]: 7,
     [STRUCTURE_TERMINAL]: 6,
     [STRUCTURE_LINK]: 5,
