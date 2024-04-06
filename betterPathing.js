@@ -191,16 +191,21 @@ Creep.prototype.requestShove = function() {
  * Finds the closest goal to this creep.
  * @param {RoomPosition[] | {pos: RoomPosition}[]} goals A an array of RoomPositions or any objects with a pos property.
  * @param {{}} options Pathfinding options.
- * @returns {{closestGoal: any, path: RoomPosition[]}} An object containing the chosen goal, as well as a path.
+ * @returns {{closestGoal: any, path: RoomPosition[]} | undefined} An object containing the chosen goal, as well as a path.
+ * Undefined if no complete path could be found.
  */
 Creep.prototype.betterFindClosestByPath = function(goals, options = {}) {
 
     // Find a path to the closest goal
     options = utility.ensureDefaultOptions(options);
+    options.warnOnIncompletePath = true;
     const path = utility.getNewPath(this.pos, goals, options);
 
-    // Figure out which goal we pathed to
-    const closestGoal = goals.find((goal) => goal.pos.getRangeTo(path.slice(-1)) <= options.range);
+    const closestGoal = this.pos.findInRange(goals, 1)[0];
+    if (!closestGoal) {
+        return;
+    }
+
     return {
         goal: closestGoal,
         path: path,
@@ -212,6 +217,20 @@ Creep.prototype.injectPath = function(path, target) {
         dest: target,
         path: utility.serializePath(path),
     };
+}
+Creep.prototype.hasShorterPath = function(path) {
+    if (path instanceof Array) {
+        path = utility.serializePath(path);
+    }
+    return this.memory._move && this.memory._move.path.length <= path.length;
+}
+Creep.prototype.getPathLength = function() {
+    return this.memory._move &&
+           this.memory._move.path 
+                // We subtract 3 here because the next step of the path is always saved as
+                // 4 characters representing the X and Y room positions
+                ? this.memory._move.path.length - 3
+                : 0;
 }
 
 // Debug
@@ -354,6 +373,11 @@ const utility = {
             // Raise maxOps and try again
             attempts++;
         }
+        if (result.incomplete) {
+            if (options.warnOnIncompletePath) {
+                console.log("Couldn't find path from " + startPos + " to goals: " + JSON.stringify(goals));
+            }
+        }
         return result.path;
     },
 
@@ -374,6 +398,9 @@ const utility = {
         }
         if (options.maxOps === undefined) {
             options.maxOps = 2000;
+        }
+        if (options.warnOnIncompletePath === undefined) {
+            options.warnOnIncompletePath = false;
         }
         return options;
     },

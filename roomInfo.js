@@ -1,5 +1,6 @@
 const remoteUtility = require("./remoteUtility");
 const estimateTravelTime = require("./estimateTravelTime");
+const haulerUtility = require("./haulerUtility");
 
 class RoomInfo {
 
@@ -11,10 +12,6 @@ class RoomInfo {
         this.room = room;
         this.sources = this.room.find(FIND_SOURCES);
         this.mineral = this.room.find(FIND_MINERALS)[0];
-
-        // These will be objects mapping game IDs to request objects
-        this._pickupRequests = {};
-        this._dropoffRequests = {};
     }
 
     /**
@@ -47,6 +44,10 @@ class RoomInfo {
 
         this.spawns = this.room.find(FIND_MY_SPAWNS);
         this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES);
+
+        this._pickupRequests = [];
+        this._dropoffRequests = [];
+        this.stolenOrders = [];
     }
 
     getMaxIncome() {
@@ -256,24 +257,30 @@ class RoomInfo {
     // #region Hauling
 
     /**
-     * Creates a pickup request for haulers with the given parameters.
+     * Creates a pickup request for haulers with the given parameters. Pickup requests under the same position will be grouped.
      * @param {ResourceConstant} resourceType The type of resource.
      * @param {number} amount The amount.
      * @param {number} fillrate The approximate rate at which the resource will accumulate at the pickup location.
      * Can be negative if resource will decay.
-     * @param {number} ticksUntilBeginFilling The approximate number of ticks until the filling will start. 
-     * Use if request will expire or if there will be a delay before filling.
-     * @param {string} ownerID The game ID of the object requesting a pickup.
+     * @param {boolean} isSource Is this request under a source? If yes, it will only be returned 
+     * if the energy is greater than or equal to the requesting hauler's carry capacity.
+     * @param {RoomPosition} pos The position of the resources to pickup.
      */
-    createPickupRequest(resourceType, amount, fillrate, ticksUntilBeginFilling, ownerID) {
-        this._pickupRequests[ownerID] = {
-            resourceType,
+    createPickupRequest(amount, fillrate, isSource, pos) {
+        // Search for haulers currently assigned to this job
+        const assignedHaulers = this.haulers.filter((h) => {
+            return h.memory.pickup && 
+                h.memory.pick.pos.x === pos.x &&
+                h.memory.pick.pos.y === pos.y &&
+                h.memory.pick.pos.roomName === pos.roomName;
+        }).map((h) => h.id);
+        this._pickupRequests.push({
             amount,
             fillrate,
-            ticksUntilBeginFilling,
-            ownerID,
-            assignedHauler: null,
-        };
+            isSource,
+            pos,
+            assignedHaulers,
+        });
     }
 
     /**
@@ -282,90 +289,70 @@ class RoomInfo {
      * @param {number} amount The amount.
      * @param {string} ownerID The game ID of the structure/creep requesting a dropoff.
      */
-    createDropoffRequest(resourceType, amount, ownerID) {
-        this._dropoffRequests[ownerID] = {
-            resourceType,
+    createDropoffRequest(amount, resourceType, dropoffIDs) {
+        const assignedHaulers = this.haulers.filter((h) => h.memory.dropoff && dropoffIDs.includes(h.memory.dropoff.id)).map((h) => h.id);
+        this._dropoffRequests.push({
             amount,
-            ownerID,
-            assignedHauler: null,
-        };
-    }
-
-    /**
-     * Gets an existing pickup request for the given owner, if one exists.
-     * @param {string} ownerID The game ID of the owner of the request.
-     * @returns The matching pickup request. Undefined if none exists.
-     */
-    getExistingPickupRequest(ownerID) {
-        return this._pickupRequests[ownerID];
-    }
-
-    /**
-     * Gets an existing dropoff request for the given owner, if one exists.
-     * @param {string} ownerID The game ID of the owner of the request.
-     * @returns The matching dropoff request. Undefined if none exists.
-     */
-    getExistingDropoffRequest(ownerID) {
-        return this._dropoffRequests[ownerID];
-    }
-
-    /**
-     * Runs a cleanup to ensure valid pickup requests, then returns an array of remaining pickup requests.
-     * @returns {{}[]} An array of pickup requests.
-     */
-    getPickupRequests() {
-        // Cleanup our requests by removing invalid ones and unmarking ones where the hauler has died
-        for (const owner in this._pickupRequests) {
-            if (Game.getObjectById(owner)) {
-                if (!Game.getObjectById(this._pickupRequests[owner].assignedHauler)) {
-                    this._pickupRequests[owner].assignedHauler = null;
-                }
-                continue;
-            }
-            delete this._pickupRequests[owner];
-        }
-        return Object.values(this._pickupRequests);
-    }
-
-    /**
-     * Runs a cleanup to ensure valid dropoff requests, then returns an array of remaining dropoff requests
-     * matching the resource type.
-     * @param {ResourceConstant} resourceType The type of resource.
-     * @returns {{}[]} An array of dropoff requests matching the resource type.
-     */
-    getDropoffRequests(resourceType) {
-        for (const owner in this._dropoffRequests) {
-            if (Game.getObjectById(owner)) {
-                if (!Game.getObjectById(this._pickupRequests[owner].assignedHauler)) {
-                    this._pickupRequests[owner].assignedHauler = null;
-                }
-                continue;
-            }
-            delete this._dropoffRequests[owner];
-        }
-        // Filter for the correct request type
-        return Object.values(this._dropoffRequests).filter((request) => {
-            return request.resourceType === resourceType ||
-                request.resourceType === RESOURCES_ALL;
+            resourceType,
+            dropoffIDs,
+            assignedHaulers,
         });
     }
 
     /**
-     * Marks a pickup request as active.
-     * @param {string} ownerID The ID of the object responsible for the request.
-     * @param {string} haulerID The ID of the hauler who accepted the request. 
+     * Returns all pickup requests, source requests will be filtered so that only ones who's amounts are 
+     * greater than or equal to the carry capacity of the requesting creep will be returned.
+     * @param {Creep} creep The hauler requesting the pickup request.
+     * @returns {{}[]} An array of pickup requests.
      */
-    acceptPickupRequest(ownerID, haulerID) {
-        this._pickupRequests[ownerID].assignedHauler = haulerID;
+    getPickupRequests(creep) {
+        // Add a property that tells us if this pickup point has enough haulers assigned to fill its request or not
+        this._pickupRequests.forEach((pickup) => {
+            const total = pickup.assignedHaulers.reduce((total, curr) => {
+                const hauler = Game.getObjectById(curr.id);
+                return total + (hauler ? hauler.store[pickup.resourceType] : 0);
+            }, 0);
+            pickup.hasEnough = total >= pickup.amount;
+        });
+
+        return this._pickupRequests.filter((pickup) => {
+            return !pickup.isSource || 
+                pickup.amount + (pickup.fillrate * estimateTravelTime(creep.pos, pickup.pos)) >= creep.store.getCapacity();
+        });
     }
 
     /**
-     * Marks a dropoff request as active.
-     * @param {string} ownerID The ID of the object responsible for the request.
-     * @param {string} haulerID The ID of the hauler who accepted the request. 
+     * Returns all dropoff requests matching the appropriate resource type.
+     * @param {ResourceConstant} resourceType The type of resource.
+     * @returns {{}[]} An array of dropoff requests that match the resource type.
      */
-    acceptDropoffRequest(ownerID, haulerID) {
-        this._dropoffRequests[ownerID].assignedHauler = haulerID;
+    getDropoffRequests(resourceType) {
+        // Filter for the correct request type
+        const validDropoffs = this._dropoffRequests.filter((dropoff) => {
+            return dropoff.resourceType === resourceType;
+        });
+
+        // Add a property that tells us if this dropoff point has enough haulers assigned to it to fill its request or not
+        this._dropoffRequests.forEach((dropoff) => {
+            const total = dropoff.assignedHaulers.reduce((total, curr) => {
+                const hauler = Game.getObjectById(curr.id);
+                return total + (hauler ? hauler.store[dropoff.resourceType] : 0);
+            }, 0);
+            dropoff.hasEnough = total >= dropoff.amount;
+        });
+
+        // If we don't have any requests, let's add the storage
+        if (!validDropoffs.length && this.room.storage) {
+            // It won't matter how much, what type, or who's assigned
+            // We will accept all haulers
+            return [{
+                amount: Infinity,
+                resourceType: resourceType,
+                dropoffIDs: [this.room.storage.id],
+                assignedHaulers: [],
+            }];
+        }
+        return validDropoffs;
     }
 
     // #endregion
