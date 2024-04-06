@@ -111,7 +111,7 @@ class HaulerManager extends CreepManager {
             creep.injectPath(path, pos);
 
             // Let's construct the object we want to store in memory
-            // We only care about the dropoff point we selected, plus the amount and resourceType
+            // We only care about the dropoff ID we selected, plus the type and amount
             return {
                 amount: dropoff.amount,
                 resourceType: dropoff.resourceType,
@@ -216,9 +216,10 @@ class HaulerManager extends CreepManager {
             creep.injectPath(path, pickup.pos);
 
             // Let's construct the object we want to store in memory
-            // We only care about the pickup point and amount
+            // We only care about the pickup point, type, and amount
             return {
                 amount: pickup.amount,
+                resourceType: pickup.resourceType,
                 pos: pickup.pos,
             };
         }
@@ -246,18 +247,17 @@ class HaulerManager extends CreepManager {
 
             // Pickup!
             if (creep.pos.getRangeTo(targetPos) <= 1) {
-
                 // Pickup dropped resources first
-                const dropped = pickupsAtLocation.find((p) => p.type === LOOK_RESOURCES).resource;
+                const dropped = pickupsAtLocation.find((p) => p.type === LOOK_RESOURCES);
                 if (dropped) {
-                    creep.pickup(dropped);
+                    creep.pickup(dropped.resource);
                     return false;
                 }
 
                 // Then withdraw
-                const store = pickupsAtLocation.find((p) => p[p.type].store[pickup.resourceType]);
-                if (store) {
-                    creep.withdraw(store, pickup.resourceType);
+                const storeObject = pickupsAtLocation.find((p) => p[p.type].store[pickup.resourceType]);
+                if (storeObject) {
+                    creep.withdraw(storeObject[storeObject.type], pickup.resourceType);
                     return false;
                 }
 
