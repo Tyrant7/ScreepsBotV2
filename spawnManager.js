@@ -324,10 +324,7 @@ class UsageSpawnHandler extends SpawnHandler {
         }
 
         // First figure out how much energy it will take to build our desired structures
-        // (not roads or containers, those are handled by our productionSpawnHandler)
-        const energyForThisRoom = roomInfo.constructionSites.filter(site => {
-            return site.structureType !== STRUCTURE_ROAD && site.structureType !== STRUCTURE_CONTAINER;
-        }).reduce((total, curr) => {
+        const energyForThisRoom = roomInfo.constructionSites.reduce((total, curr) => {
             return total + curr.progressTotal - curr.progress;
         }, 0);
 
