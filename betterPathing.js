@@ -164,16 +164,16 @@ Creep.prototype.requestShove = function() {
     const shoveTarget = this.memory._shoveTarget;
     const scoredSpaces = adjacentSpaces.map((space) => {
         return {
-             // Discourage moving to spaces with creeps -> arbitrarily equivalent to 3 distance
-             // Tested to be a decent value
-            score: space.lookFor(LOOK_CREEPS)[0] ? 3 : 0 +
+             // Discourage moving to spaces with creeps 
+            score: (space.lookFor(LOOK_CREEPS)[0] ? 1 : 0) + (
      
             // If we have a target, let's move towards them, but limit the range to a minimum of 1
             // since we don't necessarily want to be pushed directly into our target most of the time
             // If we don't have a target, let's assign a random weight to this position
             shoveTarget 
                 ? Math.max(space.getRangeTo(shoveTarget.x, shoveTarget.y), 1)
-                : Math.random(),
+                : Math.random()
+            ),
 
             pos: space,
         };

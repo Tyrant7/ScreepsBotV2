@@ -23,7 +23,7 @@ global.DEBUG = {
     drawOverlay: true,
     drawRemoteOwnership: false,
     drawContainerOverlay: false,
-    drawTrafficArrows: false,
+    drawTrafficArrows: true,
 
     trackCPUUsage: true,
     trackRCLProgress: true,
