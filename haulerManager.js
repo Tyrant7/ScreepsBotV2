@@ -107,6 +107,7 @@ class HaulerManager extends CreepManager {
         }
 
         function acceptOrder(dropoff, pos, path) {
+            roomInfo.acceptDropoffRequest(dropoff.requestID, creep.id);
             dropoff.assignedHaulers.push(creep.id);
             creep.injectPath(path, pos);
 
@@ -212,7 +213,7 @@ class HaulerManager extends CreepManager {
         }
        
         function acceptOrder(pickup, path) {
-            pickup.assignedHaulers.push(creep.id);
+            roomInfo.acceptPickupRequest(pickup.requestID, creep.id);
             creep.injectPath(path, pickup.pos);
 
             // Let's construct the object we want to store in memory

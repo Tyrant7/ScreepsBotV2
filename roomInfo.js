@@ -294,6 +294,7 @@ class RoomInfo {
                 h.memory.pickup.pos.roomName === pos.roomName;
         }).map((h) => h.id);
         this._pickupRequests.push({
+            requestID: this._pickupRequests.length,
             amount,
             resourceType,
             fillrate,
@@ -313,6 +314,7 @@ class RoomInfo {
     createDropoffRequest(amount, resourceType, dropoffIDs) {
         const assignedHaulers = this.haulers.filter((h) => h.memory.dropoff && dropoffIDs.includes(h.memory.dropoff.id)).map((h) => h.id);
         this._dropoffRequests.push({
+            requestID: this._dropoffRequests.length,
             amount,
             resourceType,
             dropoffIDs,
@@ -376,6 +378,30 @@ class RoomInfo {
             }];
         }
         return validDropoffs;
+    }
+
+    /**
+     * Adds a hauler to the matching pickup request.
+     * @param {string} requestID The ID of the request.
+     * @param {string} haulerID The ID of the hauler to add.
+     */
+    acceptPickupRequest(requestID, haulerID) {
+        const request = this._pickupRequests.find((r) => r.requestID === requestID);
+        if (request) {
+            request.assignedHaulers.push(haulerID);
+        }
+    }
+
+    /**
+     * Adds a hauler to the matching dropoff request.
+     * @param {string} requestID The ID of the dropoff request.
+     * @param {string} haulerID The ID of the hauler to add.
+     */
+    acceptDropoffRequest(requestID, haulerID) {
+        const request = this._dropoffRequests.find((r) => r.requestID === requestID);
+        if (request) {
+            request.assignedHaulers.push(haulerID);
+        }
     }
 
     // #endregion
