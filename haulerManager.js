@@ -237,8 +237,9 @@ class HaulerManager extends CreepManager {
             // Ensure that there's still resources to pickup at our point
             const targetPos = new RoomPosition(pickup.pos.x, pickup.pos.y, pickup.pos.roomName);
             const pickupsAtLocation = targetPos.look().filter((look) => {
-                return (look[look.type].store && look[look.type].store[pickup.resourceType])
-                    || (look.type === LOOK_RESOURCES && look.resource.amount);
+                return (look.structure && look[look.type].store && look[look.type].store[pickup.resourceType])
+                // Filter out amounts less than some small margin to ensure that creeps don't attempt to pickup the same energy
+                    || (look.type === LOOK_RESOURCES && look.resource.amount > 50);
             });
             if (!pickupsAtLocation.length) {
                 delete creep.memory.pickup;

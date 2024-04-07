@@ -100,15 +100,8 @@ class ProductionSpawnHandler extends SpawnHandler {
         let wantedMiners = roomInfo.sources.length;
         let wantedReservers = 0;
         let wantedCarry = roomInfo.getMaxIncome();
+        let wantedBuilderWork = 0;
         let reservedRooms = new Set();
-
-        // Calculate builder need
-        const energyForBuilds = roomInfo.constructionSites.filter(site => {
-            return site.structureType === STRUCTURE_ROAD || site.structureType === STRUCTURE_CONTAINER;
-        }).reduce((total, curr) => {
-            return total + curr.progressTotal - curr.progress;
-        }, 0);
-        let wantedBuilderWork = Math.ceil(energyForBuilds / WORK_TO_BUILD_RATIO);
 
         const nextSpawn = checkIfSpawn();
         if (nextSpawn) {
