@@ -35,7 +35,7 @@ global.DEBUG = {
     logRemoteDropping: true,
     replanRemotesOnReload: false,
 
-    runProfiler: false,
+    runProfiler: true,
 };
 global.RELOAD = true;
 

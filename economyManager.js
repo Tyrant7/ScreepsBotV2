@@ -30,7 +30,6 @@ class EconomyManager {
         // Validate our base
         const base = Memory.bases[roomInfo.room.name];
         if (!base) {
-            console.log("asda");
             return;
         }
 

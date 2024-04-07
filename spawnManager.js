@@ -204,7 +204,7 @@ class UsageSpawnHandler extends SpawnHandler {
     trySpawnUpgrader(roomInfo) {
 
         // Special upgraders for starting out
-        if (roomInfo.room.energyCapacityAvailable <= SPAWN_ENERGY_START) {
+        if (roomInfo.room.energyCapacityAvailable <= 550) {
             return creepMaker.makeMiniUpgrader();
         }
         
