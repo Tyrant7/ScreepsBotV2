@@ -202,11 +202,6 @@ class UsageSpawnHandler extends SpawnHandler {
     //#region Spawning
 
     trySpawnUpgrader(roomInfo) {
-
-        // Special upgraders for starting out
-        if (roomInfo.room.energyCapacityAvailable <= 550) {
-            return creepMaker.makeMiniUpgrader();
-        }
         
         /**
         * Estimates the needed amount of upgraders in levels
@@ -243,6 +238,17 @@ class UsageSpawnHandler extends SpawnHandler {
         const estimatedIncome = remoteUtility.getRemotePlans(roomInfo.room.name).reduce((total, curr) => {
             return total + (curr.active ? curr.score : 0);
         }, 0) + roomInfo.getMaxIncome();
+
+        // Special upgraders for starting out
+        if (roomInfo.room.energyCapacityAvailable <= 550) {
+            const use = roomInfo.upgraders.reduce((total, curr) => {
+                return total + curr.body.filter((p) => p.type === WORK).length;
+            }, 0) * UPGRADE_CONTROLLER_POWER;
+            if (use >= roomInfo.getMaxIncome()) {
+                return;
+            }
+            return creepMaker.makeMiniUpgrader();
+        }
 
         // If we're RCL 8, there's a limit of how much we can upgrade
         const isMaxRCL = roomInfo.room.controller.level === 8;
