@@ -8,6 +8,22 @@ class ColonyConstructionManager {
         if (roomInfo.mineral) {
             this.placeMineralContainer(roomInfo.mineral);
         }
+
+        if (RELOAD) {
+            // Let's regenerate our costmatrix for our main room for creeps using the better pathing system
+            const roomMatrix = new PathFinder.CostMatrix();
+            
+            // Set all containers to 4 weight to discourage moving through them unless it's more efficient
+            const minerContainers = Memory.bases[roomInfo.room.name].minerContainers
+            for (const key in minerContainers) {
+                roomMatrix.set(minerContainers[key].x, minerContainers[key].y, 4);
+            }
+            const mineralContainers = Memory.bases[roomInfo.room.name].mineralContainers;
+            for (const key in mineralContainers) {
+                roomMatrix.set(mineralContainers[key].x, mineralContainers[key].y, 4);
+            }
+            betterPathing.cacheMatrix(roomMatrix, CONSTANTS.pathSets.default, roomInfo.room.name);
+        }
     }
 
     placeUpgraderContainer(roomInfo) {

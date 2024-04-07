@@ -11,7 +11,7 @@ module.exports = {
         mineralMiner: "mineral_miner",
     },
     pathSets: {
-        remote: "remote",
+        default: "default",
     },
     maxHaulerLevel: 16,
     maxUpgraderLevel: 9,

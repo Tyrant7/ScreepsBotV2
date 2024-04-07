@@ -85,10 +85,10 @@ class RemoteManager {
                     }
                     matricesByRoom[road.roomName].set(road.x, road.y, 1);
                 }
-                matricesByRoom[plan.container.roomName].set(plan.container.x, plan.container.y, 2);
+                matricesByRoom[plan.container.roomName].set(plan.container.x, plan.container.y, 4);
             }
             for (const roomName in matricesByRoom) {
-                betterPathing.cacheMatrix(matricesByRoom[roomName], CONSTANTS.pathSets.remote, roomName);
+                betterPathing.cacheMatrix(matricesByRoom[roomName], CONSTANTS.pathSets.default, roomName);
             }
         }
 

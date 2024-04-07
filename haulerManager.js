@@ -68,7 +68,7 @@ class HaulerManager extends CreepManager {
         while (goals.length) {
             // Let's get the closest dropoff point by path
             const closestGoalAndPath = creep.betterFindClosestByPath(goals, {
-                pathSet: CONSTANTS.pathSets.remote
+                pathSet: CONSTANTS.pathSets.default,
             });
 
             if (!closestGoalAndPath) {
@@ -138,7 +138,7 @@ class HaulerManager extends CreepManager {
             // Otherwise, move
             else {
                 creep.moveTo(target, {
-                    pathSet: CONSTANTS.pathSets.remote,
+                    pathSet: CONSTANTS.pathSets.default,
                 });
             }
             return false;
@@ -176,7 +176,7 @@ class HaulerManager extends CreepManager {
 
             // Path to closest goal
             const closestPickupAndPath = creep.betterFindClosestByPath(goals, {
-                pathSet: CONSTANTS.pathSets.remote,
+                pathSet: CONSTANTS.pathSets.default,
             });
             if (!closestPickupAndPath) {
                 creep.say("No pick");
@@ -268,7 +268,7 @@ class HaulerManager extends CreepManager {
             }
             else {
                 creep.moveTo(targetPos, {
-                    pathSet: CONSTANTS.pathSets.remote,
+                    pathSet: CONSTANTS.pathSets.default,
                 });
             }
             return false;
