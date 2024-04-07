@@ -203,6 +203,11 @@ class UsageSpawnHandler extends SpawnHandler {
 
     trySpawnUpgrader(roomInfo) {
         
+        // We won't have enough spaces to support an additional
+        if (roomInfo.upgraders.length >= CONSTANTS.maxUpgraders) {
+            return;
+        }
+
         /**
         * Estimates the needed amount of upgraders in levels
         * to use as close to the required amount of energy as possible.
