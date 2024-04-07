@@ -42,20 +42,12 @@ class UpgraderManager extends CreepManager {
                 if (creep.store[RESOURCE_ENERGY] <= energyUsage) {
                     const container = creep.room.lookForAt(LOOK_STRUCTURES, upgraderContainerPos.x, upgraderContainerPos.y).find(
                         (s) => s.structureType === STRUCTURE_CONTAINER);
-                    if (container) {
-                        if (container.store[RESOURCE_ENERGY]) {
-                            creep.withdraw(container, RESOURCE_ENERGY);
-                        }
-
-                        // Request energy for our container
-                        roomInfo.createDropoffRequest(
-                            container.store.getFreeCapacity(),
-                            RESOURCE_ENERGY,
-                            [container.id],
-                        );
+                    if (container && container.store[RESOURCE_ENERGY]) {
+                        creep.withdraw(container, RESOURCE_ENERGY);
                     }
                     else {
                         // Request energy for ourself, if our container doesn't exist yet
+                        // Orders for the container itself will be handled by the basic requester
                         roomInfo.createDropoffRequest(
                             creep.store.getFreeCapacity(),
                             RESOURCE_ENERGY,

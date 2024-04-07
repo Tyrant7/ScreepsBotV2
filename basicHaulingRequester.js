@@ -26,6 +26,15 @@ class BasicHaulingRequester {
                 [spawnStructure.id],
             );
         }
+        const upgraderContainer = roomInfo.getUpgraderContainer();
+        if (upgraderContainer) {
+            // Request energy for our container
+            roomInfo.createDropoffRequest(
+                upgraderContainer.store.getFreeCapacity(),
+                RESOURCE_ENERGY,
+                [upgraderContainer.id],
+            );
+        }
 
         const base = Memory.bases[roomInfo.room.name];
         for (const sourceID in base.minerContainers) {
