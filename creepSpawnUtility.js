@@ -12,4 +12,6 @@ module.exports = {
             return !c.ticksToLive || this.getSpawnTime(c.body) <= c.ticksToLive;
         });
     },
+
+    BREAKPOINTS_EARLYGAME: 550,
 };

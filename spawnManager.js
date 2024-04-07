@@ -240,7 +240,7 @@ class UsageSpawnHandler extends SpawnHandler {
         }, 0) + roomInfo.getMaxIncome();
 
         // Special upgraders for starting out
-        if (roomInfo.room.energyCapacityAvailable <= 550) {
+        if (roomInfo.room.energyCapacityAvailable <= creepSpawnUtility.BREAKPOINTS_EARLYGAME) {
             const use = roomInfo.upgraders.reduce((total, curr) => {
                 return total + curr.body.filter((p) => p.type === WORK).length;
             }, 0) * UPGRADE_CONTROLLER_POWER;
@@ -351,7 +351,8 @@ class UsageSpawnHandler extends SpawnHandler {
     }
 
     trySpawnMineralMiner(roomInfo) {
-        if (roomInfo.mineralMiners.length) {
+        if (roomInfo.mineralMiners.length ||
+            !roomInfo.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_EXTRACTOR })) {
             return;
         }
         return creepMaker.makeMineralMiner(CONSTANTS.maxMineralMinerLevel, roomInfo.room.energyCapacityAvailable);
