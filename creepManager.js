@@ -35,16 +35,11 @@ class CreepManager {
                         && r.amount >= creep.store.getCapacity(RESOURCE_ENERGY)
                     }));
 
-                    // We can allow ourselves to target planted haulers
-                    sources.push(...creep.room.find(FIND_MY_CREEPS, { 
-                        filter: (c) => c.memory.openPull && c.memory.planted
-                    }));
-
                     // Storage
                     if (creep.room.storage && creep.room.storage.store[RESOURCE_ENERGY] > creep.store.getCapacity()) {
                         sources.push(creep.room.storage);
                     }
-                    else {                        
+                    else if (creep.room.name !== creep.memory.home) {                        
                         // Let's also add sources, if we can mine and we're not in our a base
                         if (creep.body.find((p) => p.type === WORK)) {
                             sources.push(...creep.room.find(FIND_SOURCES, { filter: (s) => s.energy > 0 }));
