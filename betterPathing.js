@@ -171,7 +171,7 @@ Creep.prototype.requestShove = function() {
             // since we don't necessarily want to be pushed directly into our target most of the time
             // If we don't have a target, let's assign a random weight to this position
             shoveTarget 
-                ? Math.max(space.getRangeTo(shoveTarget.x, shoveTarget.y) * 2, 1)
+                ? Math.max(space.getRangeTo(shoveTarget.x, shoveTarget.y), 1) * 2
                 : Math.random()
             ),
 
