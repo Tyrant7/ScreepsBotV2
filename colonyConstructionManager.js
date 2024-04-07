@@ -5,7 +5,7 @@ class ColonyConstructionManager {
         roomInfo.sources.forEach((source) => {
             this.placeMinerContainer(source);
         });
-        if (roomInfo.mineral) {
+        if (roomInfo.mineral && roomInfo.room.controller.level >= 6) {
             this.placeMineralContainer(roomInfo.mineral);
         }
 
