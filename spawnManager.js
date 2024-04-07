@@ -352,7 +352,7 @@ class UsageSpawnHandler extends SpawnHandler {
 
     trySpawnMineralMiner(roomInfo) {
         if (roomInfo.mineralMiners.length ||
-            !roomInfo.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_EXTRACTOR })) {
+            !roomInfo.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_EXTRACTOR }).length) {
             return;
         }
         return creepMaker.makeMineralMiner(CONSTANTS.maxMineralMinerLevel, roomInfo.room.energyCapacityAvailable);
