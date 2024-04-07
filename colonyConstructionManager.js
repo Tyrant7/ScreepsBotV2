@@ -11,7 +11,7 @@ class ColonyConstructionManager {
 
         if (RELOAD) {
             // Let's regenerate our costmatrix for our main room for creeps using the better pathing system
-            const roomMatrix = new PathFinder.CostMatrix();
+            const roomMatrix =betterPathing.generateDefaultCostMatrix(roomInfo.room.name);
             
             // Set all containers to 4 weight to discourage moving through them unless it's more efficient
             const minerContainers = Memory.bases[roomInfo.room.name].minerContainers
