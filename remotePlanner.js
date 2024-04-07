@@ -51,14 +51,14 @@ class RemotePlanner {
             }
         }
 
-        // Let's plan each route back to our storage
+        // Let's plan each route back to our base's core
         // As we do this, let's build up a few CostMatrix's of planned roads 
         // to encourage remotes to combine roads where they can
         // The very first road position can be used as the container position
         const remoteMatrices = this.initializeRemoteMatrices(roomInfo, potentialRemoteRooms);
         for (const remote of remotes) {         
-            const storage = roomInfo.room.storage;
-            const roads = this.planRoads(remote.source.pos, storage.pos, remoteMatrices);
+            const startPoint = roomInfo.core;
+            const roads = this.planRoads(remote.source.pos, startPoint, remoteMatrices);
             const container = roads.shift();
             
             remote.roads = roads;
@@ -66,7 +66,7 @@ class RemotePlanner {
 
 
             // We can also easily figure out how much CARRY we'll need to support the income of each source
-            // Since we plan roads all the way until the storage, our travel distance is simply our number of roads
+            // Since we plan roads all the way until the core, our travel distance is simply our number of roads
             // Each source gives 10 energy per tick, and hauler is empty on the way back
             // Therefore, 20 * distance / CARRY_CAPACITY
             remote.neededCarry = Math.ceil(20 * roads.length / CARRY_CAPACITY);

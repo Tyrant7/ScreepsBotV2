@@ -42,6 +42,10 @@ class RoomInfo {
             }
         });
 
+        // Used for planning remotes and hauler orders
+        // (temporarily hardcoded)
+        this.core = new RoomPosition(33, 10, this.room.name);
+
         this.spawns = this.room.find(FIND_MY_SPAWNS);
         this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES);
 
@@ -330,7 +334,9 @@ class RoomInfo {
 
         return this._pickupRequests.filter((pickup) => {
             return !pickup.isSource || 
-                pickup.amount + (pickup.fillrate * estimateTravelTime(creep.pos, pickup.pos)) >= creep.store.getCapacity();
+                // Using our core as our distance since we don't want further haulers accepting the orders
+                // before earlier because the further ones see there as being more energy than the closer ones
+                pickup.amount + (pickup.fillrate * estimateTravelTime(this.core, pickup.pos)) >= creep.store.getCapacity();
         });
     }
 

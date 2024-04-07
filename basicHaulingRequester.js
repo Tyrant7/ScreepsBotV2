@@ -55,6 +55,9 @@ class BasicHaulingRequester {
         importantRooms.add(roomInfo.room.name);
         const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
         for (const remote of remotes) {
+            if (!Game.rooms[remote.room]) {
+                continue;
+            }
             const containerPos = new RoomPosition(remote.container.x, remote.container.y, remote.container.roomName);
             const container = containerPos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER);
             roomInfo.createPickupRequest(
