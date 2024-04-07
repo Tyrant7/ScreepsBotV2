@@ -102,10 +102,11 @@ Creep.prototype.move = function(direction) {
     moveRegistry[this.name] = true;
 
     // Do our ordinary move
-    this.wrappedMove(direction);
-
-    // If there's a creep standing where we want to go, let's request a shove
-    this.shoveIfNecessary(utility.getPosInDirection(this.pos, direction));
+    const intentResult = this.wrappedMove(direction);
+    if (intentResult === OK) {
+        // If there's a creep standing where we want to go, let's request a shove
+        this.shoveIfNecessary(utility.getPosInDirection(this.pos, direction));
+    }
 }
 Creep.prototype.shoveIfNecessary = function(targetPos) {
     if (!targetPos) {
@@ -163,9 +164,10 @@ Creep.prototype.requestShove = function() {
 
     const shoveTarget = this.memory._shoveTarget;
     const scoredSpaces = adjacentSpaces.map((space) => {
+        const otherCreep = space.lookFor(LOOK_CREEPS)[0];
         return {
              // Discourage moving to spaces with creeps 
-            score: (space.lookFor(LOOK_CREEPS)[0] ? 1 : 0) + (
+            score: (otherCreep ? moveRegistry[otherCreep.name] ? 1 : 3: 0) + (
      
             // If we have a target, let's move towards them, but limit the range to a minimum of 1
             // since we don't necessarily want to be pushed directly into our target most of the time
