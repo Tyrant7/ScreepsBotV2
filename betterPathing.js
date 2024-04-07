@@ -89,10 +89,10 @@ Creep.prototype.betterMoveTo = function(target, options) {
         }
     }
     // Save our move data
-    this.memory._shoveTarget = target;
     this.memory._move = {
         dest: target,
         path: path,
+        range: options.range,
     };
 }
 Creep.prototype.wrappedMove = Creep.prototype.move;
@@ -162,18 +162,18 @@ Creep.prototype.requestShove = function() {
         return;
     }
 
-    const shoveTarget = this.memory._shoveTarget;
+    const shoveTarget = this.memory._move;
     const scoredSpaces = adjacentSpaces.map((space) => {
         const otherCreep = space.lookFor(LOOK_CREEPS)[0];
         return {
              // Discourage moving to spaces with creeps 
-            score: (otherCreep ? moveRegistry[otherCreep.name] ? 1 : 3: 0) + (
+            score: (otherCreep ? moveRegistry[otherCreep.name] ? 3 : 1: 0) + (
      
-            // If we have a target, let's move towards them, but limit the range to a minimum of 1
+            // If we have a target, let's move towards them, but limit the range to a minimum our movement range
             // since we don't necessarily want to be pushed directly into our target most of the time
             // If we don't have a target, let's assign a random weight to this position
             shoveTarget 
-                ? Math.max(space.getRangeTo(shoveTarget.x, shoveTarget.y), 1) * 2
+                ? Math.max(space.getRangeTo(shoveTarget.dest.x, shoveTarget.dest.y), shoveTarget.range) * 2
                 : Math.random()
             ),
 
@@ -216,7 +216,6 @@ Creep.prototype.betterFindClosestByPath = function(goals, options = {}) {
     };
 }
 Creep.prototype.injectPath = function(path, target) {
-    this.memory._shoveTarget = target;
     this.memory._move = {
         dest: target,
         path: utility.serializePath(path),
