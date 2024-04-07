@@ -44,6 +44,10 @@ class RoomInfo {
 
         // Used for planning remotes and hauler orders
         // (temporarily hardcoded)
+        // TODO //
+        // Dynamically calculate this
+        // Start by using a flag or something
+        // Then have the base planner eventually determine this
         this.core = new RoomPosition(33, 10, this.room.name);
 
         this.spawns = this.room.find(FIND_MY_SPAWNS);
