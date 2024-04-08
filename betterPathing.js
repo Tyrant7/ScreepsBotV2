@@ -452,7 +452,8 @@ const matrixHandler = {
     
         // Simply avoid unwalkable structures + construction sites
         room.find(FIND_STRUCTURES).concat(room.find(FIND_CONSTRUCTION_SITES)).forEach((s) => {
-            if (s.structureType === STRUCTURE_ROAD) {
+            // Don't count road sites as roads
+            if (s.structureType === STRUCTURE_ROAD && s instanceof Structure) {
                 matrix.set(s.pos.x, s.pos.y, 1);
             }
             else if (s.structureType !== STRUCTURE_CONTAINER &&
