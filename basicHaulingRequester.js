@@ -36,10 +36,10 @@ class BasicHaulingRequester {
             );
         }
 
+        // Add miner containers for our base
         const base = Memory.bases[roomInfo.room.name];
         for (const sourceID in base.minerContainers) {
             const containerPos = base.minerContainers[sourceID];
-            const realPos = new RoomPosition(containerPos.x, containerPos.y, containerPos.roomName);
             const container = containerPos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER);
             roomInfo.createPickupRequest(
                 container ? container.store[RESOURCE_ENERGY] : 0,
@@ -73,9 +73,6 @@ class BasicHaulingRequester {
         // Then, for each remote, let's search and add all dropped resources
         // Dropped energy should combine automatically with the container's request if it's on the same time
         for (const remoteRoom of importantRooms) {
-            if (!Game.rooms[remoteRoom]) {
-                continue;
-            }
             const droppedResources = Game.rooms[remoteRoom].find(FIND_DROPPED_RESOURCES);
             for (const dropped of droppedResources) {
                 roomInfo.createPickupRequest(
