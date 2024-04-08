@@ -331,9 +331,9 @@ class RoomInfo {
     getPickupRequests(creep) {
         // Add a property that tells us if this pickup point has enough haulers assigned to fill its request or not
         this._pickupRequests.forEach((pickup) => {
-            const total = pickup.assignedHaulers.reduce((total, curr) => {
-                const hauler = Game.getObjectById(curr.id);
-                return total + (hauler ? hauler.store[pickup.resourceType] : 0);
+            const total = pickup.assignedHaulers.reduce((total, currID) => {
+                const hauler = Game.getObjectById(currID);
+                return total + (hauler ? hauler.store.getFreeCapacity() : 0);
             }, 0);
             pickup.hasEnough = total >= pickup.amount;
         });
@@ -359,8 +359,8 @@ class RoomInfo {
 
         // Add a property that tells us if this dropoff point has enough haulers assigned to it to fill its request or not
         this._dropoffRequests.forEach((dropoff) => {
-            const total = dropoff.assignedHaulers.reduce((total, curr) => {
-                const hauler = Game.getObjectById(curr.id);
+            const total = dropoff.assignedHaulers.reduce((total, currID) => {
+                const hauler = Game.getObjectById(currID);
                 return total + (hauler ? hauler.store[dropoff.resourceType] : 0);
             }, 0);
             dropoff.hasEnough = total >= dropoff.amount;
@@ -388,6 +388,7 @@ class RoomInfo {
     acceptPickupRequest(requestID, haulerID) {
         const request = this._pickupRequests.find((r) => r.requestID === requestID);
         if (request) {
+            console.log(haulerID + " accepting request " + request.pos);
             request.assignedHaulers.push(haulerID);
         }
     }

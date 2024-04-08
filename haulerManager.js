@@ -91,7 +91,7 @@ class HaulerManager extends CreepManager {
                 // Let's try to steal this order from other assigned haulers if we're closer by path length
                 // For simplicity, we'll assume all haulers to be the same size
                 const assignedHauler = Game.getObjectById(assignedID);
-                if (!assignedHauler || !assignedHauler.hasShorterPath(path)) {
+                if (!assignedHauler || !assignedHauler.hasShorterPath(closestGoalAndPath.path)) {
                     // Steal the order
                     const orderInfo = acceptOrder(closestDropoff, closestDropoff.goal.pos, closestGoalAndPath.path);
 
@@ -197,7 +197,7 @@ class HaulerManager extends CreepManager {
                 // Let's try to steal this order from other assigned haulers if we're closer by path length
                 // For simplicity, we'll assume all haulers to be the same size
                 const assignedHauler = Game.getObjectById(assignedID);
-                if (!assignedHauler || !assignedHauler.hasShorterPath(path)) {
+                if (!assignedHauler || !assignedHauler.hasShorterPath(closestPickupAndPath.path)) {
                     // Steal the order
                     const orderInfo = acceptOrder(closestPickup, closestPickupAndPath.path);
 
