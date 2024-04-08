@@ -106,6 +106,9 @@ class HaulerManager extends CreepManager {
             goals = goals.filter((goal) => goal !== closestGoalAndPath.goal);
         }
 
+        // Didn't find a valid order -> alert us
+        creep.say("No drop");
+        
         function acceptOrder(dropoff, pos, path) {
             roomInfo.acceptDropoffRequest(dropoff.requestID, creep.id);
             dropoff.assignedHaulers.push(creep.id);
@@ -212,6 +215,9 @@ class HaulerManager extends CreepManager {
             goals = goals.filter((goal) => goal !== closestPickupAndPath.goal);
         }
        
+        // Didn't find a valid order -> alert us
+        creep.say("No pick");
+
         function acceptOrder(pickup, path) {
             roomInfo.acceptPickupRequest(pickup.requestID, creep.id);
             creep.injectPath(path, pickup.pos);
@@ -242,6 +248,7 @@ class HaulerManager extends CreepManager {
                 // Filter out amounts less than some small margin to ensure that creeps don't attempt to pickup the same energy
                     || (look.type === LOOK_RESOURCES && look.resource.amount > 50);
             });
+
             if (!pickupsAtLocation.length) {
                 delete creep.memory.pickup;
                 return true;
