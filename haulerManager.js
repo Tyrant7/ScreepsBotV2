@@ -48,11 +48,14 @@ class HaulerManager extends CreepManager {
 
                 // Since path length is always <= range, there is no point to searching for targets whose 
                 // haulers already have shorter paths than our range
-                const closestDropPos = dropoff.dropoffIDs.reduce((closest, curr) => {
-                    return creep.pos.getRangeTo(Game.getObjectById(curr).pos) < creep.pos.getRangeTo(Game.getObjectById(closest).pos)
-                        ? curr
-                        : closest;
-                }, dropoff.dropoffIDs[0]).pos;
+                const closestDropID = dropoff.dropoffIDs.length > 1 
+                    ? dropoff.dropoffIDs.reduce((closest, curr) => {
+                        return creep.pos.getRangeTo(Game.getObjectById(curr).pos) < creep.pos.getRangeTo(Game.getObjectById(closest).pos)
+                            ? curr
+                            : closest;
+                    }).pos
+                    : dropoff.dropoffIDs[0];
+                const closestDropPos = Game.getObjectById(closestDropID).pos;
 
                 // Get the first hauler that's further from its dropoff point than us
                 const furtherHauler = dropoff.assignedHaulers.find((id) => {
