@@ -200,6 +200,16 @@ class CreepManager {
     createTask(creep, roomInfo) {
         throw new Error("You must implement createTask()");
     }
+
+    /**
+     * Displays that this creep is idle using a 'say' intent.
+     * @param {string} message An additional message to display. Limited to 6 characters.
+     */
+    alertIdleCreep(creep, message) {
+        if (DEBUG.alertOnIdle) {
+            creep.say("💤" + message);
+        } 
+    }
 }
 
 module.exports = CreepManager;

@@ -19,6 +19,7 @@ if (!Memory.bases) {
 global.CONSTANTS = require("./constants");
 global.DEBUG = {
     logTasks: true,
+    alertOnIdle: false,
 
     drawOverlay: true,
     drawRemoteOwnership: false,
