@@ -77,9 +77,9 @@ class HaulerManager extends CreepManager {
                 pathSet: CONSTANTS.pathSets.default,
             });
 
+            // No good jobs for this creep
             if (!closestGoalAndPath) {
-                creep.say("No path");
-                return null;
+                break;
             }
 
             // If there aren't enough haulers assigned to this request, let's skip trying to steal it
@@ -186,9 +186,10 @@ class HaulerManager extends CreepManager {
             const closestPickupAndPath = creep.betterFindClosestByPath(goals, {
                 pathSet: CONSTANTS.pathSets.default,
             });
+
+            // No good jobs for this creep
             if (!closestPickupAndPath) {
-                creep.say("No path");
-                return null;
+                break;
             }
 
             // If there aren't enough haulers assigned to this request, let's skip trying to steal it
