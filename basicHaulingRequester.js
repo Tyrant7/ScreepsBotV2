@@ -16,10 +16,12 @@ class BasicHaulingRequester {
      */
     generateBasicRequests(roomInfo) {
 
-        const spawnStructures = roomInfo.room.find(FIND_STRUCTURES, { 
-            filter: (s) => s.structureType === STRUCTURE_EXTENSION || s.structureType === STRUCTURE_SPAWN 
+        const spawnStructuresAndTowers = roomInfo.room.find(FIND_STRUCTURES, { 
+            filter: (s) => s.structureType === STRUCTURE_EXTENSION 
+                || s.structureType === STRUCTURE_SPAWN 
+                || s.structureType === STRUCTURE_TOWER
         });
-        for (const spawnStructure of spawnStructures) {
+        for (const spawnStructure of spawnStructuresAndTowers) {
             roomInfo.createDropoffRequest(
                 spawnStructure.store.getFreeCapacity(RESOURCE_ENERGY),
                 RESOURCE_ENERGY,
