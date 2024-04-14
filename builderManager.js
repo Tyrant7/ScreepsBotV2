@@ -73,7 +73,7 @@ class BuilderManager extends CreepManager {
                 return true;
             }
             if (creep.build(target) === ERR_NOT_IN_RANGE) {
-                creep.moveTo(target, {
+                creep.betterMoveTo(target, {
                     range: 2,
                     pathSet: CONSTANTS.pathSets.default,
                 });

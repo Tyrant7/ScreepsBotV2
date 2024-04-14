@@ -68,7 +68,7 @@ class RepairerManager extends CreepManager {
                 creep.repair(target);
             }
             else {
-                creep.moveTo(target, {
+                creep.betterMoveTo(target, {
                     range: 3,
                     pathSet: CONSTANTS.pathSets.default,
                 });

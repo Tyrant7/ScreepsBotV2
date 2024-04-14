@@ -112,7 +112,7 @@ class CreepManager {
 
                 // Move if too far away
                 if (intentResult === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(harvest);
+                    creep.betterMoveTo(harvest);
                 }
                 return false;
             },
@@ -129,7 +129,7 @@ class CreepManager {
                 }
             
                 const pos = new RoomPosition(25, 25, data.roomName);
-                creep.moveTo(pos, {
+                creep.betterMoveTo(pos, {
                     range: 23,
                     maxRooms: data.maxRooms ? data.maxRooms : 16,
                 });

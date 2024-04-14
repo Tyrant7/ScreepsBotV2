@@ -47,7 +47,7 @@ class ReserverManager extends CreepManager {
             actionStack.push(function(creep, data) {
                 const controller = Game.getObjectById(data.controllerID);
                 if (creep.reserveController(controller) === ERR_NOT_IN_RANGE) {
-                    creep.moveTo(controller);
+                    creep.betterMoveTo(controller);
                 }
             });
             return new Task({ controllerID: controller.id }, "reserve", actionStack);

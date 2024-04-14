@@ -12,7 +12,13 @@ let registryTick = -1;
  * pathSet: string -> use a custom set of cost matrices for pathfinding, defined below the cacheMatrix() method. 
  * By default, costmatrices are generated to only include terrain and unwalkable spaces for unwalkable structures.
  */
-Creep.prototype.moveTo = function(target, options = {}) {
+Creep.prototype.betterMoveTo = function(target, options = {}) {
+
+    // Don't try to move while still spawning
+    if (this.spawning) {
+        return;
+    }
+
     if (!(target instanceof RoomPosition)) {
         target = target.pos;
         if (!target) {
@@ -30,11 +36,6 @@ Creep.prototype.moveTo = function(target, options = {}) {
 
     // Save our shove target in case we get shoved
     profiler.startSample(this.name + " moveTo");
-    this.betterMoveTo(target, options);
-    profiler.endSample(this.name + " moveTo");
-}
-Creep.prototype.betterMoveTo = function(target, options) {
-
     function newPath(creep) {
 
         // If we use a custom matrix set, it's safe to assume we know where we're pathing
@@ -76,9 +77,6 @@ Creep.prototype.betterMoveTo = function(target, options) {
     }
 
     // Don't try to move until we've spawned
-    if (this.spawning) {
-        return;
-    }
     const path = verifyPath(this);
     if (path.length) {
         const nextStep = utility.getNextStep(path, this.pos);
@@ -94,6 +92,7 @@ Creep.prototype.betterMoveTo = function(target, options) {
         path: path,
         range: options.range,
     };
+    profiler.endSample(this.name + " moveTo");
 }
 Creep.prototype.wrappedMove = Creep.prototype.move;
 Creep.prototype.move = function(direction) {

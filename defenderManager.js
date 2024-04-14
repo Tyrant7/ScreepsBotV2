@@ -52,7 +52,7 @@ class DefenderManager extends CreepManager {
             // Follow and attack our target!
             creep.say("🛡️", true);           
             if (creep.rangedAttack(target) === ERR_NOT_IN_RANGE) {
-                creep.moveTo(target, {
+                creep.betterMoveTo(target, {
                     range: 2,
                 });
             }

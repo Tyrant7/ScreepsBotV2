@@ -146,7 +146,7 @@ class HaulerManager extends CreepManager {
             }
             // Otherwise, move
             else {
-                creep.moveTo(target, {
+                creep.betterMoveTo(target, {
                     pathSet: CONSTANTS.pathSets.default,
                 });
             }
@@ -286,7 +286,7 @@ class HaulerManager extends CreepManager {
                 return true;
             }
             else {
-                creep.moveTo(targetPos, {
+                creep.betterMoveTo(targetPos, {
                     pathSet: CONSTANTS.pathSets.default,
                 });
             }

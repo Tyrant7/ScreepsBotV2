@@ -13,7 +13,7 @@ class MinerManager extends CreepManager {
             // Move to mining site
             const sitePos = new RoomPosition(miningSite.pos.x, miningSite.pos.y, miningSite.pos.roomName);
             if (creep.pos.getRangeTo(sitePos) > 0) {
-                creep.moveTo(sitePos, {
+                creep.betterMoveTo(sitePos, {
                     range: 0,
                     pathSet: CONSTANTS.pathSets.default,
                 });
