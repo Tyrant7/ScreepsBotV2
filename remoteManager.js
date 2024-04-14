@@ -69,7 +69,9 @@ class RemoteManager {
                     if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
                         continue;
                     }
-                    unwalkableMatrix.set(x, y, 255);
+                    // We'll heavily discourage searching outside of the planned path, but not forbid it
+                    // to still allow us to pickup dropped energy outside of our path set
+                    unwalkableMatrix.set(x, y, 255-1);
                 }
             }
             const plans = utility.getRemotePlans(roomInfo.room.name);
