@@ -107,7 +107,7 @@ class HaulerManager extends CreepManager {
         }
 
         // Didn't find a valid order -> alert us
-        creep.say("No drop");
+        creep.say("💤D");
         
         function acceptOrder(dropoff, pos, path) {
             roomInfo.acceptDropoffRequest(dropoff.requestID, creep.id);
@@ -216,7 +216,7 @@ class HaulerManager extends CreepManager {
         }
        
         // Didn't find a valid order -> alert us
-        creep.say("No pick");
+        creep.say("💤P");
 
         function acceptOrder(pickup, path) {
             roomInfo.acceptPickupRequest(pickup.requestID, creep.id);
