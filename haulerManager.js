@@ -99,7 +99,7 @@ class HaulerManager extends CreepManager {
                 const assignedHauler = Game.getObjectById(assignedID);
                 if (!assignedHauler.hasShorterPath(closestGoalAndPath.path)) {
                     // Steal the order
-                    const orderInfo = acceptOrder(closestDropoff, closestDropoff.goal.pos, closestGoalAndPath.path);
+                    const orderInfo = acceptOrder(closestDropoff, closestDropoff.goal, closestGoalAndPath.path);
 
                     // Give a new task recursively for the other hauler
                     delete assignedHauler.memory.dropoff;
