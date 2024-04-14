@@ -78,8 +78,7 @@ class HaulerManager extends CreepManager {
             });
 
             if (!closestGoalAndPath) {
-                creep.say("No drop");
-                console.log("No dropoff request found for creep " + creep.name);
+                creep.say("No path");
                 return null;
             }
 
@@ -188,8 +187,7 @@ class HaulerManager extends CreepManager {
                 pathSet: CONSTANTS.pathSets.default,
             });
             if (!closestPickupAndPath) {
-                creep.say("No pick");
-                console.log("No pickup request found for creep " + creep.name);
+                creep.say("No path");
                 return null;
             }
 

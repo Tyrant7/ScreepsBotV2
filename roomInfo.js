@@ -378,7 +378,7 @@ class RoomInfo {
             // It won't matter how much, what type, or who's assigned
             // We will accept all haulers
             return [{
-                amount: this.room.storage.getFreeCapacity(),
+                amount: this.room.storage.store.getFreeCapacity(),
                 resourceType: resourceType,
                 dropoffIDs: [this.room.storage.id],
                 assignedHaulers: [],
