@@ -275,6 +275,9 @@ class RoomInfo {
      * @param {RoomPosition} pos The position of the resources to pickup.
      */
     createPickupRequest(amount, resourceType, fillrate, isSource, pos) {
+        if (amount === 0) {
+            return;
+        }
 
         // If a pickup request already exists for this position, let's group it
         const existingRequest = this._pickupRequests.find((request) => {
@@ -312,6 +315,9 @@ class RoomInfo {
      * Pass multiple if multiple dropoff points are acceptable (primarily for link usage).
      */
     createDropoffRequest(amount, resourceType, dropoffIDs) {
+        if (amount === 0) {
+            return;
+        }
         const assignedHaulers = this.haulers.filter((h) => h.memory.dropoff && dropoffIDs.includes(h.memory.dropoff.id)).map((h) => h.id);
         this._dropoffRequests.push({
             requestID: this._dropoffRequests.length,
@@ -331,9 +337,9 @@ class RoomInfo {
     getPickupRequests(creep) {
         // Add a property that tells us if this pickup point has enough haulers assigned to fill its request or not
         this._pickupRequests.forEach((pickup) => {
+            pickup.assignedHaulers = pickup.assignedHaulers.filter((hauler) => Game.getObjectById(hauler));
             const total = pickup.assignedHaulers.reduce((total, currID) => {
-                const hauler = Game.getObjectById(currID);
-                return total + (hauler ? hauler.store.getFreeCapacity() : 0);
+                return total + Game.getObjectById(currID).store.getFreeCapacity();
             }, 0);
             pickup.hasEnough = total >= pickup.amount;
         });
@@ -359,9 +365,10 @@ class RoomInfo {
 
         // Add a property that tells us if this dropoff point has enough haulers assigned to it to fill its request or not
         this._dropoffRequests.forEach((dropoff) => {
+            // Filter to exclude haulers that no longer exist
+            dropoff.assignedHaulers = dropoff.assignedHaulers.filter((hauler) => Game.getObjectById(hauler));
             const total = dropoff.assignedHaulers.reduce((total, currID) => {
-                const hauler = Game.getObjectById(currID);
-                return total + (hauler ? hauler.store[dropoff.resourceType] : 0);
+                return total + Game.getObjectById(currID).store[dropoff.resourceType];
             }, 0);
             dropoff.hasEnough = total >= dropoff.amount;
         });
@@ -371,7 +378,7 @@ class RoomInfo {
             // It won't matter how much, what type, or who's assigned
             // We will accept all haulers
             return [{
-                amount: Infinity,
+                amount: this.room.storage.getFreeCapacity(),
                 resourceType: resourceType,
                 dropoffIDs: [this.room.storage.id],
                 assignedHaulers: [],

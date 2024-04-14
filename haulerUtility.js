@@ -12,8 +12,4 @@ module.exports = {
         }
         return hauler.memory.pickup.id;
     },
-
-    getPathLength: function(hauler) {
-        
-    },
  };
