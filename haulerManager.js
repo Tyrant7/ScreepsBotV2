@@ -246,6 +246,13 @@ class HaulerManager extends CreepManager {
                 return true;
             }
 
+            // We won't be able to access our pickup point
+            // Let's cancel the request for now
+            if (!Game.rooms[pickup.pos.roomName]) {
+                delete creep.memory.pickup;
+                return true;
+            }
+
             // Ensure that there's still resources to pickup at our point
             const targetPos = new RoomPosition(pickup.pos.x, pickup.pos.y, pickup.pos.roomName);
             const pickupsAtLocation = targetPos.look().filter((look) => {
