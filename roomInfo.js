@@ -395,7 +395,6 @@ class RoomInfo {
     acceptPickupRequest(requestID, haulerID) {
         const request = this._pickupRequests.find((r) => r.requestID === requestID);
         if (request) {
-            console.log(haulerID + " accepting request " + request.pos);
             request.assignedHaulers.push(haulerID);
         }
     }
