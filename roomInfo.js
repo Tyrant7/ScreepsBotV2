@@ -42,16 +42,16 @@ class RoomInfo {
             }
         });
 
+        this.spawns = this.room.find(FIND_MY_SPAWNS);
+        this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES);
+
         // Used for planning remotes and hauler orders
         // (temporarily hardcoded)
         // TODO //
         // Dynamically calculate this
         // Start by using a flag or something
         // Then have the base planner eventually determine this
-        this.core = new RoomPosition(33, 10, this.room.name);
-
-        this.spawns = this.room.find(FIND_MY_SPAWNS);
-        this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES);
+        this.core = this.spawns[0].pos;
 
         this._pickupRequests = [];
         this._dropoffRequests = [];
@@ -409,6 +409,32 @@ class RoomInfo {
         if (request) {
             request.assignedHaulers.push(haulerID);
         }
+    }
+
+    /**
+     * Removes a hauler from the matching pickup request, and clear its memory.
+     * @param {string} requestID The ID of the pickup request.
+     * @param {string} haulerID The ID of the hauler to remove.
+     */
+    unassignPickup(requestID, haulerID) {
+        const request = this._pickupRequests.find((r) => r.requestID === requestID);
+        if (request) {
+            request.assignedHaulers = request.assignedHaulers.filter((id) => id !== haulerID);
+        }
+        delete Game.getObjectById(haulerID).memory.pickup;
+    }
+
+    /**
+     * Removes a hauler from the matching dropoff request, and clear its memory.
+     * @param {string} requestID The ID of the pickup request.
+     * @param {string} haulerID The ID of the hauler to remove.
+     */
+    unassignDropoff(requestID, haulerID) {
+        const request = this._dropoffRequests.find((r) => r.requestID === requestID);
+        if (request) {
+            request.assignedHaulers = request.assignedHaulers.filter((id) => id !== haulerID);
+        }
+        delete Game.getObjectById(haulerID).memory.dropoff;
     }
 
     // #endregion
