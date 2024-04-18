@@ -118,4 +118,26 @@ module.exports = {
             visuals[pos.roomName].circle(pos.x, pos.y, style);
         });
     },
+
+    visualizeCostMatrix: function(roomName, matrix) {
+        let highestValue = 0;
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                highestValue = Math.max(matrix.get(x, y), highestValue);
+            }
+        }
+        const visual = new RoomVisual(roomName);
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                const value = matrix.get(x, y);
+                visual.rect(x - 0.5, y - 0.5, 1, 1, {
+                    fill: ("#" + Math.floor(value / highestValue * 255).toString(16) + "0000"),
+                });
+                visual.text(value, x, y, {
+                    font: "0.5 monospace",
+                    opacity: 0.8,
+                });
+            }
+        }
+    },
 };
