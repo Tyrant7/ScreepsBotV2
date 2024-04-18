@@ -79,6 +79,10 @@ const creepRoleMap = {
 // Economy
 const economyManager = new EconomyManager();
 
+// Base planning
+const BasePlanner = require("./basePlanner");
+const basePlanner = new BasePlanner();
+
 // Defense
 const towerManager = new TowerManager();
 
@@ -143,6 +147,10 @@ module.exports.loop = function() {
 
         // Hauling requests
         haulingRequester.generateBasicRequests(info);
+
+
+        // DEBUG
+        basePlanner.run(info);
     }
 
     // Run creeps
