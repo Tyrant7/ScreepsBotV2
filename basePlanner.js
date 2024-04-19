@@ -12,7 +12,6 @@ class BasePlanner {
         
         if (!this.flood) {
 
-            const c = Game.cpu.getUsed();
 
 
             const terrainMatrix = matrixUtility.generateTerrainMatrix(roomInfo.room.name);
@@ -46,6 +45,9 @@ class BasePlanner {
             const newMat = matrixUtility.addMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices, exitMask, exitDistMatrix);
 
             this.flood = matrixUtility.normalizeMatrix(newMat, MAX_VALUE-1);
+
+            const c = Game.cpu.getUsed();
+
 
             this.flood = matrixUtility.generateDistanceTransform(roomInfo.room.name);
 
@@ -181,7 +183,7 @@ const matrixUtility = {
                 y: pos.y,
             };
         });
-        const fromPosMap = new Map;
+        const fromPosMap = new Map();
         for (const pos of fromPositions) {
             fromPosMap[(pos.x + 1) * 50 + pos.y] = true;
         }
