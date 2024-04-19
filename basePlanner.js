@@ -11,45 +11,74 @@ class BasePlanner {
     run(roomInfo) {
         
         if (!this.flood) {
-            const terrainMatrix = planningUtility.generateTerrainMatrix(roomInfo.room.name);
+            const c = Game.cpu.getUsed();
+
+            const terrainMatrix = matrixUtility.generateTerrainMatrix(roomInfo.room.name);
 
             const controllerMatrix = {
-                matrix: planningUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone()),
+                matrix: matrixUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone()),
                 weight: WEIGHT_CONTROLLER,
             };
             const mineralMatrix = {
-                matrix: planningUtility.floodfill(roomInfo.mineral.pos, terrainMatrix.clone()),
+                matrix: matrixUtility.floodfill(roomInfo.mineral.pos, terrainMatrix.clone()),
                 weight: WEIGHT_MINERAL,
             };
             const sourceMatrices = [];
             for (const source of roomInfo.sources) {
                 sourceMatrices.push(
                     {
-                        matrix: planningUtility.floodfill(source.pos, terrainMatrix.clone()),
+                        matrix: matrixUtility.floodfill(source.pos, terrainMatrix.clone()),
                         weight: WEIGHT_SOURCES,
                     }
                 );
             }
             const exitMask = {
-                matrix: this.getExitMask(roomInfo),
+                matrix: matrixUtility.generateExitMatrix(roomInfo.room),
                 weight: 0,
             };
             const exitDistMatrix = {
-                matrix: planningUtility.floodfill(roomInfo.room.find(FIND_EXIT), terrainMatrix.clone()),
+                matrix: matrixUtility.floodfill(roomInfo.room.find(FIND_EXIT), terrainMatrix.clone()),
                 weight: WEIGHT_EXIT_DIST,
             };
 
-            const newMat = planningUtility.addMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices, exitMask, exitDistMatrix);
+            const newMat = matrixUtility.addMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices, exitMask, exitDistMatrix);
 
-            this.flood = planningUtility.normalizeMatrix(newMat, MAX_VALUE-1);
+            this.flood = matrixUtility.normalizeMatrix(newMat, MAX_VALUE-1);
+
+            console.log("planned weights in " + (Game.cpu.getUsed() - c) + " cpu!");
         }
 
         overlay.visualizeCostMatrix(roomInfo.room.name, this.flood);
     }
+}
 
-    getExitMask(roomInfo) {
+const matrixUtility = {
+    /**
+     * Generates a cost matrix for this room, masking out all unwalkable terrain under max values. 
+     * @param {string} roomName The name of the room to generate the matrix for.
+     * @returns {PathFinder.CostMatrix} A newly created cost matrix with MAX_VALUE on all tiles containing unwalkable terrain.
+     */
+    generateTerrainMatrix: function(roomName) {
+        const matrix = new PathFinder.CostMatrix();
+        const terrain = Game.map.getRoomTerrain(roomName);
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+                    matrix.set(x, y, MAX_VALUE);
+                }
+            }
+        }
+        return matrix;
+    },
+
+    /**
+     * Generates a cost matrix that marks all tiles within 1 tile of an exit as unwalkable.
+     * @param {Room} room The room to create the matrix for.
+     * @returns {PathFinder.CostMatrix} A newly created cost matrix with MAX_VALUE on all tiles within 1 of an exit.
+     */
+    generateExitMatrix: function(room) {
         const exitMatrix = new PathFinder.CostMatrix();
-        const exits = roomInfo.room.find(FIND_EXIT);
+        const exits = room.find(FIND_EXIT);
         for (const exit of exits) {
             const neighbours = [];
             for (let x = -1; x <= 1; x++) {
@@ -68,26 +97,6 @@ class BasePlanner {
             }
         }
         return exitMatrix;
-    }
-}
-
-const planningUtility = {
-    /**
-     * Generates a cost matrix for this room, masking out all unwalkable terrain under max values. 
-     * @param {string} roomName The name of the room to generate the matrix for.
-     * @returns {PathFinder.CostMatrix} A newly created cost matrix with MAX_VALUE on all tiles containing unwalkable terrain.
-     */
-    generateTerrainMatrix: function(roomName) {
-        const matrix = new PathFinder.CostMatrix();
-        const terrain = Game.map.getRoomTerrain(roomName);
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
-                    matrix.set(x, y, MAX_VALUE);
-                }
-            }
-        }
-        return matrix;
     },
 
     /**
@@ -256,6 +265,10 @@ const planningUtility = {
         }
         return matrix;
     },
-}
+};
+
+const stampUtility = {
+    
+};
 
 module.exports = BasePlanner;
