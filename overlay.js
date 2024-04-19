@@ -15,6 +15,9 @@ const panelStyle = {
     strokeWidth: 0.35,
 };
 
+const matrixDisplayColor = "#fcba03";
+const matrixWallDisplayColor = "#fc6b03";
+
 module.exports = {
     
     addText: function(roomName, importantFigures) {
@@ -131,7 +134,8 @@ module.exports = {
             for (let y = 0; y < 50; y++) {
                 const value = matrix.get(x, y);
                 visual.rect(x - 0.5, y - 0.5, 1, 1, {
-                    fill: ("#" + Math.floor(value / highestValue * 255).toString(16) + "0000"),
+                    fill: value === 255 ? matrixWallDisplayColor : matrixDisplayColor,
+                    opacity: value / highestValue,
                 });
                 visual.text(value, x, y, {
                     font: "0.5 monospace",
