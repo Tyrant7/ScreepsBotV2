@@ -9,7 +9,7 @@ class BasePlanner {
             const terrainMatrix = planningUtility.generateTerrainMatrix(roomInfo.room.name);
 
             const mat = planningUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix);
-            this.flood = planningUtility.normalizeMatrix(mat);
+            this.flood = planningUtility.normalizeMatrix(mat, MAX_VALUE-1);
         }
 
         overlay.visualizeCostMatrix(roomInfo.room.name, this.flood);
@@ -93,7 +93,7 @@ const planningUtility = {
 
     },
 
-    normalizeMatrix: function(matrix) {
+    normalizeMatrix: function(matrix, normalizeScale) {
 
         // Find our scale
         let minValue = MAX_VALUE;
@@ -116,7 +116,7 @@ const planningUtility = {
                 const oldValue = matrix.get(x, y);
                 const newValue = scale === 0 
                     ? 0
-                    : Math.round(((oldValue - minValue) / scale) * (MAX_VALUE-1));
+                    : Math.round(((oldValue - minValue) / scale) * normalizeScale);
                 matrix.set(x, y, newValue);
             }
         }
