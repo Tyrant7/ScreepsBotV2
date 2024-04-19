@@ -10,8 +10,14 @@ class BasePlanner {
 
             const controllerMatrix = planningUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone());
             const mineralMatrix = planningUtility.floodfill(roomInfo.mineral.pos, terrainMatrix.clone());
+            const sourceMatrices = [];
+            for (const source of roomInfo.sources) {
+                sourceMatrices.push(
+                    planningUtility.floodfill(source.pos, terrainMatrix.clone())
+                );
+            }
 
-            const newMat = planningUtility.addMatrices(controllerMatrix, mineralMatrix);
+            const newMat = planningUtility.addMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices);
 
             this.flood = planningUtility.normalizeMatrix(newMat, MAX_VALUE-1);
         }
@@ -93,19 +99,22 @@ const planningUtility = {
         return matrix;
     },
 
-    addMatrices: function(matrixA, matrixB) {
-        const addRange = (MAX_VALUE-1) / 2;
-        matrixA = planningUtility.normalizeMatrix(matrixA, addRange);
-        matrixB = planningUtility.normalizeMatrix(matrixB, addRange);
+    addMatrices: function(...matrices) {
+        const addRange = (MAX_VALUE-1) / matrices.length;
+        matrices.map((matrix) => {
+            return planningUtility.normalizeMatrix(matrix, addRange);
+        });
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
-                const total = matrixA.get(x, y) + matrixB.get(x, y);
+                const total = matrices.reduce((total, curr) => {
+                    return total + curr.get(x, y);
+                }, 0);
 
-                // Arbitrarily select matrix A to perform the adding
-                matrixA.set(x, y, total);
+                // Arbitrarily select matrix 0 to perform the adding
+                matrices[0].set(x, y, total);
             }
         }
-        return matrixA;
+        return matrices[0];
     },
 
     normalizeMatrix: function(matrix, normalizeScale) {
