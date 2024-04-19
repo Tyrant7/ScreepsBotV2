@@ -5,6 +5,7 @@ const MAX_VALUE = 255;
 const WEIGHT_CONTROLLER = 1.2;
 const WEIGHT_MINERAL = 0.15;
 const WEIGHT_SOURCES = 0.88;
+const WEIGHT_EXIT_DIST = -0.5;
 
 class BasePlanner {
     run(roomInfo) {
@@ -31,10 +32,14 @@ class BasePlanner {
             }
             const exitMask = {
                 matrix: this.getExitMask(roomInfo),
-                weight: 1,
+                weight: 0,
+            };
+            const exitDistMatrix = {
+                matrix: planningUtility.floodfill(roomInfo.room.find(FIND_EXIT), terrainMatrix.clone()),
+                weight: WEIGHT_EXIT_DIST,
             };
 
-            const newMat = planningUtility.addMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices, exitMask);
+            const newMat = planningUtility.addMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices, exitMask, exitDistMatrix);
 
             this.flood = planningUtility.normalizeMatrix(newMat, MAX_VALUE-1);
         }
@@ -67,6 +72,11 @@ class BasePlanner {
 }
 
 const planningUtility = {
+    /**
+     * Generates a cost matrix for this room, masking out all unwalkable terrain under max values. 
+     * @param {string} roomName The name of the room to generate the matrix for.
+     * @returns {PathFinder.CostMatrix} A newly created cost matrix with MAX_VALUE on all tiles containing unwalkable terrain.
+     */
     generateTerrainMatrix: function(roomName) {
         const matrix = new PathFinder.CostMatrix();
         const terrain = Game.map.getRoomTerrain(roomName);
@@ -80,7 +90,19 @@ const planningUtility = {
         return matrix;
     },
 
-    floodfill: function(fromPos, matrix) {        
+    /**
+     * Performs a floodfill from an array of starting positions, 
+     * and takes into account a predefined terrain matrix.
+     * @param {RoomPosition | RoomPosition[]} fromPositions The positions to fill from.
+     * @param {PathFinder.CostMatrix} matrix The predefined matrix to fill around.
+     * @returns {PathFinder.CostMatrix} A new costmatrix where each value represents
+     * the distance to the nearest start tile.
+     */
+    floodfill: function(fromPositions, matrix) {
+        if (!(fromPositions instanceof Array)) {
+            fromPositions = [fromPositions];
+        }
+
         function getMinNeighbourScore(posX, posY) {
             let minScore = MAX_VALUE;
             for (let x = -1; x <= 1; x++) {
@@ -92,8 +114,8 @@ const planningUtility = {
                         continue;
                     }
 
-                    // If this is our starting tile, let's return zero
-                    if (newX === fromPos.x && newY === fromPos.y) {
+                    // If this is one of our starting tiles, let's return zero
+                    if (fromPositions.find((pos) => newX === pos.x && newY === pos.y)) {
                         return 0;
                     }
 
@@ -108,8 +130,12 @@ const planningUtility = {
             return minScore;
         }
 
-        const originalScore = matrix.get(fromPos.x, fromPos.y);
-        const fillQueue = [{ x: fromPos.x, y: fromPos.y }];
+        const fillQueue = fromPositions.map((pos) => {
+            return {
+                x: pos.x,
+                y: pos.y,
+            };
+        });
         while (fillQueue.length > 0) {
             const next = fillQueue.shift();
 
@@ -133,9 +159,6 @@ const planningUtility = {
                 }
             }
         }
-
-        // Adjust the score of our starting tile if it was already scored
-        matrix.set(fromPos.x, fromPos.y, originalScore);
         return matrix;
     },
 
@@ -195,6 +218,12 @@ const planningUtility = {
         return matrix;
     },
 
+    /**
+     * Normalizes a cost matrix so that its minimum value becomes zero, and its max value becomes `normalizeScale`.
+     * @param {PathFinder.CostMatrix} matrix The matrix to normalize.
+     * @param {number} normalizeScale The max value allowed in the new normalized matrix.
+     * @returns {PathFinder.CostMatrix} The normalized cost matrix.
+     */
     normalizeMatrix: function(matrix, normalizeScale) {
 
         // Find our scale
