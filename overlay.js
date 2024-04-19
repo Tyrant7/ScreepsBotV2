@@ -132,7 +132,7 @@ module.exports = {
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
                 const value = matrix.get(x, y);
-                if (value === 255) {
+                if (value === 255 || value === 0) {
                     continue;
                 }
                 visual.rect(x - 0.5, y - 0.5, 1, 1, {

@@ -11,7 +11,9 @@ class BasePlanner {
     run(roomInfo) {
         
         if (!this.flood) {
+
             const c = Game.cpu.getUsed();
+
 
             const terrainMatrix = matrixUtility.generateTerrainMatrix(roomInfo.room.name);
 
@@ -45,6 +47,8 @@ class BasePlanner {
 
             this.flood = matrixUtility.normalizeMatrix(newMat, MAX_VALUE-1);
 
+            this.flood = matrixUtility.generateDistanceTransform(roomInfo.room.name);
+
             console.log("planned weights in " + (Game.cpu.getUsed() - c) + " cpu!");
         }
 
@@ -65,6 +69,38 @@ const matrixUtility = {
             for (let y = 0; y < 50; y++) {
                 if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
                     matrix.set(x, y, MAX_VALUE);
+                }
+            }
+        }
+        return matrix;
+    },
+
+    /**
+     * Generates a cost matrix that represents the distance to the nearest terrain tile in this room.
+     * @param {string} roomName The room to generate a matrix for.
+     * @returns {PathFinder.CostMatrix} A newly created cost matrix where the value of each tile represents to distance
+     * to the nearest terrain tile.
+     */
+    generateDistanceTransform: function(roomName) {
+        let matrix = new PathFinder.CostMatrix();
+        const terrain = Game.map.getRoomTerrain(roomName);
+
+        // Do a first pass, recording the location of all terrain for our floodfill
+        const terrainPoints = [];
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+                    terrainPoints.push({ x, y });
+                }
+            }
+        }
+        matrix = this.floodfill(terrainPoints, matrix);
+
+        // Do another pass, this time setting all terrain to 0
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+                    matrix.set(x, y, 0);
                 }
             }
         }
@@ -124,7 +160,7 @@ const matrixUtility = {
                     }
 
                     // If this is one of our starting tiles, let's return zero
-                    if (fromPositions.find((pos) => newX === pos.x && newY === pos.y)) {
+                    if (fromPosMap[newX + "," + newY]) {
                         return 0;
                     }
 
@@ -145,8 +181,18 @@ const matrixUtility = {
                 y: pos.y,
             };
         });
+        const fromPosMap = new Map;
+        for (const pos of fromPositions) {
+            fromPosMap[pos.x + "," + pos.y] = true;
+        }
+        let scored = 0;
         while (fillQueue.length > 0) {
             const next = fillQueue.shift();
+
+            // We're already scored this tile and it's not one of our starting tiles
+            if (matrix.get(next.x, next.y) > 0 && scored > fromPositions.length) {
+                continue;
+            }
 
             // Score the current tile according to the min of its neighbours + 1
             const minNeighbourScore = getMinNeighbourScore(next.x, next.y);
@@ -161,12 +207,10 @@ const matrixUtility = {
                         matrix.get(newX, newY) > 0) {
                         continue;
                     }
-                    // Ensure we aren't adding the same tile multiple times
-                    if (!fillQueue.find((item) => item.x === newX && item.y === newY)) {
-                        fillQueue.push({ x: newX, y: newY });
-                    }
+                    fillQueue.push({ x: newX, y: newY });
                 }
             }
+            scored++;
         }
         return matrix;
     },
@@ -265,6 +309,28 @@ const matrixUtility = {
         }
         return matrix;
     },
+};
+
+const stamps = {
+    core: [
+        [STRUCTURE_POWER_SPAWN, STRUCTURE_OBSERVER, STRUCTURE_SPAWN],
+        [STRUCTURE_TERMINAL, undefined, STRUCTURE_FACTORY],
+        [STRUCTURE_STORAGE, STRUCTURE_NUKER, STRUCTURE_LINK],
+    ],
+
+    fastFiller: [
+        [undefined, undefined, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
+        [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_SPAWN, undefined, STRUCTURE_EXTENSION],
+        [STRUCTURE_EXTENSION, undefined, STRUCTURE_LINK, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
+        [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, undefined, undefined],
+    ],
+
+    labs: [
+        [undefined, STRUCTURE_LAB, STRUCTURE_LAB, STRUCTURE_ROAD],
+        [STRUCTURE_LAB, STRUCTURE_LAB, STRUCTURE_ROAD, STRUCTURE_LAB],
+        [STRUCTURE_LAB, STRUCTURE_ROAD, STRUCTURE_LAB, STRUCTURE_LAB],
+        [STRUCTURE_ROAD, STRUCTURE_LAB, STRUCTURE_LAB, undefined],
+    ],
 };
 
 const stampUtility = {
