@@ -15,8 +15,8 @@ const planningUtility = {
     generateTerrainMatrix: function(roomName) {
         const matrix = new PathFinder.CostMatrix();
         const terrain = Game.map.getRoomTerrain(roomName);
-        for (let x = 0; x < 49; x++) {
-            for (let y = 0; y < 49; y++) {
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
                 if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
                     matrix.set(x, y, 255);
                 }
