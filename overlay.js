@@ -16,7 +16,6 @@ const panelStyle = {
 };
 
 const matrixDisplayColor = "#fcba03";
-const matrixWallDisplayColor = "#fc6b03";
 
 module.exports = {
     
@@ -133,8 +132,11 @@ module.exports = {
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
                 const value = matrix.get(x, y);
+                if (value === 255) {
+                    continue;
+                }
                 visual.rect(x - 0.5, y - 0.5, 1, 1, {
-                    fill: value === 255 ? matrixWallDisplayColor : matrixDisplayColor,
+                    fill: matrixDisplayColor,
                     opacity: value / highestValue,
                 });
                 visual.text(value, x, y, {
