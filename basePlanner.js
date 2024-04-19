@@ -11,8 +11,7 @@ class BasePlanner {
     run(roomInfo) {
         
         if (!this.flood) {
-
-            const c = Game.cpu.getUsed();
+            const cpu = Game.cpu.getUsed();
 
 
             const terrainMatrix = matrixUtility.generateTerrainMatrix(roomInfo.room.name);
@@ -21,6 +20,7 @@ class BasePlanner {
                 matrix: matrixUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone()),
                 weight: WEIGHT_CONTROLLER,
             };
+
             const mineralMatrix = {
                 matrix: matrixUtility.floodfill(roomInfo.mineral.pos, terrainMatrix.clone()),
                 weight: WEIGHT_MINERAL,
@@ -45,11 +45,12 @@ class BasePlanner {
 
             const newMat = matrixUtility.addMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices, exitMask, exitDistMatrix);
 
-            this.flood = matrixUtility.normalizeMatrix(newMat, MAX_VALUE-1);
+            this.flood = matrixUtility.normalizeMatrix(newMat, MAX_VALUE - 1);
 
-            this.flood = matrixUtility.generateDistanceTransform(roomInfo.room.name);
+            // this.flood = matrixUtility.generateDistanceTransform(roomInfo.room.name);
 
-            console.log("planned weights in " + (Game.cpu.getUsed() - c) + " cpu!");
+            console.log("planned weights in " + (Game.cpu.getUsed() - cpu) + " cpu!");
+
         }
 
         overlay.visualizeCostMatrix(roomInfo.room.name, this.flood);
@@ -148,66 +149,40 @@ const matrixUtility = {
             fromPositions = [fromPositions];
         }
 
-        function getMinNeighbourScore(posX, posY) {
-            let minScore = MAX_VALUE;
-            for (let x = -1; x <= 1; x++) {
-                for (let y = -1; y <= 1; y++) {
-                    // Ensure valid position
-                    const newX = posX + x;
-                    const newY = posY + y;
-                    if (newX < 0 || newX > 49 || newY < 0 || newY > 49) {
-                        continue;
-                    }
-
-                    // If this is one of our starting tiles, let's return zero
-                    if (fromPosMap[(newX + 1) * 50 + newY]) {
-                        return 0;
-                    }
-
-                    // Don't include unscored tiles
-                    const score = matrix.get(newX, newY);
-                    if (score === 0) {
-                        continue;
-                    }
-                    minScore = Math.min(score, minScore);
-                }
-            }
-            return minScore;
-        }
-
-        const fillQueue = fromPositions.map((pos) => {
-            return {
-                x: pos.x,
-                y: pos.y,
-            };
-        });
-        const fromPosMap = new Map();
-        for (const pos of fromPositions) {
-            fromPosMap[(pos.x + 1) * 50 + pos.y] = true;
-        }
+        const scoredPositions = {};
+        let fillDepth = 0;
+        let fillQueue = fromPositions;
+        let nextQueue = [];
         while (fillQueue.length > 0) {
             const next = fillQueue.shift();
 
-            // We're already scored this tile and it's not one of our starting tiles
-            if (matrix.get(next.x, next.y) > 0 && !fromPosMap[(next.x + 1) * 50 + next.y]) {
-                continue;
-            }
-
-            // Score the current tile according to the min of its neighbours + 1
-            const minNeighbourScore = getMinNeighbourScore(next.x, next.y);
-            matrix.set(next.x, next.y, minNeighbourScore + 1);
+            // Score this tile based on our current depth
+            matrix.set(next.x, next.y, fillDepth);
 
             // Add all unscored neighbours
             for (let x = -1; x <= 1; x++) {
                 for (let y = -1; y <= 1; y++) {
                     const newX = next.x + x;
                     const newY = next.y + y;
-                    if (newX < 0 || newX > 49 || newY < 0 || newY > 49 ||
-                        matrix.get(newX, newY) > 0) {
+                    if (newX < 0 || newX > 49 || newY < 0 || newY > 49) {
                         continue;
                     }
-                    fillQueue.push({ x: newX, y: newY });
+
+                    // We're already marked this tile to be scored, or it's unwalkable and we should skip it
+                    if (scoredPositions[(newX + 1) * 50 + newY] || matrix.get(newX, newY) === MAX_VALUE) {
+                        continue;
+                    }
+
+                    // Mark this next tile as scored
+                    scoredPositions[(newX + 1) * 50 + newY] = true;
+                    nextQueue.push({ x: newX, y: newY });
                 }
+            }
+
+            if (fillQueue.length === 0) {
+                fillQueue = nextQueue;
+                nextQueue = [];
+                fillDepth++;
             }
         }
         return matrix;
