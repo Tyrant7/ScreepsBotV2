@@ -55,7 +55,6 @@ class RoomInfo {
 
         this._pickupRequests = [];
         this._dropoffRequests = [];
-        this.stolenOrders = [];
     }
 
     getMaxIncome() {

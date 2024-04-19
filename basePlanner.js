@@ -8,8 +8,12 @@ class BasePlanner {
         if (!this.flood) {
             const terrainMatrix = planningUtility.generateTerrainMatrix(roomInfo.room.name);
 
-            const mat = planningUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix);
-            this.flood = planningUtility.normalizeMatrix(mat, MAX_VALUE-1);
+            const controllerMatrix = planningUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone());
+            const mineralMatrix = planningUtility.floodfill(roomInfo.mineral.pos, terrainMatrix.clone());
+
+            const newMat = planningUtility.addMatrices(controllerMatrix, mineralMatrix);
+
+            this.flood = planningUtility.normalizeMatrix(newMat, MAX_VALUE-1);
         }
 
         overlay.visualizeCostMatrix(roomInfo.room.name, this.flood);
@@ -90,7 +94,18 @@ const planningUtility = {
     },
 
     addMatrices: function(matrixA, matrixB) {
+        const addRange = (MAX_VALUE-1) / 2;
+        matrixA = planningUtility.normalizeMatrix(matrixA, addRange);
+        matrixB = planningUtility.normalizeMatrix(matrixB, addRange);
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                const total = matrixA.get(x, y) + matrixB.get(x, y);
 
+                // Arbitrarily select matrix A to perform the adding
+                matrixA.set(x, y, total);
+            }
+        }
+        return matrixA;
     },
 
     normalizeMatrix: function(matrix, normalizeScale) {
