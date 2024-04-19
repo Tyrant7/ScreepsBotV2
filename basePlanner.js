@@ -2,21 +2,33 @@ const overlay = require("./overlay");
 
 const MAX_VALUE = 255;
 
+const WEIGHT_CONTROLLER = 1.5;
+const WEIGHT_MINERAL = 0.15;
+const WEIGHT_SOURCES = 0.88;
+
 class BasePlanner {
     run(roomInfo) {
         
         if (!this.flood) {
             const terrainMatrix = planningUtility.generateTerrainMatrix(roomInfo.room.name);
 
-            const controllerMatrix = planningUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone());
-            const mineralMatrix = planningUtility.floodfill(roomInfo.mineral.pos, terrainMatrix.clone());
+            const controllerMatrix = {
+                matrix: planningUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone()),
+                weight: WEIGHT_CONTROLLER,
+            };
+            const mineralMatrix = {
+                matrix: planningUtility.floodfill(roomInfo.mineral.pos, terrainMatrix.clone()),
+                weight: WEIGHT_MINERAL,
+            };
             const sourceMatrices = [];
             for (const source of roomInfo.sources) {
                 sourceMatrices.push(
-                    planningUtility.floodfill(source.pos, terrainMatrix.clone())
+                    {
+                        matrix: planningUtility.floodfill(source.pos, terrainMatrix.clone()),
+                        weight: WEIGHT_SOURCES,
+                    }
                 );
             }
-
             const newMat = planningUtility.addMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices);
 
             this.flood = planningUtility.normalizeMatrix(newMat, MAX_VALUE-1);
@@ -99,22 +111,56 @@ const planningUtility = {
         return matrix;
     },
 
-    addMatrices: function(...matrices) {
-        const addRange = (MAX_VALUE-1) / matrices.length;
-        matrices.map((matrix) => {
-            return planningUtility.normalizeMatrix(matrix, addRange);
+    /**
+     * Adds up all matrices, respecting their weights and keeping their final range within the 0-255 range.
+     * @param  {...{ matrix: PathFinder.CostMatrix, weight: number }} matrixWeightPairs Any number of matrix-and-weight objects.
+     * @returns {PathFinder.CostMatrix} A newly created costmatrix, representing the sum of the weighted values of all matrices. 
+     */
+    addMatrices: function(...matrixWeightPairs) {
+
+        // First, normalize each matrix
+        matrixWeightPairs.map((pair) => {
+            return {
+                weight: pair.weight,
+                matrix: this.normalizeMatrix(pair.matrix, MAX_VALUE - 1),
+            };
         });
+
+        // Here we'll do a soft run of our matrix creation and track our largest 
+        // and smallest values for normalization
+        let largest = 0;
+        let smallest = 255;
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
-                const total = matrices.reduce((total, curr) => {
-                    return total + curr.get(x, y);
+                // Find the sum of all matrix weights in this location, excluding max values
+                // since they are not scaled
+                const total = matrixWeightPairs.reduce((total, pair) => {
+                    if (pair.matrix.get(x, y) === MAX_VALUE) {
+                        return total;
+                    }
+                    return total + (pair.matrix.get(x, y) * pair.weight);
                 }, 0);
-
-                // Arbitrarily select matrix 0 to perform the adding
-                matrices[0].set(x, y, total);
+                largest = Math.max(total, largest);
+                smallest = Math.min(total, smallest);
             }
         }
-        return matrices[0];
+        const scale = largest - smallest;
+
+        // Now we have our scale for normalization and we can create our actual matrix,
+        // normalizing our individual values to keep them within our range as we go
+        const matrix = new PathFinder.CostMatrix();
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                const total = matrixWeightPairs.reduce((total, pair) => {
+                    return total + (pair.matrix.get(x, y) * pair.weight);
+                }, 0);
+                const normalizedValue = scale === 0 
+                    ? 0
+                    : Math.round(((total - smallest) / scale) * (MAX_VALUE - 1));
+                matrix.set(x, y, normalizedValue);
+            }
+        }
+        return matrix;
     },
 
     normalizeMatrix: function(matrix, normalizeScale) {
