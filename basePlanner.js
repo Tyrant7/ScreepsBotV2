@@ -2,7 +2,7 @@ const overlay = require("./overlay");
 
 const MAX_VALUE = 255;
 
-const WEIGHT_CONTROLLER = 1.5;
+const WEIGHT_CONTROLLER = 1.2;
 const WEIGHT_MINERAL = 0.15;
 const WEIGHT_SOURCES = 0.88;
 
@@ -152,6 +152,10 @@ const planningUtility = {
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
                 const total = matrixWeightPairs.reduce((total, pair) => {
+                    // If one matrix uses the max value, we should use max value everywhere for this tile
+                    if (pair.matrix.get(x, y) === MAX_VALUE) {
+                        return Infinity;
+                    }
                     return total + (pair.matrix.get(x, y) * pair.weight);
                 }, 0);
                 const normalizedValue = scale === 0 
