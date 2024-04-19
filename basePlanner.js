@@ -12,6 +12,7 @@ class BasePlanner {
         
         if (!this.flood) {
 
+            const c = Game.cpu.getUsed();
 
 
             const terrainMatrix = matrixUtility.generateTerrainMatrix(roomInfo.room.name);
@@ -45,9 +46,6 @@ class BasePlanner {
             const newMat = matrixUtility.addMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices, exitMask, exitDistMatrix);
 
             this.flood = matrixUtility.normalizeMatrix(newMat, MAX_VALUE-1);
-
-            const c = Game.cpu.getUsed();
-
 
             this.flood = matrixUtility.generateDistanceTransform(roomInfo.room.name);
 
@@ -187,12 +185,11 @@ const matrixUtility = {
         for (const pos of fromPositions) {
             fromPosMap[(pos.x + 1) * 50 + pos.y] = true;
         }
-        let scored = 0;
         while (fillQueue.length > 0) {
             const next = fillQueue.shift();
 
             // We're already scored this tile and it's not one of our starting tiles
-            if (matrix.get(next.x, next.y) > 0 && scored > fromPositions.length) {
+            if (matrix.get(next.x, next.y) > 0 && !fromPosMap[(next.x + 1) * 50 + next.y]) {
                 continue;
             }
 
@@ -212,7 +209,6 @@ const matrixUtility = {
                     fillQueue.push({ x: newX, y: newY });
                 }
             }
-            scored++;
         }
         return matrix;
     },
