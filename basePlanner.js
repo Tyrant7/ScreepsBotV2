@@ -29,12 +29,40 @@ class BasePlanner {
                     }
                 );
             }
-            const newMat = planningUtility.addMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices);
+            const exitMask = {
+                matrix: this.getExitMask(roomInfo),
+                weight: 1,
+            };
+
+            const newMat = planningUtility.addMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices, exitMask);
 
             this.flood = planningUtility.normalizeMatrix(newMat, MAX_VALUE-1);
         }
 
         overlay.visualizeCostMatrix(roomInfo.room.name, this.flood);
+    }
+
+    getExitMask(roomInfo) {
+        const exitMatrix = new PathFinder.CostMatrix();
+        const exits = roomInfo.room.find(FIND_EXIT);
+        for (const exit of exits) {
+            const neighbours = [];
+            for (let x = -1; x <= 1; x++) {
+                for (let y = -1; y <= 1; y++) {
+                    const newX = exit.x + x;
+                    const newY = exit.y + y;
+                    if (newX < 0 || newX > 49 || newY < 0 || newY > 49 ||
+                        exitMatrix.get(newX, newY) > 0) {
+                        continue;
+                    }
+                    neighbours.push({ x: newX, y: newY });
+                }
+            }
+            for (const neighbour of neighbours) {
+                exitMatrix.set(neighbour.x, neighbour.y, MAX_VALUE);
+            }
+        }
+        return exitMatrix;
     }
 }
 
@@ -129,7 +157,7 @@ const planningUtility = {
         // Here we'll do a soft run of our matrix creation and track our largest 
         // and smallest values for normalization
         let largest = 0;
-        let smallest = 255;
+        let smallest = MAX_VALUE;
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
                 // Find the sum of all matrix weights in this location, excluding max values
@@ -188,6 +216,9 @@ const planningUtility = {
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
                 const oldValue = matrix.get(x, y);
+                if (oldValue === MAX_VALUE) {
+                    continue;
+                }
                 const newValue = scale === 0 
                     ? 0
                     : Math.round(((oldValue - minValue) / scale) * normalizeScale);
