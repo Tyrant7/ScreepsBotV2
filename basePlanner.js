@@ -160,7 +160,7 @@ const matrixUtility = {
                     }
 
                     // If this is one of our starting tiles, let's return zero
-                    if (fromPosMap[newX + "," + newY]) {
+                    if (fromPosMap[(newX + 1) * 50 + newY]) {
                         return 0;
                     }
 
@@ -183,7 +183,7 @@ const matrixUtility = {
         });
         const fromPosMap = new Map;
         for (const pos of fromPositions) {
-            fromPosMap[pos.x + "," + pos.y] = true;
+            fromPosMap[(pos.x + 1) * 50 + pos.y] = true;
         }
         let scored = 0;
         while (fillQueue.length > 0) {
