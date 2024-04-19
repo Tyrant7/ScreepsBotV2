@@ -3,8 +3,8 @@ const overlay = require("./overlay");
 class BasePlanner {
     run(roomInfo) {
         if (!this.flood) {
-            const terrain = Game.map.getRoomTerrain(roomInfo.room.name);
-            this.flood = planningUtility.floodfill(roomInfo.room.controller.pos, terrain);
+            const terrainMatrix = planningUtility.generateTerrainMatrix(roomInfo.room.name);
+            this.flood = planningUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix);
         }
 
         overlay.visualizeCostMatrix(roomInfo.room.name, this.flood);
@@ -12,9 +12,20 @@ class BasePlanner {
 }
 
 const planningUtility = {
-    floodfill: function(fromPos, terrain) {
+    generateTerrainMatrix: function(roomName) {
         const matrix = new PathFinder.CostMatrix();
-        
+        const terrain = Game.map.getRoomTerrain(roomName);
+        for (let x = 0; x < 49; x++) {
+            for (let y = 0; y < 49; y++) {
+                if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+                    matrix.set(x, y, 255);
+                }
+            }
+        }
+        return matrix;
+    },
+
+    floodfill: function(fromPos, matrix) {        
         function getMinNeighbourScore(posX, posY) {
             let minScore = 255;
             for (let x = -1; x <= 1; x++) {
@@ -24,6 +35,11 @@ const planningUtility = {
                     const newY = posY + y;
                     if (newX < 0 || newX > 49 || newY < 0 || newY > 49) {
                         continue;
+                    }
+
+                    // If this is our starting tile, let's return zero
+                    if (newX === fromPos.x && newY === fromPos.y) {
+                        return 0;
                     }
 
                     // Don't include unscored tiles
@@ -37,25 +53,14 @@ const planningUtility = {
             return minScore;
         }
 
+        const originalScore = matrix.get(fromPos.x, fromPos.y);
         const fillQueue = [{ x: fromPos.x, y: fromPos.y }];
         while (fillQueue.length > 0) {
             const next = fillQueue.shift();
 
-            // Score the first tile to base distances off of regardless of terrain type
-            if (next.x === fromPos.x && next.y === fromPos.y) {
-                matrix.set(next.x, next.y, 1);
-            }
-            else if (terrain.get(next.x, next.y) === TERRAIN_MASK_WALL) {
-                // If the tile is a terrain tile, let's score it as the worst possible score
-                // Let's also avoid scoring through it
-                matrix.set(next.x, next.y, 255);
-                continue;
-            }
-            else {
-                // Otherwise, score the current tile according to the min of its neighbours + 1
-                const minNeighbourScore = getMinNeighbourScore(next.x, next.y);
-                matrix.set(next.x, next.y, minNeighbourScore + 1);
-            }
+            // Score the current tile according to the min of its neighbours + 1
+            const minNeighbourScore = getMinNeighbourScore(next.x, next.y);
+            matrix.set(next.x, next.y, minNeighbourScore + 1);
 
             // Add all unscored neighbours
             for (let x = -1; x <= 1; x++) {
@@ -74,11 +79,8 @@ const planningUtility = {
             }
         }
 
-        // Adjust the score of our starting tile if it was unwalkable
-        if (terrain.get(fromPos.x, fromPos.y) === TERRAIN_MASK_WALL) {
-            matrix.set(fromPos.x, fromPos.y, 255);
-        }
-
+        // Adjust the score of our starting tile if it was already scored
+        matrix.set(fromPos.x, fromPos.y, originalScore);
         return matrix;
     }
 }
