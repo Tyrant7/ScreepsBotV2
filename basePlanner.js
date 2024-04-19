@@ -1,10 +1,15 @@
 const overlay = require("./overlay");
 
+const MAX_VALUE = 255;
+
 class BasePlanner {
     run(roomInfo) {
+        
         if (!this.flood) {
             const terrainMatrix = planningUtility.generateTerrainMatrix(roomInfo.room.name);
-            this.flood = planningUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix);
+
+            const mat = planningUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix);
+            this.flood = planningUtility.normalizeMatrix(mat);
         }
 
         overlay.visualizeCostMatrix(roomInfo.room.name, this.flood);
@@ -18,7 +23,7 @@ const planningUtility = {
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
                 if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
-                    matrix.set(x, y, 255);
+                    matrix.set(x, y, MAX_VALUE);
                 }
             }
         }
@@ -27,7 +32,7 @@ const planningUtility = {
 
     floodfill: function(fromPos, matrix) {        
         function getMinNeighbourScore(posX, posY) {
-            let minScore = 255;
+            let minScore = MAX_VALUE;
             for (let x = -1; x <= 1; x++) {
                 for (let y = -1; y <= 1; y++) {
                     // Ensure valid position
@@ -82,7 +87,41 @@ const planningUtility = {
         // Adjust the score of our starting tile if it was already scored
         matrix.set(fromPos.x, fromPos.y, originalScore);
         return matrix;
-    }
+    },
+
+    addMatrices: function(matrixA, matrixB) {
+
+    },
+
+    normalizeMatrix: function(matrix) {
+
+        // Find our scale
+        let minValue = MAX_VALUE;
+        let maxValue = 0;
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                const value = matrix.get(x, y);
+                if (value === MAX_VALUE) {
+                    continue;
+                }
+                minValue = Math.min(minValue, value);
+                maxValue = Math.max(maxValue, value);
+            }
+        }
+        const scale = maxValue - minValue;
+
+        // Normalize each score based on its magnitude inside of our range
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                const oldValue = matrix.get(x, y);
+                const newValue = scale === 0 
+                    ? 0
+                    : Math.round(((oldValue - minValue) / scale) * (MAX_VALUE-1));
+                matrix.set(x, y, newValue);
+            }
+        }
+        return matrix;
+    },
 }
 
 module.exports = BasePlanner;
