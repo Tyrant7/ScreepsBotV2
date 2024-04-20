@@ -85,14 +85,14 @@ class BasePlanner {
 
     planRoads(roomInfo, corePos, roomPlan) {
         const roadPoints = roomInfo.sources
-            .concat(roomInfo.mineral)
-            .concat(roomInfo.room.controller);
+            .concat(roomInfo.room.controller)
+            .concat(roomInfo.mineral);
         
-        const goal = { pos: new RoomPosition(corePos.x, corePos.y, roomInfo.room.name), range: 1 };
         const roadMatrix = new PathFinder.CostMatrix();
         for (const point of roadPoints) {
+            const goal = { pos: point.pos, range: 2 };
             const result = PathFinder.search(
-                point.pos, goal, {
+                new RoomPosition(corePos.x, corePos.y, roomInfo.room.name), goal, {
                     plainCost: 2,
                     swampCost: 2,
                     maxRooms: 1,
