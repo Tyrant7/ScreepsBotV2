@@ -9,51 +9,58 @@ const WEIGHT_EXIT_DIST = -0.5;
 
 class BasePlanner {
     run(roomInfo) {
-        
-        if (!this.flood) {
+        if (!this.roomPlan) {
+            this.roomPlan = new PathFinder.CostMatrix();
             const cpu = Game.cpu.getUsed();
 
+            const weightMatrix = this.generateWeightMatrix(roomInfo);
+            const distanceTransform = matrixUtility.generateDistanceTransform(roomInfo.room.name);
+            
 
-            const terrainMatrix = matrixUtility.generateTerrainMatrix(roomInfo.room.name);
-
-            const controllerMatrix = {
-                matrix: matrixUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone()),
-                weight: WEIGHT_CONTROLLER,
-            };
-
-            const mineralMatrix = {
-                matrix: matrixUtility.floodfill(roomInfo.mineral.pos, terrainMatrix.clone()),
-                weight: WEIGHT_MINERAL,
-            };
-            const sourceMatrices = [];
-            for (const source of roomInfo.sources) {
-                sourceMatrices.push(
-                    {
-                        matrix: matrixUtility.floodfill(source.pos, terrainMatrix.clone()),
-                        weight: WEIGHT_SOURCES,
-                    }
-                );
-            }
-            const exitMask = {
-                matrix: matrixUtility.generateExitMatrix(roomInfo.room),
-                weight: 0,
-            };
-            const exitDistMatrix = {
-                matrix: matrixUtility.floodfill(roomInfo.room.find(FIND_EXIT), terrainMatrix.clone()),
-                weight: WEIGHT_EXIT_DIST,
-            };
-
-            const newMat = matrixUtility.addMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices, exitMask, exitDistMatrix);
-
-            this.flood = matrixUtility.normalizeMatrix(newMat, MAX_VALUE - 1);
-
-            // this.flood = matrixUtility.generateDistanceTransform(roomInfo.room.name);
 
             console.log("planned weights in " + (Game.cpu.getUsed() - cpu) + " cpu!");
 
+            this.roomPlan = distanceTransform;
+
         }
 
-        overlay.visualizeCostMatrix(roomInfo.room.name, this.flood);
+        overlay.visualizeCostMatrix(roomInfo.room.name, this.roomPlan);
+    }
+
+    generateWeightMatrix(roomInfo) {
+        const terrainMatrix = matrixUtility.generateTerrainMatrix(roomInfo.room.name);
+
+        const controllerMatrix = {
+            matrix: matrixUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone()),
+            weight: WEIGHT_CONTROLLER,
+        };
+
+        const mineralMatrix = {
+            matrix: matrixUtility.floodfill(roomInfo.mineral.pos, terrainMatrix.clone()),
+            weight: WEIGHT_MINERAL,
+        };
+        const sourceMatrices = [];
+        for (const source of roomInfo.sources) {
+            sourceMatrices.push(
+                {
+                    matrix: matrixUtility.floodfill(source.pos, terrainMatrix.clone()),
+                    weight: WEIGHT_SOURCES,
+                }
+            );
+        }
+        const exitMask = {
+            matrix: matrixUtility.generateExitMatrix(roomInfo.room),
+            weight: 0,
+        };
+        const exitDistMatrix = {
+            matrix: matrixUtility.floodfill(roomInfo.room.find(FIND_EXIT), terrainMatrix.clone()),
+            weight: WEIGHT_EXIT_DIST,
+        };
+
+        return matrixUtility.normalizeMatrix(
+            matrixUtility.addMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices, exitMask, exitDistMatrix),
+            MAX_VALUE - 1,
+        );
     }
 }
 
@@ -285,29 +292,58 @@ const matrixUtility = {
 };
 
 const stamps = {
-    core: [
-        [STRUCTURE_POWER_SPAWN, STRUCTURE_OBSERVER, STRUCTURE_SPAWN],
-        [STRUCTURE_TERMINAL, undefined, STRUCTURE_FACTORY],
-        [STRUCTURE_STORAGE, STRUCTURE_NUKER, STRUCTURE_LINK],
-    ],
+    core: {
+        layout: [
+            [STRUCTURE_POWER_SPAWN, STRUCTURE_OBSERVER, STRUCTURE_SPAWN],
+            [STRUCTURE_TERMINAL, undefined, STRUCTURE_FACTORY],
+            [STRUCTURE_STORAGE, STRUCTURE_NUKER, STRUCTURE_LINK],
+        ],
+        // Points used for validating distances around this stamp to ensure 
+        // no overlap with each other or terrain
+        // Relative to the top left corner
+        distancePoints: [
+            { x: 1, y: 1, range: 1 },
+        ],
+    },
 
-    fastFiller: [
-        [undefined, undefined, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
-        [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_SPAWN, undefined, STRUCTURE_EXTENSION],
-        [STRUCTURE_EXTENSION, undefined, STRUCTURE_LINK, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
-        [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, undefined, undefined],
-    ],
+    fastFiller: {
+        layout: [
+            [undefined, undefined, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
+            [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_SPAWN, undefined, STRUCTURE_EXTENSION],
+            [STRUCTURE_EXTENSION, undefined, STRUCTURE_CONTAINER, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
+            [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, undefined, undefined],
+        ],
+        distancePoints: [
+            { x: 3, y: 1, range: 1 },
+            { x: 1, y: 2, range: 1 },
+        ],
+    },
 
-    labs: [
-        [undefined, STRUCTURE_LAB, STRUCTURE_LAB, STRUCTURE_ROAD],
-        [STRUCTURE_LAB, STRUCTURE_LAB, STRUCTURE_ROAD, STRUCTURE_LAB],
-        [STRUCTURE_LAB, STRUCTURE_ROAD, STRUCTURE_LAB, STRUCTURE_LAB],
-        [STRUCTURE_ROAD, STRUCTURE_LAB, STRUCTURE_LAB, undefined],
-    ],
+    labs: {
+        layout: [
+            [undefined, STRUCTURE_LAB, STRUCTURE_LAB, STRUCTURE_ROAD],
+            [STRUCTURE_LAB, STRUCTURE_LAB, STRUCTURE_ROAD, STRUCTURE_LAB],
+            [STRUCTURE_LAB, STRUCTURE_ROAD, STRUCTURE_LAB, STRUCTURE_LAB],
+            [STRUCTURE_ROAD, STRUCTURE_LAB, STRUCTURE_LAB, undefined],
+        ],
+        distancePoints: [
+            { x: 2, y: 1, range: 1 },
+            { x: 1, y: 2, range: 1 },
+        ],
+    },
 };
 
 const stampUtility = {
-    
+    stampFits: function(stamp, pos, distanceTransform) {
+        for (const point of stamp.distancePoints) {
+            const newX = pos.x + point.x;
+            const newY = pos.y + point.y;
+            if (distanceTransform.get(newX, newY) <= point.range) {
+                return false;
+            }
+        }
+        return true;
+    },
 };
 
 module.exports = BasePlanner;
