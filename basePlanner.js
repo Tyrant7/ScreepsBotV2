@@ -472,6 +472,31 @@ const stampUtility = {
         }
         return planMatrix;
     },
+
+    mirrorStampVertical: function(stamp) {
+        // Deep copy our stamp to ensure the original remains unmodified
+        stamp = JSON.parse(JSON.stringify(stamp));
+        const dimensions = { x: stamp.layout[0].length, y: stamp.layout.length };
+        stamp.layout.reverse();
+        for (const p of stamp.distancePoints) {
+            p.y = dimensions.y - 1 - p.y;
+        }
+        stamp.center.y = dimensions.y - 1 - stamp.center.y;
+        return stamp;
+    },
+
+    mirrorStampHorizontal: function(stamp) {
+        stamp = JSON.parse(JSON.stringify(stamp));
+        const dimensions = { x: stamp.layout[0].length, y: stamp.layout.length };
+        for (const row of stamp.layout) {
+            row.reverse();
+        }
+        for (const p of stamp.distancePoints) {
+            p.x = dimensions.x - 1 - p.x;
+        }
+        stamp.center.x = dimensions.x - 1 - stamp.center.x;
+        return stamp;
+    }
 };
 
 module.exports = BasePlanner;
