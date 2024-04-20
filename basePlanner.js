@@ -14,7 +14,8 @@ class BasePlanner {
             const cpu = Game.cpu.getUsed();
 
             // Generate our necessary matrices for planning
-            const weightMatrix = this.generateWeightMatrix(roomInfo);
+            const terrainMatrix = matrixUtility.generateTerrainMatrix(roomInfo.room.name);
+            const weightMatrix = this.generateWeightMatrix(roomInfo, terrainMatrix);
             const distanceTransform = matrixUtility.generateDistanceTransform(roomInfo.room.name);
 
             // Let's sort all spaces by score
@@ -27,27 +28,28 @@ class BasePlanner {
             spaces.sort((a, b) => weightMatrix.get(a.x, a.y) - weightMatrix.get(b.x, b.y));
 
             // Now let's check each space in order until we find one that fits our core
+            let corePos;
             for (const space of spaces) {
                 if (stampUtility.stampFits(stamps.core, space, distanceTransform)) {
                     this.roomPlan = stampUtility.placeStamp(stamps.core, space, this.roomPlan);
-                    console.log(JSON.stringify(space));
+                    corePos = space;
                     break;
                 }
             }
 
             // Once we have our core, let's pathfind to each source, controller, and mineral in the room
             // and mark these positions for roads
-
+            const roadMatrix = this.planRoads(roomInfo, corePos, this.roomPlan);
             
+            this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, roadMatrix);
+
             console.log("planned weights in " + (Game.cpu.getUsed() - cpu) + " cpu!");
         }
 
         overlay.visualizeCostMatrix(roomInfo.room.name, this.roomPlan);
     }
 
-    generateWeightMatrix(roomInfo) {
-        const terrainMatrix = matrixUtility.generateTerrainMatrix(roomInfo.room.name);
-
+    generateWeightMatrix(roomInfo, terrainMatrix) {
         const controllerMatrix = {
             matrix: matrixUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone()),
             weight: WEIGHT_CONTROLLER,
@@ -76,9 +78,45 @@ class BasePlanner {
         };
 
         return matrixUtility.normalizeMatrix(
-            matrixUtility.addMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices, exitMask, exitDistMatrix),
+            matrixUtility.addScoreMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices, exitMask, exitDistMatrix),
             MAX_VALUE - 1,
         );
+    }
+
+    planRoads(roomInfo, corePos, roomPlan) {
+        const roadPoints = roomInfo.sources
+            .concat(roomInfo.mineral)
+            .concat(roomInfo.room.controller);
+        
+        const goal = { pos: new RoomPosition(corePos.x, corePos.y, roomInfo.room.name), range: 1 };
+        const roadMatrix = new PathFinder.CostMatrix();
+        for (const point of roadPoints) {
+            const result = PathFinder.search(
+                point.pos, goal, {
+                    plainCost: 2,
+                    swampCost: 2,
+                    maxRooms: 1,
+                    roomCallback: function(roomName) {
+
+                        // Combine our road matrix and unwalkable matrices
+                        const newMatrix = new PathFinder.CostMatrix();
+                        for (let x = 0; x < 50; x++) {
+                            for (let y = 0; y < 50; y++) {
+                                const unwalkable = (roomPlan.get(x, y) > 0 ? 255 : 0);
+                                newMatrix.set(x, y, roadMatrix.get(x, y) + unwalkable);
+                            }
+                        }
+                        return newMatrix;
+                    },
+                },
+            );
+
+            // Save these into our road matrix
+            for (const step of result.path) {
+                roadMatrix.set(step.x, step.y, 1);
+            }
+        }
+        return roadMatrix;
     }
 }
 
@@ -218,7 +256,7 @@ const matrixUtility = {
      * @param  {...{ matrix: PathFinder.CostMatrix, weight: number }} matrixWeightPairs Any number of matrix-and-weight objects.
      * @returns {PathFinder.CostMatrix} A newly created costmatrix, representing the sum of the weighted values of all matrices. 
      */
-    addMatrices: function(...matrixWeightPairs) {
+    addScoreMatrices: function(...matrixWeightPairs) {
 
         // First, normalize each matrix
         matrixWeightPairs.map((pair) => {
@@ -267,6 +305,23 @@ const matrixUtility = {
             }
         }
         return matrix;
+    },
+
+    /**
+     * Takes the highest weight of all matrices for each tile.
+     * @param  {...PathFinder.CostMatrix} matrices Any number of cost matrices to consider.
+     */
+    combineMatrices: function(...matrices) {
+        const newMatrix = new PathFinder.CostMatrix();
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                const highest = matrices.reduce((highest, curr) => {
+                    return curr.get(x, y) > highest ? curr.get(x, y) : highest;
+                }, 0);
+                newMatrix.set(x, y, highest);
+            }
+        }
+        return newMatrix;
     },
 
     /**
