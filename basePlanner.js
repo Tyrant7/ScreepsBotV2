@@ -46,7 +46,7 @@ class BasePlanner {
             let placedFillers = 0;
             for (const space of spaces) {
 
-                const stamp = stampUtility.rotateStamp(stamps.fastFiller);
+                const stamp = stampUtility.rotateStamp(stampUtility.mirrorStamp(stamps.fastFiller));
 
                 if (stampUtility.stampFits(stamp, space, distanceTransform, this.roomPlan)) {
                     this.roomPlan = stampUtility.placeStamp(stamp, space, this.roomPlan);
@@ -480,7 +480,7 @@ const stampUtility = {
         return planMatrix;
     },
 
-    mirrorStampVertical: function(stamp) {
+    mirrorStamp: function(stamp) {
         // Deep copy our stamp to ensure the original remains unmodified
         stamp = JSON.parse(JSON.stringify(stamp));
         const dimensions = { x: stamp.layout[0].length, y: stamp.layout.length };
