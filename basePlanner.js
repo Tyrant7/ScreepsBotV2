@@ -5,7 +5,7 @@ const MAX_VALUE = 255;
 const WEIGHT_CONTROLLER = 1.2;
 const WEIGHT_MINERAL = 0.15;
 const WEIGHT_SOURCES = 0.88;
-const WEIGHT_EXIT_DIST = -0.5;
+const WEIGHT_EXIT_DIST = -0.65;
 
 class BasePlanner {
     run(roomInfo) {
@@ -30,18 +30,29 @@ class BasePlanner {
             // Now let's check each space in order until we find one that fits our core
             let corePos;
             for (const space of spaces) {
-                if (stampUtility.stampFits(stamps.core, space, distanceTransform)) {
+                if (stampUtility.stampFits(stamps.core, space, distanceTransform, this.roomPlan)) {
                     this.roomPlan = stampUtility.placeStamp(stamps.core, space, this.roomPlan);
                     corePos = space;
                     break;
                 }
             }
 
-            // Once we have our core, let's pathfind to each source, controller, and mineral in the room
-            // and mark these positions for roads
+            // Once we have our core, let's plan out our artery roads
             const roadMatrix = this.planRoads(roomInfo, corePos, this.roomPlan);
-            
             this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, roadMatrix);
+
+            // Then, we'll plan our our fast-filler locations
+            const FILLER_COUNT = 2;
+            let placedFillers = 0;
+            for (const space of spaces) {
+                if (stampUtility.stampFits(stamps.fastFiller, space, distanceTransform, this.roomPlan)) {
+                    this.roomPlan = stampUtility.placeStamp(stamps.fastFiller, space, this.roomPlan);
+                    placedFillers++;
+                    if (placedFillers >= FILLER_COUNT) {
+                        break;
+                    }
+                }
+            }
 
             console.log("planned weights in " + (Game.cpu.getUsed() - cpu) + " cpu!");
         }
@@ -377,6 +388,7 @@ const structureToNumber = {
     [STRUCTURE_EXTRACTOR]:    51,
     [STRUCTURE_LAB]:          6,
     [STRUCTURE_TERMINAL]:     81,
+    [STRUCTURE_CONTAINER]:    3,
     [STRUCTURE_NUKER]:        91,
     [STRUCTURE_FACTORY]:      41,
 };
@@ -429,12 +441,21 @@ const stamps = {
 };
 
 const stampUtility = {
-    stampFits: function(stamp, pos, distanceTransform) {
+    stampFits: function(stamp, pos, distanceTransform, existingPlans) {
         for (const point of stamp.distancePoints) {
             const newX = pos.x + point.x - stamp.center.x;
             const newY = pos.y + point.y - stamp.center.y;
             if (distanceTransform.get(newX, newY) <= point.range) {
                 return false;
+            }
+
+            // Look at all points within range of this one to ensure nothing else is placed there
+            for (let x = -point.range; x <= point.range; x++) {
+                for (let y = -point.range; y <= point.range; y++) {
+                    if (existingPlans.get(newX + x, newY + y) > 0) {
+                        return;
+                    }
+                }
             }
         }
         return true;
@@ -443,7 +464,10 @@ const stampUtility = {
     placeStamp: function(stamp, pos, planMatrix) {
         for (let y = 0; y < stamp.layout.length; y++) {
             for (let x = 0; x < stamp.layout[y].length; x++) {
-                planMatrix.set(pos.x - stamp.center.x + x, pos.y - stamp.center.y + y, structureToNumber[stamp.layout[y][x]]);
+                const structureValue = structureToNumber[stamp.layout[y][x]];
+                if (structureValue) {
+                    planMatrix.set(pos.x - stamp.center.x + x, pos.y - stamp.center.y + y, structureValue);
+                }
             }
         }
         return planMatrix;
