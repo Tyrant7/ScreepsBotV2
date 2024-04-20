@@ -13,15 +13,33 @@ class BasePlanner {
             this.roomPlan = new PathFinder.CostMatrix();
             const cpu = Game.cpu.getUsed();
 
+            // Generate our necessary matrices for planning
             const weightMatrix = this.generateWeightMatrix(roomInfo);
             const distanceTransform = matrixUtility.generateDistanceTransform(roomInfo.room.name);
+
+            // Let's sort all spaces by score
+            const spaces = [];
+            for (let x = 0; x < 50; x++) {
+                for (let y = 0; y < 50; y++) {
+                    spaces.push({ x, y });
+                }
+            }
+            spaces.sort((a, b) => weightMatrix.get(a.x, a.y) - weightMatrix.get(b.x, b.y));
+
+            // Now let's check each space in order until we find one that fits our core
+            for (const space of spaces) {
+                if (stampUtility.stampFits(stamps.core, space, distanceTransform)) {
+                    this.roomPlan = stampUtility.placeStamp(stamps.core, space, this.roomPlan);
+                    console.log(JSON.stringify(space));
+                    break;
+                }
+            }
+
+            // Once we have our core, let's pathfind to each source, controller, and mineral in the room
+            // and mark these positions for roads
+
             
-
-
             console.log("planned weights in " + (Game.cpu.getUsed() - cpu) + " cpu!");
-
-            this.roomPlan = distanceTransform;
-
         }
 
         overlay.visualizeCostMatrix(roomInfo.room.name, this.roomPlan);
@@ -291,6 +309,23 @@ const matrixUtility = {
     },
 };
 
+const structureToNumber = {
+    [STRUCTURE_SPAWN]:        10,
+    [STRUCTURE_EXTENSION]:    5,
+    [STRUCTURE_ROAD]:         1,
+    [STRUCTURE_RAMPART]:      100,
+    [STRUCTURE_LINK]:         20,
+    [STRUCTURE_STORAGE]:      99,
+    [STRUCTURE_TOWER]:        4,
+    [STRUCTURE_OBSERVER]:     71,
+    [STRUCTURE_POWER_SPAWN]:  61,
+    [STRUCTURE_EXTRACTOR]:    51,
+    [STRUCTURE_LAB]:          6,
+    [STRUCTURE_TERMINAL]:     81,
+    [STRUCTURE_NUKER]:        91,
+    [STRUCTURE_FACTORY]:      41,
+};
+
 const stamps = {
     core: {
         layout: [
@@ -304,6 +339,9 @@ const stamps = {
         distancePoints: [
             { x: 1, y: 1, range: 1 },
         ],
+        // The center for placement
+        // The stamp will be attempted to place with this tile on the lowest scoring weight
+        center: { x: 2, y: 0 },
     },
 
     fastFiller: {
@@ -317,6 +355,7 @@ const stamps = {
             { x: 3, y: 1, range: 1 },
             { x: 1, y: 2, range: 1 },
         ],
+        center: { x: 2, y: 1 },
     },
 
     labs: {
@@ -330,19 +369,29 @@ const stamps = {
             { x: 2, y: 1, range: 1 },
             { x: 1, y: 2, range: 1 },
         ],
+        center: { x: 3, y: 0 },
     },
 };
 
 const stampUtility = {
     stampFits: function(stamp, pos, distanceTransform) {
         for (const point of stamp.distancePoints) {
-            const newX = pos.x + point.x;
-            const newY = pos.y + point.y;
+            const newX = pos.x + point.x - stamp.center.x;
+            const newY = pos.y + point.y - stamp.center.y;
             if (distanceTransform.get(newX, newY) <= point.range) {
                 return false;
             }
         }
         return true;
+    },
+
+    placeStamp: function(stamp, pos, planMatrix) {
+        for (let y = 0; y < stamp.layout.length; y++) {
+            for (let x = 0; x < stamp.layout[y].length; x++) {
+                planMatrix.set(pos.x - stamp.center.x + x, pos.y - stamp.center.y + y, structureToNumber[stamp.layout[y][x]]);
+            }
+        }
+        return planMatrix;
     },
 };
 
