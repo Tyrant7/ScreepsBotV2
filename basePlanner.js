@@ -45,8 +45,11 @@ class BasePlanner {
             const FILLER_COUNT = 2;
             let placedFillers = 0;
             for (const space of spaces) {
-                if (stampUtility.stampFits(stamps.fastFiller, space, distanceTransform, this.roomPlan)) {
-                    this.roomPlan = stampUtility.placeStamp(stamps.fastFiller, space, this.roomPlan);
+
+                const stamp = stampUtility.rotateStamp(stamps.fastFiller);
+
+                if (stampUtility.stampFits(stamp, space, distanceTransform, this.roomPlan)) {
+                    this.roomPlan = stampUtility.placeStamp(stamp, space, this.roomPlan);
                     placedFillers++;
                     if (placedFillers >= FILLER_COUNT) {
                         break;
@@ -470,6 +473,10 @@ const stampUtility = {
                 }
             }
         }
+        for (const point of stamp.distancePoints) {
+            planMatrix.set(point.x + pos.x - stamp.center.x, point.y + pos.y - stamp.center.y, 254);
+        }
+
         return planMatrix;
     },
 
@@ -485,16 +492,19 @@ const stampUtility = {
         return stamp;
     },
 
-    mirrorStampHorizontal: function(stamp) {
+    rotateStamp: function(stamp) {
         stamp = JSON.parse(JSON.stringify(stamp));
         const dimensions = { x: stamp.layout[0].length, y: stamp.layout.length };
-        for (const row of stamp.layout) {
-            row.reverse();
-        }
+        stamp.layout = _.zip(...stamp.layout);
         for (const p of stamp.distancePoints) {
-            p.x = dimensions.x - 1 - p.x;
+            const temp = p.x;
+            p.x = dimensions.y - 1 - p.y;
+            p.y = dimensions.x - 1 - temp;
         }
-        stamp.center.x = dimensions.x - 1 - stamp.center.x;
+
+        const temp = stamp.center.y;
+        stamp.center.y = stamp.center.x;
+        stamp.center.x = temp;
         return stamp;
     }
 };
