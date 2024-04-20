@@ -308,7 +308,7 @@ const matrixUtility = {
     },
 
     /**
-     * Takes the highest weight of all matrices for each tile.
+     * Takes the highest weight of all matrices for each tile and combines them into a single matrix.
      * @param  {...PathFinder.CostMatrix} matrices Any number of cost matrices to consider.
      */
     combineMatrices: function(...matrices) {
