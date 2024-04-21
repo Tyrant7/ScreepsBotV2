@@ -152,6 +152,8 @@ class BasePlanner {
             .concat(roomInfo.room.controller)
             .concat(roomInfo.mineral);
         
+        // Save a path to each of our road points
+        const terrain = roomInfo.room.getTerrain();
         const roadMatrix = new PathFinder.CostMatrix();
         for (const point of roadPoints) {
             const goal = { pos: point.pos, range: 2 };
@@ -178,6 +180,27 @@ class BasePlanner {
             // Save these into our road matrix
             for (const step of result.path) {
                 roadMatrix.set(step.x, step.y, 1);
+
+                // We'll also mark all neighbours as roads as a road as well, 
+                // and use this as wiggle room around roads when planning structures
+                for (let x = -1; x <= 1; x++) {
+                    for (let y = -1; y <= 1; y++) {
+                        // Don't consider diagonals
+                        if (Math.abs(x) === Math.abs(y)) {
+                            continue;
+                        }
+
+                        const newX = step.x + x;
+                        const newY = step.y + y;
+
+                        // Only consider buildable squares
+                        if (newX <= 1 || newX >= 49 || newY <= 1 || newY >= 49 ||
+                            roomPlan.get(newX, newY) > 0 || terrain.get(newX, newY) === TERRAIN_MASK_WALL) {
+                            continue;
+                        }
+                        roadMatrix.set(newX, newY, 1);
+                    }
+                }
             }
         }
         return roadMatrix;
