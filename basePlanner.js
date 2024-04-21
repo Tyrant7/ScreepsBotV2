@@ -35,31 +35,11 @@ class BasePlanner {
             // Now let's check each space in order until we find one that fits our core
             let corePos;
             for (const space of spaces) {
-                const stampData = stampUtility.findBestOrientation(
-                    stamps.core,
-                    space,
-                    distanceTransform,
-                    this.roomPlan,
-                    (stamp, pos) => {
-                        let totalScore = 0;
-                        for (let y = 0; y < stamp.layout.length; y++) {
-                            for (let x = 0; x < stamp.layout[y].length; x++) {
-                                const actualX = pos.x - stamp.center.x + x;
-                                const actualY = pos.y - stamp.center.y + y;
-                                totalScore += weightMatrix.get(actualX, actualY);
-                            }
-                        }
-                        return totalScore;
-                    },
-                );
-
-                if (!stampData) {
-                    continue;
+                if (stampUtility.stampFits(stamps.core, space, distanceTransform, this.roomPlan)) {
+                    this.roomPlan = stampUtility.placeStamp(stamps.core, space, this.roomPlan);
+                    corePos = space;
+                    break;
                 }
-
-                this.roomPlan = stampUtility.placeStamp(stamps.core, space, this.roomPlan);
-                corePos = space;
-                break;
             }
 
             // Once we have our core, let's plan out our artery roads
@@ -212,27 +192,6 @@ class BasePlanner {
             // Save these into our road matrix
             for (const step of result.path) {
                 roadMatrix.set(step.x, step.y, 1);
-
-                // We'll also mark all neighbours as roads as a road as well, 
-                // and use this as wiggle room around roads when planning structures
-                for (let x = -1; x <= 1; x++) {
-                    for (let y = -1; y <= 1; y++) {
-                        // Don't consider diagonals
-                        if (Math.abs(x) === Math.abs(y)) {
-                            continue;
-                        }
-
-                        const newX = step.x + x;
-                        const newY = step.y + y;
-
-                        // Only consider buildable squares
-                        if (newX <= 1 || newX >= 49 || newY <= 1 || newY >= 49 ||
-                            roomPlan.get(newX, newY) > 0 || terrain.get(newX, newY) === TERRAIN_MASK_WALL) {
-                            continue;
-                        }
-                        roadMatrix.set(newX, newY, 1);
-                    }
-                }
             }
         }
         return roadMatrix;
