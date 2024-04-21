@@ -4,8 +4,10 @@ const MAX_VALUE = 255;
 
 const WEIGHT_CONTROLLER = 1.2;
 const WEIGHT_MINERAL = 0.15;
-const WEIGHT_SOURCES = 0.88;
-const WEIGHT_EXIT_DIST = -0.65;
+const WEIGHT_SOURCES = 0.9;
+const WEIGHT_EXIT_DIST = -0.5;
+
+const CHECK_MAXIMUM = 90;
 
 class BasePlanner {
     run(roomInfo) {
@@ -46,54 +48,61 @@ class BasePlanner {
 
             // Then, we'll plan our our fast-filler locations
             const FILLER_COUNT = 2;
-            for (let i = 0; i < FILLER_COUNT; i++) {
+            this.roomPlan = placeStamps(stamps.fastFiller, FILLER_COUNT, this.roomPlan);
 
-                // Find the best stamp we can place currently
-                // Only consider the best suspected locations
-                let bestStampData;
-                const CHECK_MAXIMUM = 100;
-                let checkedLocations = 0;
-                for (const space of spaces) {
-                    if (checkedLocations >= CHECK_MAXIMUM && bestStampData) {
-                        break;
-                    }
-                    checkedLocations++;
-
-                    // Consider all orientations
-                    const stampData = stampUtility.findBestOrientation(
-                        stamps.fastFiller,
-                        space,
-                        distanceTransform,
-                        this.roomPlan,
-                        (stamp, pos) => {
-                            let totalScore = 0;
-                            for (let y = 0; y < stamp.layout.length; y++) {
-                                for (let x = 0; x < stamp.layout[y].length; x++) {
-                                    const actualX = pos.x - stamp.center.x + x;
-                                    const actualY = pos.y - stamp.center.y + y;
-                                    totalScore += weightMatrix.get(actualX, actualY);
-                                }
-                            }
-                            // Lower scores are better
-                            return -totalScore;
-                        },
-                    );
-                    
-                    if (!stampData) {
-                        continue;
-                    }
-                    if (!bestStampData || stampData.score > bestStampData.score) {
-                        bestStampData = stampData;
-                    }
-                }
-
-                // Once we've found the current best stamp, let's place it
-                if (bestStampData) {
-                    this.roomPlan = stampUtility.placeStamp(bestStampData.stamp, bestStampData.pos, this.roomPlan);
-                }
-            }
+            const LAB_COUNT = 1;
+            this.roomPlan = placeStamps(stamps.labs, LAB_COUNT, this.roomPlan);
 
             console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
+
+            function placeStamps(stamp, count, roomPlan) {
+                for (let i = 0; i < count; i++) {
+    
+                    // Find the best stamp we can place currently
+                    // Only consider the best suspected locations
+                    let bestStampData;
+                    let checkedLocations = 0;
+                    for (const space of spaces) {
+                        if (checkedLocations >= CHECK_MAXIMUM && bestStampData) {
+                            break;
+                        }
+                        checkedLocations++;
+    
+                        // Consider all orientations
+                        const stampData = stampUtility.findBestOrientation(
+                            stamp,
+                            space,
+                            distanceTransform,
+                            roomPlan,
+                            (stamp, pos) => {
+                                let totalScore = 0;
+                                for (let y = 0; y < stamp.layout.length; y++) {
+                                    for (let x = 0; x < stamp.layout[y].length; x++) {
+                                        const actualX = pos.x - stamp.center.x + x;
+                                        const actualY = pos.y - stamp.center.y + y;
+                                        totalScore += weightMatrix.get(actualX, actualY);
+                                    }
+                                }
+                                // Lower scores are better
+                                return -totalScore;
+                            },
+                        );
+                        
+                        if (!stampData) {
+                            continue;
+                        }
+                        if (!bestStampData || stampData.score > bestStampData.score) {
+                            bestStampData = stampData;
+                        }
+                    }
+    
+                    // Once we've found the current best stamp, let's place it
+                    if (bestStampData) {
+                        roomPlan = stampUtility.placeStamp(bestStampData.stamp, bestStampData.pos, roomPlan);
+                    }
+                }
+                return roomPlan;
+            }
         }
 
         overlay.visualizeCostMatrix(roomInfo.room.name, this.roomPlan);
