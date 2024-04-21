@@ -19,7 +19,7 @@ class BasePlanner {
             const distanceTransform = matrixUtility.generateDistanceTransform(roomInfo.room.name);
 
             // Let's sort all spaces by score
-            const spaces = [];
+            let spaces = [];
             for (let x = 0; x < 50; x++) {
                 for (let y = 0; y < 50; y++) {
                     spaces.push({ x, y });
@@ -40,6 +40,9 @@ class BasePlanner {
             // Once we have our core, let's plan out our artery roads
             const roadMatrix = this.planRoads(roomInfo, corePos, this.roomPlan);
             this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, roadMatrix);
+
+             // Filter out spaces we've already used
+             spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
 
             // Then, we'll plan our our fast-filler locations
             const FILLER_COUNT = 2;
