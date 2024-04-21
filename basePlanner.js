@@ -9,6 +9,9 @@ const WEIGHT_EXIT_DIST = -0.5;
 
 const CHECK_MAXIMUM = 90;
 
+const FILLER_COUNT = 2;
+const LAB_COUNT = 1;
+
 class BasePlanner {
     run(roomInfo) {
         if (!this.roomPlan) {
@@ -43,14 +46,16 @@ class BasePlanner {
             const roadMatrix = this.planRoads(roomInfo, corePos, this.roomPlan);
             this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, roadMatrix);
 
-             // Filter out spaces we've already used
-             spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
+            // Filter out spaces we've already used
+            spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
 
             // Then, we'll plan our our fast-filler locations
-            const FILLER_COUNT = 2;
             this.roomPlan = placeStamps(stamps.fastFiller, FILLER_COUNT, this.roomPlan);
 
-            const LAB_COUNT = 1;
+            // Filter out spaces we've already used
+            spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
+
+            // And labs
             this.roomPlan = placeStamps(stamps.labs, LAB_COUNT, this.roomPlan);
 
             console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
@@ -518,10 +523,6 @@ const stampUtility = {
                 }
             }
         }
-        for (const point of stamp.distancePoints) {
-            planMatrix.set(point.x + pos.x - stamp.center.x, point.y + pos.y - stamp.center.y, 254);
-        }
-
         return planMatrix;
     },
 
