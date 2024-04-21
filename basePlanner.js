@@ -164,8 +164,10 @@ class BasePlanner {
             .concat(roomInfo.room.controller)
             .concat(roomInfo.mineral);
         
+        // Path from further points first
+        roadPoints.sort((a, b) => b.pos.getRangeTo(corePos.x, corePos.y) - a.pos.getRangeTo(corePos.x, corePos.y));
+
         // Save a path to each of our road points
-        const terrain = roomInfo.room.getTerrain();
         const roadMatrix = new PathFinder.CostMatrix();
         for (const point of roadPoints) {
             const goal = { pos: point.pos, range: 2 };
