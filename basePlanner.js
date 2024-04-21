@@ -172,10 +172,11 @@ class BasePlanner {
 
         // Save a path to each of our road points
         const roadMatrix = new PathFinder.CostMatrix();
+        corePos = new RoomPosition(corePos.x, corePos.y, roomInfo.room.name);
         for (const point of roadPoints) {
             const goal = { pos: point.pos, range: 2 };
             const result = PathFinder.search(
-                new RoomPosition(corePos.x, corePos.y, roomInfo.room.name), goal, {
+                corePos, goal, {
                     plainCost: 2,
                     swampCost: 2,
                     maxRooms: 1,
@@ -220,13 +221,14 @@ class BasePlanner {
 
         // Then, identify any roads that cannot connect back to the core
         const stragglingRoads = [];
-        corePos = new RoomPosition(corePos.x, corePos.y, roomInfo.room.name);
+        const maxNeededTiles = allRoads.length;
+        const goal = { pos: new RoomPosition(corePos.x, corePos.y, roomInfo.room.name), range: 1 };
         while (allRoads.length) {
             const next = allRoads.pop();
-            const goal = { pos: new RoomPosition(next.x, next.y, roomInfo.room.name), range: 1 };
             const result = PathFinder.search(
-                corePos, goal, {
+                new RoomPosition(next.x, next.y, roomInfo.room.name), goal, {
                     maxRooms: 1,
+                    maxCost: maxNeededTiles,
                     roomCallback: function(roomName) {
                         return roadMatrix;
                     },
