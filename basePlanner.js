@@ -35,11 +35,32 @@ class BasePlanner {
             // Now let's check each space in order until we find one that fits our core
             let corePos;
             for (const space of spaces) {
-                if (stampUtility.stampFits(stamps.core, space, distanceTransform, this.roomPlan)) {
-                    this.roomPlan = stampUtility.placeStamp(stamps.core, space, this.roomPlan);
-                    corePos = space;
-                    break;
+                const stampData = stampUtility.findBestOrientation(
+                    stamps.core,
+                    space,
+                    distanceTransform,
+                    this.roomPlan,
+                    (stamp, pos) => {
+                        let totalScore = 0;
+                        for (let y = 0; y < stamp.layout.length; y++) {
+                            for (let x = 0; x < stamp.layout[y].length; x++) {
+                                const actualX = pos.x - stamp.center.x + x;
+                                const actualY = pos.y - stamp.center.y + y;
+                                totalScore += weightMatrix.get(actualX, actualY);
+                            }
+                        }
+                        // Lower scores are better
+                        return -totalScore;
+                    },
+                );
+
+                if (!stampData) {
+                    continue;
                 }
+
+                this.roomPlan = stampUtility.placeStamp(stamps.core, space, this.roomPlan);
+                corePos = space;
+                break;
             }
 
             // Once we have our core, let's plan out our artery roads
@@ -50,17 +71,37 @@ class BasePlanner {
             spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
 
             // Then, we'll plan our our fast-filler locations
-            this.roomPlan = placeStamps(stamps.fastFiller, FILLER_COUNT, this.roomPlan);
+            this.roomPlan = placeStamps(stamps.fastFiller, FILLER_COUNT, this.roomPlan, (stamp, pos) => {
+                let totalScore = 0;
+                for (let y = 0; y < stamp.layout.length; y++) {
+                    for (let x = 0; x < stamp.layout[y].length; x++) {
+                        const actualX = pos.x - stamp.center.x + x;
+                        const actualY = pos.y - stamp.center.y + y;
+                        totalScore += weightMatrix.get(actualX, actualY);
+                    }
+                }
+                return totalScore;
+            });
 
             // Filter out spaces we've already used
             spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
 
             // And labs
-            this.roomPlan = placeStamps(stamps.labs, LAB_COUNT, this.roomPlan);
+            this.roomPlan = placeStamps(stamps.labs, LAB_COUNT, this.roomPlan, (stamp, pos) => {
+                let totalScore = 0;
+                for (let y = 0; y < stamp.layout.length; y++) {
+                    for (let x = 0; x < stamp.layout[y].length; x++) {
+                        const actualX = pos.x - stamp.center.x + x;
+                        const actualY = pos.y - stamp.center.y + y;
+                        totalScore += weightMatrix.get(actualX, actualY);
+                    }
+                }
+                return totalScore;
+            });
 
             console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
 
-            function placeStamps(stamp, count, roomPlan) {
+            function placeStamps(stamp, count, roomPlan, scoreFn) {
                 for (let i = 0; i < count; i++) {
     
                     // Find the best stamp we can place currently
@@ -79,24 +120,13 @@ class BasePlanner {
                             space,
                             distanceTransform,
                             roomPlan,
-                            (stamp, pos) => {
-                                let totalScore = 0;
-                                for (let y = 0; y < stamp.layout.length; y++) {
-                                    for (let x = 0; x < stamp.layout[y].length; x++) {
-                                        const actualX = pos.x - stamp.center.x + x;
-                                        const actualY = pos.y - stamp.center.y + y;
-                                        totalScore += weightMatrix.get(actualX, actualY);
-                                    }
-                                }
-                                // Lower scores are better
-                                return -totalScore;
-                            },
+                            scoreFn,
                         );
                         
                         if (!stampData) {
                             continue;
                         }
-                        if (!bestStampData || stampData.score > bestStampData.score) {
+                        if (!bestStampData || stampData.score < bestStampData.score) {
                             bestStampData = stampData;
                         }
                     }
@@ -466,13 +496,14 @@ const stamps = {
 
     fastFiller: {
         layout: [
-            [undefined, undefined, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
+            [undefined, STRUCTURE_ROAD, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
             [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_SPAWN, undefined, STRUCTURE_EXTENSION],
             [STRUCTURE_EXTENSION, undefined, STRUCTURE_CONTAINER, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
             [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, undefined, undefined],
         ],
         distancePoints: [
             { x: 3, y: 1, range: 1 },
+            { x: 2, y: 1, range: 1 },
             { x: 1, y: 2, range: 1 },
         ],
         center: { x: 2, y: 1 },
@@ -523,6 +554,12 @@ const stampUtility = {
                 }
             }
         }
+        /*
+        // Debug
+        for (const point of stamp.distancePoints) {
+            planMatrix.set(pos.x + point.x - stamp.center.x, pos.y + point.y - stamp.center.y, 254);
+        }
+        */
         return planMatrix;
     },
 
@@ -544,8 +581,8 @@ const stampUtility = {
         stamp.layout = _.zip(...stamp.layout);
         for (const p of stamp.distancePoints) {
             const temp = p.x;
-            p.x = dimensions.y - 1 - p.y;
-            p.y = dimensions.x - 1 - temp;
+            p.x = p.y;
+            p.y = temp;
         }
 
         const temp = stamp.center.y;
