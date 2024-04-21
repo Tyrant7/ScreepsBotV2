@@ -79,7 +79,7 @@ class BasePlanner {
             });
 
             // Next, we'll connect up any roads we've placed that aren't currently connected
-            this.roomPlan = this.connectStragglingRoads(this.roomPlan);
+            this.roomPlan = this.connectStragglingRoads(roomInfo, corePos, this.roomPlan);
 
             function placeStamps(stamp, count, roomPlan, scoreFn) {
                 for (let i = 0; i < count; i++) {
@@ -202,9 +202,55 @@ class BasePlanner {
         return roadMatrix;
     }
 
-    connectStragglingRoads(roomPlan) {
+    connectStragglingRoads(roomInfo, corePos, roomPlan) {
 
-        // First, identify the straggling roads
+        // First, construct an array of all of our roads
+        let allRoads = [];
+        const roadMatrix = new PathFinder.CostMatrix();
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                if (roomPlan.get(x, y) === structureToNumber[STRUCTURE_ROAD]) {
+                    allRoads.push({ x, y });
+                    roadMatrix.set(x, y, 1);
+                    continue;
+                }
+                roadMatrix.set(x, y, 255);
+            }
+        }
+
+        // Then, identify any roads that cannot connect back to the core
+        const stragglingRoads = [];
+        corePos = new RoomPosition(corePos.x, corePos.y, roomInfo.room.name);
+        while (allRoads.length) {
+            const next = allRoads.pop();
+            const goal = { pos: new RoomPosition(next.x, next.y, roomInfo.room.name), range: 1 };
+            const result = PathFinder.search(
+                corePos, goal, {
+                    maxRooms: 1,
+                    roomCallback: function(roomName) {
+                        return roadMatrix;
+                    },
+                },
+            );
+
+            // For each road we stepped over, remembering to include our start position
+            for (const road of result.path.concat(next)) {
+                // We can remove this road from our array since we know its state now
+                allRoads = allRoads.filter((r) => r.x !== road.x || r.y !== road.y);
+
+                // If it was incomplete, we know that this road
+                // does not connect back to our core
+                if (result.incomplete) {
+                    stragglingRoads.push(road);
+                }
+            }
+        }
+
+        // For DEBUG
+        for (const road of stragglingRoads) {
+            roomPlan.set(road.x, road.y, 200);
+        }
+
         return roomPlan;
     }
 }
