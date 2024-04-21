@@ -483,7 +483,7 @@ const stamps = {
             [undefined, STRUCTURE_LAB, STRUCTURE_LAB, STRUCTURE_ROAD],
             [STRUCTURE_LAB, STRUCTURE_LAB, STRUCTURE_ROAD, STRUCTURE_LAB],
             [STRUCTURE_LAB, STRUCTURE_ROAD, STRUCTURE_LAB, STRUCTURE_LAB],
-            [STRUCTURE_ROAD, STRUCTURE_LAB, STRUCTURE_LAB, undefined],
+            [undefined, STRUCTURE_LAB, STRUCTURE_LAB, undefined],
         ],
         distancePoints: [
             { x: 2, y: 1, range: 1 },
