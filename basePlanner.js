@@ -78,7 +78,8 @@ class BasePlanner {
                 return totalScore;
             });
 
-            console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
+            // Next, we'll connect up any roads we've placed that aren't currently connected
+            this.roomPlan = this.connectStragglingRoads(this.roomPlan);
 
             function placeStamps(stamp, count, roomPlan, scoreFn) {
                 for (let i = 0; i < count; i++) {
@@ -120,6 +121,8 @@ class BasePlanner {
                 }
                 return roomPlan;
             }
+
+            console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
         }
 
         overlay.visualizeCostMatrix(roomInfo.room.name, this.roomPlan);
@@ -197,6 +200,12 @@ class BasePlanner {
             }
         }
         return roadMatrix;
+    }
+
+    connectStragglingRoads(roomPlan) {
+
+        // First, identify the straggling roads
+        return roomPlan;
     }
 }
 
@@ -465,9 +474,9 @@ const structureToNumber = {
 const stamps = {
     core: {
         layout: [
-            [STRUCTURE_POWER_SPAWN, STRUCTURE_OBSERVER, STRUCTURE_SPAWN],
+            [STRUCTURE_STORAGE, STRUCTURE_OBSERVER, STRUCTURE_SPAWN],
             [STRUCTURE_TERMINAL, undefined, STRUCTURE_FACTORY],
-            [STRUCTURE_STORAGE, STRUCTURE_NUKER, STRUCTURE_LINK],
+            [STRUCTURE_POWER_SPAWN, STRUCTURE_NUKER, STRUCTURE_LINK],
         ],
         // Points used for validating distances around this stamp to ensure 
         // no overlap with each other or terrain
@@ -485,11 +494,12 @@ const stamps = {
             [undefined, STRUCTURE_ROAD, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
             [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_SPAWN, undefined, STRUCTURE_EXTENSION],
             [STRUCTURE_EXTENSION, undefined, STRUCTURE_CONTAINER, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
-            [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, undefined, undefined],
+            [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_ROAD, undefined],
         ],
         distancePoints: [
             { x: 3, y: 1, range: 1 },
             { x: 2, y: 1, range: 1 },
+            { x: 2, y: 2, range: 1 },
             { x: 1, y: 2, range: 1 },
         ],
         center: { x: 2, y: 1 },
