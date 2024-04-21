@@ -74,30 +74,29 @@ class BasePlanner {
                         checkedLocations++;
     
                         // Consider all orientations
-                        const stampData = stampUtility.findBestOrientation(
-                            stamp,
-                            space,
-                            distanceTransform,
-                            roomPlan,
-                            (stamp, pos) => {
-                                let totalScore = 0;
-                                for (let y = 0; y < stamp.layout.length; y++) {
-                                    for (let x = 0; x < stamp.layout[y].length; x++) {
-                                        const actualX = pos.x - stamp.center.x + x;
-                                        const actualY = pos.y - stamp.center.y + y;
-                                        totalScore += weightMatrix.get(actualX, actualY);
+                        for (const transform of stampUtility.getTransformationList()) {
+                            const transformedStamp = transform(stamp);
+                            if (stampUtility.stampFits(transformedStamp, space, distanceTransform, roomPlan)) {
+
+                                // Score the stamp
+                                let score = 0;
+                                for (let y = 0; y < transformedStamp.layout.length; y++) {
+                                    for (let x = 0; x < transformedStamp.layout[y].length; x++) {
+                                        const actualX = space.x - transformedStamp.center.x + x;
+                                        const actualY = space.y - transformedStamp.center.y + y;
+                                        score += weightMatrix.get(actualX, actualY);
                                     }
                                 }
+
                                 // Lower scores are better
-                                return -totalScore;
-                            },
-                        );
-                        
-                        if (!stampData) {
-                            continue;
-                        }
-                        if (!bestStampData || stampData.score > bestStampData.score) {
-                            bestStampData = stampData;
+                                if (!bestStampData || score < bestStampData.score) {
+                                    bestStampData = {
+                                        stamp: transformedStamp,
+                                        score: score,
+                                        pos: space,
+                                    };
+                                }
+                            }
                         }
                     }
     
@@ -577,8 +576,8 @@ const stampUtility = {
         return stamp;
     },
 
-    findBestOrientation(stamp, pos, distanceTransform, roomPlan, scoreFn) {
-        const transformations = [
+    getTransformationList: function() {
+        return [
             (stamp) => stamp,
             (stamp) => this.mirrorStamp(stamp),
             (stamp) => this.rotateStamp(stamp),
@@ -588,23 +587,6 @@ const stampUtility = {
             (stamp) => this.mirrorStamp(this.rotateStamp(this.mirrorStamp(stamp))),
             (stamp) => this.rotateStamp(this.mirrorStamp(this.rotateStamp(this.mirrorStamp(stamp)))),
         ];
-
-        let best;
-        for (const transform of transformations) {
-            const transformedStamp = transform(stamp);
-            if (this.stampFits(transformedStamp, pos, distanceTransform, roomPlan)) {
-                const score = scoreFn(transformedStamp, pos);
-                if (score <= best) {
-                    continue;
-                }
-                best = {
-                    stamp: transformedStamp,
-                    score: score,
-                    pos: pos,
-                };
-            }
-        }
-        return best;
     },
 };
 
