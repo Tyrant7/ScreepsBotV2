@@ -43,7 +43,11 @@ class BasePlanner {
             }
 
             // Once we have our core, let's plan out our artery roads
-            const roadMatrix = this.planRoads(roomInfo, corePos, this.roomPlan);
+            const roadPoints = roomInfo.sources
+                .concat(roomInfo.room.controller)
+                .concat(roomInfo.mineral)
+                .map((p) => p.pos);
+            const roadMatrix = this.planRoads(roadPoints, roomInfo.room.name, corePos, this.roomPlan);
             this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, roadMatrix);
 
             // Filter out spaces we've already used
@@ -79,7 +83,8 @@ class BasePlanner {
             });
 
             // Next, we'll connect up any roads we've placed that aren't currently connected
-            this.roomPlan = this.connectStragglingRoads(roomInfo, corePos, this.roomPlan);
+            const stragglingRoadConnectors = this.connectStragglingRoads(roomInfo.room.name, corePos, this.roomPlan);
+            this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, stragglingRoadConnectors);
 
             function placeStamps(stamp, count, roomPlan, scoreFn) {
                 for (let i = 0; i < count; i++) {
@@ -162,19 +167,16 @@ class BasePlanner {
         );
     }
 
-    planRoads(roomInfo, corePos, roomPlan) {
-        const roadPoints = roomInfo.sources
-            .concat(roomInfo.room.controller)
-            .concat(roomInfo.mineral);
-        
+    planRoads(connectPoints, roomName, corePos, roomPlan) {
+
         // Path from further points first
-        roadPoints.sort((a, b) => b.pos.getRangeTo(corePos.x, corePos.y) - a.pos.getRangeTo(corePos.x, corePos.y));
+        connectPoints.sort((a, b) => b.getRangeTo(corePos.x, corePos.y) - a.getRangeTo(corePos.x, corePos.y));
 
         // Save a path to each of our road points
         const roadMatrix = new PathFinder.CostMatrix();
-        corePos = new RoomPosition(corePos.x, corePos.y, roomInfo.room.name);
-        for (const point of roadPoints) {
-            const goal = { pos: point.pos, range: 2 };
+        corePos = new RoomPosition(corePos.x, corePos.y, roomName);
+        for (const point of connectPoints) {
+            const goal = { pos: point, range: 1 };
             const result = PathFinder.search(
                 corePos, goal, {
                     plainCost: 2,
@@ -186,7 +188,10 @@ class BasePlanner {
                         const newMatrix = new PathFinder.CostMatrix();
                         for (let x = 0; x < 50; x++) {
                             for (let y = 0; y < 50; y++) {
-                                const unwalkable = (roomPlan.get(x, y) > 0 ? 255 : 0);
+                                const value = roomPlan.get(x, y);
+                                const unwalkable = value !== 0 && value !== structureToNumber[STRUCTURE_ROAD] 
+                                    ? 255 
+                                    : 0;
                                 newMatrix.set(x, y, roadMatrix.get(x, y) + unwalkable);
                             }
                         }
@@ -203,7 +208,7 @@ class BasePlanner {
         return roadMatrix;
     }
 
-    connectStragglingRoads(roomInfo, corePos, roomPlan) {
+    connectStragglingRoads(roomName, corePos, roomPlan) {
 
         // First, construct an array of all of our roads
         let allRoads = [];
@@ -222,11 +227,11 @@ class BasePlanner {
         // Then, identify any roads that cannot connect back to the core
         const stragglingRoads = [];
         const maxNeededTiles = allRoads.length;
-        const goal = { pos: new RoomPosition(corePos.x, corePos.y, roomInfo.room.name), range: 1 };
+        const goal = { pos: new RoomPosition(corePos.x, corePos.y, roomName), range: 1 };
         while (allRoads.length) {
             const next = allRoads.pop();
             const result = PathFinder.search(
-                new RoomPosition(next.x, next.y, roomInfo.room.name), goal, {
+                new RoomPosition(next.x, next.y, roomName), goal, {
                     maxRooms: 1,
                     maxCost: maxNeededTiles,
                     roomCallback: function(roomName) {
@@ -248,12 +253,9 @@ class BasePlanner {
             }
         }
 
-        // For DEBUG
-        for (const road of stragglingRoads) {
-            roomPlan.set(road.x, road.y, 200);
-        }
-
-        return roomPlan;
+        // Plan roads to connect these back to our core
+        const roadPositions = stragglingRoads.map((r) => new RoomPosition(r.x, r.y, roomName));
+        return this.planRoads(roadPositions, roomName, corePos, roomPlan);
     }
 }
 
