@@ -636,7 +636,7 @@ const stamps = {
         ],
         distancePoints: [
             { x: 1, y: 1, range: 1 },
-            { x: 3, y: 2, range: 1 },
+            { x: 3, y: 1, range: 1 },
         ],
         center: { x: 2, y: 1 },
     },
