@@ -15,6 +15,47 @@ const LAB_COUNT = 1;
 class BasePlanner {
     run(roomInfo) {
         if (!this.roomPlan) {
+            function placeStamps(stamp, count, roomPlan, scoreFn) {
+                for (let i = 0; i < count; i++) {
+    
+                    // Find the best stamp we can place currently
+                    // Only consider the best suspected locations
+                    let bestStampData;
+                    let checkedLocations = 0;
+                    for (const space of spaces) {
+                        if (checkedLocations >= CHECK_MAXIMUM && bestStampData) {
+                            break;
+                        }
+                        checkedLocations++;
+    
+                        // Consider all orientations
+                        for (const transform of stampUtility.getTransformationList()) {
+                            const transformedStamp = transform(stamp);
+                            if (stampUtility.stampFits(transformedStamp, space, distanceTransform, roomPlan)) {
+
+                                // Score the stamp
+                                let score = scoreFn(transformedStamp, space);
+
+                                // Lower scores are better
+                                if (!bestStampData || score < bestStampData.score) {
+                                    bestStampData = {
+                                        stamp: transformedStamp,
+                                        score: score,
+                                        pos: space,
+                                    };
+                                }
+                            }
+                        }
+                    }
+    
+                    // Once we've found the current best stamp, let's place it
+                    if (bestStampData) {
+                        roomPlan = stampUtility.placeStamp(bestStampData.stamp, bestStampData.pos, roomPlan);
+                    }
+                }
+                return roomPlan;
+            }
+
             this.roomPlan = new PathFinder.CostMatrix();
             const cpu = Game.cpu.getUsed();
 
@@ -82,50 +123,27 @@ class BasePlanner {
                 return totalScore;
             });
 
+            // Filter out spaces we've already used
+            spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
+
+            // Let's also try some extensions
+            this.roomPlan = placeStamps(stamps.extensionX, 3, this.roomPlan, (stamp, pos) => {
+                let totalScore = 0;
+                for (let y = 0; y < stamp.layout.length; y++) {
+                    for (let x = 0; x < stamp.layout[y].length; x++) {
+                        const actualX = pos.x - stamp.center.x + x;
+                        const actualY = pos.y - stamp.center.y + y;
+                        totalScore += weightMatrix.get(actualX, actualY);
+                    }
+                }
+                return totalScore;
+            });
+
             // Next, we'll connect up any roads we've placed that aren't currently connected
             const stragglingRoadConnectors = this.connectStragglingRoads(roomInfo.room.name, corePos, this.roomPlan);
             this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, stragglingRoadConnectors);
 
-            function placeStamps(stamp, count, roomPlan, scoreFn) {
-                for (let i = 0; i < count; i++) {
-    
-                    // Find the best stamp we can place currently
-                    // Only consider the best suspected locations
-                    let bestStampData;
-                    let checkedLocations = 0;
-                    for (const space of spaces) {
-                        if (checkedLocations >= CHECK_MAXIMUM && bestStampData) {
-                            break;
-                        }
-                        checkedLocations++;
-    
-                        // Consider all orientations
-                        for (const transform of stampUtility.getTransformationList()) {
-                            const transformedStamp = transform(stamp);
-                            if (stampUtility.stampFits(transformedStamp, space, distanceTransform, roomPlan)) {
 
-                                // Score the stamp
-                                let score = scoreFn(transformedStamp, space);
-
-                                // Lower scores are better
-                                if (!bestStampData || score < bestStampData.score) {
-                                    bestStampData = {
-                                        stamp: transformedStamp,
-                                        score: score,
-                                        pos: space,
-                                    };
-                                }
-                            }
-                        }
-                    }
-    
-                    // Once we've found the current best stamp, let's place it
-                    if (bestStampData) {
-                        roomPlan = stampUtility.placeStamp(bestStampData.stamp, bestStampData.pos, roomPlan);
-                    }
-                }
-                return roomPlan;
-            }
 
             console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
         }
@@ -567,6 +585,20 @@ const stamps = {
             { x: 1, y: 2, range: 1 },
         ],
         center: { x: 3, y: 0 },
+    },
+
+    extensionX: {
+        layout: [
+            [undefined, STRUCTURE_ROAD, undefined],
+            [STRUCTURE_ROAD, STRUCTURE_EXTENSION, STRUCTURE_ROAD],
+            [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
+            [undefined, STRUCTURE_EXTENSION, STRUCTURE_ROAD],
+        ],
+        distancePoints: [
+            { x: 1, y: 1, range: 1 },
+            { x: 1, y: 2, range: 1 },
+        ],
+        center: { x: 1, y: 2 },
     },
 };
 
