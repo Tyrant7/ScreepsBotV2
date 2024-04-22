@@ -163,23 +163,6 @@ class BasePlanner {
             // Filter out spaces we've already used
             spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
 
-            // Let's also try some extensions
-            this.roomPlan = placeStamps(stamps.extensionX, 3, this.roomPlan, (stamp, pos) => {
-                let totalScore = 0;
-                for (let y = 0; y < stamp.layout.length; y++) {
-                    for (let x = 0; x < stamp.layout[y].length; x++) {
-                        const actualX = pos.x - stamp.center.x + x;
-                        const actualY = pos.y - stamp.center.y + y;
-                        totalScore += weightMatrix.get(actualX, actualY);
-                    }
-                }
-                return totalScore;
-            });
-
-            // Next, we'll connect up any roads we've placed that aren't currently connected
-            const stragglingRoadConnectors2 = this.connectStragglingRoads(roomInfo.room.name, corePos, this.roomPlan);
-            this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, stragglingRoadConnectors2);
-
             console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
         }
 
