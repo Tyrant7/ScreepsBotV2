@@ -7,7 +7,8 @@ const WEIGHT_CONTROLLER_SPACE = 0.8;
 const WEIGHT_MINERAL = 0.15;
 const WEIGHT_SOURCES = 0.9;
 const WEIGHT_SOURCES_SPACE = 0.45;
-const WEIGHT_EXIT_DIST = -0.5;
+const WEIGHT_EXIT_DIST = -0.65;
+const WEIGHT_TERRAIN_DIST = -1;
 
 const CHECK_MAXIMUM = 90;
 
@@ -16,6 +17,11 @@ const LAB_COUNT = 1;
 
 class BasePlanner {
     run(roomInfo) {
+        if (Game.cpu.bucket <= 200) {
+            console.log("bucket is empty");
+            return;
+        }
+
         if (!this.roomPlan) {
             function placeStamps(stamp, count, roomPlan, scoreFn) {
                 for (let i = 0; i < count; i++) {
@@ -63,8 +69,8 @@ class BasePlanner {
 
             // Generate our necessary matrices for planning
             const terrainMatrix = matrixUtility.generateTerrainMatrix(roomInfo.room.name);
-            const weightMatrix = this.generateWeightMatrix(roomInfo, terrainMatrix);
             const distanceTransform = matrixUtility.generateDistanceTransform(roomInfo.room.name);
+            const weightMatrix = this.generateWeightMatrix(roomInfo, terrainMatrix, distanceTransform);
 
             // Let's sort all spaces by score
             let spaces = [];
@@ -150,6 +156,10 @@ class BasePlanner {
                 return totalScore;
             });
 
+            // Next, we'll connect up any roads we've placed that aren't currently connected
+            const stragglingRoadConnectors = this.connectStragglingRoads(roomInfo.room.name, corePos, this.roomPlan);
+            this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, stragglingRoadConnectors);
+
             // Filter out spaces we've already used
             spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
 
@@ -167,8 +177,8 @@ class BasePlanner {
             });
 
             // Next, we'll connect up any roads we've placed that aren't currently connected
-            const stragglingRoadConnectors = this.connectStragglingRoads(roomInfo.room.name, corePos, this.roomPlan);
-            this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, stragglingRoadConnectors);
+            const stragglingRoadConnectors2 = this.connectStragglingRoads(roomInfo.room.name, corePos, this.roomPlan);
+            this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, stragglingRoadConnectors2);
 
             console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
         }
@@ -176,7 +186,7 @@ class BasePlanner {
         overlay.visualizeCostMatrix(roomInfo.room.name, this.roomPlan);
     }
 
-    generateWeightMatrix(roomInfo, terrainMatrix) {
+    generateWeightMatrix(roomInfo, terrainMatrix, distanceTransform) {
         const controllerMatrix = {
             matrix: matrixUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone()),
             weight: WEIGHT_CONTROLLER,
@@ -212,8 +222,19 @@ class BasePlanner {
             weight: WEIGHT_EXIT_DIST,
         };
 
+        const distMatrix = {
+            matrix: distanceTransform,
+            weight: WEIGHT_TERRAIN_DIST,
+        };
+
         return matrixUtility.normalizeMatrix(
-            matrixUtility.addScoreMatrices(controllerMatrix, controllerFreeSpace, mineralMatrix, ...sourceMatrices, exitMask, exitDistMatrix),
+            matrixUtility.addScoreMatrices(controllerMatrix, 
+                controllerFreeSpace, 
+                mineralMatrix, 
+                ...sourceMatrices, 
+                exitMask, 
+                exitDistMatrix,
+                distMatrix),
             MAX_VALUE - 1,
         );
     }
@@ -627,19 +648,6 @@ const stamps = {
             { x: 1, y: 2, range: 1 },
         ],
         center: { x: 3, y: 0 },
-    },
-
-    extensionX: {
-        layout: [
-            [undefined, STRUCTURE_ROAD, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
-            [STRUCTURE_ROAD, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_ROAD],
-            [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_ROAD, undefined],
-        ],
-        distancePoints: [
-            { x: 1, y: 1, range: 1 },
-            { x: 3, y: 1, range: 1 },
-        ],
-        center: { x: 2, y: 1 },
     },
 };
 
