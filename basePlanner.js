@@ -224,7 +224,21 @@ class BasePlanner {
         connectPoints.sort((a, b) => b.getRangeTo(corePos.x, corePos.y) - a.getRangeTo(corePos.x, corePos.y));
 
         // Save a path to each of our road points
+        // Use a separate matrix for road positions and pathing locations
         const roadMatrix = new PathFinder.CostMatrix();
+        const pathfindMatrix = new PathFinder.CostMatrix();
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                const value = roomPlan.get(x, y);
+                pathfindMatrix.set(x, y, 
+                    value === structureToNumber[STRUCTURE_ROAD] 
+                        ? 1 
+                        : value === 0 
+                        ? 0 
+                        : 255
+                );
+            }
+        }
         corePos = new RoomPosition(corePos.x, corePos.y, roomName);
         for (const point of connectPoints) {
             const goal = { pos: point, range: 1 };
@@ -234,28 +248,15 @@ class BasePlanner {
                     swampCost: 2,
                     maxRooms: 1,
                     roomCallback: function(roomName) {
-
-                        // Combine our road matrix and unwalkable matrices
-                        const newMatrix = new PathFinder.CostMatrix();
-                        for (let x = 0; x < 50; x++) {
-                            for (let y = 0; y < 50; y++) {
-                                const value = roomPlan.get(x, y);
-                                const unwalkable = value === 0 
-                                    ? 0
-                                    : value === structureToNumber[STRUCTURE_ROAD] 
-                                    ? 1
-                                    : 255;
-                                newMatrix.set(x, y, roadMatrix.get(x, y) + unwalkable);
-                            }
-                        }
-                        return newMatrix;
+                        return pathfindMatrix;
                     },
                 },
             );
 
             // Save these into our road matrix
             for (const step of result.path) {
-                roadMatrix.set(step.x, step.y, 1);
+                pathfindMatrix.set(step.x, step.y, 1);
+                roadMatrix.set(step.x, step.y, structureToNumber[STRUCTURE_ROAD]);
             }
         }
         return roadMatrix;
