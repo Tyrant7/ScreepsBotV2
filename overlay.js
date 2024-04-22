@@ -146,4 +146,18 @@ module.exports = {
             }
         }
     },
+
+    visualizeBasePlan: function(roomName, planMatrix, mapping) {
+        const visual = new RoomVisual(roomName);
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                const value = planMatrix.get(x, y);
+                const structureType = Object.keys(mapping).find((s) => mapping[s] === value);
+                if (structureType) {
+                    visual.structure(x, y, structureType);
+                }
+            }
+        }
+        visual.connectRoads();
+    },
 };

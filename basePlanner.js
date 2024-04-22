@@ -213,7 +213,7 @@ class BasePlanner {
             console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
         }
 
-        overlay.visualizeCostMatrix(roomInfo.room.name, this.roomPlan);
+        overlay.visualizeBasePlan(roomInfo.room.name, this.roomPlan, structureToNumber);
     }
 
     generateWeightMatrix(roomInfo, terrainMatrix, distanceTransform) {

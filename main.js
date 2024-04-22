@@ -42,6 +42,7 @@ global.RELOAD = true;
 
 // Extensions
 global.betterPathing = require("./betterPathing");
+require("betterRoomVisual");
 
 // Data
 const RoomInfo = require("./roomInfo");
