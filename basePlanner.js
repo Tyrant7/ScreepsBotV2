@@ -15,7 +15,7 @@ const CHECK_MAXIMUM = 90;
 const FILLER_COUNT = 2;
 const LAB_COUNT = 1;
 
-const EXTENSIONS_PER_STAMP = 12;
+const EXTENSIONS_PER_FILLER = 12;
 const LABS_PER_STAMP = 10;
 
 const MAX_STRUCTURES = {};
@@ -82,8 +82,8 @@ class BasePlanner {
 
             // Let's sort all spaces by score
             let spaces = [];
-            for (let x = 0; x < 50; x++) {
-                for (let y = 0; y < 50; y++) {
+            for (let x = 2; x < 48; x++) {
+                for (let y = 2; y < 48; y++) {
                     spaces.push({ x, y });
                 }
             }
@@ -170,6 +170,45 @@ class BasePlanner {
 
             // Filter out spaces we've already used
             spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
+
+            // Next, we'll place our remaining extensions
+            const remainingExtensions = MAX_STRUCTURES[STRUCTURE_EXTENSION] - (FILLER_COUNT * EXTENSIONS_PER_FILLER);
+            for (let i = 0; i < remainingExtensions; i++) {
+                // Find the lowest scoring tile that is also adjacent to a road
+                let bestSpot;
+                for (const space of spaces) {
+                    if (terrainMatrix.get(space.x, space.y) > 0 || this.roomPlan.get(space.x, space.y) > 0) {
+                        continue;
+                    }
+
+                    let hasRoad = false;
+                    for (let x = -1; x <= 1; x++) {
+                        for (let y = -1; y <= 1; y++) {
+                            const newX = space.x + x;
+                            const newY = space.y + y;
+                            if (this.roomPlan.get(newX, newY) === structureToNumber[STRUCTURE_ROAD]) {
+                                hasRoad = true;
+                                break;
+                            }
+                        }
+                        if (hasRoad) {
+                            break;
+                        }
+                    }
+
+                    if (hasRoad) {
+                        bestSpot = space;
+                        break;
+                    }
+                }
+
+                if (!bestSpot) {
+                    console.log("Could not fit all extensions!")
+                    break;
+                }
+                this.roomPlan.set(bestSpot.x, bestSpot.y, structureToNumber[STRUCTURE_EXTENSION]);
+            }
+
 
             console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
         }
@@ -594,11 +633,11 @@ const structureToNumber = {
 const stamps = {
     core: {
         layout: [
-            [undefined, STRUCTURE_ROAD, STRUCTURE_ROAD, undefined, undefined],
-            [STRUCTURE_ROAD, STRUCTURE_STORAGE, STRUCTURE_OBSERVER, STRUCTURE_SPAWN, undefined],
+            [undefined, STRUCTURE_ROAD, STRUCTURE_ROAD, STRUCTURE_ROAD, undefined],
+            [STRUCTURE_ROAD, STRUCTURE_STORAGE, STRUCTURE_OBSERVER, STRUCTURE_SPAWN, STRUCTURE_ROAD],
             [STRUCTURE_ROAD, STRUCTURE_TERMINAL, undefined, STRUCTURE_FACTORY, STRUCTURE_ROAD],
-            [undefined, STRUCTURE_POWER_SPAWN, STRUCTURE_NUKER, STRUCTURE_LINK, undefined],
-            [undefined, undefined, STRUCTURE_ROAD, undefined, undefined],
+            [STRUCTURE_ROAD, STRUCTURE_POWER_SPAWN, STRUCTURE_NUKER, STRUCTURE_LINK, STRUCTURE_ROAD],
+            [undefined, STRUCTURE_ROAD, STRUCTURE_ROAD, STRUCTURE_ROAD, undefined],
         ],
         // Points used for validating distances around this stamp to ensure 
         // no overlap with each other or terrain
