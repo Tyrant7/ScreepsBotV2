@@ -3,8 +3,10 @@ const overlay = require("./overlay");
 const MAX_VALUE = 255;
 
 const WEIGHT_CONTROLLER = 1.2;
+const WEIGHT_CONTROLLER_SPACE = 0.8;
 const WEIGHT_MINERAL = 0.15;
 const WEIGHT_SOURCES = 0.9;
+const WEIGHT_SOURCES_SPACE = 0.45;
 const WEIGHT_EXIT_DIST = -0.5;
 
 const CHECK_MAXIMUM = 90;
@@ -76,8 +78,33 @@ class BasePlanner {
             // Now let's check each space in order until we find one that fits our core
             let corePos;
             for (const space of spaces) {
-                if (stampUtility.stampFits(stamps.core, space, distanceTransform, this.roomPlan)) {
-                    this.roomPlan = stampUtility.placeStamp(stamps.core, space, this.roomPlan);
+                let bestStampData;
+                for (const transform of stampUtility.getTransformationList()) {
+                    const transformedStamp = transform(stamps.core);
+                    if (stampUtility.stampFits(transformedStamp, space, distanceTransform, this.roomPlan)) {
+
+                        // Score the stamp
+                        let score = 0;
+                        for (let y = 0; y < transformedStamp.layout.length; y++) {
+                            for (let x = 0; x < transformedStamp.layout[y].length; x++) {
+                                const actualX = space.x - transformedStamp.center.x + x;
+                                const actualY = space.y - transformedStamp.center.y + y;
+                                score += weightMatrix.get(actualX, actualY);
+                            }
+                        }
+
+                        // Lower scores are better
+                        if (!bestStampData || score < bestStampData.score) {
+                            bestStampData = {
+                                stamp: transformedStamp,
+                                score: score,
+                                pos: space,
+                            };
+                        }
+                    }
+                }
+                if (bestStampData) {
+                    this.roomPlan = stampUtility.placeStamp(bestStampData.stamp, bestStampData.pos, this.roomPlan);
                     corePos = space;
                     break;
                 }
@@ -143,8 +170,6 @@ class BasePlanner {
             const stragglingRoadConnectors = this.connectStragglingRoads(roomInfo.room.name, corePos, this.roomPlan);
             this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, stragglingRoadConnectors);
 
-
-
             console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
         }
 
@@ -156,6 +181,10 @@ class BasePlanner {
             matrix: matrixUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone()),
             weight: WEIGHT_CONTROLLER,
         };
+        const controllerFreeSpace = {
+            matrix: matrixUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone(), 2),
+            weight: WEIGHT_CONTROLLER_SPACE,
+        };
 
         const mineralMatrix = {
             matrix: matrixUtility.floodfill(roomInfo.mineral.pos, terrainMatrix.clone()),
@@ -163,12 +192,16 @@ class BasePlanner {
         };
         const sourceMatrices = [];
         for (const source of roomInfo.sources) {
-            sourceMatrices.push(
-                {
-                    matrix: matrixUtility.floodfill(source.pos, terrainMatrix.clone()),
-                    weight: WEIGHT_SOURCES,
-                }
-            );
+            sourceMatrices.push({
+                matrix: matrixUtility.floodfill(source.pos, terrainMatrix.clone()),
+                weight: WEIGHT_SOURCES,
+            });
+
+            // Disallow building too close to a source
+            sourceMatrices.push({
+                matrix: matrixUtility.floodfill(source.pos, terrainMatrix.clone(), 2),
+                weight: WEIGHT_SOURCES_SPACE,
+            });
         }
         const exitMask = {
             matrix: matrixUtility.generateExitMatrix(roomInfo.room),
@@ -180,7 +213,7 @@ class BasePlanner {
         };
 
         return matrixUtility.normalizeMatrix(
-            matrixUtility.addScoreMatrices(controllerMatrix, mineralMatrix, ...sourceMatrices, exitMask, exitDistMatrix),
+            matrixUtility.addScoreMatrices(controllerMatrix, controllerFreeSpace, mineralMatrix, ...sourceMatrices, exitMask, exitDistMatrix),
             MAX_VALUE - 1,
         );
     }
@@ -361,10 +394,11 @@ const matrixUtility = {
      * and takes into account a predefined terrain matrix.
      * @param {RoomPosition | RoomPosition[]} fromPositions The positions to fill from.
      * @param {PathFinder.CostMatrix} matrix The predefined matrix to fill around.
+     * @param {number} depthLimit The fill will stop after reaching this depth.
      * @returns {PathFinder.CostMatrix} A new costmatrix where each value represents
      * the distance to the nearest start tile.
      */
-    floodfill: function(fromPositions, matrix) {
+    floodfill: function(fromPositions, matrix, depthLimit = Infinity) {
         if (!(fromPositions instanceof Array)) {
             fromPositions = [fromPositions];
         }
@@ -403,6 +437,9 @@ const matrixUtility = {
                 fillQueue = nextQueue;
                 nextQueue = [];
                 fillDepth++;
+                if (fillDepth > depthLimit) {
+                    break;
+                }
             }
         }
         return matrix;
