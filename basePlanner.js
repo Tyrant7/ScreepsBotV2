@@ -240,9 +240,11 @@ class BasePlanner {
                         for (let x = 0; x < 50; x++) {
                             for (let y = 0; y < 50; y++) {
                                 const value = roomPlan.get(x, y);
-                                const unwalkable = value !== 0 && value !== structureToNumber[STRUCTURE_ROAD] 
-                                    ? 255 
-                                    : 0;
+                                const unwalkable = value === 0 
+                                    ? 0
+                                    : value === structureToNumber[STRUCTURE_ROAD] 
+                                    ? 1
+                                    : 255;
                                 newMatrix.set(x, y, roadMatrix.get(x, y) + unwalkable);
                             }
                         }
@@ -579,9 +581,11 @@ const structureToNumber = {
 const stamps = {
     core: {
         layout: [
-            [STRUCTURE_STORAGE, STRUCTURE_OBSERVER, STRUCTURE_SPAWN],
-            [STRUCTURE_TERMINAL, undefined, STRUCTURE_FACTORY],
-            [STRUCTURE_POWER_SPAWN, STRUCTURE_NUKER, STRUCTURE_LINK],
+            [undefined, STRUCTURE_ROAD, STRUCTURE_ROAD, undefined, undefined],
+            [STRUCTURE_ROAD, STRUCTURE_STORAGE, STRUCTURE_OBSERVER, STRUCTURE_SPAWN, undefined],
+            [STRUCTURE_ROAD, STRUCTURE_TERMINAL, undefined, STRUCTURE_FACTORY, STRUCTURE_ROAD],
+            [undefined, STRUCTURE_POWER_SPAWN, STRUCTURE_NUKER, STRUCTURE_LINK, undefined],
+            [undefined, undefined, STRUCTURE_ROAD, undefined, undefined],
         ],
         // Points used for validating distances around this stamp to ensure 
         // no overlap with each other or terrain
@@ -626,16 +630,15 @@ const stamps = {
 
     extensionX: {
         layout: [
-            [undefined, STRUCTURE_ROAD, undefined],
-            [STRUCTURE_ROAD, STRUCTURE_EXTENSION, STRUCTURE_ROAD],
-            [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
-            [undefined, STRUCTURE_EXTENSION, STRUCTURE_ROAD],
+            [undefined, STRUCTURE_ROAD, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
+            [STRUCTURE_ROAD, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_ROAD],
+            [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_ROAD, undefined],
         ],
         distancePoints: [
             { x: 1, y: 1, range: 1 },
-            { x: 1, y: 2, range: 1 },
+            { x: 3, y: 2, range: 1 },
         ],
-        center: { x: 1, y: 2 },
+        center: { x: 2, y: 1 },
     },
 };
 
