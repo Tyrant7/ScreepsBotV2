@@ -15,6 +15,14 @@ const CHECK_MAXIMUM = 90;
 const FILLER_COUNT = 2;
 const LAB_COUNT = 1;
 
+const EXTENSIONS_PER_STAMP = 12;
+const LABS_PER_STAMP = 10;
+
+const MAX_STRUCTURES = {};
+for (const key in CONTROLLER_STRUCTURES) {
+    MAX_STRUCTURES[key] = Object.values(CONTROLLER_STRUCTURES[key]).slice(-1);
+}
+
 class BasePlanner {
     run(roomInfo) {
         if (Game.cpu.bucket <= 200) {
