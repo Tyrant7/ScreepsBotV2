@@ -174,6 +174,8 @@ class BasePlanner {
             const remainingExtensions = MAX_STRUCTURES[STRUCTURE_EXTENSION] 
                 - (FILLER_COUNT * EXTENSIONS_PER_FILLER)
                 + MAX_STRUCTURES[STRUCTURE_TOWER];
+            // Here we'll be marking the extensions we place to use as potential tower locations later
+            const extensionPositions = [];
             for (let i = 0; i < remainingExtensions; i++) {
                 // Find the lowest scoring tile that is also adjacent to a road
                 let bestSpot;
@@ -208,9 +210,33 @@ class BasePlanner {
                     break;
                 }
                 this.roomPlan.set(bestSpot.x, bestSpot.y, structureToNumber[STRUCTURE_EXTENSION]);
+                extensionPositions.push({ x: bestSpot.x, y: bestSpot.y });
             }
 
-            overlay.visualizeCostMatrix(roomInfo.room.name, weightMatrix);
+            // Next, we'll replace the extra extensions we placed above with towers
+
+            // Start by creating floodfills for each exit
+            const exitMatrices = [];
+            for (const exitKey in Game.map.describeExits(roomInfo.room.name)) {
+                const matrix = matrixUtility.floodfill(roomInfo.room.find(exitKey), terrainMatrix.clone());
+                exitMatrices.push(matrix);
+            }
+            
+            // Then we'll circle through each exit and optimize a tower for that exit
+            for (let i = 0; i < MAX_STRUCTURES[STRUCTURE_TOWER]; i++) {
+
+                // Find the position of the planned extension with the lowest distance to the exit we've select
+                const activeMatrix = exitMatrices[i % exitMatrices.length];
+                const nextTowerPos = extensionPositions.reduce((best, curr) => {
+                    return activeMatrix.get(curr.x, curr.y) < activeMatrix.get(best.x, best.y) 
+                        ? curr 
+                        : best;
+                });
+                this.roomPlan.set(nextTowerPos.x, nextTowerPos.y, structureToNumber[STRUCTURE_TOWER]);
+
+                // Remove this position so we don't try to place a tower there again
+                extensionPositions.splice(extensionPositions.indexOf(nextTowerPos), 1);
+            }
 
             console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
         }
