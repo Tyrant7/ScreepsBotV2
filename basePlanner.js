@@ -693,7 +693,7 @@ const stamps = {
 
     labs: {
         layout: [
-            [undefined, STRUCTURE_LAB, STRUCTURE_LAB, STRUCTURE_ROAD],
+            [undefined, STRUCTURE_LAB, STRUCTURE_LAB, undefined],
             [STRUCTURE_LAB, STRUCTURE_LAB, STRUCTURE_ROAD, STRUCTURE_LAB],
             [STRUCTURE_LAB, STRUCTURE_ROAD, STRUCTURE_LAB, STRUCTURE_LAB],
             [undefined, STRUCTURE_LAB, STRUCTURE_LAB, undefined],
