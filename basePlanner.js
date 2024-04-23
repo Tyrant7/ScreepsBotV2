@@ -3,10 +3,10 @@ const overlay = require("./overlay");
 const MAX_VALUE = 255;
 
 const WEIGHT_CONTROLLER = 1.2;
-const WEIGHT_CONTROLLER_SPACE = 0.8;
+const WEIGHT_CONTROLLER_SPACE = 0.6;
 const WEIGHT_MINERAL = 0.15;
 const WEIGHT_SOURCES = 0.9;
-const WEIGHT_SOURCES_SPACE = 0.45;
+const WEIGHT_SOURCES_SPACE = 0.25;
 const WEIGHT_EXIT_DIST = -0.65;
 const WEIGHT_TERRAIN_DIST = -1;
 
@@ -16,11 +16,10 @@ const FILLER_COUNT = 2;
 const LAB_COUNT = 1;
 
 const EXTENSIONS_PER_FILLER = 12;
-const LABS_PER_STAMP = 10;
 
 const MAX_STRUCTURES = {};
 for (const key in CONTROLLER_STRUCTURES) {
-    MAX_STRUCTURES[key] = Object.values(CONTROLLER_STRUCTURES[key]).slice(-1);
+    MAX_STRUCTURES[key] = parseInt(Object.values(CONTROLLER_STRUCTURES[key]).slice(-1));
 }
 
 class BasePlanner {
@@ -171,8 +170,10 @@ class BasePlanner {
             // Filter out spaces we've already used
             spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
 
-            // Next, we'll place our remaining extensions
-            const remainingExtensions = MAX_STRUCTURES[STRUCTURE_EXTENSION] - (FILLER_COUNT * EXTENSIONS_PER_FILLER);
+            // Next, we'll place our remaining extensions, we'll plan extra for tower placement positions later
+            const remainingExtensions = MAX_STRUCTURES[STRUCTURE_EXTENSION] 
+                - (FILLER_COUNT * EXTENSIONS_PER_FILLER)
+                + MAX_STRUCTURES[STRUCTURE_TOWER];
             for (let i = 0; i < remainingExtensions; i++) {
                 // Find the lowest scoring tile that is also adjacent to a road
                 let bestSpot;
@@ -209,6 +210,7 @@ class BasePlanner {
                 this.roomPlan.set(bestSpot.x, bestSpot.y, structureToNumber[STRUCTURE_EXTENSION]);
             }
 
+            overlay.visualizeCostMatrix(roomInfo.room.name, weightMatrix);
 
             console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
         }
@@ -221,8 +223,10 @@ class BasePlanner {
             matrix: matrixUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone()),
             weight: WEIGHT_CONTROLLER,
         };
+
+        // Discourage building too close to controller
         const controllerFreeSpace = {
-            matrix: matrixUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone(), 2),
+            matrix: matrixUtility.generateNeighbourMatrix(roomInfo.room.controller.pos, 2),
             weight: WEIGHT_CONTROLLER_SPACE,
         };
 
@@ -237,9 +241,9 @@ class BasePlanner {
                 weight: WEIGHT_SOURCES,
             });
 
-            // Disallow building too close to a source
+            // Discourage building too close to a source
             sourceMatrices.push({
-                matrix: matrixUtility.floodfill(source.pos, terrainMatrix.clone(), 2),
+                matrix: matrixUtility.generateNeighbourMatrix(source.pos, 2),
                 weight: WEIGHT_SOURCES_SPACE,
             });
         }
@@ -416,7 +420,7 @@ const matrixUtility = {
     },
 
     /**
-     * Generates a cost matrix that marks all tiles within 1 tile of an exit as unwalkable.
+     * Generates a cost matrix that marks all tiles within 1 tile of an exit as MAX_VALUE.
      * @param {Room} room The room to create the matrix for.
      * @returns {PathFinder.CostMatrix} A newly created cost matrix with MAX_VALUE on all tiles within 1 of an exit.
      */
@@ -441,6 +445,27 @@ const matrixUtility = {
             }
         }
         return exitMatrix;
+    },
+
+    /**
+     * Generates a cost matrix that marks all tiles within range of the target as 1.
+     * @param {{ x: number, y: number }} pos The position to mark the neighbours of.
+     * @param {number} range The max range of tiles from the position to mark.
+     * @returns {PathFinder.CostMatrix} A newly created cost matrix.
+     */
+    generateNeighbourMatrix: function(pos, range) {
+        const neighbourMatrix = new PathFinder.CostMatrix();
+        for (let x = -range; x <= range; x++) {
+            for (let y = -range; y <= range; y++) {
+                const newX = pos.x + x;
+                const newY = pos.y + y;
+                if (newX < 0 || newX > 49 || newY < 0 || newY > 49) {
+                    continue;
+                }
+                neighbourMatrix.set(newX, newY, 1);
+            }
+        }
+        return neighbourMatrix;
     },
 
     /**
