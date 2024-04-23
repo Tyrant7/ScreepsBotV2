@@ -694,11 +694,11 @@ const stamps = {
         // no overlap with each other or terrain
         // Relative to the top left corner
         distancePoints: [
-            { x: 1, y: 1, range: 1 },
+            { x: 2, y: 2, range: 2 },
         ],
         // The center for placement
         // The stamp will be attempted to place with this tile on the lowest scoring weight
-        center: { x: 2, y: 0 },
+        center: { x: 2, y: 1 },
     },
 
     fastFiller: {
