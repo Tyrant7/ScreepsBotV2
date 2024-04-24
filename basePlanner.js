@@ -125,9 +125,11 @@ class BasePlanner {
                 }
             }
 
-            // Next we'll find the position closest to our core within range 2 of our controller that's valid
+            // Next we'll find the position near our controller with the most open spaces,
+            // using distance to our core as a tiebreaker
             const floodfillFromCore = matrixUtility.floodfill(corePos, terrainMatrix.clone());
             let bestContainerSpot;
+            let bestOpenSpaces = 0;
             let bestDist = Infinity;
             for (let x = -2; x <= 2; x++) {
                 for (let y = -2; y <= 2; y++) {
@@ -140,9 +142,32 @@ class BasePlanner {
                         this.roomPlan.get(newX, newY) !== 0) {
                         continue;
                     }
+
+                    // Count open neighbouring spaces to this one
+                    let openSpaces = 0;
+                    for (let x = -1; x <= 1; x++) {
+                        for (let y = -1; y <= 1; y++) {
+                            const neighbourX = newX + x;
+                            const neighbourY = newY + y;
+                            if (neighbourX <= 1 || neighbourX >= 48 || neighbourY <= 1 || neighbourY >= 48) {
+                                continue;
+                            }
+                            if (terrainMatrix.get(neighbourX, neighbourY) !== 0 ||
+                                this.roomPlan.get(neighbourX, neighbourY) !== 0) {
+                                continue;
+                            }
+                            openSpaces++;
+                        }
+                    }
+
                     const dist = floodfillFromCore.get(newX, newY);
-                    if (!bestContainerSpot || dist < bestDist) {
+                    const better = !bestContainerSpot ||
+                        openSpaces < bestOpenSpaces ||
+                        // Use distance as tiebreaker
+                        dist < bestDist;
+                    if (better) {
                         bestDist = dist;
+                        bestOpenSpaces = openSpaces;
                         bestContainerSpot = { x: newX, y: newY };
                     }
                 }
