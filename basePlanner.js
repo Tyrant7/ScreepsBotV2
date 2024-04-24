@@ -83,7 +83,9 @@ class BasePlanner {
             let spaces = [];
             for (let x = 2; x < 48; x++) {
                 for (let y = 2; y < 48; y++) {
-                    spaces.push({ x, y });
+                    if (terrainMatrix.get(x, y) === 0) {
+                        spaces.push({ x, y });
+                    }
                 }
             }
             spaces.sort((a, b) => weightMatrix.get(a.x, a.y) - weightMatrix.get(b.x, b.y));
@@ -123,10 +125,50 @@ class BasePlanner {
                 }
             }
 
+            // Next we'll find the position closest to our core within range 2 of our controller that's valid
+            const floodfillFromCore = matrixUtility.floodfill(corePos, terrainMatrix.clone());
+            let bestContainerSpot;
+            let bestDist = Infinity;
+            for (let x = -2; x <= 2; x++) {
+                for (let y = -2; y <= 2; y++) {
+                    const newX = roomInfo.room.controller.pos.x + x;
+                    const newY = roomInfo.room.controller.pos.y + y;
+                    if (newX <= 1 || newX >= 48 || newY <= 1 || newY >= 48) {
+                        continue;
+                    }
+                    if (terrainMatrix.get(newX, newY) !== 0 ||
+                        this.roomPlan.get(newX, newY) !== 0) {
+                        continue;
+                    }
+                    const dist = floodfillFromCore.get(newX, newY);
+                    if (!bestContainerSpot || dist < bestDist) {
+                        bestDist = dist;
+                        bestContainerSpot = { x: newX, y: newY };
+                    }
+                }
+            }
+
+            // We'll place the container and mark all spots around it as invalid
+            this.roomPlan.set(bestContainerSpot.x, bestContainerSpot.y, structureToNumber[STRUCTURE_CONTAINER]);
+            for (let x = -1; x <= 1; x++) {
+                for (let y = -1; y <= 1; y++) {
+                    const newX = bestContainerSpot.x + x;
+                    const newY = bestContainerSpot.y + y;
+                    if (newX <= 1 || newX >= 48 || newY <= 1 || newY >= 48) {
+                        continue;
+                    }
+                    terrainMatrix.set(newX, newY, MAX_VALUE);
+                }
+            }
+
+            // Filter out spaces we've already used and the ones we just marked as invalid
+            spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0 &&
+                terrainMatrix.get(space.x, space.y) === 0);
+
             // Once we have our core, let's plan out our artery roads
-            // This will also handle container placement
+            // This will also handle container placement for sources and minerals
             const roadPoints = roomInfo.sources
-                .concat(roomInfo.room.controller)
+                .concat({ pos: new RoomPosition(bestContainerSpot.x, bestContainerSpot.y, roomInfo.room.name) })
                 .concat(roomInfo.mineral);
             const roadMatrix = this.planRoads(roadPoints, roomInfo.room.name, corePos, this.roomPlan);
             this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, roadMatrix);
