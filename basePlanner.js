@@ -124,10 +124,10 @@ class BasePlanner {
             }
 
             // Once we have our core, let's plan out our artery roads
+            // This will also handle container placement
             const roadPoints = roomInfo.sources
                 .concat(roomInfo.room.controller)
-                .concat(roomInfo.mineral)
-                .map((p) => p.pos);
+                .concat(roomInfo.mineral);
             const roadMatrix = this.planRoads(roadPoints, roomInfo.room.name, corePos, this.roomPlan);
             this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, roadMatrix);
 
@@ -302,7 +302,7 @@ class BasePlanner {
     planRoads(connectPoints, roomName, corePos, roomPlan) {
 
         // Path from further points first
-        connectPoints.sort((a, b) => b.getRangeTo(corePos.x, corePos.y) - a.getRangeTo(corePos.x, corePos.y));
+        connectPoints.sort((a, b) => b.pos.getRangeTo(corePos.x, corePos.y) - a.pos.getRangeTo(corePos.x, corePos.y));
 
         // Save a path to each of our road points
         // Use a separate matrix for road positions and pathing locations
@@ -322,7 +322,7 @@ class BasePlanner {
         }
         corePos = new RoomPosition(corePos.x, corePos.y, roomName);
         for (const point of connectPoints) {
-            const goal = { pos: point, range: 1 };
+            const goal = { pos: point.pos, range: 1 };
             const result = PathFinder.search(
                 corePos, goal, {
                     plainCost: 2,
@@ -338,6 +338,11 @@ class BasePlanner {
             for (const step of result.path) {
                 pathfindMatrix.set(step.x, step.y, 1);
                 roadMatrix.set(step.x, step.y, structureToNumber[STRUCTURE_ROAD]);
+            }
+
+            if (point instanceof Source || point instanceof Mineral) {
+                const lastStep = result.path.slice(-1)[0];
+                roadMatrix.set(lastStep.x, lastStep.y, structureToNumber[STRUCTURE_CONTAINER]);
             }
         }
         return roadMatrix;
@@ -389,7 +394,9 @@ class BasePlanner {
         }
 
         // Plan roads to connect these back to our core
-        const roadPositions = stragglingRoads.map((r) => new RoomPosition(r.x, r.y, roomName));
+        const roadPositions = stragglingRoads.map((r) => {
+            return { pos: new RoomPosition(r.x, r.y, roomName) };
+        });
         return this.planRoads(roadPositions, roomName, corePos, roomPlan);
     }
 }
