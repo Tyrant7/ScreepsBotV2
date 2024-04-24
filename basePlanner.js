@@ -10,7 +10,7 @@ const WEIGHT_SOURCES_SPACE = 0.25;
 const WEIGHT_EXIT_DIST = -0.65;
 const WEIGHT_TERRAIN_DIST = -1;
 
-const CHECK_MAXIMUM = 90;
+const CHECK_MAXIMUM = 10;
 
 const FILLER_COUNT = 2;
 const LAB_COUNT = 1;
@@ -304,6 +304,7 @@ class BasePlanner {
                 // Remove this position so we don't try to place a tower there again
                 extensionPositions.splice(extensionPositions.indexOf(nextTowerPos), 1);
             }
+
 
             console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
         }
@@ -701,7 +702,7 @@ const matrixUtility = {
      * Normalizes a cost matrix so that its minimum value becomes zero, and its max value becomes `normalizeScale`.
      * @param {PathFinder.CostMatrix} matrix The matrix to normalize.
      * @param {number} normalizeScale The max value allowed in the new normalized matrix.
-     * @returns {PathFinder.CostMatrix} The normalized cost matrix.
+     * @returns {PathFinder.CostMatrix} A new cost matrix with the normalized values of the input cost matrix.
      */
     normalizeMatrix: function(matrix, normalizeScale) {
 
@@ -721,6 +722,7 @@ const matrixUtility = {
         const scale = maxValue - minValue;
 
         // Normalize each score based on its magnitude inside of our range
+        const newMatrix = new PathFinder.CostMatrix();
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
                 const oldValue = matrix.get(x, y);
@@ -730,10 +732,10 @@ const matrixUtility = {
                 const newValue = scale === 0 
                     ? 0
                     : Math.round(((oldValue - minValue) / scale) * normalizeScale);
-                matrix.set(x, y, newValue);
+                newMatrix.set(x, y, newValue);
             }
         }
-        return matrix;
+        return newMatrix;
     },
 };
 
@@ -819,7 +821,7 @@ const stampUtility = {
             for (let x = -point.range; x <= point.range; x++) {
                 for (let y = -point.range; y <= point.range; y++) {
                     if (existingPlans.get(newX + x, newY + y) > 0) {
-                        return;
+                        return false;
                     }
                 }
             }
@@ -836,12 +838,6 @@ const stampUtility = {
                 }
             }
         }
-        /*
-        // Debug
-        for (const point of stamp.distancePoints) {
-            planMatrix.set(pos.x + point.x - stamp.center.x, pos.y + point.y - stamp.center.y, 254);
-        }
-        */
         return planMatrix;
     },
 
