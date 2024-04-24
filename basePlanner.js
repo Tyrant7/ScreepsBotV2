@@ -8,7 +8,6 @@ const WEIGHT_SOURCES = 0.9;
 const WEIGHT_SOURCES_SPACE = 0.25;
 const WEIGHT_EXIT_DIST = -0.65;
 const WEIGHT_TERRAIN_DIST = -1;
-const PENALTY_UPGRADER_CONTAINER_BUILD_NEARBY = 30;
 
 const CHECK_MAXIMUM = 10;
 
@@ -182,16 +181,11 @@ class BasePlanner {
                     if (newX <= 1 || newX >= 48 || newY <= 1 || newY >= 48) {
                         continue;
                     }
-                    const oldValue = weightMatrix.get(newX, newY);
-                    weightMatrix.set(newX, newY, oldValue + PENALTY_UPGRADER_CONTAINER_BUILD_NEARBY);
+                    weightMatrix.set(newX, newY, MAX_VALUE);
                 }
             }
 
-            // Filter out spaces we've already used and the ones we just marked as invalid
-            spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0 &&
-                terrainMatrix.get(space.x, space.y) === 0);
-
-            // Then re-sort the spaces since we just changed our scoring
+            // Re-sort our spaces since we just changed our scoring
             spaces.sort((a, b) => weightMatrix.get(a.x, a.y) - weightMatrix.get(b.x, b.y));
 
             // Once we have our core, let's plan out our artery roads
