@@ -163,7 +163,7 @@ class BasePlanner {
                     const better = !bestContainerSpot ||
                         openSpaces > bestOpenSpaces ||
                         // Use distance as tiebreaker
-                        dist < bestDist;
+                        (openSpaces === bestOpenSpaces && dist < bestDist);
                     if (better) {
                         bestDist = dist;
                         bestOpenSpaces = openSpaces;
