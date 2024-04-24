@@ -162,7 +162,7 @@ class BasePlanner {
 
                     const dist = floodfillFromCore.get(newX, newY);
                     const better = !bestContainerSpot ||
-                        openSpaces < bestOpenSpaces ||
+                        openSpaces > bestOpenSpaces ||
                         // Use distance as tiebreaker
                         dist < bestDist;
                     if (better) {
