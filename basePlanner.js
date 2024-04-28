@@ -9,7 +9,7 @@ const WEIGHT_SOURCES_SPACE = 0.25;
 const WEIGHT_EXIT_DIST = -0.7;
 const WEIGHT_TERRAIN_DIST = -0.9;
 
-const CHECK_MAXIMUM = 10;
+const CHECK_MAXIMUM = 30;
 
 const FILLER_COUNT = 2;
 const LAB_COUNT = 1;
@@ -197,21 +197,25 @@ class BasePlanner {
             const roadMatrix = this.planRoads(roadPoints, roomInfo.room.name, corePos, this.roomPlan);
             this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, roadMatrix);
 
+
             // Filter out spaces we've already used
             spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
 
             // Then, we'll plan our our fast-filler locations
+            const distToCore = matrixUtility.floodfill(corePos, terrainMatrix.clone());
             this.roomPlan = placeStamps(stamps.fastFiller, FILLER_COUNT, this.roomPlan, (stamp, pos) => {
                 let totalScore = 0;
                 for (let y = 0; y < stamp.layout.length; y++) {
                     for (let x = 0; x < stamp.layout[y].length; x++) {
-                        const actualX = pos.x - stamp.center.x + x;
-                        const actualY = pos.y - stamp.center.y + y;
+                        const actualX = pos.x + x;
+                        const actualY = pos.y + y;
                         totalScore += weightMatrix.get(actualX, actualY);
                     }
                 }
+                totalScore += distToCore.get(pos.x, pos.y) * 30;
                 return totalScore;
             });
+
 
             // Filter out spaces we've already used
             spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
@@ -221,13 +225,14 @@ class BasePlanner {
                 let totalScore = 0;
                 for (let y = 0; y < stamp.layout.length; y++) {
                     for (let x = 0; x < stamp.layout[y].length; x++) {
-                        const actualX = pos.x - stamp.center.x + x;
-                        const actualY = pos.y - stamp.center.y + y;
+                        const actualX = pos.x + x;
+                        const actualY = pos.y + y;
                         totalScore += weightMatrix.get(actualX, actualY);
                     }
                 }
                 return totalScore;
             });
+
 
             // Next, we'll connect up any roads we've placed that aren't currently connected
             const stragglingRoadConnectors = this.connectStragglingRoads(roomInfo.room.name, corePos, this.roomPlan);
@@ -789,7 +794,6 @@ const stamps = {
         ],
         distancePoints: [
             { x: 3, y: 1, range: 1 },
-            { x: 2, y: 2, range: 1 },
             { x: 1, y: 2, range: 1 },
         ],
         center: { x: 2, y: 2 },
@@ -857,7 +861,6 @@ const stampUtility = {
 
     rotateStamp: function(stamp) {
         stamp = JSON.parse(JSON.stringify(stamp));
-        const dimensions = { x: stamp.layout[0].length, y: stamp.layout.length };
         stamp.layout = _.zip(...stamp.layout);
         for (const p of stamp.distancePoints) {
             const temp = p.x;
@@ -865,9 +868,9 @@ const stampUtility = {
             p.y = temp;
         }
 
-        const temp = stamp.center.y;
-        stamp.center.y = stamp.center.x;
-        stamp.center.x = temp;
+        const temp = stamp.center.x;
+        stamp.center.x = stamp.center.y;
+        stamp.center.y = temp;
         return stamp;
     },
 
