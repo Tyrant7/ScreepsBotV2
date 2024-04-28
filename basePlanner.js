@@ -14,6 +14,7 @@ const CHECK_MAXIMUM = 10;
 const FILLER_COUNT = 2;
 const LAB_COUNT = 1;
 
+const EXTENSIONS_IN_CORE = 1;
 const EXTENSIONS_PER_FILLER = 12;
 
 const MAX_STRUCTURES = {};
@@ -238,7 +239,9 @@ class BasePlanner {
             // Next, we'll place our remaining extensions, we'll plan extra for tower placement positions later
             const remainingExtensions = MAX_STRUCTURES[STRUCTURE_EXTENSION] 
                 - (FILLER_COUNT * EXTENSIONS_PER_FILLER)
+                - EXTENSIONS_IN_CORE
                 + MAX_STRUCTURES[STRUCTURE_TOWER];
+                + MAX_STRUCTURES[STRUCTURE_OBSERVER];
             // Here we'll be marking the extensions we place to use as potential tower locations later
             const extensionPositions = [];
             for (let i = 0; i < remainingExtensions; i++) {
@@ -302,7 +305,14 @@ class BasePlanner {
                 // Remove this position so we don't try to place a tower there again
                 extensionPositions.splice(extensionPositions.indexOf(nextTowerPos), 1);
             }
-
+            
+            // We'll also replace the worst extension with our observer
+            const worstExtensionPos = extensionPositions.reduce((worst, curr) => {
+                return weightMatrix.get(worst.x, worst.y) < weightMatrix.get(curr.x, curr.y)
+                    ? curr
+                    : worst;
+            });
+            this.roomPlan.set(worstExtensionPos.x, worstExtensionPos.y, structureToNumber[STRUCTURE_OBSERVER]);
 
             // overlay.visualizeCostMatrix(roomInfo.room.name, weightMatrix);
 
@@ -754,7 +764,7 @@ const stamps = {
     core: {
         layout: [
             [undefined, STRUCTURE_ROAD, STRUCTURE_ROAD, STRUCTURE_ROAD, undefined],
-            [STRUCTURE_ROAD, STRUCTURE_STORAGE, STRUCTURE_OBSERVER, STRUCTURE_SPAWN, STRUCTURE_ROAD],
+            [STRUCTURE_ROAD, STRUCTURE_STORAGE, STRUCTURE_EXTENSION, STRUCTURE_SPAWN, STRUCTURE_ROAD],
             [STRUCTURE_ROAD, STRUCTURE_TERMINAL, undefined, STRUCTURE_FACTORY, STRUCTURE_ROAD],
             [STRUCTURE_ROAD, STRUCTURE_POWER_SPAWN, STRUCTURE_NUKER, STRUCTURE_LINK, STRUCTURE_ROAD],
             [undefined, STRUCTURE_ROAD, STRUCTURE_ROAD, STRUCTURE_ROAD, undefined],
