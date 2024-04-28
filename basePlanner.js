@@ -4,6 +4,8 @@ const MAX_VALUE = 255;
 const MIN_BUILD_AREA = 4;
 const MAX_BUILD_AREA = 45;
 
+const EXCLUSION_ZONE = "exclusion";
+
 const WEIGHT_CONTROLLER = 1.2;
 const WEIGHT_MINERAL = 0.15;
 const WEIGHT_SOURCES = 0.85;
@@ -182,7 +184,7 @@ class BasePlanner {
                 for (let y = -1; y <= 1; y++) {
                     const newX = bestContainerSpot.x + x;
                     const newY = bestContainerSpot.y + y;
-                    weightMatrix.set(newX, newY, MAX_VALUE);
+                    this.roomPlan.set(newX, newY, structureToNumber[EXCLUSION_ZONE]);
                 }
             }
 
@@ -321,12 +323,13 @@ class BasePlanner {
             });
             this.roomPlan.set(worstExtensionPos.x, worstExtensionPos.y, structureToNumber[STRUCTURE_OBSERVER]);
 
-            // overlay.visualizeCostMatrix(roomInfo.room.name, weightMatrix);
-
             console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
+
+            // overlay.visualizeCostMatrix(roomInfo.room.name, weightMatrix);
         }
 
-        overlay.visualizeBasePlan(roomInfo.room.name, this.roomPlan, structureToNumber);
+        const mapping = _.omit(structureToNumber, [EXCLUSION_ZONE]);
+        overlay.visualizeBasePlan(roomInfo.room.name, this.roomPlan, mapping);
     }
 
     generateWeightMatrix(roomInfo, terrainMatrix, distanceTransform) {
@@ -760,6 +763,7 @@ const structureToNumber = {
     [STRUCTURE_CONTAINER]:    3,
     [STRUCTURE_NUKER]:        91,
     [STRUCTURE_FACTORY]:      41,
+    [EXCLUSION_ZONE]:         2,
 };
 
 const stamps = {
