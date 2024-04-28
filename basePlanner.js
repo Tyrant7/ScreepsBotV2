@@ -213,6 +213,9 @@ class BasePlanner {
                         totalScore += weightMatrix.get(actualX, actualY);
                     }
                 }
+                // TODO //
+                // Change this to be a road length measurement (pathfinding around tiles blocked by the stamp)
+                // instead of floodfill distance
                 totalScore += floodfillFromCore.get(pos.x, pos.y) * FILLER_CORE_DIST_PENTALTY;
                 return totalScore;
             });
