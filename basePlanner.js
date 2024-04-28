@@ -1,6 +1,8 @@
 const overlay = require("./overlay");
 
 const MAX_VALUE = 255;
+const MIN_BUILD_AREA = 4;
+const MAX_BUILD_AREA = 45;
 
 const WEIGHT_CONTROLLER = 1.2;
 const WEIGHT_MINERAL = 0.15;
@@ -9,7 +11,7 @@ const WEIGHT_SOURCES_SPACE = 0.25;
 const WEIGHT_EXIT_DIST = -0.7;
 const WEIGHT_TERRAIN_DIST = -0.9;
 
-const CHECK_MAXIMUM = 30;
+const CHECK_MAXIMUM = 20;
 const FILLER_CORE_DIST_PENTALTY = 80;
 
 const FILLER_COUNT = 2;
@@ -136,7 +138,7 @@ class BasePlanner {
                 for (let y = -2; y <= 2; y++) {
                     const newX = roomInfo.room.controller.pos.x + x;
                     const newY = roomInfo.room.controller.pos.y + y;
-                    if (newX <= 1 || newX >= 48 || newY <= 1 || newY >= 48) {
+                    if (newX < MIN_BUILD_AREA || newX > MAX_BUILD_AREA || newY < MIN_BUILD_AREA || newY > MAX_BUILD_AREA) {
                         continue;
                     }
                     if (terrainMatrix.get(newX, newY) !== 0 ||
@@ -150,7 +152,7 @@ class BasePlanner {
                         for (let y = -1; y <= 1; y++) {
                             const neighbourX = newX + x;
                             const neighbourY = newY + y;
-                            if (neighbourX <= 1 || neighbourX >= 48 || neighbourY <= 1 || neighbourY >= 48) {
+                            if (neighbourX < MIN_BUILD_AREA || neighbourX > MAX_BUILD_AREA || neighbourY < MIN_BUILD_AREA || neighbourY > MAX_BUILD_AREA) {
                                 continue;
                             }
                             if (terrainMatrix.get(neighbourX, neighbourY) !== 0 ||
@@ -180,15 +182,12 @@ class BasePlanner {
                 for (let y = -1; y <= 1; y++) {
                     const newX = bestContainerSpot.x + x;
                     const newY = bestContainerSpot.y + y;
-                    if (newX <= 1 || newX >= 48 || newY <= 1 || newY >= 48) {
-                        continue;
-                    }
                     weightMatrix.set(newX, newY, MAX_VALUE);
                 }
             }
 
-            // Re-sort our spaces since we just changed our scoring
-            spaces.sort((a, b) => weightMatrix.get(a.x, a.y) - weightMatrix.get(b.x, b.y));
+            // Now let's sort our spaces from distance to the core
+            spaces = spaces.sort((a, b) => floodfillFromCore.get(a.x, a.y) - floodfillFromCore.get(b.x, b.y));
 
             // Once we have our core, let's plan out our artery roads
             // This will also handle container placement for sources and minerals
@@ -203,7 +202,6 @@ class BasePlanner {
             spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
 
             // Then, we'll plan our our fast-filler locations
-            const distToCore = matrixUtility.floodfill(corePos, terrainMatrix.clone());
             this.roomPlan = placeStamps(stamps.fastFiller, FILLER_COUNT, this.roomPlan, (stamp, pos) => {
                 let totalScore = 0;
                 for (let y = 0; y < stamp.layout.length; y++) {
@@ -213,7 +211,7 @@ class BasePlanner {
                         totalScore += weightMatrix.get(actualX, actualY);
                     }
                 }
-                totalScore += distToCore.get(pos.x, pos.y) * FILLER_CORE_DIST_PENTALTY;
+                totalScore += floodfillFromCore.get(pos.x, pos.y) * FILLER_CORE_DIST_PENTALTY;
                 return totalScore;
             });
 
@@ -255,6 +253,9 @@ class BasePlanner {
                 let bestSpot;
                 for (const space of spaces) {
                     if (terrainMatrix.get(space.x, space.y) > 0 || this.roomPlan.get(space.x, space.y) > 0) {
+                        continue;
+                    }
+                    if (space.x < MIN_BUILD_AREA || space.x > MAX_BUILD_AREA || space.y < MIN_BUILD_AREA || space.y > MAX_BUILD_AREA) {
                         continue;
                     }
 
@@ -351,10 +352,6 @@ class BasePlanner {
                 weight: WEIGHT_SOURCES_SPACE,
             });
         }
-        const exitMask = {
-            matrix: matrixUtility.generateExitMatrix(roomInfo.room),
-            weight: 0,
-        };
         const exitDistMatrix = {
             matrix: matrixUtility.floodfill(roomInfo.room.find(FIND_EXIT), terrainMatrix.clone()),
             weight: WEIGHT_EXIT_DIST,
@@ -369,7 +366,6 @@ class BasePlanner {
             matrixUtility.addScoreMatrices(controllerMatrix, 
                 mineralMatrix, 
                 ...sourceMatrices, 
-                exitMask, 
                 exitDistMatrix,
                 distMatrix),
             MAX_VALUE - 1,
@@ -827,6 +823,9 @@ const stampUtility = {
             // Look at all points within range of this one to ensure nothing else is placed there
             for (let x = -point.range; x <= point.range; x++) {
                 for (let y = -point.range; y <= point.range; y++) {
+                    if (newX + x < MIN_BUILD_AREA || newX + x > MAX_BUILD_AREA || newY + y < MIN_BUILD_AREA || newY + y > MAX_BUILD_AREA) {
+                        return false;
+                    }
                     if (existingPlans.get(newX + x, newY + y) > 0) {
                         return false;
                     }
