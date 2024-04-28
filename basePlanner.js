@@ -304,6 +304,8 @@ class BasePlanner {
             }
 
 
+            // overlay.visualizeCostMatrix(roomInfo.room.name, weightMatrix);
+
             console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
         }
 
@@ -770,18 +772,17 @@ const stamps = {
 
     fastFiller: {
         layout: [
-            [undefined, STRUCTURE_ROAD, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
+            [undefined, undefined, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
             [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_SPAWN, undefined, STRUCTURE_EXTENSION],
             [STRUCTURE_EXTENSION, undefined, STRUCTURE_CONTAINER, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
             [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_ROAD, undefined],
         ],
         distancePoints: [
             { x: 3, y: 1, range: 1 },
-            { x: 2, y: 1, range: 1 },
             { x: 2, y: 2, range: 1 },
             { x: 1, y: 2, range: 1 },
         ],
-        center: { x: 2, y: 1 },
+        center: { x: 2, y: 2 },
     },
 
     labs: {
