@@ -10,6 +10,7 @@ const WEIGHT_EXIT_DIST = -0.7;
 const WEIGHT_TERRAIN_DIST = -0.9;
 
 const CHECK_MAXIMUM = 30;
+const FILLER_CORE_DIST_PENTALTY = 10;
 
 const FILLER_COUNT = 2;
 const LAB_COUNT = 1;
@@ -212,7 +213,7 @@ class BasePlanner {
                         totalScore += weightMatrix.get(actualX, actualY);
                     }
                 }
-                totalScore += distToCore.get(pos.x, pos.y) * 30;
+                totalScore += distToCore.get(pos.x, pos.y) * FILLER_CORE_DIST_PENTALTY;
                 return totalScore;
             });
 
