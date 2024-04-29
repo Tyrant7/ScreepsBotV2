@@ -54,7 +54,7 @@ class BasePlanner {
                             if (stampUtility.stampFits(transformedStamp, space, distanceTransform, roomPlan)) {
 
                                 // Score the stamp
-                                const score = scoreFn(transformedStamp, space);
+                                const score = scoreFn(transformedStamp, space, roomPlan);
                                 checkedAtLeastOne = true;
 
                                 // Lower scores are better
@@ -79,6 +79,53 @@ class BasePlanner {
                     }
                 }
                 return roomPlan;
+            }
+            function defaultScoreFn(stamp, pos, roomPlan) {
+                let totalScore = 0;
+                for (let y = 0; y < stamp.layout.length; y++) {
+                    for (let x = 0; x < stamp.layout[y].length; x++) {
+                        const actualX = pos.x + x;
+                        const actualY = pos.y + y;
+                        totalScore += weightMatrix.get(actualX, actualY);
+                    }
+                }
+
+                // We're going to path from our filler's center position to our core and apply a penalty for each distance we are away
+                // First, we need a matrix of what our room would look like with our stamp, 
+                // then we'll mark all planned tiles and terrain as unwalkable
+                const pathMatrix = stampUtility.placeStamp(stamp, pos, roomPlan.clone());
+                for (let x = 0; x < 50; x++) {
+                    for (let y = 0; y < 50; y++) {
+                        const value = pathMatrix.get(x, y);
+                        pathMatrix.set(x, y, 
+                            terrainMatrix.get(x, y) > 0
+                                ? 255 
+                                : value === 0 || value === structureToNumber[EXCLUSION_ZONE]
+                                ? 0
+                                : value === structureToNumber[STRUCTURE_ROAD] 
+                                ? 1 
+                                : 255
+                        );
+                    }
+                }
+
+                // Then we'll simply path and return the path length times a penalty
+                const start = new RoomPosition(pos.x, pos.y, roomInfo.room.name);
+                const goal = { pos: new RoomPosition(corePos.x, corePos.y, roomInfo.room.name), range: 2 };
+                const result = PathFinder.search(
+                    start, goal, {
+                        plainCost: 2,
+                        swampCost: 2,
+                        maxRooms: 1,
+                        roomCallback: function(roomName) {
+                            return pathMatrix;
+                        },
+                    },
+                );
+                if (result.incomplete) {
+                    return Infinity;
+                }
+                return totalScore + (result.path.length * FILLER_CORE_DIST_PENTALTY);
             }
 
             this.roomPlan = new PathFinder.CostMatrix();
@@ -211,70 +258,14 @@ class BasePlanner {
             spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
 
             // Then, we'll plan our our fast-filler locations
-            this.roomPlan = placeStamps(stamps.fastFiller, FILLER_COUNT, this.roomPlan, (stamp, pos) => {
-                let totalScore = 0;
-                for (let y = 0; y < stamp.layout.length; y++) {
-                    for (let x = 0; x < stamp.layout[y].length; x++) {
-                        const actualX = pos.x + x;
-                        const actualY = pos.y + y;
-                        totalScore += weightMatrix.get(actualX, actualY);
-                    }
-                }
-
-                // We're going to path from our filler's center position to our core and apply a penalty for each distance we are away
-                // First, we need a matrix of what our room would look like with our stamp, 
-                // then we'll mark all planned tiles and terrain as unwalkable
-                const pathMatrix = stampUtility.placeStamp(stamp, pos, this.roomPlan.clone());
-                for (let x = 0; x < 50; x++) {
-                    for (let y = 0; y < 50; y++) {
-                        const value = pathMatrix.get(x, y);
-                        pathMatrix.set(x, y, 
-                            terrainMatrix.get(x, y) > 0
-                                ? 255 
-                                : value === 0 || value === structureToNumber[EXCLUSION_ZONE]
-                                ? 0
-                                : value === structureToNumber[STRUCTURE_ROAD] 
-                                ? 1 
-                                : 255
-                        );
-                    }
-                }
-
-                // Then we'll simply path and return the path length times a penalty
-                const start = new RoomPosition(pos.x, pos.y, roomInfo.room.name);
-                const goal = { pos: new RoomPosition(corePos.x, corePos.y, roomInfo.room.name), range: 2 };
-                const result = PathFinder.search(
-                    start, goal, {
-                        plainCost: 2,
-                        swampCost: 2,
-                        maxRooms: 1,
-                        roomCallback: function(roomName) {
-                            return pathMatrix;
-                        },
-                    },
-                );
-                if (result.incomplete) {
-                    return Infinity;
-                }
-                return totalScore + (result.path.length * FILLER_CORE_DIST_PENTALTY);
-            });
+            this.roomPlan = placeStamps(stamps.fastFiller, FILLER_COUNT, this.roomPlan, defaultScoreFn);
 
 
             // Filter out spaces we've already used
             spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
 
             // And labs
-            this.roomPlan = placeStamps(stamps.labs, LAB_COUNT, this.roomPlan, (stamp, pos) => {
-                let totalScore = 0;
-                for (let y = 0; y < stamp.layout.length; y++) {
-                    for (let x = 0; x < stamp.layout[y].length; x++) {
-                        const actualX = pos.x + x;
-                        const actualY = pos.y + y;
-                        totalScore += weightMatrix.get(actualX, actualY);
-                    }
-                }
-                return totalScore;
-            });
+            this.roomPlan = placeStamps(stamps.labs, LAB_COUNT, this.roomPlan, defaultScoreFn);
 
 
             // Next, we'll connect up any roads we've placed that aren't currently connected
