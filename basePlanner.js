@@ -14,7 +14,7 @@ const WEIGHT_EXIT_DIST = -0.7;
 const WEIGHT_TERRAIN_DIST = -0.9;
 
 const CHECK_MAXIMUM = 20;
-const FILLER_CORE_DIST_PENTALTY = 80;
+const FILLER_CORE_DIST_PENTALTY = 20;
 
 const FILLER_COUNT = 2;
 const LAB_COUNT = 1;
@@ -213,11 +213,43 @@ class BasePlanner {
                         totalScore += weightMatrix.get(actualX, actualY);
                     }
                 }
-                // TODO //
-                // Change this to be a road length measurement (pathfinding around tiles blocked by the stamp)
-                // instead of floodfill distance
-                totalScore += floodfillFromCore.get(pos.x, pos.y) * FILLER_CORE_DIST_PENTALTY;
-                return totalScore;
+
+                // We're going to path from our filler's center position to our core and apply a penalty for each distance we are away
+                // First, we need a matrix of what our room would look like with our stamp, 
+                // then we'll mark all planned tiles and terrain as unwalkable
+                const pathMatrix = stampUtility.placeStamp(stamp, pos, this.roomPlan.clone());
+                for (let x = 0; x < 50; x++) {
+                    for (let y = 0; y < 50; y++) {
+                        const value = pathMatrix.get(x, y);
+                        pathMatrix.set(x, y, 
+                            terrainMatrix.get(x, y) > 0
+                                ? 255 
+                                : value === 0 
+                                ? 0
+                                : value === structureToNumber[STRUCTURE_ROAD] 
+                                ? 1 
+                                : 255
+                        );
+                    }
+                }
+
+                // Then we'll simply path and return the path length times a penalty
+                corePos = new RoomPosition(corePos.x, corePos.y, roomInfo.room.name);
+                const goal = { pos: new RoomPosition(pos.x, pos.y, roomInfo.room.name), range: 1 };
+                const result = PathFinder.search(
+                    corePos, goal, {
+                        plainCost: 2,
+                        swampCost: 2,
+                        maxRooms: 1,
+                        roomCallback: function(roomName) {
+                            return pathMatrix;
+                        },
+                    },
+                );
+                if (result.incomplete) {
+                    return Infinity;
+                }
+                return totalScore + result.path.length * FILLER_CORE_DIST_PENTALTY;
             });
 
 
