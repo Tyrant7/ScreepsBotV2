@@ -484,7 +484,7 @@ class BasePlanner {
         // Then, identify any roads that cannot connect back to the core
         const stragglingRoads = [];
         const maxNeededTiles = allRoads.length;
-        const goal = { pos: new RoomPosition(corePos.x, corePos.y, roomName), range: 1 };
+        const goal = { pos: new RoomPosition(corePos.x, corePos.y, roomName), range: 2 };
         while (allRoads.length) {
             const next = allRoads.pop();
             const result = PathFinder.search(
