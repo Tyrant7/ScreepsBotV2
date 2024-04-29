@@ -14,7 +14,7 @@ const WEIGHT_EXIT_DIST = -0.7;
 const WEIGHT_TERRAIN_DIST = -0.9;
 
 const CHECK_MAXIMUM = 20;
-const FILLER_CORE_DIST_PENTALTY = 20;
+const FILLER_CORE_DIST_PENTALTY = 200;
 
 const FILLER_COUNT = 2;
 const LAB_COUNT = 1;
@@ -43,18 +43,19 @@ class BasePlanner {
                     let bestStampData;
                     let checkedLocations = 0;
                     for (const space of spaces) {
-                        if (checkedLocations >= CHECK_MAXIMUM && bestStampData) {
+                        if (checkedLocations >= CHECK_MAXIMUM) {
                             break;
                         }
-                        checkedLocations++;
     
                         // Consider all orientations
+                        let checkedAtLeastOne = false;
                         for (const transform of stampUtility.getTransformationList()) {
                             const transformedStamp = transform(stamp);
                             if (stampUtility.stampFits(transformedStamp, space, distanceTransform, roomPlan)) {
 
                                 // Score the stamp
-                                let score = scoreFn(transformedStamp, space);
+                                const score = scoreFn(transformedStamp, space);
+                                checkedAtLeastOne = true;
 
                                 // Lower scores are better
                                 if (!bestStampData || score < bestStampData.score) {
@@ -65,6 +66,10 @@ class BasePlanner {
                                     };
                                 }
                             }
+                        }
+
+                        if (checkedAtLeastOne) {
+                            checkedLocations++;
                         }
                     }
     
@@ -234,10 +239,10 @@ class BasePlanner {
                 }
 
                 // Then we'll simply path and return the path length times a penalty
-                corePos = new RoomPosition(corePos.x, corePos.y, roomInfo.room.name);
-                const goal = { pos: new RoomPosition(pos.x, pos.y, roomInfo.room.name), range: 1 };
+                const start = new RoomPosition(pos.x, pos.y, roomInfo.room.name);
+                const goal = { pos: new RoomPosition(corePos.x, corePos.y, roomInfo.room.name), range: 2 };
                 const result = PathFinder.search(
-                    corePos, goal, {
+                    start, goal, {
                         plainCost: 2,
                         swampCost: 2,
                         maxRooms: 1,
@@ -249,7 +254,7 @@ class BasePlanner {
                 if (result.incomplete) {
                     return Infinity;
                 }
-                return totalScore + result.path.length * FILLER_CORE_DIST_PENTALTY;
+                return totalScore + (result.path.length * FILLER_CORE_DIST_PENTALTY);
             });
 
 
@@ -431,11 +436,10 @@ class BasePlanner {
                 );
             }
         }
-        corePos = new RoomPosition(corePos.x, corePos.y, roomName);
+        const goal = { pos: new RoomPosition(corePos.x, corePos.y, roomName), range: 2 };
         for (const point of connectPoints) {
-            const goal = { pos: point.pos, range: 1 };
             const result = PathFinder.search(
-                corePos, goal, {
+                point.pos, goal, {
                     plainCost: 2,
                     swampCost: 2,
                     maxRooms: 1,
@@ -452,7 +456,7 @@ class BasePlanner {
             }
 
             if (point instanceof Source || point instanceof Mineral) {
-                const lastStep = result.path.slice(-1)[0];
+                const lastStep = result.path[0];
                 roadMatrix.set(lastStep.x, lastStep.y, structureToNumber[STRUCTURE_CONTAINER]);
             }
         }
@@ -818,7 +822,7 @@ const stamps = {
         ],
         // The center for placement
         // The stamp will be attempted to place with this tile on the lowest scoring weight
-        center: { x: 2, y: 1 },
+        center: { x: 2, y: 2 },
     },
 
     fastFiller: {
