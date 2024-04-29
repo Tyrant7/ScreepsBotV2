@@ -183,13 +183,15 @@ class BasePlanner {
                 }
             }
 
-            // We'll place the container and mark all spots around it as invalid
+            // We'll place the container and mark all spots around it as invalid as long as there isn't something already there
             this.roomPlan.set(bestContainerSpot.x, bestContainerSpot.y, structureToNumber[STRUCTURE_CONTAINER]);
             for (let x = -1; x <= 1; x++) {
                 for (let y = -1; y <= 1; y++) {
                     const newX = bestContainerSpot.x + x;
                     const newY = bestContainerSpot.y + y;
-                    this.roomPlan.set(newX, newY, structureToNumber[EXCLUSION_ZONE]);
+                    if (this.roomPlan.get(newX, newY) === 0) {
+                        this.roomPlan.set(newX, newY, structureToNumber[EXCLUSION_ZONE]);
+                    }
                 }
             }
 
@@ -229,7 +231,7 @@ class BasePlanner {
                         pathMatrix.set(x, y, 
                             terrainMatrix.get(x, y) > 0
                                 ? 255 
-                                : value === 0 
+                                : value === 0 || value === structureToNumber[EXCLUSION_ZONE]
                                 ? 0
                                 : value === structureToNumber[STRUCTURE_ROAD] 
                                 ? 1 
@@ -430,7 +432,7 @@ class BasePlanner {
                 pathfindMatrix.set(x, y, 
                     value === structureToNumber[STRUCTURE_ROAD] 
                         ? 1 
-                        : value === 0 
+                        : value === 0 || value === structureToNumber[EXCLUSION_ZONE]
                         ? 0 
                         : 255
                 );
@@ -789,7 +791,7 @@ const matrixUtility = {
 const structureToNumber = {
     [STRUCTURE_SPAWN]:        10,
     [STRUCTURE_EXTENSION]:    5,
-    [STRUCTURE_ROAD]:         1,
+    [STRUCTURE_ROAD]:         2,
     [STRUCTURE_RAMPART]:      100,
     [STRUCTURE_LINK]:         20,
     [STRUCTURE_STORAGE]:      99,
@@ -802,7 +804,7 @@ const structureToNumber = {
     [STRUCTURE_CONTAINER]:    3,
     [STRUCTURE_NUKER]:        91,
     [STRUCTURE_FACTORY]:      41,
-    [EXCLUSION_ZONE]:         2,
+    [EXCLUSION_ZONE]:         1,
 };
 
 const stamps = {
