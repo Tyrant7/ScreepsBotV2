@@ -362,6 +362,14 @@ class BasePlanner {
                 roadMatrix
             );
 
+            // Let's also plan out our future routes to the exits for remotes
+            this.roomPlan = this.planExitExclusionZones(
+                roomInfo,
+                corePos,
+                this.roomPlan,
+                terrainMatrix
+            );
+
             // Filter out spaces we've already used
             spaces = spaces.filter(
                 (space) => this.roomPlan.get(space.x, space.y) === 0
@@ -720,7 +728,7 @@ class BasePlanner {
         return this.planRoads(roadPositions, roomName, corePos, roomPlan);
     }
 
-    planExitExclusionZones(roomInfo, corePos, roomPlan) {
+    planExitExclusionZones(roomInfo, corePos, roomPlan, terrainMatrix) {
         const exitTypes = [
             FIND_EXIT_TOP,
             FIND_EXIT_BOTTOM,
@@ -728,7 +736,56 @@ class BasePlanner {
             FIND_EXIT_RIGHT,
         ];
 
-        // Let's make sure that we can path to each exit
+        // Let's build a roadmatrix to encourage using existing roads
+        const roadMatrix = new PathFinder.CostMatrix();
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                if (terrainMatrix.get(x, y) !== 0) {
+                    roadMatrix.set(x, y, MAX_VALUE);
+                    continue;
+                }
+                if (roomPlan.get(x, y) === structureToNumber[STRUCTURE_ROAD]) {
+                    roadMatrix.set(x, y, 1);
+                    continue;
+                }
+                roadMatrix.set(x, y, 3);
+            }
+        }
+
+        // Let's make sure that we can path to each exit from our core
+        corePos = new RoomPosition(corePos.x, corePos.y, roomInfo.room.name);
+        for (const exitType of exitTypes) {
+            const tiles = roomInfo.room.find(exitType);
+            if (!tiles.length) {
+                continue;
+            }
+            const goals = tiles.map((tile) => {
+                return { pos: tile, range: MIN_BUILD_AREA - 1 };
+            });
+
+            const result = PathFinder.search(corePos, goals, {
+                maxRooms: 1,
+                roomCallback: function (roomName) {
+                    return roadMatrix;
+                },
+            });
+            if (!result.path.length) {
+                continue;
+            }
+
+            // Encourage potential future remotes to combine paths as well
+            for (const point of result.path) {
+                roadMatrix.set(point.x, point.y, 1);
+                if (this.roomPlan.get(point.x, point.y) === 0) {
+                    roomPlan.set(
+                        point.x,
+                        point.y,
+                        structureToNumber[EXCLUSION_ZONE]
+                    );
+                }
+            }
+        }
+        return roomPlan;
     }
 }
 
