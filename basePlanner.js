@@ -21,7 +21,9 @@ const LAB_COUNT = 1;
 
 const MAX_STRUCTURES = {};
 for (const key in CONTROLLER_STRUCTURES) {
-    MAX_STRUCTURES[key] = parseInt(Object.values(CONTROLLER_STRUCTURES[key]).slice(-1));
+    MAX_STRUCTURES[key] = parseInt(
+        Object.values(CONTROLLER_STRUCTURES[key]).slice(-1)
+    );
 }
 
 class BasePlanner {
@@ -34,7 +36,6 @@ class BasePlanner {
         if (!this.roomPlan) {
             function placeStamps(stamp, count, roomPlan, scoreFn) {
                 for (let i = 0; i < count; i++) {
-    
                     // Find the best stamp we can place currently
                     // Only consider the best suspected locations
                     let bestStampData;
@@ -43,19 +44,32 @@ class BasePlanner {
                         if (checkedLocations >= CHECK_MAXIMUM) {
                             break;
                         }
-    
+
                         // Consider all orientations
                         let checkedAtLeastOne = false;
                         for (const transform of stampUtility.getTransformationList()) {
                             const transformedStamp = transform(stamp);
-                            if (stampUtility.stampFits(transformedStamp, space, distanceTransform, roomPlan)) {
-
+                            if (
+                                stampUtility.stampFits(
+                                    transformedStamp,
+                                    space,
+                                    distanceTransform,
+                                    roomPlan
+                                )
+                            ) {
                                 // Score the stamp
-                                const score = scoreFn(transformedStamp, space, roomPlan);
+                                const score = scoreFn(
+                                    transformedStamp,
+                                    space,
+                                    roomPlan
+                                );
                                 checkedAtLeastOne = true;
 
                                 // Lower scores are better
-                                if (!bestStampData || score < bestStampData.score) {
+                                if (
+                                    !bestStampData ||
+                                    score < bestStampData.score
+                                ) {
                                     bestStampData = {
                                         stamp: transformedStamp,
                                         score: score,
@@ -69,10 +83,14 @@ class BasePlanner {
                             checkedLocations++;
                         }
                     }
-    
+
                     // Once we've found the current best stamp, let's place it
                     if (bestStampData) {
-                        roomPlan = stampUtility.placeStamp(bestStampData.stamp, bestStampData.pos, roomPlan);
+                        roomPlan = stampUtility.placeStamp(
+                            bestStampData.stamp,
+                            bestStampData.pos,
+                            roomPlan
+                        );
                     }
                 }
                 return roomPlan;
@@ -88,50 +106,76 @@ class BasePlanner {
                 }
 
                 // We're going to path from our filler's center position to our core and apply a penalty for each distance we are away
-                // First, we need a matrix of what our room would look like with our stamp, 
+                // First, we need a matrix of what our room would look like with our stamp,
                 // then we'll mark all planned tiles and terrain as unwalkable
-                const pathMatrix = stampUtility.placeStamp(stamp, pos, roomPlan.clone());
+                const pathMatrix = stampUtility.placeStamp(
+                    stamp,
+                    pos,
+                    roomPlan.clone()
+                );
                 for (let x = 0; x < 50; x++) {
                     for (let y = 0; y < 50; y++) {
                         const value = pathMatrix.get(x, y);
-                        pathMatrix.set(x, y, 
+                        pathMatrix.set(
+                            x,
+                            y,
                             terrainMatrix.get(x, y) > 0
-                                ? 255 
-                                : value === 0 || value === structureToNumber[EXCLUSION_ZONE]
+                                ? 255
+                                : value === 0 ||
+                                  value === structureToNumber[EXCLUSION_ZONE]
                                 ? 0
-                                : value === structureToNumber[STRUCTURE_ROAD] 
-                                ? 1 
+                                : value === structureToNumber[STRUCTURE_ROAD]
+                                ? 1
                                 : 255
                         );
                     }
                 }
 
                 // Then we'll simply path and return the path length times a penalty
-                const start = new RoomPosition(pos.x, pos.y, roomInfo.room.name);
-                const goal = { pos: new RoomPosition(corePos.x, corePos.y, roomInfo.room.name), range: 2 };
-                const result = PathFinder.search(
-                    start, goal, {
-                        plainCost: 2,
-                        swampCost: 2,
-                        maxRooms: 1,
-                        roomCallback: function(roomName) {
-                            return pathMatrix;
-                        },
-                    },
+                const start = new RoomPosition(
+                    pos.x,
+                    pos.y,
+                    roomInfo.room.name
                 );
+                const goal = {
+                    pos: new RoomPosition(
+                        corePos.x,
+                        corePos.y,
+                        roomInfo.room.name
+                    ),
+                    range: 2,
+                };
+                const result = PathFinder.search(start, goal, {
+                    plainCost: 2,
+                    swampCost: 2,
+                    maxRooms: 1,
+                    roomCallback: function (roomName) {
+                        return pathMatrix;
+                    },
+                });
                 if (result.incomplete) {
                     return Infinity;
                 }
-                return totalScore + (result.path.length * FILLER_CORE_DIST_PENTALTY);
+                return (
+                    totalScore + result.path.length * FILLER_CORE_DIST_PENTALTY
+                );
             }
 
             this.roomPlan = new PathFinder.CostMatrix();
             const cpu = Game.cpu.getUsed();
 
             // Generate our necessary matrices for planning
-            const terrainMatrix = matrixUtility.generateTerrainMatrix(roomInfo.room.name);
-            const distanceTransform = matrixUtility.generateDistanceTransform(roomInfo.room.name);
-            const weightMatrix = this.generateWeightMatrix(roomInfo, terrainMatrix, distanceTransform);
+            const terrainMatrix = matrixUtility.generateTerrainMatrix(
+                roomInfo.room.name
+            );
+            const distanceTransform = matrixUtility.generateDistanceTransform(
+                roomInfo.room.name
+            );
+            const weightMatrix = this.generateWeightMatrix(
+                roomInfo,
+                terrainMatrix,
+                distanceTransform
+            );
 
             // Let's sort all spaces by score
             let spaces = [];
@@ -142,7 +186,10 @@ class BasePlanner {
                     }
                 }
             }
-            spaces.sort((a, b) => weightMatrix.get(a.x, a.y) - weightMatrix.get(b.x, b.y));
+            spaces.sort(
+                (a, b) =>
+                    weightMatrix.get(a.x, a.y) - weightMatrix.get(b.x, b.y)
+            );
 
             // Now let's check each space in order until we find one that fits our core
             let corePos;
@@ -150,14 +197,30 @@ class BasePlanner {
                 let bestStampData;
                 for (const transform of stampUtility.getTransformationList()) {
                     const transformedStamp = transform(stamps.core);
-                    if (stampUtility.stampFits(transformedStamp, space, distanceTransform, this.roomPlan)) {
-
+                    if (
+                        stampUtility.stampFits(
+                            transformedStamp,
+                            space,
+                            distanceTransform,
+                            this.roomPlan
+                        )
+                    ) {
                         // Score the stamp
                         let score = 0;
-                        for (let y = 0; y < transformedStamp.layout.length; y++) {
-                            for (let x = 0; x < transformedStamp.layout[y].length; x++) {
-                                const actualX = space.x - transformedStamp.center.x + x;
-                                const actualY = space.y - transformedStamp.center.y + y;
+                        for (
+                            let y = 0;
+                            y < transformedStamp.layout.length;
+                            y++
+                        ) {
+                            for (
+                                let x = 0;
+                                x < transformedStamp.layout[y].length;
+                                x++
+                            ) {
+                                const actualX =
+                                    space.x - transformedStamp.center.x + x;
+                                const actualY =
+                                    space.y - transformedStamp.center.y + y;
                                 score += weightMatrix.get(actualX, actualY);
                             }
                         }
@@ -173,7 +236,11 @@ class BasePlanner {
                     }
                 }
                 if (bestStampData) {
-                    this.roomPlan = stampUtility.placeStamp(bestStampData.stamp, bestStampData.pos, this.roomPlan);
+                    this.roomPlan = stampUtility.placeStamp(
+                        bestStampData.stamp,
+                        bestStampData.pos,
+                        this.roomPlan
+                    );
                     corePos = space;
                     break;
                 }
@@ -181,7 +248,10 @@ class BasePlanner {
 
             // Next we'll find the position near our controller with the most open spaces,
             // using distance to our core as a tiebreaker
-            const floodfillFromCore = matrixUtility.floodfill(corePos, terrainMatrix.clone());
+            const floodfillFromCore = matrixUtility.floodfill(
+                corePos,
+                terrainMatrix.clone()
+            );
             let bestContainerSpot;
             let bestOpenSpaces = 0;
             let bestDist = Infinity;
@@ -189,11 +259,18 @@ class BasePlanner {
                 for (let y = -2; y <= 2; y++) {
                     const newX = roomInfo.room.controller.pos.x + x;
                     const newY = roomInfo.room.controller.pos.y + y;
-                    if (newX < MIN_BUILD_AREA || newX > MAX_BUILD_AREA || newY < MIN_BUILD_AREA || newY > MAX_BUILD_AREA) {
+                    if (
+                        newX < MIN_BUILD_AREA ||
+                        newX > MAX_BUILD_AREA ||
+                        newY < MIN_BUILD_AREA ||
+                        newY > MAX_BUILD_AREA
+                    ) {
                         continue;
                     }
-                    if (terrainMatrix.get(newX, newY) !== 0 ||
-                        this.roomPlan.get(newX, newY) !== 0) {
+                    if (
+                        terrainMatrix.get(newX, newY) !== 0 ||
+                        this.roomPlan.get(newX, newY) !== 0
+                    ) {
                         continue;
                     }
 
@@ -203,11 +280,19 @@ class BasePlanner {
                         for (let y = -1; y <= 1; y++) {
                             const neighbourX = newX + x;
                             const neighbourY = newY + y;
-                            if (neighbourX < MIN_BUILD_AREA || neighbourX > MAX_BUILD_AREA || neighbourY < MIN_BUILD_AREA || neighbourY > MAX_BUILD_AREA) {
+                            if (
+                                neighbourX < MIN_BUILD_AREA ||
+                                neighbourX > MAX_BUILD_AREA ||
+                                neighbourY < MIN_BUILD_AREA ||
+                                neighbourY > MAX_BUILD_AREA
+                            ) {
                                 continue;
                             }
-                            if (terrainMatrix.get(neighbourX, neighbourY) !== 0 ||
-                                this.roomPlan.get(neighbourX, neighbourY) !== 0) {
+                            if (
+                                terrainMatrix.get(neighbourX, neighbourY) !==
+                                    0 ||
+                                this.roomPlan.get(neighbourX, neighbourY) !== 0
+                            ) {
                                 continue;
                             }
                             openSpaces++;
@@ -215,7 +300,8 @@ class BasePlanner {
                     }
 
                     const dist = floodfillFromCore.get(newX, newY);
-                    const better = !bestContainerSpot ||
+                    const better =
+                        !bestContainerSpot ||
                         openSpaces > bestOpenSpaces ||
                         // Use distance as tiebreaker
                         (openSpaces === bestOpenSpaces && dist < bestDist);
@@ -228,75 +314,133 @@ class BasePlanner {
             }
 
             // We'll place the container and mark all spots around it as invalid as long as there isn't something already there
-            this.roomPlan.set(bestContainerSpot.x, bestContainerSpot.y, structureToNumber[STRUCTURE_CONTAINER]);
+            this.roomPlan.set(
+                bestContainerSpot.x,
+                bestContainerSpot.y,
+                structureToNumber[STRUCTURE_CONTAINER]
+            );
             for (let x = -1; x <= 1; x++) {
                 for (let y = -1; y <= 1; y++) {
                     const newX = bestContainerSpot.x + x;
                     const newY = bestContainerSpot.y + y;
                     if (this.roomPlan.get(newX, newY) === 0) {
-                        this.roomPlan.set(newX, newY, structureToNumber[EXCLUSION_ZONE]);
+                        this.roomPlan.set(
+                            newX,
+                            newY,
+                            structureToNumber[EXCLUSION_ZONE]
+                        );
                     }
                 }
             }
 
             // Now let's sort our spaces from distance to the core
-            spaces = spaces.sort((a, b) => floodfillFromCore.get(a.x, a.y) - floodfillFromCore.get(b.x, b.y));
+            spaces = spaces.sort(
+                (a, b) =>
+                    floodfillFromCore.get(a.x, a.y) -
+                    floodfillFromCore.get(b.x, b.y)
+            );
 
             // Once we have our core, let's plan out our artery roads
             // This will also handle container placement for sources and minerals
             const roadPoints = roomInfo.sources
-                .concat({ pos: new RoomPosition(bestContainerSpot.x, bestContainerSpot.y, roomInfo.room.name) })
+                .concat({
+                    pos: new RoomPosition(
+                        bestContainerSpot.x,
+                        bestContainerSpot.y,
+                        roomInfo.room.name
+                    ),
+                })
                 .concat(roomInfo.mineral);
-            const roadMatrix = this.planRoads(roadPoints, roomInfo.room.name, corePos, this.roomPlan);
-            this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, roadMatrix);
-
+            const roadMatrix = this.planRoads(
+                roadPoints,
+                roomInfo.room.name,
+                corePos,
+                this.roomPlan
+            );
+            this.roomPlan = matrixUtility.combineMatrices(
+                this.roomPlan,
+                roadMatrix
+            );
 
             // Filter out spaces we've already used
-            spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
+            spaces = spaces.filter(
+                (space) => this.roomPlan.get(space.x, space.y) === 0
+            );
 
             // Then, we'll plan our our fast-filler locations
-            this.roomPlan = placeStamps(stamps.fastFiller, FILLER_COUNT, this.roomPlan, defaultScoreFn);
-
+            this.roomPlan = placeStamps(
+                stamps.fastFiller,
+                FILLER_COUNT,
+                this.roomPlan,
+                defaultScoreFn
+            );
 
             // Filter out spaces we've already used
-            spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
+            spaces = spaces.filter(
+                (space) => this.roomPlan.get(space.x, space.y) === 0
+            );
 
             // And labs
-            this.roomPlan = placeStamps(stamps.labs, LAB_COUNT, this.roomPlan, defaultScoreFn);
-
+            this.roomPlan = placeStamps(
+                stamps.labs,
+                LAB_COUNT,
+                this.roomPlan,
+                defaultScoreFn
+            );
 
             // Next, we'll connect up any roads we've placed that aren't currently connected
-            const stragglingRoadConnectors = this.connectStragglingRoads(roomInfo.room.name, corePos, this.roomPlan);
-            this.roomPlan = matrixUtility.combineMatrices(this.roomPlan, stragglingRoadConnectors);
+            const stragglingRoadConnectors = this.connectStragglingRoads(
+                roomInfo.room.name,
+                corePos,
+                this.roomPlan
+            );
+            this.roomPlan = matrixUtility.combineMatrices(
+                this.roomPlan,
+                stragglingRoadConnectors
+            );
 
             // Filter out spaces we've already used
-            spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
+            spaces = spaces.filter(
+                (space) => this.roomPlan.get(space.x, space.y) === 0
+            );
 
             // Next, we'll place our remaining extensions, we'll plan extra for tower and observer placement positions later
             // Let's start by counting how many extensions we have already
             let placedExtensions = 0;
             for (let x = 0; x < 50; x++) {
                 for (let y = 0; y < 50; y++) {
-                    if (this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_EXTENSION]) {
+                    if (
+                        this.roomPlan.get(x, y) ===
+                        structureToNumber[STRUCTURE_EXTENSION]
+                    ) {
                         placedExtensions++;
                     }
                 }
             }
 
-            const remainingExtensions = MAX_STRUCTURES[STRUCTURE_EXTENSION] 
-                - placedExtensions
-                + MAX_STRUCTURES[STRUCTURE_TOWER];
-                + MAX_STRUCTURES[STRUCTURE_OBSERVER];
+            const remainingExtensions =
+                MAX_STRUCTURES[STRUCTURE_EXTENSION] -
+                placedExtensions +
+                MAX_STRUCTURES[STRUCTURE_TOWER];
+            +MAX_STRUCTURES[STRUCTURE_OBSERVER];
             // Here we'll be marking the extensions we place to use as potential tower locations later
             const extensionPositions = [];
             for (let i = 0; i < remainingExtensions; i++) {
                 // Find the lowest scoring tile that is also adjacent to a road
                 let bestSpot;
                 for (const space of spaces) {
-                    if (terrainMatrix.get(space.x, space.y) !== 0 || this.roomPlan.get(space.x, space.y) !== 0) {
+                    if (
+                        terrainMatrix.get(space.x, space.y) !== 0 ||
+                        this.roomPlan.get(space.x, space.y) !== 0
+                    ) {
                         continue;
                     }
-                    if (space.x < MIN_BUILD_AREA || space.x > MAX_BUILD_AREA || space.y < MIN_BUILD_AREA || space.y > MAX_BUILD_AREA) {
+                    if (
+                        space.x < MIN_BUILD_AREA ||
+                        space.x > MAX_BUILD_AREA ||
+                        space.y < MIN_BUILD_AREA ||
+                        space.y > MAX_BUILD_AREA
+                    ) {
                         continue;
                     }
 
@@ -305,7 +449,10 @@ class BasePlanner {
                         for (let y = -1; y <= 1; y++) {
                             const newX = space.x + x;
                             const newY = space.y + y;
-                            if (this.roomPlan.get(newX, newY) === structureToNumber[STRUCTURE_ROAD]) {
+                            if (
+                                this.roomPlan.get(newX, newY) ===
+                                structureToNumber[STRUCTURE_ROAD]
+                            ) {
                                 hasRoad = true;
                                 break;
                             }
@@ -322,10 +469,14 @@ class BasePlanner {
                 }
 
                 if (!bestSpot) {
-                    console.log("Could not fit all extensions!")
+                    console.log("Could not fit all extensions!");
                     break;
                 }
-                this.roomPlan.set(bestSpot.x, bestSpot.y, structureToNumber[STRUCTURE_EXTENSION]);
+                this.roomPlan.set(
+                    bestSpot.x,
+                    bestSpot.y,
+                    structureToNumber[STRUCTURE_EXTENSION]
+                );
                 extensionPositions.push({ x: bestSpot.x, y: bestSpot.y });
             }
 
@@ -334,35 +485,54 @@ class BasePlanner {
             // Start by creating floodfills for each exit
             const exitMatrices = [];
             for (const exitKey in Game.map.describeExits(roomInfo.room.name)) {
-                const matrix = matrixUtility.floodfill(roomInfo.room.find(exitKey), terrainMatrix.clone());
+                const matrix = matrixUtility.floodfill(
+                    roomInfo.room.find(exitKey),
+                    terrainMatrix.clone()
+                );
                 exitMatrices.push(matrix);
             }
-            
+
             // Then we'll circle through each exit and optimize a tower for that exit
             for (let i = 0; i < MAX_STRUCTURES[STRUCTURE_TOWER]; i++) {
-
                 // Find the position of the planned extension with the lowest distance to the exit we've select
                 const activeMatrix = exitMatrices[i % exitMatrices.length];
                 const nextTowerPos = extensionPositions.reduce((best, curr) => {
-                    return activeMatrix.get(curr.x, curr.y) < activeMatrix.get(best.x, best.y) 
-                        ? curr 
+                    return activeMatrix.get(curr.x, curr.y) <
+                        activeMatrix.get(best.x, best.y)
+                        ? curr
                         : best;
                 });
-                this.roomPlan.set(nextTowerPos.x, nextTowerPos.y, structureToNumber[STRUCTURE_TOWER]);
+                this.roomPlan.set(
+                    nextTowerPos.x,
+                    nextTowerPos.y,
+                    structureToNumber[STRUCTURE_TOWER]
+                );
 
                 // Remove this position so we don't try to place a tower there again
-                extensionPositions.splice(extensionPositions.indexOf(nextTowerPos), 1);
+                extensionPositions.splice(
+                    extensionPositions.indexOf(nextTowerPos),
+                    1
+                );
             }
-            
-            // We'll also replace the worst extension with our observer
-            const worstExtensionPos = extensionPositions.reduce((worst, curr) => {
-                return weightMatrix.get(worst.x, worst.y) < weightMatrix.get(curr.x, curr.y)
-                    ? curr
-                    : worst;
-            });
-            this.roomPlan.set(worstExtensionPos.x, worstExtensionPos.y, structureToNumber[STRUCTURE_OBSERVER]);
 
-            console.log("planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!");
+            // We'll also replace the worst extension with our observer
+            const worstExtensionPos = extensionPositions.reduce(
+                (worst, curr) => {
+                    return weightMatrix.get(worst.x, worst.y) <
+                        weightMatrix.get(curr.x, curr.y)
+                        ? curr
+                        : worst;
+                }
+            );
+            this.roomPlan.set(
+                worstExtensionPos.x,
+                worstExtensionPos.y,
+                structureToNumber[STRUCTURE_OBSERVER]
+            );
+
+            console.log(
+                "planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!"
+            );
 
             // overlay.visualizeCostMatrix(roomInfo.room.name, weightMatrix);
         }
@@ -373,18 +543,27 @@ class BasePlanner {
 
     generateWeightMatrix(roomInfo, terrainMatrix, distanceTransform) {
         const controllerMatrix = {
-            matrix: matrixUtility.floodfill(roomInfo.room.controller.pos, terrainMatrix.clone()),
+            matrix: matrixUtility.floodfill(
+                roomInfo.room.controller.pos,
+                terrainMatrix.clone()
+            ),
             weight: WEIGHT_CONTROLLER,
         };
 
         const mineralMatrix = {
-            matrix: matrixUtility.floodfill(roomInfo.mineral.pos, terrainMatrix.clone()),
+            matrix: matrixUtility.floodfill(
+                roomInfo.mineral.pos,
+                terrainMatrix.clone()
+            ),
             weight: WEIGHT_MINERAL,
         };
         const sourceMatrices = [];
         for (const source of roomInfo.sources) {
             sourceMatrices.push({
-                matrix: matrixUtility.floodfill(source.pos, terrainMatrix.clone()),
+                matrix: matrixUtility.floodfill(
+                    source.pos,
+                    terrainMatrix.clone()
+                ),
                 weight: WEIGHT_SOURCES,
             });
 
@@ -395,7 +574,10 @@ class BasePlanner {
             });
         }
         const exitDistMatrix = {
-            matrix: matrixUtility.floodfill(roomInfo.room.find(FIND_EXIT), terrainMatrix.clone()),
+            matrix: matrixUtility.floodfill(
+                roomInfo.room.find(FIND_EXIT),
+                terrainMatrix.clone()
+            ),
             weight: WEIGHT_EXIT_DIST,
         };
 
@@ -405,19 +587,24 @@ class BasePlanner {
         };
 
         return matrixUtility.normalizeMatrix(
-            matrixUtility.addScoreMatrices(controllerMatrix, 
-                mineralMatrix, 
-                ...sourceMatrices, 
+            matrixUtility.addScoreMatrices(
+                controllerMatrix,
+                mineralMatrix,
+                ...sourceMatrices,
                 exitDistMatrix,
-                distMatrix),
-            MAX_VALUE - 1,
+                distMatrix
+            ),
+            MAX_VALUE - 1
         );
     }
 
     planRoads(connectPoints, roomName, corePos, roomPlan) {
-
         // Path from further points first
-        connectPoints.sort((a, b) => b.pos.getRangeTo(corePos.x, corePos.y) - a.pos.getRangeTo(corePos.x, corePos.y));
+        connectPoints.sort(
+            (a, b) =>
+                b.pos.getRangeTo(corePos.x, corePos.y) -
+                a.pos.getRangeTo(corePos.x, corePos.y)
+        );
 
         // Save a path to each of our road points
         // Use a separate matrix for road positions and pathing locations
@@ -426,45 +613,56 @@ class BasePlanner {
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
                 const value = roomPlan.get(x, y);
-                pathfindMatrix.set(x, y, 
-                    value === structureToNumber[STRUCTURE_ROAD] 
-                        ? 1 
-                        : value === 0 || value === structureToNumber[EXCLUSION_ZONE]
-                        ? 0 
+                pathfindMatrix.set(
+                    x,
+                    y,
+                    value === structureToNumber[STRUCTURE_ROAD]
+                        ? 1
+                        : value === 0 ||
+                          value === structureToNumber[EXCLUSION_ZONE]
+                        ? 0
                         : MAX_VALUE
                 );
             }
         }
-        const goal = { pos: new RoomPosition(corePos.x, corePos.y, roomName), range: 2 };
+        const goal = {
+            pos: new RoomPosition(corePos.x, corePos.y, roomName),
+            range: 2,
+        };
         for (const point of connectPoints) {
-            const result = PathFinder.search(
-                point.pos, goal, {
-                    plainCost: 2,
-                    swampCost: 2,
-                    maxRooms: 1,
-                    roomCallback: function(roomName) {
-                        return pathfindMatrix;
-                    },
+            const result = PathFinder.search(point.pos, goal, {
+                plainCost: 2,
+                swampCost: 2,
+                maxRooms: 1,
+                roomCallback: function (roomName) {
+                    return pathfindMatrix;
                 },
-            );
+            });
 
             // Save these into our road matrix
             for (const step of result.path) {
                 pathfindMatrix.set(step.x, step.y, 1);
-                roadMatrix.set(step.x, step.y, structureToNumber[STRUCTURE_ROAD]);
+                roadMatrix.set(
+                    step.x,
+                    step.y,
+                    structureToNumber[STRUCTURE_ROAD]
+                );
             }
 
             if (point instanceof Source || point instanceof Mineral) {
                 const lastStep = result.path[0];
                 pathfindMatrix.set(lastStep.x, lastStep.y, MAX_VALUE);
-                roadMatrix.set(lastStep.x, lastStep.y, structureToNumber[STRUCTURE_CONTAINER]);
+                roadMatrix.set(
+                    lastStep.x,
+                    lastStep.y,
+                    structureToNumber[STRUCTURE_CONTAINER]
+                );
             }
         }
         return roadMatrix;
     }
 
     connectStragglingRoads(roomName, corePos, roomPlan) {
-
         // First, construct an array of all of our roads
         let allRoads = [];
         const roadMatrix = new PathFinder.CostMatrix();
@@ -482,23 +680,30 @@ class BasePlanner {
         // Then, identify any roads that cannot connect back to the core
         const stragglingRoads = [];
         const maxNeededTiles = allRoads.length;
-        const goal = { pos: new RoomPosition(corePos.x, corePos.y, roomName), range: 2 };
+        const goal = {
+            pos: new RoomPosition(corePos.x, corePos.y, roomName),
+            range: 2,
+        };
         while (allRoads.length) {
             const next = allRoads.pop();
             const result = PathFinder.search(
-                new RoomPosition(next.x, next.y, roomName), goal, {
+                new RoomPosition(next.x, next.y, roomName),
+                goal,
+                {
                     maxRooms: 1,
                     maxCost: maxNeededTiles,
-                    roomCallback: function(roomName) {
+                    roomCallback: function (roomName) {
                         return roadMatrix;
                     },
-                },
+                }
             );
 
             // For each road we stepped over, remembering to include our start position
             for (const road of result.path.concat(next)) {
                 // We can remove this road from our array since we know its state now
-                allRoads = allRoads.filter((r) => r.x !== road.x || r.y !== road.y);
+                allRoads = allRoads.filter(
+                    (r) => r.x !== road.x || r.y !== road.y
+                );
 
                 // If it was incomplete, we know that this road
                 // does not connect back to our core
@@ -514,15 +719,26 @@ class BasePlanner {
         });
         return this.planRoads(roadPositions, roomName, corePos, roomPlan);
     }
+
+    planExitExclusionZones(roomInfo, corePos, roomPlan) {
+        const exitTypes = [
+            FIND_EXIT_TOP,
+            FIND_EXIT_BOTTOM,
+            FIND_EXIT_LEFT,
+            FIND_EXIT_RIGHT,
+        ];
+
+        // Let's make sure that we can path to each exit
+    }
 }
 
 const matrixUtility = {
     /**
-     * Generates a cost matrix for this room, masking out all unwalkable terrain under max values. 
+     * Generates a cost matrix for this room, masking out all unwalkable terrain under max values.
      * @param {string} roomName The name of the room to generate the matrix for.
      * @returns {PathFinder.CostMatrix} A newly created cost matrix with MAX_VALUE on all tiles containing unwalkable terrain.
      */
-    generateTerrainMatrix: function(roomName) {
+    generateTerrainMatrix: function (roomName) {
         const matrix = new PathFinder.CostMatrix();
         const terrain = Game.map.getRoomTerrain(roomName);
         for (let x = 0; x < 50; x++) {
@@ -541,7 +757,7 @@ const matrixUtility = {
      * @returns {PathFinder.CostMatrix} A newly created cost matrix where the value of each tile represents to distance
      * to the nearest terrain tile.
      */
-    generateDistanceTransform: function(roomName) {
+    generateDistanceTransform: function (roomName) {
         let matrix = new PathFinder.CostMatrix();
         const terrain = Game.map.getRoomTerrain(roomName);
 
@@ -572,7 +788,7 @@ const matrixUtility = {
      * @param {Room} room The room to create the matrix for.
      * @returns {PathFinder.CostMatrix} A newly created cost matrix with MAX_VALUE on all tiles within 1 of an exit.
      */
-    generateExitMatrix: function(room) {
+    generateExitMatrix: function (room) {
         const exitMatrix = new PathFinder.CostMatrix();
         const exits = room.find(FIND_EXIT);
         for (const exit of exits) {
@@ -581,8 +797,13 @@ const matrixUtility = {
                 for (let y = -1; y <= 1; y++) {
                     const newX = exit.x + x;
                     const newY = exit.y + y;
-                    if (newX < 0 || newX > 49 || newY < 0 || newY > 49 ||
-                        exitMatrix.get(newX, newY) > 0) {
+                    if (
+                        newX < 0 ||
+                        newX > 49 ||
+                        newY < 0 ||
+                        newY > 49 ||
+                        exitMatrix.get(newX, newY) > 0
+                    ) {
                         continue;
                     }
                     neighbours.push({ x: newX, y: newY });
@@ -601,7 +822,7 @@ const matrixUtility = {
      * @param {number} range The max range of tiles from the position to mark.
      * @returns {PathFinder.CostMatrix} A newly created cost matrix.
      */
-    generateNeighbourMatrix: function(pos, range) {
+    generateNeighbourMatrix: function (pos, range) {
         const neighbourMatrix = new PathFinder.CostMatrix();
         for (let x = -range; x <= range; x++) {
             for (let y = -range; y <= range; y++) {
@@ -617,7 +838,7 @@ const matrixUtility = {
     },
 
     /**
-     * Performs a floodfill from an array of starting positions, 
+     * Performs a floodfill from an array of starting positions,
      * and takes into account a predefined terrain matrix.
      * @param {RoomPosition | RoomPosition[]} fromPositions The positions to fill from.
      * @param {PathFinder.CostMatrix} matrix The predefined matrix to fill around.
@@ -625,7 +846,7 @@ const matrixUtility = {
      * @returns {PathFinder.CostMatrix} A new costmatrix where each value represents
      * the distance to the nearest start tile.
      */
-    floodfill: function(fromPositions, matrix, depthLimit = Infinity) {
+    floodfill: function (fromPositions, matrix, depthLimit = Infinity) {
         if (!(fromPositions instanceof Array)) {
             fromPositions = [fromPositions];
         }
@@ -650,7 +871,10 @@ const matrixUtility = {
                     }
 
                     // We're already marked this tile to be scored, or it's unwalkable and we should skip it
-                    if (scoredPositions[(newX + 1) * 50 + newY] || matrix.get(newX, newY) === MAX_VALUE) {
+                    if (
+                        scoredPositions[(newX + 1) * 50 + newY] ||
+                        matrix.get(newX, newY) === MAX_VALUE
+                    ) {
                         continue;
                     }
 
@@ -675,10 +899,9 @@ const matrixUtility = {
     /**
      * Adds up all matrices, respecting their weights and keeping their final range within the 0-255 range.
      * @param  {...{ matrix: PathFinder.CostMatrix, weight: number }} matrixWeightPairs Any number of matrix-and-weight objects.
-     * @returns {PathFinder.CostMatrix} A newly created costmatrix, representing the sum of the weighted values of all matrices. 
+     * @returns {PathFinder.CostMatrix} A newly created costmatrix, representing the sum of the weighted values of all matrices.
      */
-    addScoreMatrices: function(...matrixWeightPairs) {
-
+    addScoreMatrices: function (...matrixWeightPairs) {
         // First, normalize each matrix
         matrixWeightPairs.map((pair) => {
             return {
@@ -687,7 +910,7 @@ const matrixUtility = {
             };
         });
 
-        // Here we'll do a soft run of our matrix creation and track our largest 
+        // Here we'll do a soft run of our matrix creation and track our largest
         // and smallest values for normalization
         let largest = 0;
         let smallest = MAX_VALUE;
@@ -699,7 +922,7 @@ const matrixUtility = {
                     if (pair.matrix.get(x, y) === MAX_VALUE) {
                         return total;
                     }
-                    return total + (pair.matrix.get(x, y) * pair.weight);
+                    return total + pair.matrix.get(x, y) * pair.weight;
                 }, 0);
                 largest = Math.max(total, largest);
                 smallest = Math.min(total, smallest);
@@ -717,11 +940,14 @@ const matrixUtility = {
                     if (pair.matrix.get(x, y) === MAX_VALUE) {
                         return Infinity;
                     }
-                    return total + (pair.matrix.get(x, y) * pair.weight);
+                    return total + pair.matrix.get(x, y) * pair.weight;
                 }, 0);
-                const normalizedValue = scale === 0 
-                    ? 0
-                    : Math.round(((total - smallest) / scale) * (MAX_VALUE - 1));
+                const normalizedValue =
+                    scale === 0
+                        ? 0
+                        : Math.round(
+                              ((total - smallest) / scale) * (MAX_VALUE - 1)
+                          );
                 matrix.set(x, y, normalizedValue);
             }
         }
@@ -732,7 +958,7 @@ const matrixUtility = {
      * Takes the highest weight of all matrices for each tile and combines them into a single matrix.
      * @param  {...PathFinder.CostMatrix} matrices Any number of cost matrices to consider.
      */
-    combineMatrices: function(...matrices) {
+    combineMatrices: function (...matrices) {
         const newMatrix = new PathFinder.CostMatrix();
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
@@ -751,8 +977,7 @@ const matrixUtility = {
      * @param {number} normalizeScale The max value allowed in the new normalized matrix.
      * @returns {PathFinder.CostMatrix} A new cost matrix with the normalized values of the input cost matrix.
      */
-    normalizeMatrix: function(matrix, normalizeScale) {
-
+    normalizeMatrix: function (matrix, normalizeScale) {
         // Find our scale
         let minValue = MAX_VALUE;
         let maxValue = 0;
@@ -776,9 +1001,12 @@ const matrixUtility = {
                 if (oldValue === MAX_VALUE) {
                     continue;
                 }
-                const newValue = scale === 0 
-                    ? 0
-                    : Math.round(((oldValue - minValue) / scale) * normalizeScale);
+                const newValue =
+                    scale === 0
+                        ? 0
+                        : Math.round(
+                              ((oldValue - minValue) / scale) * normalizeScale
+                          );
                 newMatrix.set(x, y, newValue);
             }
         }
@@ -787,39 +1015,67 @@ const matrixUtility = {
 };
 
 const structureToNumber = {
-    [STRUCTURE_SPAWN]:        10,
-    [STRUCTURE_EXTENSION]:    5,
-    [STRUCTURE_ROAD]:         2,
-    [STRUCTURE_RAMPART]:      100,
-    [STRUCTURE_LINK]:         20,
-    [STRUCTURE_STORAGE]:      99,
-    [STRUCTURE_TOWER]:        4,
-    [STRUCTURE_OBSERVER]:     71,
-    [STRUCTURE_POWER_SPAWN]:  61,
-    [STRUCTURE_EXTRACTOR]:    51,
-    [STRUCTURE_LAB]:          6,
-    [STRUCTURE_TERMINAL]:     81,
-    [STRUCTURE_CONTAINER]:    3,
-    [STRUCTURE_NUKER]:        91,
-    [STRUCTURE_FACTORY]:      41,
-    [EXCLUSION_ZONE]:         1,
+    [STRUCTURE_SPAWN]: 10,
+    [STRUCTURE_EXTENSION]: 5,
+    [STRUCTURE_ROAD]: 2,
+    [STRUCTURE_RAMPART]: 100,
+    [STRUCTURE_LINK]: 20,
+    [STRUCTURE_STORAGE]: 99,
+    [STRUCTURE_TOWER]: 4,
+    [STRUCTURE_OBSERVER]: 71,
+    [STRUCTURE_POWER_SPAWN]: 61,
+    [STRUCTURE_EXTRACTOR]: 51,
+    [STRUCTURE_LAB]: 6,
+    [STRUCTURE_TERMINAL]: 81,
+    [STRUCTURE_CONTAINER]: 3,
+    [STRUCTURE_NUKER]: 91,
+    [STRUCTURE_FACTORY]: 41,
+    [EXCLUSION_ZONE]: 1,
 };
 
 const stamps = {
     core: {
         layout: [
-            [undefined, STRUCTURE_ROAD, STRUCTURE_ROAD, STRUCTURE_ROAD, undefined],
-            [STRUCTURE_ROAD, STRUCTURE_STORAGE, STRUCTURE_EXTENSION, STRUCTURE_SPAWN, STRUCTURE_ROAD],
-            [STRUCTURE_ROAD, STRUCTURE_TERMINAL, undefined, STRUCTURE_FACTORY, STRUCTURE_ROAD],
-            [STRUCTURE_ROAD, STRUCTURE_POWER_SPAWN, STRUCTURE_NUKER, STRUCTURE_LINK, STRUCTURE_ROAD],
-            [undefined, STRUCTURE_ROAD, STRUCTURE_ROAD, STRUCTURE_ROAD, undefined],
+            [
+                undefined,
+                STRUCTURE_ROAD,
+                STRUCTURE_ROAD,
+                STRUCTURE_ROAD,
+                undefined,
+            ],
+            [
+                STRUCTURE_ROAD,
+                STRUCTURE_STORAGE,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_SPAWN,
+                STRUCTURE_ROAD,
+            ],
+            [
+                STRUCTURE_ROAD,
+                STRUCTURE_TERMINAL,
+                undefined,
+                STRUCTURE_FACTORY,
+                STRUCTURE_ROAD,
+            ],
+            [
+                STRUCTURE_ROAD,
+                STRUCTURE_POWER_SPAWN,
+                STRUCTURE_NUKER,
+                STRUCTURE_LINK,
+                STRUCTURE_ROAD,
+            ],
+            [
+                undefined,
+                STRUCTURE_ROAD,
+                STRUCTURE_ROAD,
+                STRUCTURE_ROAD,
+                undefined,
+            ],
         ],
-        // Points used for validating distances around this stamp to ensure 
+        // Points used for validating distances around this stamp to ensure
         // no overlap with each other or terrain
         // Relative to the top left corner
-        distancePoints: [
-            { x: 2, y: 2, range: 2 },
-        ],
+        distancePoints: [{ x: 2, y: 2, range: 2 }],
         // The center for placement
         // The stamp will be attempted to place with this tile on the lowest scoring weight
         center: { x: 2, y: 2 },
@@ -827,10 +1083,34 @@ const stamps = {
 
     fastFiller: {
         layout: [
-            [undefined, undefined, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
-            [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_SPAWN, undefined, STRUCTURE_EXTENSION],
-            [STRUCTURE_EXTENSION, undefined, STRUCTURE_CONTAINER, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION],
-            [STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_EXTENSION, STRUCTURE_ROAD, undefined],
+            [
+                undefined,
+                undefined,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_EXTENSION,
+            ],
+            [
+                STRUCTURE_EXTENSION,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_SPAWN,
+                undefined,
+                STRUCTURE_EXTENSION,
+            ],
+            [
+                STRUCTURE_EXTENSION,
+                undefined,
+                STRUCTURE_CONTAINER,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_EXTENSION,
+            ],
+            [
+                STRUCTURE_EXTENSION,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_ROAD,
+                undefined,
+            ],
         ],
         distancePoints: [
             { x: 3, y: 1, range: 1 },
@@ -855,7 +1135,7 @@ const stamps = {
 };
 
 const stampUtility = {
-    stampFits: function(stamp, pos, distanceTransform, existingPlans) {
+    stampFits: function (stamp, pos, distanceTransform, existingPlans) {
         for (const point of stamp.distancePoints) {
             const newX = pos.x + point.x - stamp.center.x;
             const newY = pos.y + point.y - stamp.center.y;
@@ -866,7 +1146,12 @@ const stampUtility = {
             // Look at all points within range of this one to ensure nothing else is placed there
             for (let x = -point.range; x <= point.range; x++) {
                 for (let y = -point.range; y <= point.range; y++) {
-                    if (newX + x < MIN_BUILD_AREA || newX + x > MAX_BUILD_AREA || newY + y < MIN_BUILD_AREA || newY + y > MAX_BUILD_AREA) {
+                    if (
+                        newX + x < MIN_BUILD_AREA ||
+                        newX + x > MAX_BUILD_AREA ||
+                        newY + y < MIN_BUILD_AREA ||
+                        newY + y > MAX_BUILD_AREA
+                    ) {
                         return false;
                     }
                     if (existingPlans.get(newX + x, newY + y) > 0) {
@@ -878,22 +1163,29 @@ const stampUtility = {
         return true;
     },
 
-    placeStamp: function(stamp, pos, planMatrix) {
+    placeStamp: function (stamp, pos, planMatrix) {
         for (let y = 0; y < stamp.layout.length; y++) {
             for (let x = 0; x < stamp.layout[y].length; x++) {
                 const structureValue = structureToNumber[stamp.layout[y][x]];
                 if (structureValue) {
-                    planMatrix.set(pos.x - stamp.center.x + x, pos.y - stamp.center.y + y, structureValue);
+                    planMatrix.set(
+                        pos.x - stamp.center.x + x,
+                        pos.y - stamp.center.y + y,
+                        structureValue
+                    );
                 }
             }
         }
         return planMatrix;
     },
 
-    mirrorStamp: function(stamp) {
+    mirrorStamp: function (stamp) {
         // Deep copy our stamp to ensure the original remains unmodified
         stamp = JSON.parse(JSON.stringify(stamp));
-        const dimensions = { x: stamp.layout[0].length, y: stamp.layout.length };
+        const dimensions = {
+            x: stamp.layout[0].length,
+            y: stamp.layout.length,
+        };
         stamp.layout.reverse();
         for (const p of stamp.distancePoints) {
             p.y = dimensions.y - 1 - p.y;
@@ -902,7 +1194,7 @@ const stampUtility = {
         return stamp;
     },
 
-    rotateStamp: function(stamp) {
+    rotateStamp: function (stamp) {
         stamp = JSON.parse(JSON.stringify(stamp));
         stamp.layout = _.zip(...stamp.layout);
         for (const p of stamp.distancePoints) {
@@ -917,16 +1209,21 @@ const stampUtility = {
         return stamp;
     },
 
-    getTransformationList: function() {
+    getTransformationList: function () {
         return [
             (stamp) => stamp,
             (stamp) => this.mirrorStamp(stamp),
             (stamp) => this.rotateStamp(stamp),
             (stamp) => this.mirrorStamp(this.rotateStamp(stamp)),
             (stamp) => this.rotateStamp(this.mirrorStamp(stamp)),
-            (stamp) => this.rotateStamp(this.mirrorStamp(this.rotateStamp(stamp))),
-            (stamp) => this.mirrorStamp(this.rotateStamp(this.mirrorStamp(stamp))),
-            (stamp) => this.rotateStamp(this.mirrorStamp(this.rotateStamp(this.mirrorStamp(stamp)))),
+            (stamp) =>
+                this.rotateStamp(this.mirrorStamp(this.rotateStamp(stamp))),
+            (stamp) =>
+                this.mirrorStamp(this.rotateStamp(this.mirrorStamp(stamp))),
+            (stamp) =>
+                this.rotateStamp(
+                    this.mirrorStamp(this.rotateStamp(this.mirrorStamp(stamp)))
+                ),
         ];
     },
 };
