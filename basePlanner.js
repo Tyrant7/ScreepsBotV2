@@ -19,9 +19,6 @@ const FILLER_CORE_DIST_PENTALTY = 200;
 const FILLER_COUNT = 2;
 const LAB_COUNT = 1;
 
-const EXTENSIONS_IN_CORE = 1;
-const EXTENSIONS_PER_FILLER = 12;
-
 const MAX_STRUCTURES = {};
 for (const key in CONTROLLER_STRUCTURES) {
     MAX_STRUCTURES[key] = parseInt(Object.values(CONTROLLER_STRUCTURES[key]).slice(-1));
@@ -275,10 +272,19 @@ class BasePlanner {
             // Filter out spaces we've already used
             spaces = spaces.filter((space) => this.roomPlan.get(space.x, space.y) === 0);
 
-            // Next, we'll place our remaining extensions, we'll plan extra for tower placement positions later
+            // Next, we'll place our remaining extensions, we'll plan extra for tower and observer placement positions later
+            // Let's start by counting how many extensions we have already
+            let placedExtensions = 0;
+            for (let x = 0; x < 50; x++) {
+                for (let y = 0; y < 50; y++) {
+                    if (this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_EXTENSION]) {
+                        placedExtensions++;
+                    }
+                }
+            }
+
             const remainingExtensions = MAX_STRUCTURES[STRUCTURE_EXTENSION] 
-                - (FILLER_COUNT * EXTENSIONS_PER_FILLER)
-                - EXTENSIONS_IN_CORE
+                - placedExtensions
                 + MAX_STRUCTURES[STRUCTURE_TOWER];
                 + MAX_STRUCTURES[STRUCTURE_OBSERVER];
             // Here we'll be marking the extensions we place to use as potential tower locations later
@@ -287,7 +293,7 @@ class BasePlanner {
                 // Find the lowest scoring tile that is also adjacent to a road
                 let bestSpot;
                 for (const space of spaces) {
-                    if (terrainMatrix.get(space.x, space.y) > 0 || this.roomPlan.get(space.x, space.y) > 0) {
+                    if (terrainMatrix.get(space.x, space.y) !== 0 || this.roomPlan.get(space.x, space.y) !== 0) {
                         continue;
                     }
                     if (space.x < MIN_BUILD_AREA || space.x > MAX_BUILD_AREA || space.y < MIN_BUILD_AREA || space.y > MAX_BUILD_AREA) {
@@ -425,7 +431,7 @@ class BasePlanner {
                         ? 1 
                         : value === 0 || value === structureToNumber[EXCLUSION_ZONE]
                         ? 0 
-                        : 255
+                        : MAX_VALUE
                 );
             }
         }
@@ -450,6 +456,7 @@ class BasePlanner {
 
             if (point instanceof Source || point instanceof Mineral) {
                 const lastStep = result.path[0];
+                pathfindMatrix.set(lastStep.x, lastStep.y, MAX_VALUE);
                 roadMatrix.set(lastStep.x, lastStep.y, structureToNumber[STRUCTURE_CONTAINER]);
             }
         }
