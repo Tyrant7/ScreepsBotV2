@@ -554,6 +554,16 @@ class BasePlanner {
                 structureToNumber[STRUCTURE_OBSERVER]
             );
 
+            // Then finally, we'll filter out any structures we might have accidentally placed on walls
+            // (through optional roads and things like that)
+            for (let x = 0; x < 50; x++) {
+                for (let y = 0; y < 50; y++) {
+                    if (terrainMatrix.get(x, y) > 0) {
+                        this.roomPlan.set(x, y, 0);
+                    }
+                }
+            }
+
             console.log(
                 "planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!"
             );

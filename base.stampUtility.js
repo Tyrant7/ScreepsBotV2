@@ -6,6 +6,18 @@ const {
 } = require("./base.planningConstants");
 
 module.exports = {
+    /**
+     * Determines if a stamp fits in a given area given its distance points, taking into consideration the distance
+     * to edges and any other planned structures.
+     * @param {{}} stamp The stamp to determine fitness for.
+     * @param {{ x: number, y: number }} pos An object with an X and Y coordinates representing
+     * where the stamp will be placed.
+     * @param {PathFinder.CostMatrix} distanceTransform A cost matrix representing the distance
+     * to the nearest terrain tile in any given direction.
+     * @param {PathFinder.CostMatrix} existingPlans A cost matrix representing the current planned
+     * room configuration.
+     * @returns {boolean} True if all distance points fit within the given parameters, false otherwise.
+     */
     stampFits: function (stamp, pos, distanceTransform, existingPlans) {
         for (const point of stamp.distancePoints) {
             const newX = pos.x + point.x - stamp.center.x;
@@ -48,13 +60,20 @@ module.exports = {
         return true;
     },
 
-    placeStamp: function (stamp, pos, planMatrix, terrainMatrix) {
+    /**
+     * Places the given stamp into the plan matrix at the appropriate position, returning the modified matrix object.
+     * @param {{}} stamp The stamp to place.
+     * @param {{ x: number, y: number }} pos The position to place the stamp. Measured from the stamp's centre object.
+     * @param {PathFinder.CostMatrix} planMatrix The matrix to modify.
+     * @returns {PathFinder.CostMatrix} The modified plan matrix.
+     */
+    placeStamp: function (stamp, pos, planMatrix) {
         for (let y = 0; y < stamp.layout.length; y++) {
             for (let x = 0; x < stamp.layout[y].length; x++) {
                 const structureValue = structureToNumber[stamp.layout[y][x]];
                 const trueX = pos.x - stamp.center.x + x;
                 const trueY = pos.y - stamp.center.y + y;
-                if (structureValue && terrainMatrix.get(trueX, trueY) === 0) {
+                if (structureValue) {
                     planMatrix.set(trueX, trueY, structureValue);
                 }
             }
@@ -62,6 +81,11 @@ module.exports = {
         return planMatrix;
     },
 
+    /**
+     * Creates a deep copy of the given stamp whose new layout is mirrored across the horizontal axis.
+     * @param {{}} stamp The stamp to mirror.
+     * @returns {{}} A new, vertically mirrored stamp.
+     */
     mirrorStamp: function (stamp) {
         // Deep copy our stamp to ensure the original remains unmodified
         stamp = JSON.parse(JSON.stringify(stamp));
@@ -77,6 +101,12 @@ module.exports = {
         return stamp;
     },
 
+    /**
+     * Creates a deep copy of the given stamp whose new layout is rotated counter-clockwise
+     * and mirror across the vertical axis.
+     * @param {{}} stamp The stamp to mirror.
+     * @returns {{}} A new, rotated stamp.
+     */
     rotateStamp: function (stamp) {
         stamp = JSON.parse(JSON.stringify(stamp));
         stamp.layout = _.zip(...stamp.layout);
@@ -92,6 +122,12 @@ module.exports = {
         return stamp;
     },
 
+    /**
+     * Returns a set list of all transformations needed to cover all possible orientations
+     * for any given asymmetrical stamp.
+     * @returns {(stamp: {}) => {}} An array of functions, each which transform the layout of a
+     * stamp object in different ways.
+     */
     getTransformationList: function () {
         return [
             (stamp) => stamp,

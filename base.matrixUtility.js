@@ -1,8 +1,4 @@
-const {
-    MAX_VALUE,
-    MAX_BUILD_AREA,
-    MIN_BUILD_AREA,
-} = require("./base.planningConstants");
+const { MAX_VALUE } = require("./base.planningConstants");
 
 module.exports = {
     /**
