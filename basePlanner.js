@@ -1114,47 +1114,82 @@ const stamps = {
         layout: [
             [
                 undefined,
+                undefined,
+                undefined,
+                STRUCTURE_ROAD,
+                undefined,
+                undefined,
+                undefined,
+            ],
+            [
+                undefined,
+                undefined,
                 STRUCTURE_ROAD,
                 STRUCTURE_EXTENSION,
                 STRUCTURE_ROAD,
                 undefined,
+                undefined,
             ],
             [
+                undefined,
                 STRUCTURE_ROAD,
                 STRUCTURE_STORAGE,
                 STRUCTURE_EXTENSION,
                 STRUCTURE_SPAWN,
                 STRUCTURE_ROAD,
+                undefined,
             ],
             [
+                STRUCTURE_ROAD,
                 STRUCTURE_EXTENSION,
                 STRUCTURE_TERMINAL,
                 undefined,
                 STRUCTURE_FACTORY,
                 STRUCTURE_EXTENSION,
+                STRUCTURE_ROAD,
+                ,
             ],
             [
+                undefined,
                 STRUCTURE_ROAD,
                 STRUCTURE_POWER_SPAWN,
                 STRUCTURE_NUKER,
                 STRUCTURE_LINK,
                 STRUCTURE_ROAD,
+                undefined,
             ],
             [
+                undefined,
                 undefined,
                 STRUCTURE_ROAD,
                 STRUCTURE_EXTENSION,
                 STRUCTURE_ROAD,
+                undefined,
+                undefined,
+            ],
+            [
+                undefined,
+                undefined,
+                undefined,
+                STRUCTURE_ROAD,
+                undefined,
+                undefined,
                 undefined,
             ],
         ],
         // Points used for validating distances around this stamp to ensure
         // no overlap with each other or terrain
         // Relative to the top left corner
-        distancePoints: [{ x: 2, y: 2, range: 2 }],
+        distancePoints: [
+            { x: 3, y: 3, range: 2 },
+            { x: 3, y: 0, range: 0 },
+            { x: 0, y: 3, range: 0 },
+            { x: 6, y: 3, range: 0 },
+            { x: 3, y: 6, range: 0 },
+        ],
         // The center for placement
         // The stamp will be attempted to place with this tile on the lowest scoring weight
-        center: { x: 2, y: 2 },
+        center: { x: 3, y: 3 },
     },
 
     extensionStampX: {
