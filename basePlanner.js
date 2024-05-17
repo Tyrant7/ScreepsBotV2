@@ -14,7 +14,7 @@ const WEIGHT_EXIT_DIST = -0.7;
 const WEIGHT_TERRAIN_DIST = -0.9;
 
 const CHECK_MAXIMUM = 20;
-const FILLER_CORE_DIST_PENTALTY = 200;
+const STAMP_CORE_DIST_PENTALTY = 200;
 
 const SPAWN_STAMP_COUNT = 2;
 const EXTENSION_STAMP_COUNT = 1;
@@ -93,7 +93,8 @@ class BasePlanner {
                         roomPlan = stampUtility.placeStamp(
                             bestStampData.stamp,
                             bestStampData.pos,
-                            roomPlan
+                            roomPlan,
+                            terrainMatrix
                         );
                     }
                 }
@@ -115,7 +116,8 @@ class BasePlanner {
                 const pathMatrix = stampUtility.placeStamp(
                     stamp,
                     pos,
-                    roomPlan.clone()
+                    roomPlan.clone(),
+                    terrainMatrix
                 );
                 for (let x = 0; x < 50; x++) {
                     for (let y = 0; y < 50; y++) {
@@ -161,7 +163,7 @@ class BasePlanner {
                     return Infinity;
                 }
                 return (
-                    totalScore + result.path.length * FILLER_CORE_DIST_PENTALTY
+                    totalScore + result.path.length * STAMP_CORE_DIST_PENTALTY
                 );
             }
 
@@ -243,7 +245,8 @@ class BasePlanner {
                     this.roomPlan = stampUtility.placeStamp(
                         bestStampData.stamp,
                         bestStampData.pos,
-                        this.roomPlan
+                        this.roomPlan,
+                        terrainMatrix
                     );
                     corePos = space;
                     break;
@@ -373,8 +376,6 @@ class BasePlanner {
                 this.roomPlan,
                 terrainMatrix
             );
-
-            overlay.visualizeCostMatrix(roomInfo.room.name, this.roomPlan);
 
             // Filter out spaces we've already used
             spaces = spaces.filter(
@@ -1256,6 +1257,20 @@ const stampUtility = {
                 return false;
             }
 
+            if (point.range === 0) {
+                const obstructor = existingPlans.get(newX, newY);
+                const stampHasRoad =
+                    stamp.layout[point.y][point.x] === STRUCTURE_ROAD;
+                const obstructorIsRoadOrExclusion =
+                    obstructor === structureToNumber[STRUCTURE_ROAD] ||
+                    obstructor === structureToNumber[EXCLUSION_ZONE];
+
+                // We can skip validating this point if it's only on a road being blocked by a road
+                if (stampHasRoad && obstructorIsRoadOrExclusion) {
+                    continue;
+                }
+            }
+
             // Look at all points within range of this one to ensure nothing else is placed there
             for (let x = -point.range; x <= point.range; x++) {
                 for (let y = -point.range; y <= point.range; y++) {
@@ -1276,16 +1291,14 @@ const stampUtility = {
         return true;
     },
 
-    placeStamp: function (stamp, pos, planMatrix) {
+    placeStamp: function (stamp, pos, planMatrix, terrainMatrix) {
         for (let y = 0; y < stamp.layout.length; y++) {
             for (let x = 0; x < stamp.layout[y].length; x++) {
                 const structureValue = structureToNumber[stamp.layout[y][x]];
-                if (structureValue) {
-                    planMatrix.set(
-                        pos.x - stamp.center.x + x,
-                        pos.y - stamp.center.y + y,
-                        structureValue
-                    );
+                const trueX = pos.x - stamp.center.x + x;
+                const trueY = pos.y - stamp.center.y + y;
+                if (structureValue && terrainMatrix.get(trueX, trueY) === 0) {
+                    planMatrix.set(trueX, trueY, structureValue);
                 }
             }
         }
