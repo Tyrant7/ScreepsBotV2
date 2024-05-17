@@ -17,22 +17,11 @@ const WEIGHT_SOURCES_SPACE = 0.25;
 const WEIGHT_EXIT_DIST = -0.7;
 const WEIGHT_TERRAIN_DIST = -0.9;
 
-const CHECK_MAXIMUM = 20;
 const STAMP_CORE_DIST_PENTALTY = 200;
 
 const SPAWN_STAMP_COUNT = 2;
 const EXTENSION_STAMP_COUNT = 1;
 const LAB_COUNT = 1;
-
-const CONNECTIVE_ROAD_PENALTY_PLAINS = 3;
-const CONNECTIVE_ROAD_PENALTY_SWAMP = 5;
-
-const MAX_STRUCTURES = {};
-for (const key in CONTROLLER_STRUCTURES) {
-    MAX_STRUCTURES[key] = parseInt(
-        Object.values(CONTROLLER_STRUCTURES[key]).slice(-1)
-    );
-}
 
 class BasePlanner {
     run(roomInfo) {
@@ -141,7 +130,7 @@ class BasePlanner {
                 corePos,
                 terrainMatrix.clone()
             );
-            planBuilder.planUpgraderContainer(
+            const upgraderContainer = planBuilder.planUpgraderContainer(
                 floodfillFromCore,
                 roomInfo.room.controller.pos
             );
@@ -158,16 +147,16 @@ class BasePlanner {
             const roadPoints = roomInfo.sources
                 .concat({
                     pos: new RoomPosition(
-                        bestContainerSpot.x,
-                        bestContainerSpot.y,
+                        upgraderContainer.x,
+                        upgraderContainer.y,
                         roomInfo.room.name
                     ),
                 })
                 .concat(roomInfo.mineral);
-            planBuilder.planRoads(roadPoints, roomInfo.room.name, corePos);
+            planBuilder.planRoads(roadPoints, corePos);
 
             // Also plan out our future routes to the exits for remotes
-            planBuilder.planRemoteRoads();
+            planBuilder.planRemoteRoads(roomInfo.room, corePos);
 
             // Filter out spaces we've already used
             planBuilder.filterUsedSpaces();
@@ -195,7 +184,7 @@ class BasePlanner {
 
             planBuilder.filterUsedSpaces();
 
-            planBuilder.placeDynamicStructures();
+            planBuilder.placeDynamicStructures(roomInfo.room);
 
             planBuilder.cleanup();
             this.roomPlan = planBuilder.getProduct();

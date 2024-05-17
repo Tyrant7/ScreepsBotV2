@@ -1,4 +1,6 @@
 const stampUtility = require("./base.stampUtility");
+const matrixUtility = require("./base.matrixUtility");
+const utility = require("./base.planningUtility");
 const {
     MAX_VALUE,
     MAX_BUILD_AREA,
@@ -6,6 +8,18 @@ const {
     EXCLUSION_ZONE,
     structureToNumber,
 } = require("./base.planningConstants");
+
+const STAMP_MAX_ATTEMPTS = 20;
+
+const CONNECTIVE_ROAD_PENALTY_PLAINS = 3;
+const CONNECTIVE_ROAD_PENALTY_SWAMP = 5;
+
+const MAX_STRUCTURES = {};
+for (const key in CONTROLLER_STRUCTURES) {
+    MAX_STRUCTURES[key] = parseInt(
+        Object.values(CONTROLLER_STRUCTURES[key]).slice(-1)
+    );
+}
 
 class PlanBuilder {
     constructor(terrainMatrix, distanceTransform, weightMatrix) {
@@ -95,12 +109,7 @@ class PlanBuilder {
             for (let y = -2; y <= 2; y++) {
                 const newX = controllerPos.x + x;
                 const newY = controllerPos.y + y;
-                if (
-                    newX < MIN_BUILD_AREA ||
-                    newX > MAX_BUILD_AREA ||
-                    newY < MIN_BUILD_AREA ||
-                    newY > MAX_BUILD_AREA
-                ) {
+                if (!utility.inBuildArea(newX, newY)) {
                     continue;
                 }
                 if (
@@ -116,12 +125,7 @@ class PlanBuilder {
                     for (let y = -1; y <= 1; y++) {
                         const neighbourX = newX + x;
                         const neighbourY = newY + y;
-                        if (
-                            neighbourX < MIN_BUILD_AREA ||
-                            neighbourX > MAX_BUILD_AREA ||
-                            neighbourY < MIN_BUILD_AREA ||
-                            neighbourY > MAX_BUILD_AREA
-                        ) {
+                        if (!utility.inBuildArea(newX, newY)) {
                             continue;
                         }
                         if (
@@ -167,6 +171,7 @@ class PlanBuilder {
                 }
             }
         }
+        return bestContainerSpot;
     }
 
     resortSpaces(compareFn) {
@@ -240,13 +245,14 @@ class PlanBuilder {
         }
     }
 
-    planRemoteRoads(roomTerrain, corePos) {
+    planRemoteRoads(room, corePos) {
         const exitTypes = [
             FIND_EXIT_TOP,
             FIND_EXIT_BOTTOM,
             FIND_EXIT_LEFT,
             FIND_EXIT_RIGHT,
         ];
+        const roomTerrain = Game.map.getRoomTerrain(room.name);
 
         // Let's build a roadmatrix to encourage using existing roads
         const roadMatrix = new PathFinder.CostMatrix();
@@ -260,7 +266,10 @@ class PlanBuilder {
                     roadMatrix.set(x, y, CONNECTIVE_ROAD_PENALTY_SWAMP);
                     continue;
                 }
-                if (roomPlan.get(x, y) === structureToNumber[STRUCTURE_ROAD]) {
+                if (
+                    this.roomPlan.get(x, y) ===
+                    structureToNumber[STRUCTURE_ROAD]
+                ) {
                     roadMatrix.set(x, y, 1);
                     continue;
                 }
@@ -270,7 +279,7 @@ class PlanBuilder {
 
         // Let's make sure that we can path to each exit from our core
         for (const exitType of exitTypes) {
-            const tiles = roomInfo.room.find(exitType);
+            const tiles = room.find(exitType);
             if (!tiles.length) {
                 continue;
             }
@@ -308,8 +317,8 @@ class PlanBuilder {
             // Only consider the best suspected locations
             let bestStampData;
             let checkedLocations = 0;
-            for (const space of spaces) {
-                if (checkedLocations >= CHECK_MAXIMUM) {
+            for (const space of this.spaces) {
+                if (checkedLocations >= STAMP_MAX_ATTEMPTS) {
                     break;
                 }
 
@@ -421,7 +430,7 @@ class PlanBuilder {
         this.planRoads(roadPositions, corePos);
     }
 
-    placeDynamicStructures() {
+    placeDynamicStructures(room) {
         // Next, we'll place our remaining extensions, we'll plan extra for tower and observer placement positions later
         // Let's start by counting how many extensions we have already
         let placedExtensions = 0;
@@ -446,19 +455,14 @@ class PlanBuilder {
         for (let i = 0; i < remainingExtensions; i++) {
             // Find the lowest scoring tile that is also adjacent to a road
             let bestSpot;
-            for (const space of spaces) {
+            for (const space of this.spaces) {
                 if (
                     this.tm.get(space.x, space.y) !== 0 ||
                     this.roomPlan.get(space.x, space.y) !== 0
                 ) {
                     continue;
                 }
-                if (
-                    space.x < MIN_BUILD_AREA ||
-                    space.x > MAX_BUILD_AREA ||
-                    space.y < MIN_BUILD_AREA ||
-                    space.y > MAX_BUILD_AREA
-                ) {
+                if (!utility.inBuildArea(space.x, space.y)) {
                     continue;
                 }
 
@@ -502,9 +506,9 @@ class PlanBuilder {
 
         // Start by creating floodfills for each exit
         const exitMatrices = [];
-        for (const exitKey in Game.map.describeExits(roomInfo.room.name)) {
+        for (const exitKey in Game.map.describeExits(room.name)) {
             const matrix = matrixUtility.floodfill(
-                roomInfo.room.find(exitKey),
+                room.find(exitKey),
                 this.tm.clone()
             );
             exitMatrices.push(matrix);
