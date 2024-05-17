@@ -7,7 +7,6 @@ const MAX_BUILD_AREA = 45;
 const EXCLUSION_ZONE = "exclusion";
 
 const WEIGHT_CONTROLLER = 1.2;
-const WEIGHT_MINERAL = 0.15;
 const WEIGHT_SOURCES = 0.85;
 const WEIGHT_SOURCES_SPACE = 0.25;
 const WEIGHT_EXIT_DIST = -0.7;
@@ -571,14 +570,6 @@ class BasePlanner {
             ),
             weight: WEIGHT_CONTROLLER,
         };
-
-        const mineralMatrix = {
-            matrix: matrixUtility.floodfill(
-                roomInfo.mineral.pos,
-                terrainMatrix.clone()
-            ),
-            weight: WEIGHT_MINERAL,
-        };
         const sourceMatrices = [];
         for (const source of roomInfo.sources) {
             sourceMatrices.push({
@@ -611,7 +602,6 @@ class BasePlanner {
         return matrixUtility.normalizeMatrix(
             matrixUtility.addScoreMatrices(
                 controllerMatrix,
-                mineralMatrix,
                 ...sourceMatrices,
                 exitDistMatrix,
                 distMatrix
