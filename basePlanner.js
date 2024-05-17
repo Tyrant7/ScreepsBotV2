@@ -434,8 +434,8 @@ class BasePlanner {
             const remainingExtensions =
                 MAX_STRUCTURES[STRUCTURE_EXTENSION] -
                 placedExtensions +
-                MAX_STRUCTURES[STRUCTURE_TOWER];
-            +MAX_STRUCTURES[STRUCTURE_OBSERVER];
+                MAX_STRUCTURES[STRUCTURE_TOWER] +
+                MAX_STRUCTURES[STRUCTURE_OBSERVER];
             // Here we'll be marking the extensions we place to use as potential tower locations later
             const extensionPositions = [];
             for (let i = 0; i < remainingExtensions; i++) {
