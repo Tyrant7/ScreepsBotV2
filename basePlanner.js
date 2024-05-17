@@ -16,7 +16,7 @@ const WEIGHT_TERRAIN_DIST = -0.9;
 const CHECK_MAXIMUM = 20;
 const FILLER_CORE_DIST_PENTALTY = 200;
 
-const FILLER_COUNT = 2;
+const EXTENSION_STAMP_COUNT = 3;
 const LAB_COUNT = 1;
 
 const MAX_STRUCTURES = {};
@@ -375,10 +375,10 @@ class BasePlanner {
                 (space) => this.roomPlan.get(space.x, space.y) === 0
             );
 
-            // Then, we'll plan our our fast-filler locations
+            // Then, we'll plan our our extension stamp locations
             this.roomPlan = placeStamps(
-                stamps.fastFiller,
-                FILLER_COUNT,
+                stamps.extensionStampX,
+                EXTENSION_STAMP_COUNT,
                 this.roomPlan,
                 defaultScoreFn
             );
@@ -1138,40 +1138,40 @@ const stamps = {
         center: { x: 2, y: 2 },
     },
 
-    fastFiller: {
+    extensionStampX: {
         layout: [
+            [undefined, undefined, STRUCTURE_ROAD, undefined, undefined],
             [
                 undefined,
-                undefined,
-                STRUCTURE_EXTENSION,
-                STRUCTURE_EXTENSION,
-                STRUCTURE_EXTENSION,
-            ],
-            [
-                STRUCTURE_EXTENSION,
-                STRUCTURE_EXTENSION,
-                STRUCTURE_SPAWN,
-                undefined,
-                STRUCTURE_EXTENSION,
-            ],
-            [
-                STRUCTURE_EXTENSION,
-                undefined,
-                STRUCTURE_CONTAINER,
-                STRUCTURE_EXTENSION,
-                STRUCTURE_EXTENSION,
-            ],
-            [
-                STRUCTURE_EXTENSION,
-                STRUCTURE_EXTENSION,
+                STRUCTURE_ROAD,
                 STRUCTURE_EXTENSION,
                 STRUCTURE_ROAD,
                 undefined,
             ],
+            [
+                STRUCTURE_ROAD,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_ROAD,
+            ],
+            [
+                undefined,
+                STRUCTURE_ROAD,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_ROAD,
+                undefined,
+            ],
+            [undefined, undefined, STRUCTURE_ROAD, undefined, undefined],
         ],
         distancePoints: [
-            { x: 3, y: 1, range: 1 },
-            { x: 1, y: 2, range: 1 },
+            { x: 2, y: 1, range: 0 },
+            { x: 1, y: 2, range: 0 },
+            { x: 2, y: 2, range: 0 },
+            { x: 3, y: 2, range: 0 },
+            { x: 2, y: 3, range: 0 },
+            { x: 1, y: 1, range: 0 },
+            { x: 3, y: 3, range: 0 },
         ],
         center: { x: 2, y: 2 },
     },
