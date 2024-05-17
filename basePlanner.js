@@ -19,6 +19,9 @@ const FILLER_CORE_DIST_PENTALTY = 200;
 const EXTENSION_STAMP_COUNT = 3;
 const LAB_COUNT = 1;
 
+const CONNECTIVE_ROAD_PENALTY_PLAINS = 3;
+const CONNECTIVE_ROAD_PENALTY_SWAMP = 5;
+
 const MAX_STRUCTURES = {};
 for (const key in CONTROLLER_STRUCTURES) {
     MAX_STRUCTURES[key] = parseInt(
@@ -369,6 +372,8 @@ class BasePlanner {
                 this.roomPlan,
                 terrainMatrix
             );
+
+            overlay.visualizeCostMatrix(roomInfo.room.name, this.roomPlan);
 
             // Filter out spaces we've already used
             spaces = spaces.filter(
@@ -728,27 +733,32 @@ class BasePlanner {
         return this.planRoads(roadPositions, roomName, corePos, roomPlan);
     }
 
-    planExitExclusionZones(roomInfo, corePos, roomPlan, terrainMatrix) {
+    planExitExclusionZones(roomInfo, corePos, roomPlan) {
         const exitTypes = [
             FIND_EXIT_TOP,
             FIND_EXIT_BOTTOM,
             FIND_EXIT_LEFT,
             FIND_EXIT_RIGHT,
         ];
+        const roomTerrain = Game.map.getRoomTerrain(roomInfo.room.name);
 
         // Let's build a roadmatrix to encourage using existing roads
         const roadMatrix = new PathFinder.CostMatrix();
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
-                if (terrainMatrix.get(x, y) !== 0) {
+                if (roomTerrain.get(x, y) === TERRAIN_MASK_WALL) {
                     roadMatrix.set(x, y, MAX_VALUE);
+                    continue;
+                }
+                if (roomTerrain.get(x, y) === TERRAIN_MASK_SWAMP) {
+                    roadMatrix.set(x, y, CONNECTIVE_ROAD_PENALTY_SWAMP);
                     continue;
                 }
                 if (roomPlan.get(x, y) === structureToNumber[STRUCTURE_ROAD]) {
                     roadMatrix.set(x, y, 1);
                     continue;
                 }
-                roadMatrix.set(x, y, 3);
+                roadMatrix.set(x, y, CONNECTIVE_ROAD_PENALTY_PLAINS);
             }
         }
 
