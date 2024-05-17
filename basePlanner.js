@@ -16,7 +16,8 @@ const WEIGHT_TERRAIN_DIST = -0.9;
 const CHECK_MAXIMUM = 20;
 const FILLER_CORE_DIST_PENTALTY = 200;
 
-const EXTENSION_STAMP_COUNT = 3;
+const SPAWN_STAMP_COUNT = 2;
+const EXTENSION_STAMP_COUNT = 1;
 const LAB_COUNT = 1;
 
 const CONNECTIVE_ROAD_PENALTY_PLAINS = 3;
@@ -381,6 +382,13 @@ class BasePlanner {
             );
 
             // Then, we'll plan our our extension stamp locations
+            // (both regular and with spawns)
+            this.roomPlan = placeStamps(
+                stamps.extensionStampXWithSpawn,
+                SPAWN_STAMP_COUNT,
+                this.roomPlan,
+                defaultScoreFn
+            );
             this.roomPlan = placeStamps(
                 stamps.extensionStampX,
                 EXTENSION_STAMP_COUNT,
@@ -1162,6 +1170,44 @@ const stamps = {
                 STRUCTURE_ROAD,
                 STRUCTURE_EXTENSION,
                 STRUCTURE_EXTENSION,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_ROAD,
+            ],
+            [
+                undefined,
+                STRUCTURE_ROAD,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_ROAD,
+                undefined,
+            ],
+            [undefined, undefined, STRUCTURE_ROAD, undefined, undefined],
+        ],
+        distancePoints: [
+            { x: 2, y: 1, range: 0 },
+            { x: 1, y: 2, range: 0 },
+            { x: 2, y: 2, range: 0 },
+            { x: 3, y: 2, range: 0 },
+            { x: 2, y: 3, range: 0 },
+            { x: 1, y: 1, range: 0 },
+            { x: 3, y: 3, range: 0 },
+        ],
+        center: { x: 2, y: 2 },
+    },
+
+    extensionStampXWithSpawn: {
+        layout: [
+            [undefined, undefined, STRUCTURE_ROAD, undefined, undefined],
+            [
+                undefined,
+                STRUCTURE_ROAD,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_ROAD,
+                undefined,
+            ],
+            [
+                STRUCTURE_ROAD,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_SPAWN,
                 STRUCTURE_EXTENSION,
                 STRUCTURE_ROAD,
             ],
