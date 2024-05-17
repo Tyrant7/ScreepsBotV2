@@ -1115,7 +1115,7 @@ const stamps = {
             [
                 undefined,
                 STRUCTURE_ROAD,
-                STRUCTURE_ROAD,
+                STRUCTURE_EXTENSION,
                 STRUCTURE_ROAD,
                 undefined,
             ],
@@ -1127,11 +1127,11 @@ const stamps = {
                 STRUCTURE_ROAD,
             ],
             [
-                STRUCTURE_ROAD,
+                STRUCTURE_EXTENSION,
                 STRUCTURE_TERMINAL,
                 undefined,
                 STRUCTURE_FACTORY,
-                STRUCTURE_ROAD,
+                STRUCTURE_EXTENSION,
             ],
             [
                 STRUCTURE_ROAD,
@@ -1143,7 +1143,7 @@ const stamps = {
             [
                 undefined,
                 STRUCTURE_ROAD,
-                STRUCTURE_ROAD,
+                STRUCTURE_EXTENSION,
                 STRUCTURE_ROAD,
                 undefined,
             ],
