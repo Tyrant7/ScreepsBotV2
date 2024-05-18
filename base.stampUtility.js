@@ -1,7 +1,5 @@
 const utility = require("./base.planningUtility");
 const {
-    MAX_BUILD_AREA,
-    MIN_BUILD_AREA,
     EXCLUSION_ZONE,
     structureToNumber,
 } = require("./base.planningConstants");
