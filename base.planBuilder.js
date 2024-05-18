@@ -9,6 +9,8 @@ const {
     structureToNumber,
 } = require("./base.planningConstants");
 
+const MAX_STAMP_ATTEMPTS = 10;
+
 const CONNECTIVE_ROAD_PENALTY_PLAINS = 3;
 const CONNECTIVE_ROAD_PENALTY_SWAMP = 5;
 
@@ -271,9 +273,19 @@ class PlanBuilder {
     }
 
     placeStamp(stamp) {
-        // Find the best stamp we can place currently
-        // Only consider the best suspected locations
+        let attempts = 0;
+        let foundOne = false;
+
+        let bestScore = Infinity;
+        let bestStamp;
+        let bestStampPos;
+
+        // Find the best stamp we can place currently over an arbitrary number of attempts
         for (const space of this.spaces) {
+            if (attempts >= MAX_STAMP_ATTEMPTS) {
+                break;
+            }
+
             // Consider all orientations
             for (const transform of stampUtility.getTransformationList()) {
                 const transformedStamp = transform(stamp);
@@ -285,16 +297,50 @@ class PlanBuilder {
                         this.roomPlan
                     )
                 ) {
-                    // Once we've found the an orientation that fits, let's place it
-                    this.roomPlan = stampUtility.placeStamp(
+                    // We'll score the stamp based on how many roads its placement managed to save
+                    // Lower scores are better
+                    let score = 0;
+                    const dummyPlan = stampUtility.placeStamp(
                         transformedStamp,
                         space,
-                        this.roomPlan
+                        this.roomPlan.clone()
                     );
-                    return space;
+                    for (let x = 0; x < 50; x++) {
+                        for (let y = 0; y < 50; y++) {
+                            if (
+                                dummyPlan.get(x, y) ===
+                                structureToNumber[STRUCTURE_ROAD]
+                            ) {
+                                score++;
+                            }
+                        }
+                    }
+
+                    // Once we've found the an orientation that fits, let's save it
+                    // if it beats our current best
+                    if (!bestStamp || bestScore > score) {
+                        bestScore = score;
+                        bestStamp = transformedStamp;
+                        bestStampPos = space;
+                    }
+
+                    foundOne = true;
                 }
             }
+
+            if (foundOne) {
+                attempts++;
+            }
         }
+
+        if (bestStamp) {
+            this.roomPlan = stampUtility.placeStamp(
+                bestStamp,
+                bestStampPos,
+                this.roomPlan
+            );
+        }
+        return bestStampPos;
     }
 
     connectStragglingRoads(roomName) {
