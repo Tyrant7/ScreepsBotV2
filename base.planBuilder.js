@@ -35,7 +35,7 @@ class PlanBuilder {
         this.spaces = [];
         for (let x = MIN_BUILD_AREA; x < MAX_BUILD_AREA; x++) {
             for (let y = MIN_BUILD_AREA; y < MAX_BUILD_AREA; y++) {
-                if (terrainMatrix.get(x, y) === 0) {
+                if (this.tm.get(x, y) === 0) {
                     this.spaces.push({ x, y });
                 }
             }
@@ -262,15 +262,15 @@ class PlanBuilder {
                     roadMatrix.set(x, y, MAX_VALUE);
                     continue;
                 }
-                if (roomTerrain.get(x, y) === TERRAIN_MASK_SWAMP) {
-                    roadMatrix.set(x, y, CONNECTIVE_ROAD_PENALTY_SWAMP);
-                    continue;
-                }
                 if (
                     this.roomPlan.get(x, y) ===
                     structureToNumber[STRUCTURE_ROAD]
                 ) {
                     roadMatrix.set(x, y, 1);
+                    continue;
+                }
+                if (roomTerrain.get(x, y) === TERRAIN_MASK_SWAMP) {
+                    roadMatrix.set(x, y, CONNECTIVE_ROAD_PENALTY_SWAMP);
                     continue;
                 }
                 roadMatrix.set(x, y, CONNECTIVE_ROAD_PENALTY_PLAINS);

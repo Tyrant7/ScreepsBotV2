@@ -1,3 +1,4 @@
+const utility = require("./base.planningUtility");
 const {
     MAX_BUILD_AREA,
     MIN_BUILD_AREA,
@@ -26,32 +27,34 @@ module.exports = {
                 return false;
             }
 
-            if (point.range === 0) {
-                const obstructor = existingPlans.get(newX, newY);
-                const stampHasRoad =
-                    stamp.layout[point.y][point.x] === STRUCTURE_ROAD;
-                const obstructorIsRoadOrExclusion =
-                    obstructor === structureToNumber[STRUCTURE_ROAD] ||
-                    obstructor === structureToNumber[EXCLUSION_ZONE];
-
-                // We can skip validating this point if it's only on a road being blocked by a road, for example
-                if (stampHasRoad && obstructorIsRoadOrExclusion) {
-                    continue;
-                }
-            }
-
             // Look at all points within range of this one to ensure nothing else is placed there
             for (let x = -point.range; x <= point.range; x++) {
                 for (let y = -point.range; y <= point.range; y++) {
-                    if (
-                        newX + x < MIN_BUILD_AREA ||
-                        newX + x > MAX_BUILD_AREA ||
-                        newY + y < MIN_BUILD_AREA ||
-                        newY + y > MAX_BUILD_AREA
-                    ) {
+                    const nextX = newX + x;
+                    const nextY = newY + y;
+                    if (!utility.inBuildArea(nextX, nextY)) {
                         return false;
                     }
-                    if (existingPlans.get(newX + x, newY + y) > 0) {
+
+                    const obstructor = existingPlans.get(nextX, nextY);
+                    const wanted = stamp.layout[point.y + y][point.x + x];
+                    const stampHasRoadOrExclusion =
+                        wanted === STRUCTURE_ROAD ||
+                        wanted === EXCLUSION_ZONE ||
+                        wanted === undefined;
+                    const obstructorIsRoadOrExclusion =
+                        obstructor === structureToNumber[STRUCTURE_ROAD] ||
+                        obstructor === structureToNumber[EXCLUSION_ZONE];
+
+                    // We can skip validating this point if it's an
+                    // unwalkable structure on top of another unwalkable structure
+                    if (
+                        stampHasRoadOrExclusion &&
+                        obstructorIsRoadOrExclusion
+                    ) {
+                        continue;
+                    }
+                    if (obstructor > 0) {
                         return false;
                     }
                 }

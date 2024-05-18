@@ -36,7 +36,7 @@ module.exports = {
                 STRUCTURE_ROAD,
                 STRUCTURE_EXTENSION,
                 STRUCTURE_TERMINAL,
-                undefined,
+                EXCLUSION_ZONE,
                 STRUCTURE_FACTORY,
                 STRUCTURE_EXTENSION,
                 STRUCTURE_ROAD,

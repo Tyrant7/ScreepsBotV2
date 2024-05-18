@@ -1,10 +1,4 @@
-const {
-    MAX_VALUE,
-    MAX_BUILD_AREA,
-    MIN_BUILD_AREA,
-    EXCLUSION_ZONE,
-    structureToNumber,
-} = require("./base.planningConstants");
+const { MAX_BUILD_AREA, MIN_BUILD_AREA } = require("./base.planningConstants");
 
 module.exports = {
     inBuildArea(x, y) {

@@ -5,8 +5,6 @@ const stamps = require("./base.stamps");
 const PlanBuilder = require("./base.planBuilder");
 const {
     MAX_VALUE,
-    MAX_BUILD_AREA,
-    MIN_BUILD_AREA,
     EXCLUSION_ZONE,
     structureToNumber,
 } = require("./base.planningConstants");
@@ -135,13 +133,6 @@ class BasePlanner {
                 roomInfo.room.controller.pos
             );
 
-            // Resort our spaces by distance to the core
-            planBuilder.resortSpaces(
-                (a, b) =>
-                    floodfillFromCore.get(a.x, a.y) -
-                    floodfillFromCore.get(b.x, b.y)
-            );
-
             // Once we have our core, let's plan out our artery roads
             // This will also handle container placement for sources and minerals
             const roadPoints = roomInfo.sources
@@ -161,6 +152,13 @@ class BasePlanner {
             // Filter out spaces we've already used
             planBuilder.filterUsedSpaces();
 
+            // Resort our spaces by distance to the core
+            planBuilder.resortSpaces(
+                (a, b) =>
+                    floodfillFromCore.get(a.x, a.y) -
+                    floodfillFromCore.get(b.x, b.y)
+            );
+
             // Plan our our extension stamp locations
             // (both regular and with spawns)
             planBuilder.placeStamps(
@@ -168,6 +166,7 @@ class BasePlanner {
                 SPAWN_STAMP_COUNT,
                 defaultScoreFn
             );
+
             planBuilder.placeStamps(
                 stamps.extensionStampX,
                 EXTENSION_STAMP_COUNT,
@@ -183,7 +182,6 @@ class BasePlanner {
             planBuilder.connectStragglingRoads(roomInfo.room.name, corePos);
 
             planBuilder.filterUsedSpaces();
-
             planBuilder.placeDynamicStructures(roomInfo.room);
 
             planBuilder.cleanup();
