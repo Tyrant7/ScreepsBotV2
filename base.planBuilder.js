@@ -213,13 +213,51 @@ class PlanBuilder {
                 );
             }
 
-            if (point instanceof Source || point instanceof Mineral) {
-                const lastStep = result.path[0];
-                pathfindMatrix.set(lastStep.x, lastStep.y, MAX_VALUE);
+            // Next stuff only applies to minerals and sources
+            if (!(point instanceof Source || point instanceof Mineral)) {
+                continue;
+            }
+
+            // Place the containers
+            const lastStep = result.path[0];
+            pathfindMatrix.set(lastStep.x, lastStep.y, MAX_VALUE);
+            this.roomPlan.set(
+                lastStep.x,
+                lastStep.y,
+                structureToNumber[STRUCTURE_CONTAINER]
+            );
+
+            // Handle link placement
+            if (point instanceof Source) {
+                // Iterate the neighbours, then choose the one
+                // closest to the core where no other structure lies
+                let bestNeighbour;
+                for (let x = -1; x <= 1; x++) {
+                    for (let y = -1; y <= 1; y++) {
+                        const newX = lastStep.x + x;
+                        const newY = lastStep.y + y;
+                        if (
+                            !utility.inBuildArea(newX, newY) ||
+                            this.tm.get(newX, newY) > 0 ||
+                            this.roomPlan.get(newX, newY) > 0
+                        ) {
+                            continue;
+                        }
+                        if (
+                            !bestNeighbour ||
+                            this.floodfillFromCore.get(
+                                bestNeighbour.x,
+                                bestNeighbour.y
+                            ) > this.floodfillFromCore.get(newX, newY)
+                        ) {
+                            bestNeighbour = { x: newX, y: newY };
+                        }
+                    }
+                }
                 this.roomPlan.set(
-                    lastStep.x,
-                    lastStep.y,
-                    structureToNumber[STRUCTURE_CONTAINER]
+                    bestNeighbour.x,
+                    bestNeighbour.y,
+                    structureToNumber[STRUCTURE_LINK]
                 );
             }
         }

@@ -52,7 +52,7 @@ class BasePlanner {
             const upgraderContainer = planBuilder.planUpgraderContainer();
 
             // Plan out artery roads
-            // This will also handle container placement for sources and minerals
+            // This will also handle container placement for minerals and container + links for sources
             planBuilder.planRoads(
                 roomInfo.sources
                     .concat({
