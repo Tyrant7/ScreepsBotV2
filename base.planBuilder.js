@@ -159,21 +159,18 @@ class PlanBuilder {
 
         // Save a path to each of our road points
         const pathfindMatrix = new PathFinder.CostMatrix();
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                const value = this.roomPlan.get(x, y);
-                pathfindMatrix.set(
-                    x,
-                    y,
-                    value === structureToNumber[STRUCTURE_ROAD]
-                        ? 1
-                        : value === 0 ||
-                          value === structureToNumber[EXCLUSION_ZONE]
-                        ? 0
-                        : MAX_VALUE
-                );
-            }
-        }
+        matrixUtility.iterateMatrix((x, y) => {
+            const value = this.roomPlan.get(x, y);
+            pathfindMatrix.set(
+                x,
+                y,
+                value === structureToNumber[STRUCTURE_ROAD]
+                    ? 1
+                    : value === 0 || value === structureToNumber[EXCLUSION_ZONE]
+                    ? 0
+                    : MAX_VALUE
+            );
+        });
         const goal = {
             pos: this.corePos,
             range: 2,
@@ -221,26 +218,21 @@ class PlanBuilder {
 
         // Let's build a roadmatrix to encourage using existing roads
         const roadMatrix = new PathFinder.CostMatrix();
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                if (roomTerrain.get(x, y) === TERRAIN_MASK_WALL) {
-                    roadMatrix.set(x, y, MAX_VALUE);
-                    continue;
-                }
-                if (
-                    this.roomPlan.get(x, y) ===
-                    structureToNumber[STRUCTURE_ROAD]
-                ) {
-                    roadMatrix.set(x, y, 1);
-                    continue;
-                }
-                if (roomTerrain.get(x, y) === TERRAIN_MASK_SWAMP) {
-                    roadMatrix.set(x, y, CONNECTIVE_ROAD_PENALTY_SWAMP);
-                    continue;
-                }
-                roadMatrix.set(x, y, CONNECTIVE_ROAD_PENALTY_PLAINS);
+        matrixUtility.iterateMatrix((x, y) => {
+            if (roomTerrain.get(x, y) === TERRAIN_MASK_WALL) {
+                roadMatrix.set(x, y, MAX_VALUE);
+                return;
             }
-        }
+            if (this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_ROAD]) {
+                roadMatrix.set(x, y, 1);
+                return;
+            }
+            if (roomTerrain.get(x, y) === TERRAIN_MASK_SWAMP) {
+                roadMatrix.set(x, y, CONNECTIVE_ROAD_PENALTY_SWAMP);
+                return;
+            }
+            roadMatrix.set(x, y, CONNECTIVE_ROAD_PENALTY_PLAINS);
+        });
 
         // Let's make sure that we can path to each exit from our core
         for (const exitType of exitTypes) {
@@ -309,16 +301,14 @@ class PlanBuilder {
                         space,
                         this.roomPlan.clone()
                     );
-                    for (let x = 0; x < 50; x++) {
-                        for (let y = 0; y < 50; y++) {
-                            if (
-                                dummyPlan.get(x, y) ===
-                                structureToNumber[STRUCTURE_ROAD]
-                            ) {
-                                score++;
-                            }
+                    matrixUtility.iterateMatrix((x, y) => {
+                        if (
+                            dummyPlan.get(x, y) ===
+                            structureToNumber[STRUCTURE_ROAD]
+                        ) {
+                            score++;
                         }
-                    }
+                    });
 
                     // Once we've found the an orientation that fits, let's save it
                     // if it beats our current best
@@ -357,19 +347,14 @@ class PlanBuilder {
         // First, construct an array of all of our roads
         let allRoads = [];
         const roadMatrix = new PathFinder.CostMatrix();
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                if (
-                    this.roomPlan.get(x, y) ===
-                    structureToNumber[STRUCTURE_ROAD]
-                ) {
-                    allRoads.push({ x, y });
-                    roadMatrix.set(x, y, 1);
-                    continue;
-                }
-                roadMatrix.set(x, y, 255);
+        matrixUtility.iterateMatrix((x, y) => {
+            if (this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_ROAD]) {
+                allRoads.push({ x, y });
+                roadMatrix.set(x, y, 1);
+                return;
             }
-        }
+            roadMatrix.set(x, y, 255);
+        });
 
         // Then, identify any roads that cannot connect back to the core
         const stragglingRoads = [];
@@ -418,16 +403,14 @@ class PlanBuilder {
         // Next, we'll place our remaining extensions, we'll plan extra for tower and observer placement positions later
         // Let's start by counting how many extensions we have already
         let placedExtensions = 0;
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                if (
-                    this.roomPlan.get(x, y) ===
-                    structureToNumber[STRUCTURE_EXTENSION]
-                ) {
-                    placedExtensions++;
-                }
+        matrixUtility.iterateMatrix((x, y) => {
+            if (
+                this.roomPlan.get(x, y) ===
+                structureToNumber[STRUCTURE_EXTENSION]
+            ) {
+                placedExtensions++;
             }
-        }
+        });
 
         const remainingExtensions =
             MAX_STRUCTURES[STRUCTURE_EXTENSION] -
@@ -537,13 +520,11 @@ class PlanBuilder {
     cleanup() {
         // Filter out any structures we might have accidentally placed on walls
         // through optional roads and things like that
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                if (this.tm.get(x, y) > 0) {
-                    this.roomPlan.set(x, y, 0);
-                }
+        matrixUtility.iterateMatrix((x, y) => {
+            if (this.tm.get(x, y) > 0) {
+                this.roomPlan.set(x, y, 0);
             }
-        }
+        });
     }
 
     getProduct() {

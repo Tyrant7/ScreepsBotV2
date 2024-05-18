@@ -235,10 +235,11 @@ module.exports = {
         let maxValue = 0;
         this.iterateMatrix((x, y) => {
             const value = matrix.get(x, y);
-            if (value !== MAX_VALUE) {
-                minValue = Math.min(minValue, value);
-                maxValue = Math.max(maxValue, value);
+            if (value === MAX_VALUE) {
+                return;
             }
+            minValue = Math.min(minValue, value);
+            maxValue = Math.max(maxValue, value);
         });
         const scale = maxValue - minValue;
 
@@ -246,15 +247,16 @@ module.exports = {
         const newMatrix = new PathFinder.CostMatrix();
         this.iterateMatrix((x, y) => {
             const oldValue = matrix.get(x, y);
-            if (oldValue !== MAX_VALUE) {
-                const newValue =
-                    scale === 0
-                        ? 0
-                        : Math.round(
-                              ((oldValue - minValue) / scale) * normalizeScale
-                          );
-                newMatrix.set(x, y, newValue);
+            if (oldValue === MAX_VALUE) {
+                return;
             }
+            const newValue =
+                scale === 0
+                    ? 0
+                    : Math.round(
+                          ((oldValue - minValue) / scale) * normalizeScale
+                      );
+            newMatrix.set(x, y, newValue);
         });
         return newMatrix;
     },
