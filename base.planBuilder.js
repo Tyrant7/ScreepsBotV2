@@ -9,7 +9,7 @@ const {
     structureToNumber,
 } = require("./base.planningConstants");
 
-const MAX_STAMP_ATTEMPTS = 10;
+const MAX_STAMP_ATTEMPTS = 20;
 
 const CONNECTIVE_ROAD_PENALTY_PLAINS = 3;
 const CONNECTIVE_ROAD_PENALTY_SWAMP = 5;
