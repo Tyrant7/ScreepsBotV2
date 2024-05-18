@@ -52,7 +52,7 @@ class BasePlanner {
 
             const upgraderContainer = planBuilder.planUpgraderContainer();
 
-            // Once we have our core, let's plan out our artery roads
+            // Plan out artery roads
             // This will also handle container placement for sources and minerals
             planBuilder.planRoads(
                 roomInfo.sources
@@ -69,9 +69,6 @@ class BasePlanner {
             // Also plan out our future routes to the exits for remotes
             planBuilder.planRemoteRoads();
 
-            // Filter out spaces we've already used
-            planBuilder.filterUsedSpaces();
-
             // Resort our spaces by distance to the core
             planBuilder.resortSpaces(
                 (a, b) =>
@@ -79,23 +76,21 @@ class BasePlanner {
                     planBuilder.floodfillFromCore.get(b.x, b.y)
             );
 
-            // Plan our our extension stamp locations
-            // (both regular and with spawns)
+            // Filter out spaces we've already used for better performance when placing our stamps
+            planBuilder.filterUsedSpaces();
             planBuilder.placeStamps(
                 stamps.extensionStampXWithSpawn,
                 SPAWN_STAMP_COUNT
             );
 
             planBuilder.filterUsedSpaces();
-
             planBuilder.placeStamps(
                 stamps.extensionStampX,
                 EXTENSION_STAMP_COUNT
             );
 
-            planBuilder.filterUsedSpaces();
-
             // Labs next
+            planBuilder.filterUsedSpaces();
             planBuilder.placeStamps(stamps.labs, LAB_COUNT);
 
             // Cleanup any roads placed over terrain
@@ -104,6 +99,7 @@ class BasePlanner {
             // Connect up straggling roads
             planBuilder.connectStragglingRoads();
 
+            // Place all of our dynamic structures
             planBuilder.filterUsedSpaces();
             planBuilder.placeDynamicStructures();
 
