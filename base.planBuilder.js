@@ -62,6 +62,10 @@ class PlanBuilder {
         this.ri = roomInfo;
     }
 
+    /**
+     * Plans the upgrader container for this room.
+     * @returns {{ x: number, y: number }} The X and Y position chosen for the container.
+     */
     planUpgraderContainer() {
         const controllerPos = this.ri.room.controller.pos;
 
@@ -139,16 +143,30 @@ class PlanBuilder {
         return bestContainerSpot;
     }
 
+    /**
+     * Resorts the buildable spaces based on the given compare function.
+     * @param {(a: { x: number, y: number },
+     *          b: { x: number, y: number }) => number} compareFn A function returning a number
+     * to use for sort order. A negative number indicates a before b, and a positive indicates b before a.
+     */
     resortSpaces(compareFn) {
         this.spaces.sort(compareFn);
     }
 
+    /**
+     * Filters current buildable spaces where a structure already exists in the room plan.
+     */
     filterUsedSpaces() {
         this.spaces = this.spaces.filter(
             (space) => this.roomPlan.get(space.x, space.y) === 0
         );
     }
 
+    /**
+     * Plans roads for this base, connected each point in `connectPoints` back to the core.
+     * @param {{ x: number, y: number }[]} connectPoints An array of X, Y positions to connect
+     * back to the core.
+     */
     planRoads(connectPoints) {
         // Path from further points first
         connectPoints.sort(
@@ -207,6 +225,10 @@ class PlanBuilder {
         }
     }
 
+    /**
+     * Places exclusion zones to ensure that there is at least one valid path
+     * to each exit of the current planning room.
+     */
     planRemoteRoads() {
         const exitTypes = [
             FIND_EXIT_TOP,
@@ -268,6 +290,12 @@ class PlanBuilder {
         }
     }
 
+    /**
+     * Places a stamp in the best position found after `MAX_STAMP_ATTEMPTS` attempts, where
+     * best is defined as sharing the most number of roads with existing roads in the plan.
+     * @param {{}} stamp The stamp to place.
+     * @returns {{ x: number, y: number }} The centre position of the placed stamp.
+     */
     placeStamp(stamp) {
         let attempts = 0;
         let foundOne = false;
@@ -337,12 +365,21 @@ class PlanBuilder {
         return bestStampPos;
     }
 
+    /**
+     * Places multiple of the same stamp by calling `placeStamp` once for each `count`.
+     * @param {{}} stamp The stamp to place.
+     * @param {number} count The number of stamps to place.
+     */
     placeStamps(stamp, count) {
         for (let i = 0; i < count; i++) {
             this.placeStamp(stamp);
         }
     }
 
+    /**
+     * Ensures all roads in the current plan connect back to the core.
+     * If not already, will draw connecting roads where possible.
+     */
     connectStragglingRoads() {
         // First, construct an array of all of our roads
         let allRoads = [];
@@ -399,6 +436,10 @@ class PlanBuilder {
         this.planRoads(roadPositions, this.corePos);
     }
 
+    /**
+     * Handles placement of all dynamic structures of the plan.
+     * Any missing extensions will be placed here, as well towers, and the observer.
+     */
     placeDynamicStructures() {
         // Next, we'll place our remaining extensions, we'll plan extra for tower and observer placement positions later
         // Let's start by counting how many extensions we have already
@@ -517,6 +558,9 @@ class PlanBuilder {
         );
     }
 
+    /**
+     * Removes any roads overlapping with terrain in the current plan.
+     */
     cleanup() {
         // Filter out any structures we might have accidentally placed on walls
         // through optional roads and things like that
@@ -527,6 +571,10 @@ class PlanBuilder {
         });
     }
 
+    /**
+     * Gets the current plan.
+     * @returns {PathFinder.CostMatrix} The current room plan.
+     */
     getProduct() {
         return this.roomPlan;
     }
