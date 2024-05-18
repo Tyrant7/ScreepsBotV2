@@ -110,11 +110,10 @@ module.exports = {
      * and takes into account a predefined terrain matrix.
      * @param {RoomPosition | RoomPosition[]} fromPositions The positions to fill from.
      * @param {PathFinder.CostMatrix} matrix The predefined matrix to fill around.
-     * @param {number} depthLimit The fill will stop after reaching this depth.
      * @returns {PathFinder.CostMatrix} A new costmatrix where each value represents
      * the distance to the nearest start tile.
      */
-    floodfill: function (fromPositions, matrix, depthLimit = Infinity) {
+    floodfill: function (fromPositions, matrix) {
         if (!(fromPositions instanceof Array)) {
             fromPositions = [fromPositions];
         }
@@ -156,9 +155,6 @@ module.exports = {
                 fillQueue = nextQueue;
                 nextQueue = [];
                 fillDepth++;
-                if (fillDepth > depthLimit) {
-                    break;
-                }
             }
         }
         return matrix;

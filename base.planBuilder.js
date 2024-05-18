@@ -9,8 +9,6 @@ const {
     structureToNumber,
 } = require("./base.planningConstants");
 
-const STAMP_MAX_ATTEMPTS = 20;
-
 const CONNECTIVE_ROAD_PENALTY_PLAINS = 3;
 const CONNECTIVE_ROAD_PENALTY_SWAMP = 5;
 
@@ -51,54 +49,8 @@ class PlanBuilder {
         );
 
         // Let's start by doing a simple placement of our core on the best space we can find that fits it
-        for (const space of this.spaces) {
-            let bestStampData;
-            for (const transform of stampUtility.getTransformationList()) {
-                const transformedStamp = transform(coreStamp);
-                if (
-                    stampUtility.stampFits(
-                        transformedStamp,
-                        space,
-                        this.dt,
-                        this.roomPlan
-                    )
-                ) {
-                    // Score the stamp
-                    let score = 0;
-                    for (let y = 0; y < transformedStamp.layout.length; y++) {
-                        for (
-                            let x = 0;
-                            x < transformedStamp.layout[y].length;
-                            x++
-                        ) {
-                            const actualX =
-                                space.x - transformedStamp.center.x + x;
-                            const actualY =
-                                space.y - transformedStamp.center.y + y;
-                            score += this.wm.get(actualX, actualY);
-                        }
-                    }
-
-                    // Lower scores are better
-                    if (!bestStampData || score < bestStampData.score) {
-                        bestStampData = {
-                            stamp: transformedStamp,
-                            score: score,
-                            pos: space,
-                        };
-                    }
-                }
-            }
-            if (bestStampData) {
-                this.roomPlan = stampUtility.placeStamp(
-                    bestStampData.stamp,
-                    bestStampData.pos,
-                    this.roomPlan
-                );
-                this.corePos = new RoomPosition(space.x, space.y, roomName);
-                break;
-            }
-        }
+        const core = this.placeStamp(coreStamp);
+        this.corePos = new RoomPosition(core.x, core.y, roomName);
 
         this.floodfillFromCore = matrixUtility.floodfill(
             this.corePos,
@@ -318,61 +270,29 @@ class PlanBuilder {
         }
     }
 
-    placeStamps(stamp, count, scoreFn) {
-        for (let i = 0; i < count; i++) {
-            // Find the best stamp we can place currently
-            // Only consider the best suspected locations
-            let bestStampData;
-            let checkedLocations = 0;
-            for (const space of this.spaces) {
-                if (checkedLocations >= STAMP_MAX_ATTEMPTS) {
-                    break;
+    placeStamp(stamp) {
+        // Find the best stamp we can place currently
+        // Only consider the best suspected locations
+        for (const space of this.spaces) {
+            // Consider all orientations
+            for (const transform of stampUtility.getTransformationList()) {
+                const transformedStamp = transform(stamp);
+                if (
+                    stampUtility.stampFits(
+                        transformedStamp,
+                        space,
+                        this.dt,
+                        this.roomPlan
+                    )
+                ) {
+                    // Once we've found the an orientation that fits, let's place it
+                    this.roomPlan = stampUtility.placeStamp(
+                        transformedStamp,
+                        space,
+                        this.roomPlan
+                    );
+                    return space;
                 }
-
-                // Consider all orientations
-                let checkedAtLeastOne = false;
-                for (const transform of stampUtility.getTransformationList()) {
-                    const transformedStamp = transform(stamp);
-                    if (
-                        stampUtility.stampFits(
-                            transformedStamp,
-                            space,
-                            this.dt,
-                            this.roomPlan
-                        )
-                    ) {
-                        // Score the stamp
-                        const score = scoreFn(
-                            transformedStamp,
-                            space,
-                            this.roomPlan,
-                            this.corePos
-                        );
-                        checkedAtLeastOne = true;
-
-                        // Lower scores are better
-                        if (!bestStampData || score < bestStampData.score) {
-                            bestStampData = {
-                                stamp: transformedStamp,
-                                score: score,
-                                pos: space,
-                            };
-                        }
-                    }
-                }
-
-                if (checkedAtLeastOne) {
-                    checkedLocations++;
-                }
-            }
-
-            // Once we've found the current best stamp, let's place it
-            if (bestStampData) {
-                this.roomPlan = stampUtility.placeStamp(
-                    bestStampData.stamp,
-                    bestStampData.pos,
-                    this.roomPlan
-                );
             }
         }
     }

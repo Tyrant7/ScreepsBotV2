@@ -29,73 +29,6 @@ class BasePlanner {
         }
 
         if (!this.roomPlan) {
-            function defaultScoreFn(stamp, pos, roomPlan, corePos) {
-                let totalScore = 0;
-                for (let y = 0; y < stamp.layout.length; y++) {
-                    for (let x = 0; x < stamp.layout[y].length; x++) {
-                        const actualX = pos.x + x;
-                        const actualY = pos.y + y;
-                        totalScore += weightMatrix.get(actualX, actualY);
-                    }
-                }
-
-                // We're going to path from our filler's center position to our core and apply a penalty for each distance we are away
-                // First, we need a matrix of what our room would look like with our stamp,
-                // then we'll mark all planned tiles and terrain as unwalkable
-                const pathMatrix = stampUtility.placeStamp(
-                    stamp,
-                    pos,
-                    roomPlan.clone(),
-                    terrainMatrix
-                );
-                for (let x = 0; x < 50; x++) {
-                    for (let y = 0; y < 50; y++) {
-                        const value = pathMatrix.get(x, y);
-                        pathMatrix.set(
-                            x,
-                            y,
-                            terrainMatrix.get(x, y) > 0
-                                ? 255
-                                : value === 0 ||
-                                  value === structureToNumber[EXCLUSION_ZONE]
-                                ? 0
-                                : value === structureToNumber[STRUCTURE_ROAD]
-                                ? 1
-                                : 255
-                        );
-                    }
-                }
-
-                // Then we'll simply path and return the path length times a penalty
-                const start = new RoomPosition(
-                    pos.x,
-                    pos.y,
-                    roomInfo.room.name
-                );
-                const goal = {
-                    pos: new RoomPosition(
-                        corePos.x,
-                        corePos.y,
-                        roomInfo.room.name
-                    ),
-                    range: 2,
-                };
-                const result = PathFinder.search(start, goal, {
-                    plainCost: 2,
-                    swampCost: 2,
-                    maxRooms: 1,
-                    roomCallback: function (roomName) {
-                        return pathMatrix;
-                    },
-                });
-                if (result.incomplete) {
-                    return Infinity;
-                }
-                return (
-                    totalScore + result.path.length * STAMP_CORE_DIST_PENTALTY
-                );
-            }
-
             const cpu = Game.cpu.getUsed();
 
             // Generate our necessary matrices for planning
@@ -151,22 +84,23 @@ class BasePlanner {
 
             // Plan our our extension stamp locations
             // (both regular and with spawns)
-            planBuilder.placeStamps(
-                stamps.extensionStampXWithSpawn,
-                SPAWN_STAMP_COUNT,
-                defaultScoreFn
-            );
+            for (let i = 0; i < SPAWN_STAMP_COUNT; i++) {
+                planBuilder.placeStamp(stamps.extensionStampXWithSpawn);
+            }
 
-            planBuilder.placeStamps(
-                stamps.extensionStampX,
-                EXTENSION_STAMP_COUNT,
-                defaultScoreFn
-            );
+            for (let i = 0; i < EXTENSION_STAMP_COUNT; i++) {
+                planBuilder.placeStamp(stamps.extensionStampX);
+            }
 
             planBuilder.filterUsedSpaces();
 
             // Labs next
-            planBuilder.placeStamps(stamps.labs, LAB_COUNT, defaultScoreFn);
+            for (let i = 0; i < LAB_COUNT; i++) {
+                planBuilder.placeStamp(stamps.labs);
+            }
+
+            // Cleanup any roads placed over terrain
+            planBuilder.cleanup();
 
             // Connect up straggling roads
             planBuilder.connectStragglingRoads(roomInfo.room.name);
@@ -174,6 +108,7 @@ class BasePlanner {
             planBuilder.filterUsedSpaces();
             planBuilder.placeDynamicStructures(roomInfo.room);
 
+            // Cleanup any roads placed over terrain
             planBuilder.cleanup();
             this.roomPlan = planBuilder.getProduct();
 
