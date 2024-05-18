@@ -14,9 +14,9 @@ const WEIGHT_SOURCES_SPACE = 0.25;
 const WEIGHT_EXIT_DIST = -0.7;
 const WEIGHT_TERRAIN_DIST = -0.9;
 
-const SPAWN_STAMP_COUNT = 2;
-const EXTENSION_STAMP_COUNT = 1;
-const LAB_COUNT = 1;
+const STAMP_COUNT_SPAWN = 2;
+const STAMP_COUNT_EXTENSION = 1;
+const STAMP_COUNT_LAB = 1;
 
 class BasePlanner {
     run(roomInfo) {
@@ -79,18 +79,18 @@ class BasePlanner {
             planBuilder.filterUsedSpaces();
             planBuilder.placeStamps(
                 stamps.extensionStampXWithSpawn,
-                SPAWN_STAMP_COUNT
+                STAMP_COUNT_SPAWN
             );
 
             planBuilder.filterUsedSpaces();
             planBuilder.placeStamps(
                 stamps.extensionStampX,
-                EXTENSION_STAMP_COUNT
+                STAMP_COUNT_EXTENSION
             );
 
             // Labs next
             planBuilder.filterUsedSpaces();
-            planBuilder.placeStamps(stamps.labs, LAB_COUNT);
+            planBuilder.placeStamps(stamps.labs, STAMP_COUNT_LAB);
 
             // Cleanup any roads placed over terrain
             planBuilder.cleanup();
