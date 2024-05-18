@@ -9,13 +9,11 @@ module.exports = {
     generateTerrainMatrix: function (roomName) {
         const matrix = new PathFinder.CostMatrix();
         const terrain = Game.map.getRoomTerrain(roomName);
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
-                    matrix.set(x, y, MAX_VALUE);
-                }
+        this.iterateMatrix((x, y) => {
+            if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+                matrix.set(x, y, MAX_VALUE);
             }
-        }
+        });
         return matrix;
     },
 
@@ -31,23 +29,19 @@ module.exports = {
 
         // Do a first pass, recording the location of all terrain for our floodfill
         const terrainPoints = [];
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
-                    terrainPoints.push({ x, y });
-                }
+        this.iterateMatrix((x, y) => {
+            if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+                terrainPoints.push({ x, y });
             }
-        }
+        });
         matrix = this.floodfill(terrainPoints, matrix);
 
         // Do another pass, this time setting all terrain to 0
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
-                    matrix.set(x, y, 0);
-                }
+        this.iterateMatrix((x, y) => {
+            if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+                matrix.set(x, y, 0);
             }
-        }
+        });
         return matrix;
     },
 
@@ -178,43 +172,39 @@ module.exports = {
         // and smallest values for normalization
         let largest = 0;
         let smallest = MAX_VALUE;
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                // Find the sum of all matrix weights in this location, excluding max values
-                // since they are not scaled
-                const total = matrixWeightPairs.reduce((total, pair) => {
-                    if (pair.matrix.get(x, y) === MAX_VALUE) {
-                        return total;
-                    }
-                    return total + pair.matrix.get(x, y) * pair.weight;
-                }, 0);
-                largest = Math.max(total, largest);
-                smallest = Math.min(total, smallest);
-            }
-        }
+        this.iterateMatrix((x, y) => {
+            // Find the sum of all matrix weights in this location, excluding max values
+            // since they are not scaled
+            const total = matrixWeightPairs.reduce((total, pair) => {
+                if (pair.matrix.get(x, y) === MAX_VALUE) {
+                    return total;
+                }
+                return total + pair.matrix.get(x, y) * pair.weight;
+            }, 0);
+            largest = Math.max(total, largest);
+            smallest = Math.min(total, smallest);
+        });
         const scale = largest - smallest;
 
         // Now we have our scale for normalization and we can create our actual matrix,
         // normalizing our individual values to keep them within our range as we go
         const matrix = new PathFinder.CostMatrix();
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                const total = matrixWeightPairs.reduce((total, pair) => {
-                    // If one matrix uses the max value, we should use max value everywhere for this tile
-                    if (pair.matrix.get(x, y) === MAX_VALUE) {
-                        return Infinity;
-                    }
-                    return total + pair.matrix.get(x, y) * pair.weight;
-                }, 0);
-                const normalizedValue =
-                    scale === 0
-                        ? 0
-                        : Math.round(
-                              ((total - smallest) / scale) * (MAX_VALUE - 1)
-                          );
-                matrix.set(x, y, normalizedValue);
-            }
-        }
+        this.iterateMatrix((x, y) => {
+            const total = matrixWeightPairs.reduce((total, pair) => {
+                // If one matrix uses the max value, we should use max value everywhere for this tile
+                if (pair.matrix.get(x, y) === MAX_VALUE) {
+                    return Infinity;
+                }
+                return total + pair.matrix.get(x, y) * pair.weight;
+            }, 0);
+            const normalizedValue =
+                scale === 0
+                    ? 0
+                    : Math.round(
+                          ((total - smallest) / scale) * (MAX_VALUE - 1)
+                      );
+            matrix.set(x, y, normalizedValue);
+        });
         return matrix;
     },
 
@@ -224,14 +214,12 @@ module.exports = {
      */
     combineMatrices: function (...matrices) {
         const newMatrix = new PathFinder.CostMatrix();
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                const highest = matrices.reduce((highest, curr) => {
-                    return curr.get(x, y) > highest ? curr.get(x, y) : highest;
-                }, 0);
-                newMatrix.set(x, y, highest);
-            }
-        }
+        this.iterateMatrix((x, y) => {
+            const highest = matrices.reduce((highest, curr) => {
+                return curr.get(x, y) > highest ? curr.get(x, y) : highest;
+            }, 0);
+            newMatrix.set(x, y, highest);
+        });
         return newMatrix;
     },
 
@@ -245,26 +233,20 @@ module.exports = {
         // Find our scale
         let minValue = MAX_VALUE;
         let maxValue = 0;
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                const value = matrix.get(x, y);
-                if (value === MAX_VALUE) {
-                    continue;
-                }
+        this.iterateMatrix((x, y) => {
+            const value = matrix.get(x, y);
+            if (value !== MAX_VALUE) {
                 minValue = Math.min(minValue, value);
                 maxValue = Math.max(maxValue, value);
             }
-        }
+        });
         const scale = maxValue - minValue;
 
         // Normalize each score based on its magnitude inside of our range
         const newMatrix = new PathFinder.CostMatrix();
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                const oldValue = matrix.get(x, y);
-                if (oldValue === MAX_VALUE) {
-                    continue;
-                }
+        this.iterateMatrix((x, y) => {
+            const oldValue = matrix.get(x, y);
+            if (oldValue !== MAX_VALUE) {
                 const newValue =
                     scale === 0
                         ? 0
@@ -273,7 +255,19 @@ module.exports = {
                           );
                 newMatrix.set(x, y, newValue);
             }
-        }
+        });
         return newMatrix;
+    },
+
+    /**
+     * Iterates over the positions in a cost matrix, performing a callback for each tile.
+     * @param {(x: number, y: number) => void} callbackFn
+     */
+    iterateMatrix: function (callbackFn) {
+        for (let x = 0; x < 50; x++) {
+            for (let y = 0; y < 50; y++) {
+                callbackFn(x, y);
+            }
+        }
     },
 };
