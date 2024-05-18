@@ -29,7 +29,7 @@ class BasePlanner {
         }
 
         if (!this.roomPlan) {
-            function defaultScoreFn(stamp, pos, roomPlan) {
+            function defaultScoreFn(stamp, pos, roomPlan, corePos) {
                 let totalScore = 0;
                 for (let y = 0; y < stamp.layout.length; y++) {
                     for (let x = 0; x < stamp.layout[y].length; x++) {
@@ -114,22 +114,12 @@ class BasePlanner {
             const planBuilder = new PlanBuilder(
                 terrainMatrix,
                 distanceTransform,
-                weightMatrix
-            );
-
-            const core = planBuilder.planCore(stamps.core);
-            const corePos = new RoomPosition(
-                core.x,
-                core.y,
+                weightMatrix,
+                stamps.core,
                 roomInfo.room.name
             );
 
-            const floodfillFromCore = matrixUtility.floodfill(
-                corePos,
-                terrainMatrix.clone()
-            );
             const upgraderContainer = planBuilder.planUpgraderContainer(
-                floodfillFromCore,
                 roomInfo.room.controller.pos
             );
 
@@ -144,10 +134,10 @@ class BasePlanner {
                     ),
                 })
                 .concat(roomInfo.mineral);
-            planBuilder.planRoads(roadPoints, corePos);
+            planBuilder.planRoads(roadPoints);
 
             // Also plan out our future routes to the exits for remotes
-            planBuilder.planRemoteRoads(roomInfo.room, corePos);
+            planBuilder.planRemoteRoads(roomInfo.room);
 
             // Filter out spaces we've already used
             planBuilder.filterUsedSpaces();
@@ -155,8 +145,8 @@ class BasePlanner {
             // Resort our spaces by distance to the core
             planBuilder.resortSpaces(
                 (a, b) =>
-                    floodfillFromCore.get(a.x, a.y) -
-                    floodfillFromCore.get(b.x, b.y)
+                    planBuilder.floodfillFromCore.get(a.x, a.y) -
+                    planBuilder.floodfillFromCore.get(b.x, b.y)
             );
 
             // Plan our our extension stamp locations
@@ -179,7 +169,7 @@ class BasePlanner {
             planBuilder.placeStamps(stamps.labs, LAB_COUNT, defaultScoreFn);
 
             // Connect up straggling roads
-            planBuilder.connectStragglingRoads(roomInfo.room.name, corePos);
+            planBuilder.connectStragglingRoads(roomInfo.room.name);
 
             planBuilder.filterUsedSpaces();
             planBuilder.placeDynamicStructures(roomInfo.room);

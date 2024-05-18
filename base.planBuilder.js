@@ -22,7 +22,13 @@ for (const key in CONTROLLER_STRUCTURES) {
 }
 
 class PlanBuilder {
-    constructor(terrainMatrix, distanceTransform, weightMatrix) {
+    constructor(
+        terrainMatrix,
+        distanceTransform,
+        weightMatrix,
+        coreStamp,
+        roomName
+    ) {
         // Initialize a new room plan
         this.roomPlan = new PathFinder.CostMatrix();
 
@@ -43,15 +49,12 @@ class PlanBuilder {
         this.spaces.sort(
             (a, b) => this.wm.get(a.x, a.y) - this.wm.get(b.x, b.y)
         );
-    }
 
-    planCore(stamp) {
-        // Check each space in order until we find one that fits our core
-        let corePos;
+        // Let's start by doing a simple placement of our core on the best space we can find that fits it
         for (const space of this.spaces) {
             let bestStampData;
             for (const transform of stampUtility.getTransformationList()) {
-                const transformedStamp = transform(stamp);
+                const transformedStamp = transform(coreStamp);
                 if (
                     stampUtility.stampFits(
                         transformedStamp,
@@ -92,14 +95,18 @@ class PlanBuilder {
                     bestStampData.pos,
                     this.roomPlan
                 );
-                corePos = space;
+                this.corePos = new RoomPosition(space.x, space.y, roomName);
                 break;
             }
         }
-        return corePos;
+
+        this.floodfillFromCore = matrixUtility.floodfill(
+            this.corePos,
+            terrainMatrix.clone()
+        );
     }
 
-    planUpgraderContainer(floodfillFromCore, controllerPos) {
+    planUpgraderContainer(controllerPos) {
         // Find the position near our controller with the most open spaces,
         // using distance to our core as a tiebreaker
         let bestContainerSpot;
@@ -138,7 +145,7 @@ class PlanBuilder {
                     }
                 }
 
-                const dist = floodfillFromCore.get(newX, newY);
+                const dist = this.floodfillFromCore.get(newX, newY);
                 const better =
                     !bestContainerSpot ||
                     openSpaces > bestOpenSpaces ||
@@ -184,12 +191,12 @@ class PlanBuilder {
         );
     }
 
-    planRoads(connectPoints, corePos) {
+    planRoads(connectPoints) {
         // Path from further points first
         connectPoints.sort(
             (a, b) =>
-                b.pos.getRangeTo(corePos.x, corePos.y) -
-                a.pos.getRangeTo(corePos.x, corePos.y)
+                b.pos.getRangeTo(this.corePos.x, this.corePos.y) -
+                a.pos.getRangeTo(this.corePos.x, this.corePos.y)
         );
 
         // Save a path to each of our road points
@@ -210,7 +217,7 @@ class PlanBuilder {
             }
         }
         const goal = {
-            pos: corePos,
+            pos: this.corePos,
             range: 2,
         };
         for (const point of connectPoints) {
@@ -245,7 +252,7 @@ class PlanBuilder {
         }
     }
 
-    planRemoteRoads(room, corePos) {
+    planRemoteRoads(room) {
         const exitTypes = [
             FIND_EXIT_TOP,
             FIND_EXIT_BOTTOM,
@@ -287,7 +294,7 @@ class PlanBuilder {
                 return { pos: tile, range: MIN_BUILD_AREA - 1 };
             });
 
-            const result = PathFinder.search(corePos, goals, {
+            const result = PathFinder.search(this.corePos, goals, {
                 maxRooms: 1,
                 roomCallback: function (roomName) {
                     return roadMatrix;
@@ -338,7 +345,8 @@ class PlanBuilder {
                         const score = scoreFn(
                             transformedStamp,
                             space,
-                            this.roomPlan
+                            this.roomPlan,
+                            this.corePos
                         );
                         checkedAtLeastOne = true;
 
@@ -369,7 +377,7 @@ class PlanBuilder {
         }
     }
 
-    connectStragglingRoads(roomName, corePos) {
+    connectStragglingRoads(roomName) {
         // First, construct an array of all of our roads
         let allRoads = [];
         const roadMatrix = new PathFinder.CostMatrix();
@@ -391,7 +399,7 @@ class PlanBuilder {
         const stragglingRoads = [];
         const maxNeededTiles = allRoads.length;
         const goal = {
-            pos: corePos,
+            pos: this.corePos,
             range: 2,
         };
         while (allRoads.length) {
@@ -427,7 +435,7 @@ class PlanBuilder {
         const roadPositions = stragglingRoads.map((r) => {
             return { pos: new RoomPosition(r.x, r.y, roomName) };
         });
-        this.planRoads(roadPositions, corePos);
+        this.planRoads(roadPositions, this.corePos);
     }
 
     placeDynamicStructures(room) {
