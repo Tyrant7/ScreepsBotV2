@@ -15,8 +15,6 @@ const WEIGHT_SOURCES_SPACE = 0.25;
 const WEIGHT_EXIT_DIST = -0.7;
 const WEIGHT_TERRAIN_DIST = -0.9;
 
-const STAMP_CORE_DIST_PENTALTY = 200;
-
 const SPAWN_STAMP_COUNT = 2;
 const EXTENSION_STAMP_COUNT = 1;
 const LAB_COUNT = 1;
@@ -49,28 +47,27 @@ class BasePlanner {
                 distanceTransform,
                 weightMatrix,
                 stamps.core,
-                roomInfo.room.name
+                roomInfo
             );
 
-            const upgraderContainer = planBuilder.planUpgraderContainer(
-                roomInfo.room.controller.pos
-            );
+            const upgraderContainer = planBuilder.planUpgraderContainer();
 
             // Once we have our core, let's plan out our artery roads
             // This will also handle container placement for sources and minerals
-            const roadPoints = roomInfo.sources
-                .concat({
-                    pos: new RoomPosition(
-                        upgraderContainer.x,
-                        upgraderContainer.y,
-                        roomInfo.room.name
-                    ),
-                })
-                .concat(roomInfo.mineral);
-            planBuilder.planRoads(roadPoints);
+            planBuilder.planRoads(
+                roomInfo.sources
+                    .concat({
+                        pos: new RoomPosition(
+                            upgraderContainer.x,
+                            upgraderContainer.y,
+                            roomInfo.room.name
+                        ),
+                    })
+                    .concat(roomInfo.mineral)
+            );
 
             // Also plan out our future routes to the exits for remotes
-            planBuilder.planRemoteRoads(roomInfo.room);
+            planBuilder.planRemoteRoads();
 
             // Filter out spaces we've already used
             planBuilder.filterUsedSpaces();
@@ -84,29 +81,31 @@ class BasePlanner {
 
             // Plan our our extension stamp locations
             // (both regular and with spawns)
-            for (let i = 0; i < SPAWN_STAMP_COUNT; i++) {
-                planBuilder.placeStamp(stamps.extensionStampXWithSpawn);
-            }
+            planBuilder.placeStamps(
+                stamps.extensionStampXWithSpawn,
+                SPAWN_STAMP_COUNT
+            );
 
-            for (let i = 0; i < EXTENSION_STAMP_COUNT; i++) {
-                planBuilder.placeStamp(stamps.extensionStampX);
-            }
+            planBuilder.filterUsedSpaces();
+
+            planBuilder.placeStamps(
+                stamps.extensionStampX,
+                EXTENSION_STAMP_COUNT
+            );
 
             planBuilder.filterUsedSpaces();
 
             // Labs next
-            for (let i = 0; i < LAB_COUNT; i++) {
-                planBuilder.placeStamp(stamps.labs);
-            }
+            planBuilder.placeStamps(stamps.labs, LAB_COUNT);
 
             // Cleanup any roads placed over terrain
             planBuilder.cleanup();
 
             // Connect up straggling roads
-            planBuilder.connectStragglingRoads(roomInfo.room.name);
+            planBuilder.connectStragglingRoads();
 
             planBuilder.filterUsedSpaces();
-            planBuilder.placeDynamicStructures(roomInfo.room);
+            planBuilder.placeDynamicStructures();
 
             // Cleanup any roads placed over terrain
             planBuilder.cleanup();

@@ -27,7 +27,7 @@ class PlanBuilder {
         distanceTransform,
         weightMatrix,
         coreStamp,
-        roomName
+        roomInfo
     ) {
         // Initialize a new room plan
         this.roomPlan = new PathFinder.CostMatrix();
@@ -52,15 +52,19 @@ class PlanBuilder {
 
         // Let's start by doing a simple placement of our core on the best space we can find that fits it
         const core = this.placeStamp(coreStamp);
-        this.corePos = new RoomPosition(core.x, core.y, roomName);
+        this.corePos = new RoomPosition(core.x, core.y, roomInfo.room.name);
 
         this.floodfillFromCore = matrixUtility.floodfill(
             this.corePos,
             terrainMatrix.clone()
         );
+
+        this.ri = roomInfo;
     }
 
-    planUpgraderContainer(controllerPos) {
+    planUpgraderContainer() {
+        const controllerPos = this.ri.room.controller.pos;
+
         // Find the position near our controller with the most open spaces,
         // using distance to our core as a tiebreaker
         let bestContainerSpot;
@@ -206,14 +210,14 @@ class PlanBuilder {
         }
     }
 
-    planRemoteRoads(room) {
+    planRemoteRoads() {
         const exitTypes = [
             FIND_EXIT_TOP,
             FIND_EXIT_BOTTOM,
             FIND_EXIT_LEFT,
             FIND_EXIT_RIGHT,
         ];
-        const roomTerrain = Game.map.getRoomTerrain(room.name);
+        const roomTerrain = Game.map.getRoomTerrain(this.ri.room.name);
 
         // Let's build a roadmatrix to encourage using existing roads
         const roadMatrix = new PathFinder.CostMatrix();
@@ -240,7 +244,7 @@ class PlanBuilder {
 
         // Let's make sure that we can path to each exit from our core
         for (const exitType of exitTypes) {
-            const tiles = room.find(exitType);
+            const tiles = this.ri.room.find(exitType);
             if (!tiles.length) {
                 continue;
             }
@@ -343,7 +347,13 @@ class PlanBuilder {
         return bestStampPos;
     }
 
-    connectStragglingRoads(roomName) {
+    placeStamps(stamp, count) {
+        for (let i = 0; i < count; i++) {
+            this.placeStamp(stamp);
+        }
+    }
+
+    connectStragglingRoads() {
         // First, construct an array of all of our roads
         let allRoads = [];
         const roadMatrix = new PathFinder.CostMatrix();
@@ -371,7 +381,7 @@ class PlanBuilder {
         while (allRoads.length) {
             const next = allRoads.pop();
             const result = PathFinder.search(
-                new RoomPosition(next.x, next.y, roomName),
+                new RoomPosition(next.x, next.y, this.ri.room.name),
                 goal,
                 {
                     maxRooms: 1,
@@ -399,12 +409,12 @@ class PlanBuilder {
 
         // Plan roads to connect these back to our core
         const roadPositions = stragglingRoads.map((r) => {
-            return { pos: new RoomPosition(r.x, r.y, roomName) };
+            return { pos: new RoomPosition(r.x, r.y, this.ri.room.name) };
         });
         this.planRoads(roadPositions, this.corePos);
     }
 
-    placeDynamicStructures(room) {
+    placeDynamicStructures() {
         // Next, we'll place our remaining extensions, we'll plan extra for tower and observer placement positions later
         // Let's start by counting how many extensions we have already
         let placedExtensions = 0;
@@ -480,9 +490,9 @@ class PlanBuilder {
 
         // Start by creating floodfills for each exit
         const exitMatrices = [];
-        for (const exitKey in Game.map.describeExits(room.name)) {
+        for (const exitKey in Game.map.describeExits(this.ri.room.name)) {
             const matrix = matrixUtility.floodfill(
-                room.find(exitKey),
+                this.ri.room.find(exitKey),
                 this.tm.clone()
             );
             exitMatrices.push(matrix);
