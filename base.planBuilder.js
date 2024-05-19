@@ -624,7 +624,12 @@ class PlanBuilder {
             }
         });
 
-        const fill = matrixUtility.floodfill(structures, this.tm.clone());
+        // We want to use a fresh costmatrix here,
+        // since ranged attack can still go through terrain
+        const fill = matrixUtility.floodfill(
+            structures,
+            new PathFinder.CostMatrix()
+        );
         const ramparts = new PathFinder.CostMatrix();
 
         // TODO: Try to dynamically pick the depth for each stretch of ramparts
@@ -632,6 +637,9 @@ class PlanBuilder {
 
         const RAMPART_GAP = 3;
         matrixUtility.iterateMatrix((x, y) => {
+            if (this.tm.get(x, y)) {
+                return;
+            }
             if (
                 fill.get(x, y) === RAMPART_GAP ||
                 fill.get(x, y) === RAMPART_GAP + 1
