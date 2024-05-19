@@ -239,9 +239,16 @@ class PlanBuilder {
                         const newX = lastStep.x + x;
                         const newY = lastStep.y + y;
                         if (
-                            !utility.inBuildArea(newX, newY) ||
-                            this.tm.get(newX, newY) > 0 ||
-                            this.roomPlan.get(newX, newY) > 0
+                            newX >= 48 ||
+                            newX <= 1 ||
+                            newY >= 48 ||
+                            newY <= 1
+                        ) {
+                            continue;
+                        }
+                        if (
+                            this.tm.get(newX, newY) ||
+                            this.roomPlan.get(newX, newY)
                         ) {
                             continue;
                         }
