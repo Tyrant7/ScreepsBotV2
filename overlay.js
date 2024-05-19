@@ -18,8 +18,7 @@ const panelStyle = {
 const matrixDisplayColor = "#fcba03";
 
 module.exports = {
-    
-    addText: function(roomName, importantFigures) {
+    addText: function (roomName, importantFigures) {
         if (!DEBUG.drawOverlay) {
             return;
         }
@@ -30,16 +29,18 @@ module.exports = {
         if (!this.panels[roomName] || this.panels[roomName].shouldRedraw) {
             this.panels[roomName] = { shouldRedraw: false, elements: [] };
         }
-        this.panels[roomName].elements.push(...Object.keys(importantFigures).map((fig) => {
-            return {
-                content: fig + ": " + importantFigures[fig],
-                style: defaultText,
-                spacing: 1,
-            };
-        }));
+        this.panels[roomName].elements.push(
+            ...Object.keys(importantFigures).map((fig) => {
+                return {
+                    content: fig + ": " + importantFigures[fig],
+                    style: defaultText,
+                    spacing: 1,
+                };
+            })
+        );
     },
 
-    addHeading: function(roomName, title) {
+    addHeading: function (roomName, title) {
         if (!DEBUG.drawOverlay) {
             return;
         }
@@ -57,7 +58,7 @@ module.exports = {
         });
     },
 
-    finalizePanels: function(roomName, anchor = "right") {
+    finalizePanels: function (roomName, anchor = "right") {
         if (!DEBUG.drawOverlay) {
             return;
         }
@@ -72,11 +73,22 @@ module.exports = {
         }
 
         // Draw the panel itself first
-        const panelHeight = (panel.elements.reduce((total, curr) => total + curr.spacing, 0)) + 0.5;
+        const panelHeight =
+            panel.elements.reduce((total, curr) => total + curr.spacing, 0) +
+            0.5;
         const panelWidth = 11;
-        const x = anchor === "left" ? -0.5 + panelStyle.strokeWidth / 2: 49.5 - panelWidth - panelStyle.strokeWidth / 2;
+        const x =
+            anchor === "left"
+                ? -0.5 + panelStyle.strokeWidth / 2
+                : 49.5 - panelWidth - panelStyle.strokeWidth / 2;
         const y = -0.5 + panelStyle.strokeWidth / 2;
-        const visual = new RoomVisual(roomName).rect(x, y, panelWidth, panelHeight, panelStyle);
+        const visual = new RoomVisual(roomName).rect(
+            x,
+            y,
+            panelWidth,
+            panelHeight,
+            panelStyle
+        );
 
         // Add text to the panel for each element
         let offset = 0.5 + panelStyle.strokeWidth / 2;
@@ -91,8 +103,12 @@ module.exports = {
         panel.shouldRedraw = true;
     },
 
-    rects: function(positions, width = 0.5, height = 0.5, style = defaultStyle) {
-
+    rects: function (
+        positions,
+        width = 0.5,
+        height = 0.5,
+        style = defaultStyle
+    ) {
         if (!DEBUG.drawOverlay) {
             return;
         }
@@ -102,12 +118,17 @@ module.exports = {
             if (!visuals[pos.roomName]) {
                 visuals[pos.roomName] = new RoomVisual(pos.roomName);
             }
-            visuals[pos.roomName].rect(pos.x - width / 2, pos.y - height / 2, width, height, style);
+            visuals[pos.roomName].rect(
+                pos.x - width / 2,
+                pos.y - height / 2,
+                width,
+                height,
+                style
+            );
         });
     },
 
-    circles: function(positions, style = defaultStyle) {
-
+    circles: function (positions, style = defaultStyle) {
         if (!DEBUG.drawOverlay) {
             return;
         }
@@ -121,7 +142,11 @@ module.exports = {
         });
     },
 
-    visualizeCostMatrix: function(roomName, matrix) {
+    visualizeCostMatrix: function (
+        roomName,
+        matrix,
+        excludedValues = [0, 255]
+    ) {
         let highestValue = 0;
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
@@ -132,7 +157,7 @@ module.exports = {
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
                 const value = matrix.get(x, y);
-                if (value === 255 || value === 0) {
+                if (excludedValues.includes(value)) {
                     continue;
                 }
                 visual.rect(x - 0.5, y - 0.5, 1, 1, {
@@ -147,12 +172,14 @@ module.exports = {
         }
     },
 
-    visualizeBasePlan: function(roomName, planMatrix, mapping) {
+    visualizeBasePlan: function (roomName, planMatrix, mapping) {
         const visual = new RoomVisual(roomName);
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
                 const value = planMatrix.get(x, y);
-                const structureType = Object.keys(mapping).find((s) => mapping[s] === value);
+                const structureType = Object.keys(mapping).find(
+                    (s) => mapping[s] === value
+                );
                 if (structureType) {
                     visual.structure(x, y, structureType);
                 }
