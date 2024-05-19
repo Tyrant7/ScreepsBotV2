@@ -605,67 +605,67 @@ class PlanBuilder {
         );
     }
 
-    planRamparts() {
+    planRamparts(additionalProtectPoints) {
         console.log("planning ramparts!");
 
-        // We're going to create lines of ramparts from each direction of our base
+        const excludedStructures = [
+            0,
+            structureToNumber[EXCLUSION_ZONE],
+            structureToNumber[STRUCTURE_ROAD],
+            structureToNumber[STRUCTURE_LINK],
+            structureToNumber[STRUCTURE_CONTAINER],
+            structureToNumber[STRUCTURE_EXTRACTOR],
+        ];
 
-        // Horizontal lines for top and bottom
-        // And vertical lines for left and right
-
-        // Find our furthest structure in each direction of our base
-        const bounds = { l: 49, r: 0, t: 49, b: 0 };
+        const structures = additionalProtectPoints.map((point) => {
+            return {
+                x: point.x,
+                y: point.y,
+            };
+        });
         matrixUtility.iterateMatrix((x, y) => {
-            const excludedStructures = [
-                0,
-                structureToNumber[EXCLUSION_ZONE],
-                structureToNumber[STRUCTURE_ROAD],
-                structureToNumber[STRUCTURE_LINK],
-                structureToNumber[STRUCTURE_CONTAINER],
-                structureToNumber[STRUCTURE_EXTRACTOR],
-            ];
             if (!excludedStructures.includes(this.roomPlan.get(x, y))) {
-                bounds.l = Math.min(bounds.l, x);
-                bounds.r = Math.max(bounds.r, x);
-                bounds.t = Math.min(bounds.t, y);
-                bounds.b = Math.max(bounds.b, y);
+                structures.push({ x, y });
             }
         });
 
-        function countRamparts(matrix) {
-            let total = 0;
-            matrixUtility.iterateMatrix((x, y) => {
-                if (matrix.get(x, y)) {
-                    total++;
-                }
-            });
-            return total;
-        }
+        const fill = matrixUtility.floodfill(structures, this.tm.clone());
+        const ramparts = new PathFinder.CostMatrix();
 
         const RAMPART_GAP = 3;
-        bounds.l -= RAMPART_GAP;
-        bounds.r += RAMPART_GAP;
-        bounds.t -= RAMPART_GAP;
-        bounds.b += RAMPART_GAP;
-
-        const ramparts = new PathFinder.CostMatrix();
         matrixUtility.iterateMatrix((x, y) => {
-            if (this.tm.get(x, y)) {
-                return;
-            }
-            if (
-                ((x === bounds.l || x === bounds.r) &&
-                    y > bounds.t &&
-                    y < bounds.b) ||
-                ((y === bounds.t || y === bounds.b) &&
-                    x >= bounds.l &&
-                    x <= bounds.r)
-            ) {
-                ramparts.set(x, y, 1);
+            if (fill.get(x, y) === RAMPART_GAP) {
+                ramparts.set(x, y, MAX_VALUE);
             }
         });
 
-        overlay.visualizeCostMatrix(this.ri.room.name, ramparts);
+        // Next we'll floodfill from the outside of the room to the ramparts
+        // Any that we don't hit are unnecessary and can be removed
+        const exits = this.ri.room.find(FIND_EXIT);
+        const exitFill = matrixUtility.floodfill(
+            exits,
+            matrixUtility.combineMatrices(ramparts, this.tm)
+        );
+
+        matrixUtility.iterateMatrix((x, y) => {
+            for (let x1 = x - 1; x1 <= x + 1; x1++) {
+                for (let y1 = y - 1; y1 <= y + 1; y1++) {
+                    if (
+                        x1 >= 0 &&
+                        x1 <= 49 &&
+                        y1 >= 0 &&
+                        y1 <= 49 &&
+                        exitFill.get(x1, y1) !== 0 &&
+                        exitFill.get(x1, y1) !== MAX_VALUE
+                    ) {
+                        return;
+                    }
+                }
+            }
+            ramparts.set(x, y, 0);
+        });
+
+        overlay.visualizeCostMatrix(this.ri.room.name, ramparts, [0]);
     }
 
     /**

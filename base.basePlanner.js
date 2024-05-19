@@ -103,7 +103,7 @@ class BasePlanner {
             planBuilder.placeDynamicStructures();
 
             // Finally, let's rampart our entire base
-            planBuilder.planRamparts();
+            planBuilder.planRamparts([upgraderContainer]);
 
             // Cleanup any roads placed over terrain
             planBuilder.cleanup();
