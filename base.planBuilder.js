@@ -8,6 +8,7 @@ const {
     EXCLUSION_ZONE,
     structureToNumber,
 } = require("./base.planningConstants");
+const overlay = require("./overlay");
 
 const MAX_STAMP_ATTEMPTS = 20;
 
@@ -31,6 +32,7 @@ class PlanBuilder {
     ) {
         // Initialize a new room plan
         this.roomPlan = new PathFinder.CostMatrix();
+        this.ramparts = new PathFinder.CostMatrix();
 
         // Store necessary planning matrices
         this.tm = terrainMatrix;
@@ -594,6 +596,69 @@ class PlanBuilder {
             worstExtensionPos.y,
             structureToNumber[STRUCTURE_OBSERVER]
         );
+    }
+
+    planRamparts() {
+        console.log("planning ramparts!");
+
+        // We're going to create lines of ramparts from each direction of our base
+
+        // Horizontal lines for top and bottom
+        // And vertical lines for left and right
+
+        // Find our furthest structure in each direction of our base
+        const bounds = { l: 49, r: 0, t: 49, b: 0 };
+        matrixUtility.iterateMatrix((x, y) => {
+            const excludedStructures = [
+                0,
+                structureToNumber[EXCLUSION_ZONE],
+                structureToNumber[STRUCTURE_ROAD],
+                structureToNumber[STRUCTURE_LINK],
+                structureToNumber[STRUCTURE_CONTAINER],
+                structureToNumber[STRUCTURE_EXTRACTOR],
+            ];
+            if (!excludedStructures.includes(this.roomPlan.get(x, y))) {
+                bounds.l = Math.min(bounds.l, x);
+                bounds.r = Math.max(bounds.r, x);
+                bounds.t = Math.min(bounds.t, y);
+                bounds.b = Math.max(bounds.b, y);
+            }
+        });
+
+        function countRamparts(matrix) {
+            let total = 0;
+            matrixUtility.iterateMatrix((x, y) => {
+                if (matrix.get(x, y)) {
+                    total++;
+                }
+            });
+            return total;
+        }
+
+        const RAMPART_GAP = 2;
+        bounds.l -= RAMPART_GAP;
+        bounds.r += RAMPART_GAP;
+        bounds.t -= RAMPART_GAP;
+        bounds.b += RAMPART_GAP;
+
+        const ramparts = new PathFinder.CostMatrix();
+        matrixUtility.iterateMatrix((x, y) => {
+            if (this.tm.get(x, y)) {
+                return;
+            }
+            if (
+                ((x === bounds.l || x === bounds.r) &&
+                    y > bounds.t &&
+                    y < bounds.b) ||
+                ((y === bounds.t || y === bounds.b) &&
+                    x >= bounds.l &&
+                    x <= bounds.r)
+            ) {
+                ramparts.set(x, y, 1);
+            }
+        });
+
+        overlay.visualizeCostMatrix(this.ri.room.name, ramparts);
     }
 
     /**

@@ -102,6 +102,9 @@ class BasePlanner {
             planBuilder.filterUsedSpaces();
             planBuilder.placeDynamicStructures();
 
+            // Finally, let's rampart our entire base
+            planBuilder.planRamparts();
+
             // Cleanup any roads placed over terrain
             planBuilder.cleanup();
             this.roomPlan = planBuilder.getProduct();
