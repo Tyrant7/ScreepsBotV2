@@ -642,7 +642,7 @@ class PlanBuilder {
             return total;
         }
 
-        const RAMPART_GAP = 2;
+        const RAMPART_GAP = 3;
         bounds.l -= RAMPART_GAP;
         bounds.r += RAMPART_GAP;
         bounds.t -= RAMPART_GAP;

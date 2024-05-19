@@ -1,6 +1,6 @@
 const MAX_VALUE = 255;
-const MIN_BUILD_AREA = 4;
-const MAX_BUILD_AREA = 45;
+const MIN_BUILD_AREA = 5;
+const MAX_BUILD_AREA = 44;
 
 const EXCLUSION_ZONE = "exclusion";
 
