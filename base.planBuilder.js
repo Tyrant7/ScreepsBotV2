@@ -605,7 +605,7 @@ class PlanBuilder {
         );
     }
 
-    planRamparts(additionalProtectPoints) {
+    planRamparts() {
         console.log("planning ramparts!");
 
         const excludedStructures = [
@@ -617,12 +617,7 @@ class PlanBuilder {
             structureToNumber[STRUCTURE_EXTRACTOR],
         ];
 
-        const structures = additionalProtectPoints.map((point) => {
-            return {
-                x: point.x,
-                y: point.y,
-            };
-        });
+        const structures = [];
         matrixUtility.iterateMatrix((x, y) => {
             if (!excludedStructures.includes(this.roomPlan.get(x, y))) {
                 structures.push({ x, y });
@@ -632,9 +627,15 @@ class PlanBuilder {
         const fill = matrixUtility.floodfill(structures, this.tm.clone());
         const ramparts = new PathFinder.CostMatrix();
 
+        // TODO: Try to dynamically pick the depth for each stretch of ramparts
+        // Test up to a max depth and pick the one with the fewest
+
         const RAMPART_GAP = 3;
         matrixUtility.iterateMatrix((x, y) => {
-            if (fill.get(x, y) === RAMPART_GAP) {
+            if (
+                fill.get(x, y) === RAMPART_GAP ||
+                fill.get(x, y) === RAMPART_GAP + 1
+            ) {
                 ramparts.set(x, y, MAX_VALUE);
             }
         });
