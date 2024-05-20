@@ -147,6 +147,19 @@ class PlanBuilder {
     }
 
     /**
+     * Locates the mineral in this room and plans an extractor there.
+     */
+    planExtractor() {
+        if (this.ri.mineral) {
+            this.roomPlan.set(
+                this.ri.mineral.pos.x,
+                this.ri.mineral.pos.y,
+                structureToNumber[STRUCTURE_EXTRACTOR]
+            );
+        }
+    }
+
+    /**
      * Resorts the buildable spaces based on the given compare function.
      * @param {(a: { x: number, y: number },
      *          b: { x: number, y: number }) => number} compareFn A function returning a number
@@ -612,9 +625,14 @@ class PlanBuilder {
         );
     }
 
+    /**
+     * Uses Clarkok's mincut implementation to protect the base in the fewest number of ramparts.
+     * Also places ramparts over any important exposed structures, like links.
+     */
     planRamparts() {
         const { minCutToExit } = require("./base.mincut");
 
+        // First let's figure out where all of our important structures are
         const excludedStructures = [
             0,
             structureToNumber[EXCLUSION_ZONE],
@@ -623,7 +641,6 @@ class PlanBuilder {
             structureToNumber[STRUCTURE_CONTAINER],
             structureToNumber[STRUCTURE_EXTRACTOR],
         ];
-
         const structures = [];
         matrixUtility.iterateMatrix((x, y) => {
             if (!excludedStructures.includes(this.roomPlan.get(x, y))) {
@@ -631,6 +648,8 @@ class PlanBuilder {
             }
         });
 
+        // Then, we'll figure out everywhere we want to protect with ramparts
+        // In this case, it's any tile within ATTACK_RANGE of our structures
         const flood = matrixUtility.floodfill(
             structures,
             new PathFinder.CostMatrix()
@@ -642,6 +661,7 @@ class PlanBuilder {
             }
         });
 
+        // Then we'll create the matrix of costs to cut
         const cutCosts = new PathFinder.CostMatrix();
         matrixUtility.iterateMatrix((x, y) => {
             if (this.tm.get(x, y)) {
@@ -651,8 +671,8 @@ class PlanBuilder {
             cutCosts.set(x, y, 1);
         });
 
+        // Finally, we'll perform our mincut and set our base ramparts in our cost matrix
         const ramparts = minCutToExit(sources, cutCosts);
-
         this.ramparts = new PathFinder.CostMatrix();
         for (const rampart of ramparts) {
             if (this.tm.get(rampart.x, rampart.y)) {
@@ -660,16 +680,47 @@ class PlanBuilder {
             }
             this.ramparts.set(rampart.x, rampart.y, MAX_VALUE);
         }
+
+        // After doing our main ramparts, let's look for any important structures outside of them,
+        // and place a rampart there as well
+        const exit = this.ri.room.find(FIND_EXIT)[0];
+        const fillFromExit = matrixUtility.floodfill(
+            exit,
+            matrixUtility.combineMatrices(this.tm, this.ramparts)
+        );
+
+        // This will cover links
+        matrixUtility.iterateMatrix((x, y) => {
+            if (
+                fillFromExit.get(x, y) &&
+                this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_LINK]
+            ) {
+                this.ramparts.set(x, y, MAX_VALUE);
+            }
+
+            if (
+                this.roomPlan.get(x, y) ===
+                structureToNumber[STRUCTURE_EXTRACTOR]
+            ) {
+                this.ramparts.set(x, y, MAX_VALUE);
+            }
+        });
     }
 
     /**
-     * Removes any roads overlapping with terrain in the current plan.
+     * Removes any structures overlapping with terrain in the current plan.
      */
     cleanup() {
         // Filter out any structures we might have accidentally placed on walls
         // through optional roads and things like that
         matrixUtility.iterateMatrix((x, y) => {
             if (this.tm.get(x, y) > 0) {
+                if (
+                    this.roomPlan.get(x, y) ===
+                    structureToNumber[STRUCTURE_EXTRACTOR]
+                ) {
+                    return;
+                }
                 this.roomPlan.set(x, y, 0);
             }
         });

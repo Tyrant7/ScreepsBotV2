@@ -49,6 +49,7 @@ class BasePlanner {
             );
 
             const upgraderContainer = planBuilder.planUpgraderContainer();
+            planBuilder.planExtractor();
 
             // Also plan out our future routes to the exits for remotes
             planBuilder.planRemoteRoads();

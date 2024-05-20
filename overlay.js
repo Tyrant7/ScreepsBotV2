@@ -177,14 +177,14 @@ module.exports = {
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
                 const value = planMatrix.get(x, y);
+                if (rampartMatrix.get(x, y)) {
+                    visual.structure(x, y, STRUCTURE_RAMPART);
+                }
                 const structureType = Object.keys(mapping).find(
                     (s) => mapping[s] === value
                 );
                 if (structureType) {
                     visual.structure(x, y, structureType);
-                }
-                if (rampartMatrix.get(x, y)) {
-                    visual.structure(x, y, STRUCTURE_RAMPART);
                 }
             }
         }
