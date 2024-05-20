@@ -688,19 +688,11 @@ class PlanBuilder {
             exit,
             matrixUtility.combineMatrices(this.tm, this.ramparts)
         );
-
-        // This will cover links
+        const importantStructures = [structureToNumber[STRUCTURE_LINK]];
         matrixUtility.iterateMatrix((x, y) => {
             if (
                 fillFromExit.get(x, y) &&
-                this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_LINK]
-            ) {
-                this.ramparts.set(x, y, MAX_VALUE);
-            }
-
-            if (
-                this.roomPlan.get(x, y) ===
-                structureToNumber[STRUCTURE_EXTRACTOR]
+                importantStructures.includes(this.roomPlan.get(x, y))
             ) {
                 this.ramparts.set(x, y, MAX_VALUE);
             }
