@@ -75,7 +75,11 @@ module.exports = {
                 const trueX = pos.x - stamp.center.x + x;
                 const trueY = pos.y - stamp.center.y + y;
                 if (structureValue) {
-                    planMatrix.set(trueX, trueY, structureValue);
+                    planMatrix.set(
+                        trueX,
+                        trueY,
+                        Math.max(planMatrix.get(trueX, trueY), structureValue)
+                    );
                 }
             }
         }
