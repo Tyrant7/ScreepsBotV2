@@ -549,7 +549,7 @@ class PlanBuilder {
             }
 
             if (!bestSpot) {
-                console.log("Could not fit all extensions!");
+                console.log("Could not fit all structures!");
                 break;
             }
             this.roomPlan.set(
