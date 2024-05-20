@@ -607,7 +607,7 @@ class PlanBuilder {
     }
 
     planRamparts() {
-        const { minCutToExit } = require("./weight-min-cut");
+        const { minCutToExit } = require("./base.mincut");
 
         const excludedStructures = [
             0,
