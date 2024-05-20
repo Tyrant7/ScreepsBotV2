@@ -4,11 +4,13 @@ const MAX_BUILD_AREA = 44;
 
 const EXCLUSION_ZONE = "exclusion";
 
+// Numbers are in order of priority
+// When two structures are attempted to be placed on the same tile,
+// the higher number will take precedence
 const structureToNumber = {
     [STRUCTURE_SPAWN]: 10,
     [STRUCTURE_EXTENSION]: 5,
     [STRUCTURE_ROAD]: 2,
-    [STRUCTURE_RAMPART]: 100,
     [STRUCTURE_LINK]: 20,
     [STRUCTURE_STORAGE]: 99,
     [STRUCTURE_TOWER]: 4,
