@@ -62,17 +62,14 @@ class BasePlanner {
             );
 
             // Labs next
-            planBuilder.filterUsedSpaces();
             planBuilder.placeStamps(stamps.labs, STAMP_COUNT_LAB);
 
             // Filter out spaces we've already used for better performance when placing our stamps
-            planBuilder.filterUsedSpaces();
             planBuilder.placeStamps(
                 stamps.extensionStampXWithSpawn,
                 STAMP_COUNT_SPAWN
             );
 
-            planBuilder.filterUsedSpaces();
             planBuilder.placeStamps(
                 stamps.extensionStampX,
                 STAMP_COUNT_EXTENSION

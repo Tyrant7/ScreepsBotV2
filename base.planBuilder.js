@@ -415,10 +415,12 @@ class PlanBuilder {
 
     /**
      * Places multiple of the same stamp by calling `placeStamp` once for each `count`.
+     * Also employs an optimization to filter out used spaces before attempting stamp placement.
      * @param {{}} stamp The stamp to place.
      * @param {number} count The number of stamps to place.
      */
     placeStamps(stamp, count) {
+        this.filterUsedSpaces();
         for (let i = 0; i < count; i++) {
             this.placeStamp(stamp);
         }
