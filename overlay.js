@@ -172,7 +172,7 @@ module.exports = {
         }
     },
 
-    visualizeBasePlan: function (roomName, planMatrix, mapping) {
+    visualizeBasePlan: function (roomName, planMatrix, rampartMatrix, mapping) {
         const visual = new RoomVisual(roomName);
         for (let x = 0; x < 50; x++) {
             for (let y = 0; y < 50; y++) {
@@ -182,6 +182,9 @@ module.exports = {
                 );
                 if (structureType) {
                     visual.structure(x, y, structureType);
+                }
+                if (rampartMatrix.get(x, y)) {
+                    visual.structure(x, y, STRUCTURE_RAMPART);
                 }
             }
         }

@@ -107,7 +107,9 @@ class BasePlanner {
 
             // Cleanup any roads placed over terrain
             planBuilder.cleanup();
-            this.roomPlan = planBuilder.getProduct();
+            const { structures, ramparts } = planBuilder.getProduct();
+            this.roomPlan = structures;
+            this.ramparts = ramparts;
 
             console.log(
                 "planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!"
@@ -117,7 +119,12 @@ class BasePlanner {
         }
 
         const mapping = _.omit(structureToNumber, [EXCLUSION_ZONE]);
-        overlay.visualizeBasePlan(roomInfo.room.name, this.roomPlan, mapping);
+        overlay.visualizeBasePlan(
+            roomInfo.room.name,
+            this.roomPlan,
+            this.ramparts,
+            mapping
+        );
     }
 
     generateWeightMatrix(roomInfo, terrainMatrix, distanceTransform) {

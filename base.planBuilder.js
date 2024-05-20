@@ -647,15 +647,13 @@ class PlanBuilder {
 
         const ramparts = minCutToExit(sources, cutCosts);
 
-        const rampartMatrix = new PathFinder.CostMatrix();
+        this.ramparts = new PathFinder.CostMatrix();
         for (const rampart of ramparts) {
             if (this.tm.get(rampart.x, rampart.y)) {
                 continue;
             }
-            rampartMatrix.set(rampart.x, rampart.y, MAX_VALUE);
+            this.ramparts.set(rampart.x, rampart.y, MAX_VALUE);
         }
-
-        overlay.visualizeCostMatrix(this.ri.room.name, rampartMatrix, [0]);
     }
 
     /**
@@ -673,10 +671,11 @@ class PlanBuilder {
 
     /**
      * Gets the current plan.
-     * @returns {PathFinder.CostMatrix} The current room plan.
+     * @returns {{ structures: PathFinder.CostMatrix, ramparts: PathFinder.CostMatrix }}
+     * The current room plan. `structures` represents all structures except ramparts, while `ramparts` is only ramparts.
      */
     getProduct() {
-        return this.roomPlan;
+        return { structures: this.roomPlan, ramparts: this.ramparts };
     }
 }
 
