@@ -10,12 +10,11 @@ const {
 
 const WEIGHT_CONTROLLER = 1.2;
 const WEIGHT_SOURCES = 0.85;
-const WEIGHT_SOURCES_SPACE = 0.25;
 const WEIGHT_EXIT_DIST = -0.7;
 const WEIGHT_TERRAIN_DIST = -0.9;
 
 const STAMP_COUNT_SPAWN = 2;
-const STAMP_COUNT_EXTENSION = 1;
+const STAMP_COUNT_EXTENSION = 2;
 const STAMP_COUNT_LAB = 1;
 
 class BasePlanner {
@@ -89,9 +88,6 @@ class BasePlanner {
                     .concat(roomInfo.mineral)
             );
 
-            // Cleanup any roads placed over terrain
-            planBuilder.cleanup();
-
             // Connect up straggling roads
             planBuilder.connectStragglingRoads();
 
@@ -140,12 +136,6 @@ class BasePlanner {
                     terrainMatrix.clone()
                 ),
                 weight: WEIGHT_SOURCES,
-            });
-
-            // Discourage building too close to a source
-            sourceMatrices.push({
-                matrix: matrixUtility.generateNeighbourMatrix(source.pos, 2),
-                weight: WEIGHT_SOURCES_SPACE,
             });
         }
         const exitDistMatrix = {

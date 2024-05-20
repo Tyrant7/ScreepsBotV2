@@ -429,8 +429,12 @@ class PlanBuilder {
     /**
      * Ensures all roads in the current plan connect back to the core.
      * If not already, will draw connecting roads where possible.
+     * Will also remove any invalid road tiles that may have been previously placed.
      */
     connectStragglingRoads() {
+        // First cleanup any roads placed over terrain
+        this.cleanup();
+
         // First, construct an array of all of our roads
         let allRoads = [];
         const roadMatrix = new PathFinder.CostMatrix();
