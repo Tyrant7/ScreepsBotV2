@@ -11,6 +11,7 @@ const {
 const overlay = require("./overlay");
 
 const MAX_STAMP_ATTEMPTS = 20;
+const RAMPART_GAP = 3;
 
 const CONNECTIVE_ROAD_PENALTY_PLAINS = 3;
 const CONNECTIVE_ROAD_PENALTY_SWAMP = 5;
@@ -606,7 +607,7 @@ class PlanBuilder {
     }
 
     planRamparts() {
-        console.log("planning ramparts!");
+        const { minCutToExit } = require("./weight-min-cut");
 
         const excludedStructures = [
             0,
@@ -624,57 +625,37 @@ class PlanBuilder {
             }
         });
 
-        // We want to use a fresh costmatrix here,
-        // since ranged attack can still go through terrain
-        const fill = matrixUtility.floodfill(
+        const flood = matrixUtility.floodfill(
             structures,
             new PathFinder.CostMatrix()
         );
-        const ramparts = new PathFinder.CostMatrix();
+        const sources = [];
+        matrixUtility.iterateMatrix((x, y) => {
+            if (flood.get(x, y) <= RAMPART_GAP) {
+                sources.push({ x, y });
+            }
+        });
 
-        // TODO: Try to dynamically pick the depth for each stretch of ramparts
-        // Test up to a max depth and pick the one with the fewest
-
-        const RAMPART_GAP = 3;
+        const cutCosts = new PathFinder.CostMatrix();
         matrixUtility.iterateMatrix((x, y) => {
             if (this.tm.get(x, y)) {
+                cutCosts.set(x, y, MAX_VALUE);
                 return;
             }
-            if (
-                fill.get(x, y) === RAMPART_GAP ||
-                fill.get(x, y) === RAMPART_GAP + 1
-            ) {
-                ramparts.set(x, y, MAX_VALUE);
-            }
+            cutCosts.set(x, y, 1);
         });
 
-        // Next we'll floodfill from the outside of the room to the ramparts
-        // Any that we don't hit are unnecessary and can be removed
-        const exits = this.ri.room.find(FIND_EXIT);
-        const exitFill = matrixUtility.floodfill(
-            exits,
-            matrixUtility.combineMatrices(ramparts, this.tm)
-        );
+        const ramparts = minCutToExit(sources, cutCosts);
 
-        matrixUtility.iterateMatrix((x, y) => {
-            for (let x1 = x - 1; x1 <= x + 1; x1++) {
-                for (let y1 = y - 1; y1 <= y + 1; y1++) {
-                    if (
-                        x1 >= 0 &&
-                        x1 <= 49 &&
-                        y1 >= 0 &&
-                        y1 <= 49 &&
-                        exitFill.get(x1, y1) !== 0 &&
-                        exitFill.get(x1, y1) !== MAX_VALUE
-                    ) {
-                        return;
-                    }
-                }
+        const rampartMatrix = new PathFinder.CostMatrix();
+        for (const rampart of ramparts) {
+            if (this.tm.get(rampart.x, rampart.y)) {
+                continue;
             }
-            ramparts.set(x, y, 0);
-        });
+            rampartMatrix.set(rampart.x, rampart.y, MAX_VALUE);
+        }
 
-        overlay.visualizeCostMatrix(this.ri.room.name, ramparts, [0]);
+        overlay.visualizeCostMatrix(this.ri.room.name, rampartMatrix, [0]);
     }
 
     /**
