@@ -51,20 +51,6 @@ class BasePlanner {
 
             const upgraderContainer = planBuilder.planUpgraderContainer();
 
-            // Plan out artery roads
-            // This will also handle container placement for minerals and container + links for sources
-            planBuilder.planRoads(
-                roomInfo.sources
-                    .concat({
-                        pos: new RoomPosition(
-                            upgraderContainer.x,
-                            upgraderContainer.y,
-                            roomInfo.room.name
-                        ),
-                    })
-                    .concat(roomInfo.mineral)
-            );
-
             // Also plan out our future routes to the exits for remotes
             planBuilder.planRemoteRoads();
 
@@ -74,6 +60,10 @@ class BasePlanner {
                     planBuilder.floodfillFromCore.get(a.x, a.y) -
                     planBuilder.floodfillFromCore.get(b.x, b.y)
             );
+
+            // Labs next
+            planBuilder.filterUsedSpaces();
+            planBuilder.placeStamps(stamps.labs, STAMP_COUNT_LAB);
 
             // Filter out spaces we've already used for better performance when placing our stamps
             planBuilder.filterUsedSpaces();
@@ -88,9 +78,19 @@ class BasePlanner {
                 STAMP_COUNT_EXTENSION
             );
 
-            // Labs next
-            planBuilder.filterUsedSpaces();
-            planBuilder.placeStamps(stamps.labs, STAMP_COUNT_LAB);
+            // Plan out artery roads
+            // This will also handle container placement for minerals and container + links for sources
+            planBuilder.planRoads(
+                roomInfo.sources
+                    .concat({
+                        pos: new RoomPosition(
+                            upgraderContainer.x,
+                            upgraderContainer.y,
+                            roomInfo.room.name
+                        ),
+                    })
+                    .concat(roomInfo.mineral)
+            );
 
             // Cleanup any roads placed over terrain
             planBuilder.cleanup();
