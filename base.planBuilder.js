@@ -63,6 +63,11 @@ class PlanBuilder {
         );
 
         this.ri = roomInfo;
+
+        // Initialize these necessary road planning variables
+        this.upgraderContainer = undefined;
+        this.mineralContainer = undefined;
+        this.sourceContainers = [];
     }
 
     /**
@@ -143,7 +148,7 @@ class PlanBuilder {
                 }
             }
         }
-        return bestContainerSpot;
+        this.upgraderContainer = bestContainerSpot;
     }
 
     /**
@@ -179,11 +184,14 @@ class PlanBuilder {
     }
 
     /**
-     * Plans roads for this base, connected each point in `connectPoints` back to the core.
-     * @param {{ x: number, y: number }[]} connectPoints An array of X, Y positions to connect
-     * back to the core.
+     * Gets a path from the core to each of the connect points.
+     * @param {{ pos: RoomPosition }[]} connectPoints An array of objects with a `pos` property of type `RoomPosition`.
+     * Will path from these positions back to the core.
+     * @returns {{ point: { x: number, y: number }, path: RoomPosition[]}}
+     * An object with two properties. The first being the point which the path belongs to,
+     * and the second being an array of `RoomPosition`s marking the path.
      */
-    planRoads(connectPoints) {
+    getRoadPaths(connectPoints) {
         // Path from further points first
         connectPoints.sort(
             (a, b) =>
@@ -209,6 +217,7 @@ class PlanBuilder {
             pos: this.corePos,
             range: 2,
         };
+        const allPoints = [];
         for (const point of connectPoints) {
             const result = PathFinder.search(point.pos, goal, {
                 plainCost: 2,
@@ -222,68 +231,163 @@ class PlanBuilder {
             // Save these into our road matrix
             for (const step of result.path) {
                 pathfindMatrix.set(step.x, step.y, 1);
-                this.roomPlan.set(
-                    step.x,
-                    step.y,
-                    structureToNumber[STRUCTURE_ROAD]
-                );
             }
+            allPoints.push({ point: point, path: result.path });
+        }
+        return allPoints;
+    }
 
-            // Next stuff only applies to minerals and sources
-            if (!(point instanceof Source || point instanceof Mineral)) {
-                continue;
-            }
-
+    /**
+     * Plans containers for mineral and containers + link for sources.
+     * Does so by gauging the approximate road plans, and placing containers/links at the end.
+     */
+    planMiningSpots() {
+        const spots = [].concat(this.ri.sources).concat(this.ri.mineral);
+        const paths = this.getRoadPaths(spots);
+        for (const { point, path } of paths) {
             // Place the containers
-            const lastStep = result.path[0];
-            pathfindMatrix.set(lastStep.x, lastStep.y, MAX_VALUE);
+            const lastStep = path[0];
             this.roomPlan.set(
                 lastStep.x,
                 lastStep.y,
                 structureToNumber[STRUCTURE_CONTAINER]
             );
 
-            // Handle link placement
             if (point instanceof Source) {
-                // Iterate the neighbours, then choose the one
-                // closest to the core where no other structure lies
-                let bestNeighbour;
-                for (let x = -1; x <= 1; x++) {
-                    for (let y = -1; y <= 1; y++) {
-                        const newX = lastStep.x + x;
-                        const newY = lastStep.y + y;
-                        if (
-                            newX >= 48 ||
-                            newX <= 1 ||
-                            newY >= 48 ||
-                            newY <= 1
-                        ) {
-                            continue;
-                        }
-                        if (
-                            this.tm.get(newX, newY) ||
-                            this.roomPlan.get(newX, newY)
-                        ) {
-                            continue;
-                        }
-                        if (
-                            !bestNeighbour ||
-                            this.floodfillFromCore.get(
-                                bestNeighbour.x,
-                                bestNeighbour.y
-                            ) > this.floodfillFromCore.get(newX, newY)
-                        ) {
-                            bestNeighbour = { x: newX, y: newY };
-                        }
+                this.sourceContainers.push(lastStep);
+            } else {
+                this.mineralContainer = lastStep;
+                continue;
+            }
+
+            // Handle link placement
+            // Iterate the neighbours, then choose the one
+            // closest to the core where no other structure lies
+            let bestNeighbour;
+            for (let x = -1; x <= 1; x++) {
+                for (let y = -1; y <= 1; y++) {
+                    const newX = lastStep.x + x;
+                    const newY = lastStep.y + y;
+                    if (newX >= 48 || newX <= 1 || newY >= 48 || newY <= 1) {
+                        continue;
+                    }
+                    if (
+                        this.tm.get(newX, newY) ||
+                        this.roomPlan.get(newX, newY)
+                    ) {
+                        continue;
+                    }
+                    if (
+                        !bestNeighbour ||
+                        this.floodfillFromCore.get(
+                            bestNeighbour.x,
+                            bestNeighbour.y
+                        ) > this.floodfillFromCore.get(newX, newY)
+                    ) {
+                        bestNeighbour = { x: newX, y: newY };
                     }
                 }
+            }
+            this.roomPlan.set(
+                bestNeighbour.x,
+                bestNeighbour.y,
+                structureToNumber[STRUCTURE_LINK]
+            );
+        }
+    }
+
+    /**
+     * Plans artery roads for this base by default.
+     * These are roads which connect all source, mineral, and upgrader containers back to the core.
+     * If supplied with connect points, will connect those back to the core instead.
+     * @param {{ x: number, y: number }[]} points An array of points to map back to the core.
+     * By default, all source, mineral, and upgrader containers currently planned.
+     */
+    planRoads(points = undefined) {
+        if (!points) {
+            points = []
+                .concat(this.sourceContainers)
+                .concat(this.mineralContainer)
+                .concat(this.upgraderContainer);
+        }
+        points = points.filter((p) => p);
+        points = points.map((point) => {
+            return {
+                pos: this.ri.room.getPositionAt(point.x, point.y),
+            };
+        });
+        const paths = this.getRoadPaths(points);
+        for (const { path } of paths) {
+            // Save these into our road matrix
+            for (const step of path) {
                 this.roomPlan.set(
-                    bestNeighbour.x,
-                    bestNeighbour.y,
-                    structureToNumber[STRUCTURE_LINK]
+                    step.x,
+                    step.y,
+                    structureToNumber[STRUCTURE_ROAD]
                 );
             }
         }
+    }
+
+    /**
+     * Ensures all roads in the current plan connect back to the core.
+     * If not already, will draw connecting roads where possible.
+     * Will also remove any invalid road tiles that may have been previously placed.
+     */
+    connectStragglingRoads() {
+        // First cleanup any roads placed over terrain
+        this.cleanup();
+
+        // First, construct an array of all of our roads
+        let allRoads = [];
+        const roadMatrix = new PathFinder.CostMatrix();
+        matrixUtility.iterateMatrix((x, y) => {
+            if (this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_ROAD]) {
+                allRoads.push({ x, y });
+                roadMatrix.set(x, y, 1);
+                return;
+            }
+            roadMatrix.set(x, y, 255);
+        });
+
+        // Then, identify any roads that cannot connect back to the core
+        const stragglingRoads = [];
+        const maxNeededTiles = allRoads.length;
+        const goal = {
+            pos: this.corePos,
+            range: 2,
+        };
+        while (allRoads.length) {
+            const next = allRoads.pop();
+            const result = PathFinder.search(
+                new RoomPosition(next.x, next.y, this.ri.room.name),
+                goal,
+                {
+                    maxRooms: 1,
+                    maxCost: maxNeededTiles,
+                    roomCallback: function (roomName) {
+                        return roadMatrix;
+                    },
+                }
+            );
+
+            // For each road we stepped over, remembering to include our start position
+            for (const road of result.path.concat(next)) {
+                // We can remove this road from our array since we know its state now
+                allRoads = allRoads.filter(
+                    (r) => r.x !== road.x || r.y !== road.y
+                );
+
+                // If it was incomplete, we know that this road
+                // does not connect back to our core
+                if (result.incomplete) {
+                    stragglingRoads.push(road);
+                }
+            }
+        }
+
+        // Plan roads to connect these back to our core
+        this.planRoads(stragglingRoads, this.corePos);
     }
 
     /**
@@ -437,70 +541,6 @@ class PlanBuilder {
         for (let i = 0; i < count; i++) {
             this.placeStamp(stamp);
         }
-    }
-
-    /**
-     * Ensures all roads in the current plan connect back to the core.
-     * If not already, will draw connecting roads where possible.
-     * Will also remove any invalid road tiles that may have been previously placed.
-     */
-    connectStragglingRoads() {
-        // First cleanup any roads placed over terrain
-        this.cleanup();
-
-        // First, construct an array of all of our roads
-        let allRoads = [];
-        const roadMatrix = new PathFinder.CostMatrix();
-        matrixUtility.iterateMatrix((x, y) => {
-            if (this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_ROAD]) {
-                allRoads.push({ x, y });
-                roadMatrix.set(x, y, 1);
-                return;
-            }
-            roadMatrix.set(x, y, 255);
-        });
-
-        // Then, identify any roads that cannot connect back to the core
-        const stragglingRoads = [];
-        const maxNeededTiles = allRoads.length;
-        const goal = {
-            pos: this.corePos,
-            range: 2,
-        };
-        while (allRoads.length) {
-            const next = allRoads.pop();
-            const result = PathFinder.search(
-                new RoomPosition(next.x, next.y, this.ri.room.name),
-                goal,
-                {
-                    maxRooms: 1,
-                    maxCost: maxNeededTiles,
-                    roomCallback: function (roomName) {
-                        return roadMatrix;
-                    },
-                }
-            );
-
-            // For each road we stepped over, remembering to include our start position
-            for (const road of result.path.concat(next)) {
-                // We can remove this road from our array since we know its state now
-                allRoads = allRoads.filter(
-                    (r) => r.x !== road.x || r.y !== road.y
-                );
-
-                // If it was incomplete, we know that this road
-                // does not connect back to our core
-                if (result.incomplete) {
-                    stragglingRoads.push(road);
-                }
-            }
-        }
-
-        // Plan roads to connect these back to our core
-        const roadPositions = stragglingRoads.map((r) => {
-            return { pos: new RoomPosition(r.x, r.y, this.ri.room.name) };
-        });
-        this.planRoads(roadPositions, this.corePos);
     }
 
     /**

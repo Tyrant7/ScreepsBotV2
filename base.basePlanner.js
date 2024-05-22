@@ -48,22 +48,12 @@ class BasePlanner {
                 roomInfo
             );
 
-            const upgraderContainer = planBuilder.planUpgraderContainer();
+            planBuilder.planUpgraderContainer();
             planBuilder.planExtractor();
+            planBuilder.planMiningSpots();
 
-            // Plan out artery roads
-            // This will also handle container placement for minerals and container + links for sources
-            planBuilder.planRoads(
-                roomInfo.sources
-                    .concat({
-                        pos: new RoomPosition(
-                            upgraderContainer.x,
-                            upgraderContainer.y,
-                            roomInfo.room.name
-                        ),
-                    })
-                    .concat(roomInfo.mineral)
-            );
+            // Plan our artery roads
+            planBuilder.planRoads();
 
             // Also plan out our future routes to the exits for remotes
             planBuilder.planRemoteRoads();
