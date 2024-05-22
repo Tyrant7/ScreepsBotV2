@@ -386,7 +386,7 @@ class PlanBuilder {
         }
 
         // Plan roads to connect these back to our core
-        this.planRoads(stragglingRoads, this.corePos);
+        this.planRoads(stragglingRoads);
     }
 
     /**
