@@ -8,7 +8,6 @@ const {
     EXCLUSION_ZONE,
     structureToNumber,
 } = require("./base.planningConstants");
-const overlay = require("./overlay");
 
 const MAX_STAMP_ATTEMPTS = 20;
 const RAMPART_GAP = 3;
