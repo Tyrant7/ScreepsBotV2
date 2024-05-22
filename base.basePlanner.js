@@ -40,6 +40,8 @@ class BasePlanner {
                 distanceTransform
             );
 
+            // PLANNING STARTS HERE //
+
             const planBuilder = new PlanBuilder(
                 terrainMatrix,
                 distanceTransform,
@@ -52,12 +54,6 @@ class BasePlanner {
             planBuilder.planExtractor();
             planBuilder.planMiningSpots();
 
-            // Plan our artery roads
-            planBuilder.planRoads();
-
-            // Also plan out our future routes to the exits for remotes
-            planBuilder.planRemoteRoads();
-
             // Resort our spaces by distance to the core
             planBuilder.resortSpaces(
                 (a, b) =>
@@ -65,15 +61,22 @@ class BasePlanner {
                     planBuilder.floodfillFromCore.get(b.x, b.y)
             );
 
+            // Plan our artery roads
+            planBuilder.planRoads();
+
+            // Plan out our future routes to the exits for remotes
+            planBuilder.planRemoteRoads();
+
             // Labs next
             planBuilder.placeStamps(stamps.labs, STAMP_COUNT_LAB);
 
-            // Filter out spaces we've already used for better performance when placing our stamps
+            // Spawn stamps
             planBuilder.placeStamps(
                 stamps.extensionStampXWithSpawn,
                 STAMP_COUNT_SPAWN
             );
 
+            // Ordinary extension stamps
             planBuilder.placeStamps(
                 stamps.extensionStampX,
                 STAMP_COUNT_EXTENSION
