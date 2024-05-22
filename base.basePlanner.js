@@ -67,14 +67,14 @@ class BasePlanner {
             // Plan out our future routes to the exits for remotes
             planBuilder.planRemoteRoads();
 
-            // Labs next
-            planBuilder.placeStamps(stamps.labs, STAMP_COUNT_LAB);
-
             // Spawn stamps
             planBuilder.placeStamps(
                 stamps.extensionStampXWithSpawn,
                 STAMP_COUNT_SPAWN
             );
+
+            // Lab stamps
+            planBuilder.placeStamps(stamps.labs, STAMP_COUNT_LAB);
 
             // Ordinary extension stamps
             planBuilder.placeStamps(
