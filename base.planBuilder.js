@@ -177,7 +177,7 @@ class PlanBuilder {
      * Filters current buildable spaces where a structure already exists in the room plan, or where
      * structures will not be accessible if placed.
      */
-    filterUsedSpaces() {
+    filterBadSpaces() {
         const unwalkableMatrix = new PathFinder.CostMatrix();
         const excludeStructures = [
             0,
@@ -560,7 +560,7 @@ class PlanBuilder {
      * @param {number} count The number of stamps to place.
      */
     placeStamps(stamp, count) {
-        this.filterUsedSpaces();
+        this.filterBadSpaces();
         for (let i = 0; i < count; i++) {
             this.placeStamp(stamp);
         }

@@ -86,7 +86,7 @@ class BasePlanner {
             planBuilder.connectStragglingRoads();
 
             // Place all of our dynamic structures
-            planBuilder.filterUsedSpaces();
+            planBuilder.filterBadSpaces();
             planBuilder.placeDynamicStructures();
 
             // Finally, let's rampart our entire base
