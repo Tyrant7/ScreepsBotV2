@@ -44,8 +44,8 @@ module.exports = {
                         obstructor === structureToNumber[STRUCTURE_ROAD] ||
                         obstructor === structureToNumber[EXCLUSION_ZONE];
 
-                    // We can skip validating this point if it's an
-                    // unwalkable structure on top of another unwalkable structure
+                    // We can skip validating this point if it's a
+                    // walkable structure on top of another walkable structure
                     if (
                         stampHasRoadOrExclusion &&
                         obstructorIsRoadOrExclusion

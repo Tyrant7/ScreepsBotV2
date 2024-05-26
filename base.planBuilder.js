@@ -8,6 +8,7 @@ const {
     EXCLUSION_ZONE,
     structureToNumber,
 } = require("./base.planningConstants");
+const baseStamps = require("./base.stamps");
 
 const MAX_STAMP_ATTEMPTS = 20;
 const RAMPART_GAP = 3;
@@ -550,6 +551,9 @@ class PlanBuilder {
                 this.roomPlan
             );
         }
+        // Remove this space so we don't place another here to
+        // consolidate roads if the stamp is only walkable structures
+        this.spaces = this.spaces.filter((space) => space !== bestStampPos);
         return bestStampPos;
     }
 
