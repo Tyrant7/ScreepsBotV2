@@ -174,11 +174,35 @@ class PlanBuilder {
     }
 
     /**
-     * Filters current buildable spaces where a structure already exists in the room plan.
+     * Filters current buildable spaces where a structure already exists in the room plan, or where
+     * structures will not be accessible if placed.
      */
     filterUsedSpaces() {
+        const unwalkableMatrix = new PathFinder.CostMatrix();
+        const excludeStructures = [
+            0,
+            structureToNumber[EXCLUSION_ZONE],
+            structureToNumber[STRUCTURE_CONTAINER],
+            structureToNumber[STRUCTURE_ROAD],
+        ];
+        matrixUtility.iterateMatrix((x, y) => {
+            const s = this.roomPlan.get(x, y);
+            if (excludeStructures.includes(s)) {
+                return;
+            }
+            unwalkableMatrix.set(x, y, MAX_VALUE);
+        });
+        const fill = matrixUtility.floodfill(
+            this.ri.room.find(FIND_EXIT),
+            matrixUtility.combineMatrices(this.tm, unwalkableMatrix)
+        );
+
         this.spaces = this.spaces.filter(
-            (space) => this.roomPlan.get(space.x, space.y) === 0
+            (space) =>
+                // Filter out all used spaces
+                this.roomPlan.get(space.x, space.y) === 0 &&
+                // And inaccessible spaces
+                fill.get(space.x, space.y) !== 0
         );
     }
 
