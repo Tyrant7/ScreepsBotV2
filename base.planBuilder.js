@@ -427,8 +427,17 @@ class PlanBuilder {
         const roomTerrain = Game.map.getRoomTerrain(this.ri.room.name);
 
         // Let's build a roadmatrix to encourage using existing roads
+        // While we're doing this, let's also search for our point to path back to
+        // Default to corePos in case no storage has been planned yet
+        let pathPoint = this.corePos;
         const roadMatrix = new PathFinder.CostMatrix();
         matrixUtility.iterateMatrix((x, y) => {
+            if (
+                this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_STORAGE]
+            ) {
+                pathPoint = this.ri.room.getPositionAt(x, y);
+            }
+
             if (roomTerrain.get(x, y) === TERRAIN_MASK_WALL) {
                 roadMatrix.set(x, y, MAX_VALUE);
                 return;
@@ -454,7 +463,8 @@ class PlanBuilder {
                 return { pos: tile, range: MIN_BUILD_AREA - 1 };
             });
 
-            const result = PathFinder.search(this.corePos, goals, {
+            console.log(pathPoint);
+            const result = PathFinder.search(pathPoint, goals, {
                 maxRooms: 1,
                 roomCallback: function (roomName) {
                     return roadMatrix;
