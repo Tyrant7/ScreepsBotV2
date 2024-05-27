@@ -87,10 +87,10 @@ module.exports = {
 
     extensionStampX: {
         layout: [
-            [undefined, undefined, STRUCTURE_ROAD, undefined, undefined],
+            [undefined, undefined, undefined, undefined, undefined],
             [
                 undefined,
-                STRUCTURE_ROAD,
+                undefined,
                 STRUCTURE_EXTENSION,
                 STRUCTURE_ROAD,
                 undefined,
@@ -102,18 +102,12 @@ module.exports = {
                 STRUCTURE_EXTENSION,
                 STRUCTURE_ROAD,
             ],
-            [
-                undefined,
-                STRUCTURE_ROAD,
-                STRUCTURE_EXTENSION,
-                STRUCTURE_ROAD,
-                undefined,
-            ],
+            [undefined, undefined, STRUCTURE_EXTENSION, undefined, undefined],
             [undefined, undefined, STRUCTURE_ROAD, undefined, undefined],
         ],
         distancePoints: [
             { x: 2, y: 2, range: 1 },
-            { x: 2, y: 0, range: 0 },
+            { x: 3, y: 1, range: 0 },
             { x: 2, y: 4, range: 0 },
             { x: 0, y: 2, range: 0 },
             { x: 4, y: 2, range: 0 },
@@ -123,10 +117,10 @@ module.exports = {
 
     extensionStampXWithSpawn: {
         layout: [
-            [undefined, undefined, STRUCTURE_ROAD, undefined, undefined],
+            [undefined, undefined, undefined, undefined, undefined],
             [
                 undefined,
-                STRUCTURE_ROAD,
+                undefined,
                 STRUCTURE_EXTENSION,
                 STRUCTURE_ROAD,
                 undefined,
@@ -138,18 +132,12 @@ module.exports = {
                 STRUCTURE_EXTENSION,
                 STRUCTURE_ROAD,
             ],
-            [
-                undefined,
-                STRUCTURE_ROAD,
-                STRUCTURE_EXTENSION,
-                STRUCTURE_ROAD,
-                undefined,
-            ],
+            [undefined, undefined, STRUCTURE_EXTENSION, undefined, undefined],
             [undefined, undefined, STRUCTURE_ROAD, undefined, undefined],
         ],
         distancePoints: [
             { x: 2, y: 2, range: 1 },
-            { x: 2, y: 0, range: 0 },
+            { x: 3, y: 1, range: 0 },
             { x: 2, y: 4, range: 0 },
             { x: 0, y: 2, range: 0 },
             { x: 4, y: 2, range: 0 },
