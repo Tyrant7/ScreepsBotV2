@@ -61,9 +61,6 @@ class BasePlanner {
                     planBuilder.floodfillFromCore.get(b.x, b.y)
             );
 
-            // Plan our artery roads
-            planBuilder.planRoads();
-
             // Plan out our future routes to the exits for remotes
             planBuilder.planRemoteRoads();
 
@@ -81,6 +78,9 @@ class BasePlanner {
                 stamps.extensionStampX,
                 STAMP_COUNT_EXTENSION
             );
+
+            // Plan our artery roads
+            planBuilder.planRoads();
 
             // Connect up straggling roads
             planBuilder.connectStragglingRoads();
