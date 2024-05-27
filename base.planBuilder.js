@@ -22,6 +22,14 @@ for (const key in CONTROLLER_STRUCTURES) {
     );
 }
 
+const NO_RAMPART_STRUCTURES = [
+    structureToNumber[EXCLUSION_ZONE],
+    structureToNumber[STRUCTURE_ROAD],
+    structureToNumber[STRUCTURE_LINK],
+    structureToNumber[STRUCTURE_CONTAINER],
+    structureToNumber[STRUCTURE_EXTRACTOR],
+];
+
 class PlanBuilder {
     constructor(
         terrainMatrix,
@@ -463,7 +471,6 @@ class PlanBuilder {
                 return { pos: tile, range: MIN_BUILD_AREA - 1 };
             });
 
-            console.log(pathPoint);
             const result = PathFinder.search(pathPoint, goals, {
                 maxRooms: 1,
                 roomCallback: function (roomName) {
@@ -586,15 +593,10 @@ class PlanBuilder {
     placeDynamicStructures() {
         // Next, we'll place our remaining extensions, we'll plan extra for tower and observer placement positions later
         // Let's start by counting how many extensions we have already
-        let placedExtensions = 0;
-        matrixUtility.iterateMatrix((x, y) => {
-            if (
-                this.roomPlan.get(x, y) ===
-                structureToNumber[STRUCTURE_EXTENSION]
-            ) {
-                placedExtensions++;
-            }
-        });
+        const placedExtensions = matrixUtility.countOccurences(
+            this.roomPlan,
+            structureToNumber[STRUCTURE_EXTENSION]
+        );
 
         const remainingExtensions =
             MAX_STRUCTURES[STRUCTURE_EXTENSION] -
@@ -709,17 +711,12 @@ class PlanBuilder {
         const { minCutToExit } = require("./base.mincut");
 
         // First let's figure out where all of our important structures are
-        const excludedStructures = [
-            0,
-            structureToNumber[EXCLUSION_ZONE],
-            structureToNumber[STRUCTURE_ROAD],
-            structureToNumber[STRUCTURE_LINK],
-            structureToNumber[STRUCTURE_CONTAINER],
-            structureToNumber[STRUCTURE_EXTRACTOR],
-        ];
         const structures = [];
         matrixUtility.iterateMatrix((x, y) => {
-            if (!excludedStructures.includes(this.roomPlan.get(x, y))) {
+            if (
+                this.roomPlan.get(x, y) &&
+                !NO_RAMPART_STRUCTURES.includes(this.roomPlan.get(x, y))
+            ) {
                 structures.push({ x, y });
             }
         });
@@ -759,15 +756,15 @@ class PlanBuilder {
 
         // After doing our main ramparts, let's look for any important structures outside of them,
         // and place a rampart there as well
-        const exit = this.ri.room.find(FIND_EXIT)[0];
-        const fillFromExit = matrixUtility.floodfill(
-            exit,
+        const exits = this.ri.room.find(FIND_EXIT);
+        const fillFromExits = matrixUtility.floodfill(
+            exits,
             matrixUtility.combineMatrices(this.tm, this.ramparts)
         );
         const importantStructures = [structureToNumber[STRUCTURE_LINK]];
         matrixUtility.iterateMatrix((x, y) => {
             if (
-                fillFromExit.get(x, y) &&
+                fillFromExits.get(x, y) &&
                 importantStructures.includes(this.roomPlan.get(x, y))
             ) {
                 this.ramparts.set(x, y, MAX_VALUE);
@@ -795,11 +792,153 @@ class PlanBuilder {
     }
 
     /**
-     * Gets the current plan.
+     * Gets the current plan, and validates it to ensure it is complete.
      * @returns {{ structures: PathFinder.CostMatrix, ramparts: PathFinder.CostMatrix }}
      * The current room plan. `structures` represents all structures except ramparts, while `ramparts` is only ramparts.
      */
     getProduct() {
+        if (DEBUG.validateBasePlans) {
+            const checks = {
+                structure: () => {
+                    const excludeStructures = [
+                        STRUCTURE_ROAD,
+                        STRUCTURE_RAMPART,
+                        STRUCTURE_WALL,
+                        STRUCTURE_CONTAINER,
+                        STRUCTURE_LINK,
+                    ];
+                    for (const structure in MAX_STRUCTURES) {
+                        const actual = matrixUtility.countOccurences(
+                            this.roomPlan,
+                            structureToNumber[structure]
+                        );
+                        const wanted = MAX_STRUCTURES[structure];
+                        if (actual > wanted) {
+                            return (
+                                "Have overplanned for structures of type: " +
+                                structure
+                            );
+                        } else if (actual < wanted) {
+                            if (excludeStructures.includes(structure)) {
+                                continue;
+                            }
+                            return (
+                                "Have not yet accounted for all structures of type: " +
+                                structure
+                            );
+                        }
+                    }
+                },
+                rampart: () => {
+                    const exits = this.ri.room.find(FIND_EXIT);
+                    const fillFromExits = matrixUtility.floodfill(
+                        exits,
+                        matrixUtility.combineMatrices(this.tm, this.ramparts)
+                    );
+                    const rampartPositions = [];
+                    matrixUtility.iterateMatrix((x, y) => {
+                        if (this.ramparts.get(x, y)) {
+                            rampartPositions.push({ x, y });
+                        }
+                    });
+                    const fillFromRamparts = matrixUtility.floodfill(
+                        rampartPositions,
+                        this.tm
+                    );
+                    for (let x = 0; x < 50; x++) {
+                        for (let y = 0; y < 50; y++) {
+                            if (
+                                this.roomPlan.get(x, y) === 0 ||
+                                NO_RAMPART_STRUCTURES.includes(
+                                    this.roomPlan.get(x, y)
+                                )
+                            ) {
+                                continue;
+                            }
+
+                            // There's a structure here and it's either outside of our ramparts
+                            if (fillFromExits.get(x, y)) {
+                                return (
+                                    "Structure at position " +
+                                    x +
+                                    ", " +
+                                    y +
+                                    " is outside of ramparts."
+                                );
+                            }
+                            // Or it's close enough to get hit by ranged enemy attackers
+                            else if (
+                                fillFromRamparts.get(x, y) <= RAMPART_GAP
+                            ) {
+                                return (
+                                    "Structure at position " +
+                                    x +
+                                    ", " +
+                                    y +
+                                    " is too close to exterior ramparts."
+                                );
+                            }
+                        }
+                    }
+                },
+                accessibility: () => {
+                    const accessibleStructures = [
+                        structureToNumber[STRUCTURE_SPAWN],
+                        structureToNumber[STRUCTURE_EXTENSION],
+                        structureToNumber[STRUCTURE_STORAGE],
+                        structureToNumber[STRUCTURE_TOWER],
+                        structureToNumber[STRUCTURE_POWER_SPAWN],
+                        structureToNumber[STRUCTURE_LAB],
+                        structureToNumber[STRUCTURE_TERMINAL],
+                        structureToNumber[STRUCTURE_CONTAINER],
+                        structureToNumber[STRUCTURE_NUKER],
+                        structureToNumber[STRUCTURE_FACTORY],
+                    ];
+                    const roadPositions = [];
+                    matrixUtility.iterateMatrix((x, y) => {
+                        if (
+                            this.roomPlan.get(x, y) ===
+                            structureToNumber[STRUCTURE_ROAD]
+                        ) {
+                            roadPositions.push({ x, y });
+                        }
+                    });
+                    const floodfillFromRoads = matrixUtility.floodfill(
+                        roadPositions,
+                        new PathFinder.CostMatrix()
+                    );
+                    for (let x = 0; x < 50; x++) {
+                        for (let y = 0; y < 50; y++) {
+                            if (
+                                accessibleStructures.includes(
+                                    this.roomPlan.get(x, y)
+                                ) &&
+                                floodfillFromRoads.get(x, y) > 1
+                            ) {
+                                return (
+                                    "Structure at position " +
+                                    x +
+                                    ", " +
+                                    y +
+                                    " is not accessible by road."
+                                );
+                            }
+                        }
+                    }
+                },
+            };
+
+            console.log("Beginning plan validation...");
+            for (const check in checks) {
+                const message = checks[check]();
+                if (message) {
+                    throw new Error("Invalid base plan: " + message);
+                }
+                console.log("Plan passes " + check + " validation...");
+            }
+        }
+        console.log("Plan passes all validation checks!");
+
         return { structures: this.roomPlan, ramparts: this.ramparts };
     }
 }

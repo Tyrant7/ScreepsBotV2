@@ -272,4 +272,20 @@ module.exports = {
             }
         }
     },
+
+    /**
+     * Counts the occurences of the given value in the given matrix.
+     * @param {PathFinder.CostMatrix} matrix The matrix to count occurences in.
+     * @param {number} value The value to look for.
+     * @returns {number} The number of occurences of value found.
+     */
+    countOccurences: function (matrix, value) {
+        let total = 0;
+        this.iterateMatrix((x, y) => {
+            if (matrix.get(x, y) === value) {
+                total++;
+            }
+        });
+        return total;
+    },
 };

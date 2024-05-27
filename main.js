@@ -37,6 +37,8 @@ global.DEBUG = {
     replanRemotesOnReload: false,
 
     runProfiler: false,
+
+    validateBasePlans: true,
 };
 global.RELOAD = true;
 
