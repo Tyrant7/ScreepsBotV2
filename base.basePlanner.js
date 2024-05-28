@@ -62,7 +62,7 @@ class BasePlanner {
             );
 
             // Plan out our future routes to the exits for remotes
-            // planBuilder.planRemoteRoads();
+            planBuilder.planRemoteRoads();
 
             // Spawn stamps
             planBuilder.placeStamps(
