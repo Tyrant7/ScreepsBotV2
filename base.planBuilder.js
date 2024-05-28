@@ -956,9 +956,7 @@ class PlanBuilder {
                                 );
                             }
                             // Or it's close enough to get hit by ranged enemy attackers
-                            else if (
-                                fillFromRamparts.get(x, y) <= RAMPART_GAP
-                            ) {
+                            else if (fillFromRamparts.get(x, y) < RAMPART_GAP) {
                                 return (
                                     "Structure at position " +
                                     x +
@@ -1021,7 +1019,11 @@ class PlanBuilder {
             for (const check in checks) {
                 const message = checks[check]();
                 if (message) {
-                    throw new Error("Invalid base plan: " + message);
+                    console.log("Invalid base plan: " + message);
+                    return {
+                        structures: this.roomPlan,
+                        ramparts: this.ramparts,
+                    };
                 }
                 console.log("Plan passes " + check + " validation...");
             }
