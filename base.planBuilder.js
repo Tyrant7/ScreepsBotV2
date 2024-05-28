@@ -12,6 +12,10 @@ const {
 const MAX_STAMP_ATTEMPTS = 20;
 const RAMPART_GAP = 3;
 
+const RAMPART_WALK_COST_ROAD = 1;
+const RAMPART_WALK_COST_PLAINS = 3;
+const RAMPART_WALK_COST_SWAMP = 4;
+
 const CONNECTIVE_ROAD_PENALTY_PLAINS = 3;
 const CONNECTIVE_ROAD_PENALTY_SWAMP = 5;
 
@@ -774,7 +778,7 @@ class PlanBuilder {
                 roadMatrix.set(x, y, MAX_VALUE);
             }
             if (this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_ROAD]) {
-                roadMatrix.set(x, y, 1);
+                roadMatrix.set(x, y, RAMPART_WALK_COST_ROAD);
                 return;
             }
             if (
@@ -804,8 +808,8 @@ class PlanBuilder {
                 new RoomPosition(rampart.x, rampart.y, this.ri.room.name),
                 { pos: this.corePos, range: RAMPART_GAP },
                 {
-                    plainCost: CONNECTIVE_ROAD_PENALTY_PLAINS,
-                    swampCost: CONNECTIVE_ROAD_PENALTY_SWAMP,
+                    plainCost: RAMPART_WALK_COST_PLAINS,
+                    swampCost: RAMPART_WALK_COST_SWAMP,
                     maxRooms: 1,
                     roomCallback: function (roomName) {
                         return roadMatrix;
@@ -819,20 +823,30 @@ class PlanBuilder {
 
             // Save the points that we've planned to encourage path reuse
             for (const point of result.path) {
-                roadMatrix.set(point.x, point.y, 1);
+                roadMatrix.set(point.x, point.y, RAMPART_WALK_COST_ROAD);
                 this.roomPlan.set(
                     point.x,
                     point.y,
                     structureToNumber[STRUCTURE_ROAD]
                 );
             }
-
-            // Let's look at the first few points of each path, and convert
-            // them to ramparts for safe passage into the walls
-            for (const point of result.path.slice(0, 2)) {
-                this.ramparts.set(point.x, point.y, MAX_VALUE);
-            }
         }
+
+        // Let's now rampart every road that's within range of our ramparts
+        // And inside of our base
+        const fillFromRamparts = matrixUtility.floodfill(
+            ramparts,
+            this.ramparts.clone()
+        );
+        matrixUtility.iterateMatrix((x, y) => {
+            if (
+                this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_ROAD] &&
+                fillFromExits.get(x, y) === 0 &&
+                fillFromRamparts.get(x, y) < RAMPART_GAP
+            ) {
+                this.ramparts.set(x, y, MAX_VALUE);
+            }
+        });
 
         // After doing our main ramparts, let's look for any important structures outside of them,
         // and place a rampart there as well
