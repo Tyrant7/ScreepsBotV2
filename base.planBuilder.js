@@ -835,14 +835,29 @@ class PlanBuilder {
                         exits,
                         matrixUtility.combineMatrices(this.tm, this.ramparts)
                     );
-                    const rampartPositions = [];
+                    const exteriorRamparts = [];
                     matrixUtility.iterateMatrix((x, y) => {
                         if (this.ramparts.get(x, y)) {
-                            rampartPositions.push({ x, y });
+                            for (let nextX = x - 1; nextX <= x + 1; nextX++) {
+                                for (
+                                    let nextY = y - 1;
+                                    nextY <= y + 1;
+                                    nextY++
+                                ) {
+                                    if (
+                                        fillFromExits.get(nextX, nextY) &&
+                                        !this.tm.get(nextX, nextY) &&
+                                        !this.ramparts.get(nextX, nextY)
+                                    ) {
+                                        exteriorRamparts.push({ x, y });
+                                        return;
+                                    }
+                                }
+                            }
                         }
                     });
                     const fillFromRamparts = matrixUtility.floodfill(
-                        rampartPositions,
+                        exteriorRamparts,
                         this.tm
                     );
                     for (let x = 0; x < 50; x++) {
