@@ -745,13 +745,62 @@ class PlanBuilder {
         });
 
         // Finally, we'll perform our mincut and set our base ramparts in our cost matrix
-        const ramparts = minCutToExit(sources, cutCosts);
+        const ramparts = minCutToExit(sources, cutCosts).filter(
+            (r) => !this.tm.get(r.x, r.y)
+        );
         this.ramparts = new PathFinder.CostMatrix();
         for (const rampart of ramparts) {
-            if (this.tm.get(rampart.x, rampart.y)) {
-                continue;
-            }
             this.ramparts.set(rampart.x, rampart.y, MAX_VALUE);
+        }
+
+        // After planning our exterior ramparts, let's build walks to access them in case of invasion
+        // First, we'll draw paths to each rampart, reusing them as we go
+        const roadMatrix = new PathFinder.CostMatrix();
+        matrixUtility.iterateMatrix((x, y) => {
+            if (this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_ROAD]) {
+                roadMatrix.set(x, y, 1);
+                return;
+            }
+            if (this.roomPlan.get(x, y) !== structureToNumber[EXCLUSION_ZONE]) {
+                roadMatrix.set(x, y, MAX_VALUE);
+                return;
+            }
+            if (this.tm.get(x, y)) {
+                roadMatrix.set(x, y, MAX_VALUE);
+                return;
+            }
+        });
+
+        // Then we'll path to each rampart, placing roads and a safe walkway up to them as we do
+        for (const rampart of ramparts) {
+            const result = PathFinder.search(
+                new RoomPosition(rampart.x, rampart.y, this.ri.room.name),
+                { pos: this.corePos, range: RAMPART_GAP },
+                {
+                    plainCost: CONNECTIVE_ROAD_PENALTY_PLAINS,
+                    swampCost: CONNECTIVE_ROAD_PENALTY_SWAMP,
+                    maxRooms: 1,
+                    roomCallback: function (roomName) {
+                        return roadMatrix;
+                    },
+                }
+            );
+
+            // Save the points that we've planned to encourage path reuse
+            for (const point of result.path) {
+                roadMatrix.set(point.x, point.y, 1);
+                this.roomPlan.set(
+                    point.x,
+                    point.y,
+                    structureToNumber[STRUCTURE_ROAD]
+                );
+            }
+
+            // Let's look at the first few points of each path, and convert
+            // them to ramparts for safe passage into the walls
+            for (const point of result.path.slice(0, 2)) {
+                this.ramparts.set(point.x, point.y, MAX_VALUE);
+            }
         }
 
         // After doing our main ramparts, let's look for any important structures outside of them,
