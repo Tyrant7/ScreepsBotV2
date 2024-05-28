@@ -172,12 +172,13 @@ class PlanBuilder {
     }
 
     /**
-     * Resorts the buildable spaces based on the given compare function.
+     * Runs a cleanup to filter bad spaces, then resorts the buildable spaces based on the given compare function.
      * @param {(a: { x: number, y: number },
      *          b: { x: number, y: number }) => number} compareFn A function returning a number
      * to use for sort order. A negative number indicates a before b, and a positive indicates b before a.
      */
     resortSpaces(compareFn) {
+        this.filterBadSpaces();
         this.spaces.sort(compareFn);
     }
 
