@@ -568,8 +568,8 @@ class PlanBuilder {
                 this.roomPlan
             );
         }
-        // Remove this space so we don't place another here to
-        // consolidate roads if the stamp is only walkable structures
+        // Remove this space so we don't place another in the exact same place
+        // while attempting to consolidate roads if the stamp is only roads
         this.spaces = this.spaces.filter((space) => space !== bestStampPos);
         return bestStampPos;
     }
