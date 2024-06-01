@@ -2,11 +2,13 @@ const overlay = require("./overlay");
 const matrixUtility = require("./base.matrixUtility");
 const stamps = require("./base.stamps");
 const PlanBuilder = require("./base.planBuilder");
+const RCLPlanner = require("./base.RCLPlanner");
 const {
     MAX_VALUE,
     EXCLUSION_ZONE,
     structureToNumber,
     numberToStructure,
+    MAX_RCL,
 } = require("./base.planningConstants");
 
 const WEIGHT_CONTROLLER = 1.2;
@@ -99,6 +101,14 @@ class BasePlanner {
             this.roomPlan = structures;
             this.ramparts = ramparts;
 
+            // Plan build RCLs
+            const rclPlanner = new RCLPlanner();
+            this.rclPlans = rclPlanner.planBuildRCLs(
+                this.roomPlan,
+                this.ramparts,
+                planBuilder.floodfillFromCore
+            );
+
             console.log(
                 "planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!"
             );
@@ -111,7 +121,7 @@ class BasePlanner {
         ]);
         overlay.visualizeBasePlan(
             roomInfo.room.name,
-            this.roomPlan,
+            this.rclPlans[(Game.time % MAX_RCL) + 1],
             this.ramparts,
             mapping
         );

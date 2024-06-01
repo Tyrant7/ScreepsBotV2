@@ -34,6 +34,10 @@ for (const key in CONTROLLER_STRUCTURES) {
     );
 }
 
+const MAX_RCL = parseInt(
+    Object.keys(CONTROLLER_STRUCTURES[STRUCTURE_ROAD]).slice(-1)
+);
+
 module.exports = {
     MAX_VALUE,
     MIN_BUILD_AREA,
@@ -42,4 +46,5 @@ module.exports = {
     structureToNumber,
     numberToStructure,
     MAX_STRUCTURES,
+    MAX_RCL,
 };
