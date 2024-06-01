@@ -710,7 +710,8 @@ class PlanBuilder {
 
     /**
      * Uses Clarkok's mincut implementation to protect the base in the fewest number of ramparts.
-     * Also places ramparts over any important exposed structures, like links.
+     * Also places ramparts over any important exposed structures, like links, and creates safe walkways
+     * to reach the exterior ramparts in case of an attack.
      */
     planRamparts() {
         const { minCutToExit } = require("./base.mincut");
@@ -750,7 +751,7 @@ class PlanBuilder {
         });
 
         // Finally, we'll perform our mincut and set our base ramparts in our cost matrix
-        const ramparts = minCutToExit(sources, cutCosts).filter(
+        let ramparts = minCutToExit(sources, cutCosts).filter(
             (r) => !this.tm.get(r.x, r.y)
         );
         this.ramparts = new PathFinder.CostMatrix();
@@ -769,6 +770,43 @@ class PlanBuilder {
             exits,
             matrixUtility.combineMatrices(this.tm, this.ramparts)
         );
+
+        // If our upgrader container is inside of our ramparts,
+        // let's replan ramparts but leave a larger space around it
+        if (this.upgraderContainer) {
+            if (
+                !fillFromExits.get(
+                    this.upgraderContainer.x,
+                    this.upgraderContainer.y
+                )
+            ) {
+                // Container must be inside ramparts
+                // Add it to our list of considerations
+                const ff = matrixUtility.floodfill(
+                    this.upgraderContainer,
+                    new PathFinder.CostMatrix()
+                );
+                matrixUtility.iterateMatrix((x, y) => {
+                    if (ff.get(x, y) <= RAMPART_GAP) {
+                        sources.push({ x, y });
+                    }
+                });
+
+                // Replan our ramparts
+                ramparts = minCutToExit(sources, cutCosts).filter(
+                    (r) => !this.tm.get(r.x, r.y)
+                );
+                this.ramparts = new PathFinder.CostMatrix();
+                for (const rampart of ramparts) {
+                    this.ramparts.set(rampart.x, rampart.y, MAX_VALUE);
+                    this.roomPlan.set(
+                        rampart.x,
+                        rampart.y,
+                        structureToNumber[STRUCTURE_ROAD]
+                    );
+                }
+            }
+        }
 
         // After planning our exterior ramparts, let's build walks to access them in case of invasion
         // First, we'll draw paths to each rampart, reusing them as we go
