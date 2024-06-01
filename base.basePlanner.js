@@ -19,7 +19,7 @@ const STAMP_COUNT_LAB = 1;
 
 class BasePlanner {
     run(roomInfo) {
-        if (Game.cpu.bucket <= 200) {
+        if (Game.cpu.bucket <= 250) {
             console.log("bucket is empty");
             return;
         }

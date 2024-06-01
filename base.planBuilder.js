@@ -8,13 +8,14 @@ const {
     EXCLUSION_ZONE,
     structureToNumber,
 } = require("./base.planningConstants");
+const overlay = require("./overlay");
 
 const MAX_STAMP_ATTEMPTS = 20;
 const RAMPART_GAP = 3;
 
-const RAMPART_WALK_COST_ROAD = 1;
-const RAMPART_WALK_COST_PLAINS = 3;
-const RAMPART_WALK_COST_SWAMP = 4;
+const RAMPART_WALK_COST_ROAD = 5;
+const RAMPART_WALK_COST_PLAINS = 11;
+const RAMPART_WALK_COST_SWAMP = 11;
 
 const CONNECTIVE_ROAD_PENALTY_PLAINS = 3;
 const CONNECTIVE_ROAD_PENALTY_SWAMP = 5;
@@ -757,17 +758,11 @@ class PlanBuilder {
         this.ramparts = new PathFinder.CostMatrix();
         for (const rampart of ramparts) {
             this.ramparts.set(rampart.x, rampart.y, MAX_VALUE);
-            this.roomPlan.set(
-                rampart.x,
-                rampart.y,
-                structureToNumber[STRUCTURE_ROAD]
-            );
         }
 
         // Figure out where is inside our ramparts
-        const exits = this.ri.room.find(FIND_EXIT);
-        const fillFromExits = matrixUtility.floodfill(
-            exits,
+        let fillFromExits = matrixUtility.floodfill(
+            this.ri.room.find(FIND_EXIT),
             matrixUtility.combineMatrices(this.tm, this.ramparts)
         );
 
@@ -799,48 +794,55 @@ class PlanBuilder {
                 this.ramparts = new PathFinder.CostMatrix();
                 for (const rampart of ramparts) {
                     this.ramparts.set(rampart.x, rampart.y, MAX_VALUE);
-                    this.roomPlan.set(
-                        rampart.x,
-                        rampart.y,
-                        structureToNumber[STRUCTURE_ROAD]
-                    );
                 }
+                fillFromExits = matrixUtility.floodfill(
+                    this.ri.room.find(FIND_EXIT),
+                    matrixUtility.combineMatrices(this.tm, this.ramparts)
+                );
             }
+        }
+
+        // Place roads under our ramparts for convenient access
+        for (const rampart of ramparts) {
+            this.roomPlan.set(
+                rampart.x,
+                rampart.y,
+                structureToNumber[STRUCTURE_ROAD]
+            );
         }
 
         // After planning our exterior ramparts, let's build walks to access them in case of invasion
         // First, we'll draw paths to each rampart, reusing them as we go
         const roadMatrix = new PathFinder.CostMatrix();
         matrixUtility.iterateMatrix((x, y) => {
+            if (this.ramparts.get(x, y)) {
+                roadMatrix.set(x, y, RAMPART_WALK_COST_ROAD);
+                return;
+            }
             if (fillFromExits.get(x, y)) {
                 roadMatrix.set(x, y, MAX_VALUE);
+                return;
             }
             if (this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_ROAD]) {
                 roadMatrix.set(x, y, RAMPART_WALK_COST_ROAD);
                 return;
             }
-            if (
-                this.roomPlan.get(x, y) &&
-                this.roomPlan.get(x, y) !== structureToNumber[EXCLUSION_ZONE]
-            ) {
+            if (this.roomPlan.get(x, y) === structureToNumber[EXCLUSION_ZONE]) {
+                // Use terrain value
+                return;
+            }
+            if (this.roomPlan.get(x, y)) {
                 roadMatrix.set(x, y, MAX_VALUE);
                 return;
             }
         });
 
         // Then we'll path to each rampart, placing roads and a safe walkway up to them as we do
-        ramparts.sort((a, b) => {
-            return (
-                Math.min(
-                    Math.abs(a.x - this.corePos.x),
-                    Math.abs(a.y - this.corePos.y)
-                ) -
-                Math.min(
-                    Math.abs(b.x - this.corePos.x),
-                    Math.abs(b.y - this.corePos.y)
-                )
-            );
-        });
+        ramparts.sort(
+            (a, b) =>
+                this.floodfillFromCore.get(b.x, b.y) -
+                this.floodfillFromCore.get(a.x, a.y)
+        );
         for (const rampart of ramparts) {
             const result = PathFinder.search(
                 new RoomPosition(rampart.x, rampart.y, this.ri.room.name),
