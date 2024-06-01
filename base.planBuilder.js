@@ -713,8 +713,17 @@ class PlanBuilder {
      * Uses Clarkok's mincut implementation to protect the base in the fewest number of ramparts.
      * Also places ramparts over any important exposed structures, like links, and creates safe walkways
      * to reach the exterior ramparts in case of an attack.
+     * @param {boolean} makeWalks Should we make safe walks up to our ramparts?
+     * @param {boolean} fitUpgraderContainer Should we plan our ramparts to fit our
+     * upgrader container if it's close to our main base?
+     * @param {boolean} rampartExteriorStructures Should we place a rampart over important structures like
+     * links if they're outside of our main ramparts?
      */
-    planRamparts() {
+    planRamparts(
+        makeWalks = true,
+        fitUpgraderContainer = true,
+        rampartExteriorStructures = true
+    ) {
         const { minCutToExit } = require("./base.mincut");
 
         // First let's figure out where all of our important structures are
@@ -768,107 +777,119 @@ class PlanBuilder {
 
         // If our upgrader container is inside of our ramparts,
         // let's replan ramparts but leave a larger space around it
-        if (this.upgraderContainer) {
-            if (
-                !fillFromExits.get(
-                    this.upgraderContainer.x,
-                    this.upgraderContainer.y
-                )
-            ) {
-                // Container must be inside ramparts
-                // Add it to our list of considerations
-                const ff = matrixUtility.floodfill(
-                    this.upgraderContainer,
-                    new PathFinder.CostMatrix()
-                );
-                matrixUtility.iterateMatrix((x, y) => {
-                    if (ff.get(x, y) <= RAMPART_GAP) {
-                        sources.push({ x, y });
+        if (fitUpgraderContainer) {
+            if (this.upgraderContainer) {
+                if (
+                    !fillFromExits.get(
+                        this.upgraderContainer.x,
+                        this.upgraderContainer.y
+                    )
+                ) {
+                    // Container must be inside ramparts
+                    // Add it to our list of considerations
+                    const ff = matrixUtility.floodfill(
+                        this.upgraderContainer,
+                        new PathFinder.CostMatrix()
+                    );
+                    matrixUtility.iterateMatrix((x, y) => {
+                        if (ff.get(x, y) <= RAMPART_GAP) {
+                            sources.push({ x, y });
+                        }
+                    });
+
+                    // Replan our ramparts
+                    ramparts = minCutToExit(sources, cutCosts).filter(
+                        (r) => !this.tm.get(r.x, r.y)
+                    );
+                    this.ramparts = new PathFinder.CostMatrix();
+                    for (const rampart of ramparts) {
+                        this.ramparts.set(rampart.x, rampart.y, MAX_VALUE);
                     }
-                });
-
-                // Replan our ramparts
-                ramparts = minCutToExit(sources, cutCosts).filter(
-                    (r) => !this.tm.get(r.x, r.y)
-                );
-                this.ramparts = new PathFinder.CostMatrix();
-                for (const rampart of ramparts) {
-                    this.ramparts.set(rampart.x, rampart.y, MAX_VALUE);
+                    fillFromExits = matrixUtility.floodfill(
+                        this.ri.room.find(FIND_EXIT),
+                        matrixUtility.combineMatrices(this.tm, this.ramparts)
+                    );
                 }
-                fillFromExits = matrixUtility.floodfill(
-                    this.ri.room.find(FIND_EXIT),
-                    matrixUtility.combineMatrices(this.tm, this.ramparts)
-                );
             }
         }
 
-        // Place roads under our ramparts for convenient access
-        for (const rampart of ramparts) {
-            this.roomPlan.set(
-                rampart.x,
-                rampart.y,
-                structureToNumber[STRUCTURE_ROAD]
-            );
-        }
-
-        // After planning our exterior ramparts, let's build walks to access them in case of invasion
-        // First, we'll draw paths to each rampart, reusing them as we go
-        const roadMatrix = new PathFinder.CostMatrix();
-        matrixUtility.iterateMatrix((x, y) => {
-            if (this.ramparts.get(x, y)) {
-                roadMatrix.set(x, y, RAMPART_WALK_COST_ROAD);
-                return;
-            }
-            if (fillFromExits.get(x, y)) {
-                roadMatrix.set(x, y, MAX_VALUE);
-                return;
-            }
-            if (this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_ROAD]) {
-                roadMatrix.set(x, y, RAMPART_WALK_COST_ROAD);
-                return;
-            }
-            if (this.roomPlan.get(x, y) === structureToNumber[EXCLUSION_ZONE]) {
-                // Use terrain value
-                return;
-            }
-            if (this.roomPlan.get(x, y)) {
-                roadMatrix.set(x, y, MAX_VALUE);
-                return;
-            }
-        });
-
-        // Then we'll path to each rampart, placing roads and a safe walkway up to them as we do
-        ramparts.sort(
-            (a, b) =>
-                this.floodfillFromCore.get(b.x, b.y) -
-                this.floodfillFromCore.get(a.x, a.y)
-        );
-        for (const rampart of ramparts) {
-            const result = PathFinder.search(
-                new RoomPosition(rampart.x, rampart.y, this.ri.room.name),
-                { pos: this.corePos, range: RAMPART_GAP },
-                {
-                    plainCost: RAMPART_WALK_COST_PLAINS,
-                    swampCost: RAMPART_WALK_COST_SWAMP,
-                    maxRooms: 1,
-                    roomCallback: function (roomName) {
-                        return roadMatrix;
-                    },
-                }
-            );
-
-            if (result.incomplete) {
-                console.log("Incomplete path with " + JSON.stringify(rampart));
-            }
-
-            // Save the points that we've planned to encourage path reuse
-            for (const point of result.path) {
-                roadMatrix.set(point.x, point.y, RAMPART_WALK_COST_ROAD);
+        if (makeWalks) {
+            // Place roads under our ramparts for convenient access
+            for (const rampart of ramparts) {
                 this.roomPlan.set(
-                    point.x,
-                    point.y,
+                    rampart.x,
+                    rampart.y,
                     structureToNumber[STRUCTURE_ROAD]
                 );
+            }
+
+            // After planning our exterior ramparts, let's build walks to access them in case of invasion
+            // First, we'll draw paths to each rampart, reusing them as we go
+            const roadMatrix = new PathFinder.CostMatrix();
+            matrixUtility.iterateMatrix((x, y) => {
+                if (this.ramparts.get(x, y)) {
+                    roadMatrix.set(x, y, RAMPART_WALK_COST_ROAD);
+                    return;
+                }
+                if (fillFromExits.get(x, y)) {
+                    roadMatrix.set(x, y, MAX_VALUE);
+                    return;
+                }
+                if (
+                    this.roomPlan.get(x, y) ===
+                    structureToNumber[STRUCTURE_ROAD]
+                ) {
+                    roadMatrix.set(x, y, RAMPART_WALK_COST_ROAD);
+                    return;
+                }
+                if (
+                    this.roomPlan.get(x, y) ===
+                    structureToNumber[EXCLUSION_ZONE]
+                ) {
+                    // Use terrain value
+                    return;
+                }
+                if (this.roomPlan.get(x, y)) {
+                    roadMatrix.set(x, y, MAX_VALUE);
+                    return;
+                }
+            });
+
+            // Then we'll path to each rampart, placing roads and a safe walkway up to them as we do
+            ramparts.sort(
+                (a, b) =>
+                    this.floodfillFromCore.get(b.x, b.y) -
+                    this.floodfillFromCore.get(a.x, a.y)
+            );
+            for (const rampart of ramparts) {
+                const result = PathFinder.search(
+                    new RoomPosition(rampart.x, rampart.y, this.ri.room.name),
+                    { pos: this.corePos, range: RAMPART_GAP },
+                    {
+                        plainCost: RAMPART_WALK_COST_PLAINS,
+                        swampCost: RAMPART_WALK_COST_SWAMP,
+                        maxRooms: 1,
+                        roomCallback: function (roomName) {
+                            return roadMatrix;
+                        },
+                    }
+                );
+
+                if (result.incomplete) {
+                    console.log(
+                        "Incomplete path with " + JSON.stringify(rampart)
+                    );
+                }
+
+                // Save the points that we've planned to encourage path reuse
+                for (const point of result.path) {
+                    roadMatrix.set(point.x, point.y, RAMPART_WALK_COST_ROAD);
+                    this.roomPlan.set(
+                        point.x,
+                        point.y,
+                        structureToNumber[STRUCTURE_ROAD]
+                    );
+                }
             }
         }
 
@@ -890,15 +911,17 @@ class PlanBuilder {
 
         // After doing our main ramparts, let's look for any important structures outside of them,
         // and place a rampart there as well
-        const importantStructures = [structureToNumber[STRUCTURE_LINK]];
-        matrixUtility.iterateMatrix((x, y) => {
-            if (
-                fillFromExits.get(x, y) &&
-                importantStructures.includes(this.roomPlan.get(x, y))
-            ) {
-                this.ramparts.set(x, y, MAX_VALUE);
-            }
-        });
+        if (rampartExteriorStructures) {
+            const importantStructures = [structureToNumber[STRUCTURE_LINK]];
+            matrixUtility.iterateMatrix((x, y) => {
+                if (
+                    fillFromExits.get(x, y) &&
+                    importantStructures.includes(this.roomPlan.get(x, y))
+                ) {
+                    this.ramparts.set(x, y, MAX_VALUE);
+                }
+            });
+        }
     }
 
     /**
