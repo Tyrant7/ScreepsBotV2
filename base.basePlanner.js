@@ -106,7 +106,10 @@ class BasePlanner {
             this.rclPlans = rclPlanner.planBuildRCLs(
                 this.roomPlan,
                 this.ramparts,
-                planBuilder.floodfillFromCore
+                planBuilder.corePos,
+                terrainMatrix,
+                roomInfo,
+                planBuilder.upgraderContainer
             );
 
             console.log(
