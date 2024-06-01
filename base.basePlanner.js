@@ -6,6 +6,7 @@ const {
     MAX_VALUE,
     EXCLUSION_ZONE,
     structureToNumber,
+    numberToStructure,
 } = require("./base.planningConstants");
 
 const WEIGHT_CONTROLLER = 1.2;
@@ -105,7 +106,9 @@ class BasePlanner {
             // overlay.visualizeCostMatrix(roomInfo.room.name, weightMatrix);
         }
 
-        const mapping = _.omit(structureToNumber, [EXCLUSION_ZONE]);
+        const mapping = _.omit(numberToStructure, [
+            structureToNumber[EXCLUSION_ZONE],
+        ]);
         overlay.visualizeBasePlan(
             roomInfo.room.name,
             this.roomPlan,

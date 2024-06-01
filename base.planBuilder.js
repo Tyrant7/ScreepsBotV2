@@ -7,8 +7,8 @@ const {
     MIN_BUILD_AREA,
     EXCLUSION_ZONE,
     structureToNumber,
+    MAX_STRUCTURES,
 } = require("./base.planningConstants");
-const overlay = require("./overlay");
 
 const MAX_STAMP_ATTEMPTS = 20;
 const RAMPART_GAP = 3;
@@ -19,13 +19,6 @@ const RAMPART_WALK_COST_SWAMP = 11;
 
 const CONNECTIVE_ROAD_PENALTY_PLAINS = 3;
 const CONNECTIVE_ROAD_PENALTY_SWAMP = 5;
-
-const MAX_STRUCTURES = {};
-for (const key in CONTROLLER_STRUCTURES) {
-    MAX_STRUCTURES[key] = parseInt(
-        Object.values(CONTROLLER_STRUCTURES[key]).slice(-1)
-    );
-}
 
 const NO_RAMPART_STRUCTURES = [
     structureToNumber[EXCLUSION_ZONE],

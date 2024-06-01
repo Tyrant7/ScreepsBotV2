@@ -180,11 +180,8 @@ module.exports = {
                 if (rampartMatrix.get(x, y)) {
                     visual.structure(x, y, STRUCTURE_RAMPART);
                 }
-                const structureType = Object.keys(mapping).find(
-                    (s) => mapping[s] === value
-                );
-                if (structureType) {
-                    visual.structure(x, y, structureType);
+                if (mapping[value]) {
+                    visual.structure(x, y, mapping[value]);
                 }
             }
         }

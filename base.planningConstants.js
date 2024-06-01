@@ -25,10 +25,21 @@ const structureToNumber = {
     [EXCLUSION_ZONE]: 1,
 };
 
+const numberToStructure = _.invert(structureToNumber);
+
+const MAX_STRUCTURES = {};
+for (const key in CONTROLLER_STRUCTURES) {
+    MAX_STRUCTURES[key] = parseInt(
+        Object.values(CONTROLLER_STRUCTURES[key]).slice(-1)
+    );
+}
+
 module.exports = {
     MAX_VALUE,
     MIN_BUILD_AREA,
     MAX_BUILD_AREA,
     EXCLUSION_ZONE,
     structureToNumber,
+    numberToStructure,
+    MAX_STRUCTURES,
 };
