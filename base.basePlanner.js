@@ -20,8 +20,6 @@ const STAMP_COUNT_SPAWN = 2;
 const STAMP_COUNT_EXTENSION = 2;
 const STAMP_COUNT_LAB = 1;
 
-const RAMPART_RCL = 4;
-
 class BasePlanner {
     run(roomInfo) {
         if (Game.cpu.bucket <= 250) {
@@ -100,19 +98,18 @@ class BasePlanner {
             // Cleanup any roads placed over terrain
             planBuilder.cleanup();
             const { structures, ramparts } = planBuilder.getProduct();
-            this.roomPlan = structures;
-            this.ramparts = ramparts;
 
             // Plan build RCLs
             const rclPlanner = new RCLPlanner();
-            this.rclPlans = rclPlanner.planBuildRCLs(
-                this.roomPlan,
-                this.ramparts,
+            const { rclStructures, rclRamparts } = rclPlanner.planBuildRCLs(
+                structures,
+                ramparts,
                 planBuilder.corePos,
                 roomInfo,
-                planBuilder.upgraderContainer,
-                RAMPART_RCL
+                planBuilder.upgraderContainer
             );
+            this.rclStructures = rclStructures;
+            this.rclRamparts = rclRamparts;
 
             console.log(
                 "planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!"
@@ -124,12 +121,11 @@ class BasePlanner {
         const mapping = _.omit(numberToStructure, [
             structureToNumber[EXCLUSION_ZONE],
         ]);
+        const rclVis = (Game.time % MAX_RCL) + 1;
         overlay.visualizeBasePlan(
             roomInfo.room.name,
-            this.rclPlans[(Game.time % MAX_RCL) + 1],
-            (Game.time % MAX_RCL) + 1 >= RAMPART_RCL
-                ? this.ramparts
-                : new PathFinder.CostMatrix(),
+            this.rclStructures[rclVis],
+            this.rclRamparts[rclVis],
             mapping
         );
     }

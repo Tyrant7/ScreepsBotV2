@@ -14,6 +14,8 @@ const UPGRADER_CONTAINER_RCL = 3;
 const MINERAL_CONTAINER_RCL = 6;
 const MISC_CONTAINER_RCL = 3;
 
+const RAMPART_RCL = 4;
+
 const STRUCTURE_GROUP_SIZE = 10;
 
 class RCLPlanner {
@@ -22,10 +24,13 @@ class RCLPlanner {
         ramparts,
         corePos,
         roomInfo,
-        upgraderContainerPos,
-        RAMPART_RCL
+        upgraderContainerPos
     ) {
-        const RCLPlans = Array.from(
+        const rclStructures = Array.from(
+            { length: MAX_RCL + 1 },
+            () => new PathFinder.CostMatrix()
+        );
+        const rclRamparts = Array.from(
             { length: MAX_RCL + 1 },
             () => new PathFinder.CostMatrix()
         );
@@ -91,7 +96,7 @@ class RCLPlanner {
                     ([key, value]) => value > count
                 )[0];
 
-                RCLPlans[currentRCL].set(
+                rclStructures[currentRCL].set(
                     structure.x,
                     structure.y,
                     structureType
@@ -135,7 +140,11 @@ class RCLPlanner {
                 structures.get(x, y) === structureToNumber[STRUCTURE_CONTAINER]
             ) {
                 const rcl = identifyContainerRCL({ x, y });
-                RCLPlans[rcl].set(x, y, structureToNumber[STRUCTURE_CONTAINER]);
+                rclStructures[rcl].set(
+                    x,
+                    y,
+                    structureToNumber[STRUCTURE_CONTAINER]
+                );
             }
         });
 
@@ -162,8 +171,15 @@ class RCLPlanner {
             const currentRCL = Object.entries(
                 CONTROLLER_STRUCTURES[STRUCTURE_TOWER]
             ).find(([key, value]) => value >= placedTowers.length)[0];
-            RCLPlans[currentRCL].set(next.x, next.y, towerNumber);
+            rclStructures[currentRCL].set(next.x, next.y, towerNumber);
         }
+
+        // Finally, we'll place ramparts in plans above our minimum threshold
+        matrixUtility.iterateMatrix((x, y) => {
+            if (ramparts.get(x, y)) {
+                rclRamparts[RAMPART_RCL].set(x, y, MAX_VALUE);
+            }
+        });
 
         // Now that we've planned out all of the basic structures, we can revisit our exceptions
         // For roads, let's ensure that we only plan roads to connect what we want to
@@ -176,7 +192,7 @@ class RCLPlanner {
             roadMatrix.set(x, y, MAX_VALUE);
         });
         let i = 0;
-        for (const rcl of RCLPlans) {
+        for (const rcl of rclStructures) {
             const rclStructures = [];
             const containers = [];
             matrixUtility.iterateMatrix((x, y) => {
@@ -230,16 +246,20 @@ class RCLPlanner {
         }
 
         // Now we have a plan of our RCL deltas, let's combine each plan with all lower plans
-        for (let i = 0; i < RCLPlans.length; i++) {
+        for (let i = 0; i < rclStructures.length; i++) {
             for (let past = 0; past < i; past++) {
-                RCLPlans[i] = matrixUtility.combineMatrices(
-                    RCLPlans[i],
-                    RCLPlans[past]
+                rclStructures[i] = matrixUtility.combineMatrices(
+                    rclStructures[i],
+                    rclStructures[past]
+                );
+                rclRamparts[i] = matrixUtility.combineMatrices(
+                    rclRamparts[i],
+                    rclRamparts[past]
                 );
             }
         }
 
-        return RCLPlans;
+        return { rclStructures, rclRamparts };
     }
 }
 
