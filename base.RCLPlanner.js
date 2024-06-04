@@ -140,6 +140,32 @@ class RCLPlanner {
             }
         });
 
+        // Finally, we'll push towers into our plan
+        // We want to spread out our towers, so for each one,
+        // we'll build the furthest one from the existing towers
+        const towerNumber = structureToNumber[STRUCTURE_TOWER];
+        const placedTowers = [];
+        const remainingTowers = [...plannedStructures[towerNumber]];
+        function sumDistance(tower) {
+            return placedTowers.reduce(
+                (sum, t) =>
+                    sum +
+                    Math.max(Math.abs(t.x - tower.x) + Math.abs(t.y - tower.y)),
+                0
+            );
+        }
+        while (remainingTowers.length) {
+            const next = remainingTowers.reduce((best, curr) => {
+                return sumDistance(curr) > sumDistance(best) ? curr : best;
+            });
+            placedTowers.push(next);
+            remainingTowers.splice(remainingTowers.indexOf(next), 1);
+            const currentRCL = Object.entries(
+                CONTROLLER_STRUCTURES[STRUCTURE_TOWER]
+            ).find(([key, value]) => value >= placedTowers.length)[0];
+            RCLPlans[currentRCL].set(next.x, next.y, towerNumber);
+        }
+
         // Now that we've planned out all of the basic structures, we can revisit our exceptions
         // For roads, let's ensure that we only plan roads to connect what we want to
         const roadMatrix = new PathFinder.CostMatrix();
