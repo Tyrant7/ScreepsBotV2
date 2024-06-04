@@ -1,5 +1,4 @@
 const matrixUtility = require("./base.matrixUtility");
-const utility = require("./base.planningUtility");
 const { core } = require("./base.stamps");
 const {
     MAX_VALUE,
@@ -22,9 +21,9 @@ class RCLPlanner {
         structures,
         ramparts,
         corePos,
-        terrainMatrix,
         roomInfo,
-        upgraderContainerPos
+        upgraderContainerPos,
+        RAMPART_RCL
     ) {
         const RCLPlans = Array.from(
             { length: MAX_RCL + 1 },
@@ -140,7 +139,7 @@ class RCLPlanner {
             }
         });
 
-        // Finally, we'll push towers into our plan
+        // Next, we'll push towers into our plan
         // We want to spread out our towers, so for each one,
         // we'll build the furthest one from the existing towers
         const towerNumber = structureToNumber[STRUCTURE_TOWER];
@@ -176,11 +175,15 @@ class RCLPlanner {
             }
             roadMatrix.set(x, y, MAX_VALUE);
         });
+        let i = 0;
         for (const rcl of RCLPlans) {
             const rclStructures = [];
             const containers = [];
             matrixUtility.iterateMatrix((x, y) => {
                 if (rcl.get(x, y)) {
+                    rclStructures.push({ x, y });
+                }
+                if (i >= RAMPART_RCL && ramparts.get(x, y)) {
                     rclStructures.push({ x, y });
                 }
                 if (rcl.get(x, y) === structureToNumber[STRUCTURE_CONTAINER]) {
@@ -223,6 +226,7 @@ class RCLPlanner {
                     }
                 }
             }
+            i++;
         }
 
         // Now we have a plan of our RCL deltas, let's combine each plan with all lower plans

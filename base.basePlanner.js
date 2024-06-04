@@ -20,6 +20,8 @@ const STAMP_COUNT_SPAWN = 2;
 const STAMP_COUNT_EXTENSION = 2;
 const STAMP_COUNT_LAB = 1;
 
+const RAMPART_RCL = 4;
+
 class BasePlanner {
     run(roomInfo) {
         if (Game.cpu.bucket <= 250) {
@@ -107,9 +109,9 @@ class BasePlanner {
                 this.roomPlan,
                 this.ramparts,
                 planBuilder.corePos,
-                terrainMatrix,
                 roomInfo,
-                planBuilder.upgraderContainer
+                planBuilder.upgraderContainer,
+                RAMPART_RCL
             );
 
             console.log(
@@ -125,7 +127,9 @@ class BasePlanner {
         overlay.visualizeBasePlan(
             roomInfo.room.name,
             this.rclPlans[(Game.time % MAX_RCL) + 1],
-            this.ramparts,
+            (Game.time % MAX_RCL) + 1 >= RAMPART_RCL
+                ? this.ramparts
+                : new PathFinder.CostMatrix(),
             mapping
         );
     }
