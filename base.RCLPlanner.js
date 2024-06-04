@@ -15,6 +15,8 @@ const UPGRADER_CONTAINER_RCL = 3;
 const MINERAL_CONTAINER_RCL = 6;
 const MISC_CONTAINER_RCL = 3;
 
+const STRUCTURE_GROUP_SIZE = 10;
+
 class RCLPlanner {
     planBuildRCLs(
         structures,
@@ -32,7 +34,6 @@ class RCLPlanner {
         // We'll place these based on different criteria
         const skipDistancePlans = [
             STRUCTURE_ROAD,
-            STRUCTURE_LINK,
             STRUCTURE_CONTAINER,
             STRUCTURE_TOWER,
         ];
@@ -54,28 +55,36 @@ class RCLPlanner {
 
         // Then iterate over each structure type, and plan them closest to furthest from the core,
         // moving up an RCL when we hit the placement limit for the current one
-        const weightMatrix = matrixUtility.floodfill(
-            corePos,
-            terrainMatrix.clone()
-        );
         for (const structureType in plannedStructures) {
             if (skipDistancePlans.includes(numberToStructure[structureType])) {
                 continue;
             }
 
-            while (plannedStructures[structureType].length) {
-                const structure = plannedStructures[structureType].reduce(
-                    (best, curr) =>
-                        weightMatrix.get(curr.x, curr.y) <
-                        weightMatrix.get(best.x, best.y)
+            const structures = [...plannedStructures[structureType]];
+            const sorted = [];
+            while (structures.length) {
+                let lastPos = corePos;
+                const currentGroup = [];
+                for (let i = 0; i < STRUCTURE_GROUP_SIZE; i++) {
+                    if (!structures.length) {
+                        break;
+                    }
+                    const closest = structures.reduce((best, curr) => {
+                        return Math.abs(lastPos.x - curr.x) +
+                            Math.abs(lastPos.y - curr.y) <
+                            Math.abs(lastPos.x - best.x) +
+                                Math.abs(lastPos.y - best.y)
                             ? curr
-                            : best
-                );
-                plannedStructures[structureType].splice(
-                    plannedStructures[structureType].indexOf(structure),
-                    1
-                );
+                            : best;
+                    });
+                    structures.splice(structures.indexOf(closest), 1);
+                    currentGroup.push(closest);
+                    lastPos = currentGroup[0];
+                }
+                sorted.push(...currentGroup);
+            }
 
+            for (const structure of sorted) {
                 const count = placedStructureCounts[structureType];
                 const mapping =
                     CONTROLLER_STRUCTURES[numberToStructure[structureType]];

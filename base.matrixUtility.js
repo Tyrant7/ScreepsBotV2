@@ -133,14 +133,14 @@ module.exports = {
 
                     // We're already marked this tile to be scored, or it's unwalkable and we should skip it
                     if (
-                        scoredPositions[(newX + 1) * 50 + newY] ||
+                        scoredPositions[newX * 50 + newY] ||
                         matrix.get(newX, newY) === MAX_VALUE
                     ) {
                         continue;
                     }
 
                     // Mark this next tile as scored
-                    scoredPositions[(newX + 1) * 50 + newY] = true;
+                    scoredPositions[newX * 50 + newY] = true;
                     nextQueue.push({ x: newX, y: newY });
                 }
             }
