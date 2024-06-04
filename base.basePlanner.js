@@ -27,7 +27,7 @@ class BasePlanner {
             return;
         }
 
-        if (!this.roomPlan) {
+        if (!this.rclStructures || !this.rclRamparts) {
             const cpu = Game.cpu.getUsed();
 
             // Generate our necessary matrices for planning
