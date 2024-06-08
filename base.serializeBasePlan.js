@@ -179,7 +179,10 @@ const runTests = (rclStructures, rclRamparts) => {
     );
     let rcl = 0;
     for (const plan of serializedPlans) {
-        console.log("RCL " + rcl + ": " + plan);
+        console.log(
+            // Wrap every 196 characters
+            "RCL " + rcl + ": " + plan.replace(/.{196}/g, "$&\n       ")
+        );
         rcl++;
     }
 };
