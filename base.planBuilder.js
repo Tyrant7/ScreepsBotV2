@@ -1040,6 +1040,7 @@ class PlanBuilder {
                         for (let y = 0; y < 50; y++) {
                             if (
                                 this.roomPlan.get(x, y) === 0 ||
+                                this.ramparts.get(x, y) ||
                                 NO_RAMPART_STRUCTURES.includes(
                                     this.roomPlan.get(x, y)
                                 )
