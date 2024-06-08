@@ -17,6 +17,9 @@ const RAMPART_RCL = 4;
 
 const STRUCTURE_GROUP_SIZE = 10;
 
+const SINGLE_USE_ROAD_PLAN_COST = 3;
+const MULTIPLE_USE_ROAD_PLAN_COST = 2;
+
 // We'll place these based on different criteria than simply when and where we're able to
 const SPECIAL_RCL_STRUCTURES = [
     STRUCTURE_ROAD,
@@ -213,7 +216,7 @@ class RCLPlanner {
             if (
                 this.structures.get(x, y) === structureToNumber[STRUCTURE_ROAD]
             ) {
-                roadMatrix.set(x, y, 3);
+                roadMatrix.set(x, y, SINGLE_USE_ROAD_PLAN_COST);
                 return;
             }
             roadMatrix.set(x, y, MAX_VALUE);
@@ -270,7 +273,11 @@ class RCLPlanner {
                         );
 
                         // Slightly encourage road reuse between paths
-                        roadMatrix.set(point.x, point.y, 2);
+                        roadMatrix.set(
+                            point.x,
+                            point.y,
+                            MULTIPLE_USE_ROAD_PLAN_COST
+                        );
                     }
                 }
             }
