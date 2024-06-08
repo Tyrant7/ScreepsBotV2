@@ -178,6 +178,15 @@ class RCLPlanner {
         matrixUtility.iterateMatrix((x, y) => {
             if (ramparts.get(x, y)) {
                 rclRamparts[RAMPART_RCL].set(x, y, MAX_VALUE);
+                if (
+                    structures.get(x, y) === structureToNumber[STRUCTURE_ROAD]
+                ) {
+                    rclStructures[RAMPART_RCL].set(
+                        x,
+                        y,
+                        structureToNumber[STRUCTURE_ROAD]
+                    );
+                }
             }
         });
 

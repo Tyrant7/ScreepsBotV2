@@ -127,8 +127,8 @@ class BasePlanner {
         const rclVis = (Game.time % MAX_RCL) + 1;
         overlay.visualizeBasePlan(
             roomInfo.room.name,
-            this.structures,
-            this.ramparts,
+            this.rclStructures[rclVis],
+            this.rclRamparts[rclVis],
             mapping
         );
     }
