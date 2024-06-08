@@ -74,10 +74,14 @@ class RCLPlanner {
                         break;
                     }
                     const closest = structures.reduce((best, curr) => {
-                        return Math.abs(lastPos.x - curr.x) +
-                            Math.abs(lastPos.y - curr.y) <
-                            Math.abs(lastPos.x - best.x) +
+                        return Math.max(
+                            Math.abs(lastPos.x - curr.x),
+                            Math.abs(lastPos.y - curr.y)
+                        ) <
+                            Math.max(
+                                Math.abs(lastPos.x - best.x),
                                 Math.abs(lastPos.y - best.y)
+                            )
                             ? curr
                             : best;
                     });
