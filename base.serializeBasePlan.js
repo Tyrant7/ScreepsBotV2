@@ -73,11 +73,9 @@ const serializeBasePlan = (rclStructures, rclRamparts) => {
 };
 
 const deserializeBasePlan = (serializedPlans, rcl) => {
-    const deserializedPlan = {
-        structures: new PathFinder.CostMatrix(),
-        ramparts: new PathFinder.CostMatrix(),
-    };
-    const isNumeric = (char) => !Number.isNaN(char);
+    const structures = new PathFinder.CostMatrix();
+    const ramparts = new PathFinder.CostMatrix();
+    const isNumeric = (char) => /^[+-]?\d+(\.\d+)?$/.test(char);
     for (let current = 0; current <= rcl; current++) {
         const plan = serializedPlans[current];
         let position = 0;
@@ -97,31 +95,21 @@ const deserializeBasePlan = (serializedPlans, rcl) => {
                     skip = plan[j] + skip;
                     continue;
                 }
+                break;
             }
             position += parseInt(skip) || 0;
 
-            console.log(parseInt(skip));
-
-            const x = position % 50;
-            const y = position / 50;
+            const x = position / 50;
+            const y = position % 50;
             const trueChar = char.toLowerCase();
             if (trueChar !== char) {
-                deserializedPlan.ramparts.set(x, y, MAX_VALUE);
+                ramparts.set(x, y, MAX_VALUE);
             }
-            deserializedPlan.structures.set(x, y, charToNumber[trueChar]);
+            structures.set(x, y, charToNumber[trueChar]);
             position++;
         }
     }
-
-    console.log("visualizing");
-    overlay.visualizeBasePlan(
-        "W7N7",
-        deserializedPlan.structures,
-        deserializedPlan.ramparts,
-        structureToNumber
-    );
-
-    iterateMatrix((x, y) => {});
+    return { structures, ramparts };
 };
 
 module.exports = { serializeBasePlan, deserializeBasePlan };

@@ -126,25 +126,29 @@ class BasePlanner {
                 rclStructures,
                 rclRamparts
             );
-            deserializeBasePlan(serializedPlans, 8);
+            const {
+                structures: deserializedStructures,
+                ramparts: deserializedRamparts,
+            } = deserializeBasePlan(serializedPlans, 8);
+
+            this.deserializedStructures = deserializedStructures;
+            this.deserializedRamparts = deserializedRamparts;
 
             console.log(
                 "planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!"
             );
         }
 
-        /*
         const mapping = _.omit(numberToStructure, [
             structureToNumber[EXCLUSION_ZONE],
         ]);
         const rclVis = (Game.time % MAX_RCL) + 1;
         overlay.visualizeBasePlan(
             roomInfo.room.name,
-            this.rclStructures[rclVis],
-            this.rclRamparts[rclVis],
+            this.deserializedStructures,
+            this.deserializedRamparts,
             mapping
         );
-        */
     }
 
     generateWeightMatrix(roomInfo, terrainMatrix, distanceTransform) {
