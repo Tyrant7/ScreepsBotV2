@@ -74,7 +74,10 @@ module.exports = {
         // no overlap with each other or terrain
         // Relative to the top left corner
         distancePoints: [
-            { x: 3, y: 3, range: 2 },
+            { x: 4, y: 3, range: 2 },
+            { x: 2, y: 3, range: 2 },
+            { x: 3, y: 4, range: 2 },
+            { x: 3, y: 2, range: 2 },
             { x: 3, y: 0, range: 0 },
             { x: 0, y: 3, range: 0 },
             { x: 6, y: 3, range: 0 },
