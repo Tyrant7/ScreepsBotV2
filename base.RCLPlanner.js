@@ -199,7 +199,7 @@ class RCLPlanner {
                 if (rcl.get(x, y)) {
                     rclStructures.push({ x, y });
                 }
-                if (i >= RAMPART_RCL && ramparts.get(x, y)) {
+                if (rclRamparts[i].get(x, y)) {
                     rclStructures.push({ x, y });
                 }
                 if (rcl.get(x, y) === structureToNumber[STRUCTURE_CONTAINER]) {

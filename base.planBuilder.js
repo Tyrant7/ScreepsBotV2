@@ -806,6 +806,7 @@ class PlanBuilder {
             }
         }
 
+        const interiorRamparts = new PathFinder.CostMatrix();
         if (makeWalks) {
             // Place roads under our ramparts for convenient access
             for (const rampart of ramparts) {
@@ -854,6 +855,7 @@ class PlanBuilder {
                     this.floodfillFromCore.get(b.x, b.y) -
                     this.floodfillFromCore.get(a.x, a.y)
             );
+            const keptRamparts = [];
             for (const rampart of ramparts) {
                 const result = PathFinder.search(
                     new RoomPosition(rampart.x, rampart.y, this.ri.room.name),
@@ -862,17 +864,41 @@ class PlanBuilder {
                         plainCost: RAMPART_WALK_COST_PLAINS,
                         swampCost: RAMPART_WALK_COST_SWAMP,
                         maxRooms: 1,
+                        maxops: 1000,
                         roomCallback: function (roomName) {
                             return roadMatrix;
                         },
                     }
                 );
 
+                // If we have any exterior ramparts that aren't accessible from within our base,
+                // meaning that terrain is probably in the way, let's instead directly rampart the structures
+                // that they're meant to protect inside of our base
                 if (result.incomplete) {
-                    console.log(
-                        "Incomplete path with " + JSON.stringify(rampart)
+                    // Remove the original rampart and road
+                    this.ramparts.set(rampart.x, rampart.y, 0);
+                    this.roomPlan.set(rampart.x, rampart.y, 0);
+
+                    // Find all structures that this rampart should have protected
+                    const fill = matrixUtility.floodfill(
+                        rampart,
+                        new PathFinder.CostMatrix()
                     );
+                    matrixUtility.iterateMatrix((x, y) => {
+                        if (
+                            fill.get(x, y) <= RAMPART_GAP &&
+                            this.roomPlan.get(x, y) &&
+                            !NO_RAMPART_STRUCTURES.includes(
+                                this.roomPlan.get(x, y)
+                            )
+                        ) {
+                            interiorRamparts.set(x, y, MAX_VALUE);
+                            this.ramparts.set(x, y, MAX_VALUE);
+                        }
+                    });
+                    continue;
                 }
+                keptRamparts.push(rampart);
 
                 // Save the points that we've planned to encourage path reuse
                 for (const point of result.path) {
@@ -884,6 +910,7 @@ class PlanBuilder {
                     );
                 }
             }
+            ramparts = keptRamparts;
         }
 
         // Let's now rampart every road that's within range of our ramparts
@@ -892,7 +919,11 @@ class PlanBuilder {
             ramparts,
             this.ramparts.clone()
         );
+
         matrixUtility.iterateMatrix((x, y) => {
+            if (interiorRamparts.get(x, y)) {
+                return;
+            }
             if (
                 this.roomPlan.get(x, y) === structureToNumber[STRUCTURE_ROAD] &&
                 fillFromExits.get(x, y) === 0 &&

@@ -99,6 +99,9 @@ class BasePlanner {
             planBuilder.cleanup();
             const { structures, ramparts } = planBuilder.getProduct();
 
+            this.structures = structures;
+            this.ramparts = ramparts;
+
             // Plan build RCLs
             const rclPlanner = new RCLPlanner();
             const { rclStructures, rclRamparts } = rclPlanner.planBuildRCLs(
@@ -124,8 +127,8 @@ class BasePlanner {
         const rclVis = (Game.time % MAX_RCL) + 1;
         overlay.visualizeBasePlan(
             roomInfo.room.name,
-            this.rclStructures[rclVis],
-            this.rclRamparts[rclVis],
+            this.structures,
+            this.ramparts,
             mapping
         );
     }
