@@ -254,6 +254,7 @@ class PlanBuilder {
                 plainCost: 2,
                 swampCost: 2,
                 maxRooms: 1,
+                maxOps: 2500,
                 roomCallback: function (roomName) {
                     return pathfindMatrix;
                 },
@@ -473,6 +474,7 @@ class PlanBuilder {
 
             const result = PathFinder.search(pathPoint, goals, {
                 maxRooms: 1,
+                maxOps: 2500,
                 roomCallback: function (roomName) {
                     return roadMatrix;
                 },
