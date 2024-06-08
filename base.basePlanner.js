@@ -33,8 +33,16 @@ class BasePlanner {
             return;
         }
 
-        if (!this.rclStructures || !this.rclRamparts) {
+        if (!this.serializedPlans) {
             const cpu = Game.cpu.getUsed();
+            this.printDebugMessage(
+                "-".repeat(20) +
+                    " Tyrant's Base Planner V1.0.0 " +
+                    "-".repeat(20)
+            );
+            this.printDebugMessage("Beginning plan creation...");
+
+            //#region Initialization
 
             // Generate our necessary matrices for planning
             const terrainMatrix = matrixUtility.generateTerrainMatrix(
@@ -49,7 +57,9 @@ class BasePlanner {
                 distanceTransform
             );
 
-            // PLANNING STARTS HERE //
+            //#endregion
+
+            //#region Room Plan
 
             const planBuilder = new PlanBuilder(
                 terrainMatrix,
@@ -105,10 +115,13 @@ class BasePlanner {
             planBuilder.cleanup();
             const { structures, ramparts } = planBuilder.getProduct();
 
-            this.structures = structures;
-            this.ramparts = ramparts;
+            //#endregion
 
-            // Plan build RCLs
+            this.printDebugMessage("Completed plan creation...");
+            this.printDebugMessage("Beginning RCL planning...");
+
+            //#region RCL planning
+
             const rclPlanner = new RCLPlanner(
                 structures,
                 planBuilder.corePos,
@@ -121,36 +134,35 @@ class BasePlanner {
             rclPlanner.planRoads(stamps.core);
             const { rclStructures, rclRamparts } = rclPlanner.getProduct();
 
-            this.rclStructures = rclStructures;
-            this.rclRamparts = rclRamparts;
+            //#endregion
 
-            const serializedPlans = serializeBasePlan(
+            this.printDebugMessage("Completed RCL planning...");
+            this.printDebugMessage("Beginning plan serialization...");
+
+            this.serializedPlans = serializeBasePlan(
                 rclStructures,
                 rclRamparts
             );
-            const {
-                structures: deserializedStructures,
-                ramparts: deserializedRamparts,
-            } = deserializeBasePlan(serializedPlans, 8);
 
-            this.deserializedStructures = deserializedStructures;
-            this.deserializedRamparts = deserializedRamparts;
-
-            runTests(rclStructures, rclRamparts);
-
-            console.log(
-                "planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!"
-            );
+            if (DEBUG.validateBasePlans) {
+                runTests(rclStructures, rclRamparts);
+                this.printDebugMessage(
+                    "planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!"
+                );
+            }
         }
 
         const mapping = _.omit(numberToStructure, [
             structureToNumber[EXCLUSION_ZONE],
         ]);
-        const rclVis = (Game.time % MAX_RCL) + 1;
+        const { structures, ramparts } = deserializeBasePlan(
+            this.serializedPlans,
+            (Game.time % MAX_RCL) + 1
+        );
         overlay.visualizeBasePlan(
             roomInfo.room.name,
-            this.deserializedStructures,
-            this.ramparts,
+            structures,
+            ramparts,
             mapping
         );
     }
@@ -195,6 +207,12 @@ class BasePlanner {
             ),
             MAX_VALUE - 1
         );
+    }
+
+    printDebugMessage(message) {
+        if (DEBUG.validateBasePlans) {
+            console.log(message);
+        }
     }
 }
 

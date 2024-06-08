@@ -24,8 +24,6 @@ const numberToChar = {
 const charToNumber = _.invert(numberToChar);
 
 const serializeBasePlan = (rclStructures, rclRamparts) => {
-    console.log("serializing plan!");
-
     const serializedPlans = Array.from(
         { length: rclStructures.length },
         () => ""
@@ -50,13 +48,6 @@ const serializeBasePlan = (rclStructures, rclRamparts) => {
             whiteSpace++;
         });
     }
-
-    console.log(
-        `serialized all base plans with a size of: ${roughSizeOfObject(
-            serializedPlans
-        )} bytes`
-    );
-
     return serializedPlans;
 };
 
@@ -128,7 +119,13 @@ const runTests = (rclStructures, rclRamparts) => {
         completeRCLRamparts.push(nextRamparts);
     }
 
+    const serializeCPU = Game.cpu.getUsed();
     const serializedPlans = serializeBasePlan(rclStructures, rclRamparts);
+    console.log(
+        `Serialized base plans with ${Game.cpu.getUsed() - serializeCPU} CPU`
+    );
+
+    const deserializeCPU = Game.cpu.getUsed();
     for (let rcl = 0; rcl < completeRCLStructures.length; rcl++) {
         const { structures: deserializedStructures } = deserializeBasePlan(
             serializedPlans,
@@ -146,7 +143,30 @@ const runTests = (rclStructures, rclRamparts) => {
             return;
         }
     }
-    console.log("Plan is serialization and deserialization matches!");
+    console.log(
+        `Deserialized base plans with ${
+            Game.cpu.getUsed() - deserializeCPU
+        } CPU`
+    );
+
+    // Determine the size of our serialized plans
+    let size = 0;
+    const stack = [...serializedPlans];
+    while (stack.length) {
+        const value = stack.pop();
+        size += value.length;
+    }
+
+    console.log(
+        `Plan serialization successful and matches deserialization. ` +
+            `All base plans serialized with a size of: ${size} chars`
+    );
+
+    let rcl = 0;
+    for (const plan of serializedPlans) {
+        console.log("RCL " + rcl + ": " + plan);
+        rcl++;
+    }
 };
 
 const verifyIndenticality = (beforePlan, afterPlan) => {
@@ -166,34 +186,3 @@ module.exports = {
     deserializeBasePlan,
     runTests,
 };
-
-function roughSizeOfObject(object) {
-    const objectList = [];
-    const stack = [object];
-    const bytes = [0];
-    while (stack.length) {
-        const value = stack.pop();
-        if (value == null) bytes[0] += 4;
-        else if (typeof value === "boolean") bytes[0] += 4;
-        else if (typeof value === "string") bytes[0] += value.length * 2;
-        else if (typeof value === "number") bytes[0] += 8;
-        else if (
-            typeof value === "object" &&
-            objectList.indexOf(value) === -1
-        ) {
-            objectList.push(value);
-            if (typeof value.byteLength === "number")
-                bytes[0] += value.byteLength;
-            else if (value[Symbol.iterator]) {
-                // eslint-disable-next-line no-restricted-syntax
-                for (const v of value) stack.push(v);
-            } else {
-                Object.keys(value).forEach((k) => {
-                    bytes[0] += k.length * 2;
-                    stack.push(value[k]);
-                });
-            }
-        }
-    }
-    return bytes[0];
-}
