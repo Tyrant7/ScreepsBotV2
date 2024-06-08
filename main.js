@@ -39,6 +39,8 @@ global.DEBUG = {
     runProfiler: false,
 
     validateBasePlans: true,
+    testBasePlanSerialization: true,
+    cpuPrintoutFigures: 4,
 };
 global.RELOAD = true;
 

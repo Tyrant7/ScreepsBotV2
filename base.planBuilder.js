@@ -8,6 +8,7 @@ const {
     EXCLUSION_ZONE,
     structureToNumber,
     MAX_STRUCTURES,
+    HEADER_SIZE,
 } = require("./base.planningConstants");
 
 const MAX_STAMP_ATTEMPTS = 20;
@@ -1128,10 +1129,14 @@ class PlanBuilder {
                         ramparts: this.ramparts,
                     };
                 }
-                console.log("Plan passes " + check + " validation...");
+                console.log("✔️ Plan passes " + check + " validation...");
             }
         }
-        console.log("Plan passes all validation checks!");
+        console.log(
+            "-".repeat(HEADER_SIZE) +
+                " Plan passes all validation checks " +
+                "-".repeat(HEADER_SIZE)
+        );
 
         return { structures: this.roomPlan, ramparts: this.ramparts };
     }

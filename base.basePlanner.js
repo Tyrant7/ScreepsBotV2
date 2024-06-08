@@ -15,6 +15,8 @@ const {
     structureToNumber,
     numberToStructure,
     MAX_RCL,
+    TITLE_SIZE,
+    HEADER_SIZE,
 } = require("./base.planningConstants");
 
 const WEIGHT_CONTROLLER = 1.2;
@@ -34,13 +36,15 @@ class BasePlanner {
         }
 
         if (!this.serializedPlans) {
-            const cpu = Game.cpu.getUsed();
+            const totalCpu = Game.cpu.getUsed();
+            let cpu = Game.cpu.getUsed();
             this.printDebugMessage(
-                "-".repeat(20) +
+                "<" +
+                    "-".repeat(TITLE_SIZE) +
                     " Tyrant's Base Planner V1.0.0 " +
-                    "-".repeat(20)
+                    "-".repeat(TITLE_SIZE) +
+                    ">"
             );
-            this.printDebugMessage("Beginning plan creation...");
 
             //#region Initialization
 
@@ -117,8 +121,12 @@ class BasePlanner {
 
             //#endregion
 
-            this.printDebugMessage("Completed plan creation...");
-            this.printDebugMessage("Beginning RCL planning...");
+            this.printDebugMessage(
+                `Completed plan creation in ${(
+                    Game.cpu.getUsed() - cpu
+                ).toFixed(DEBUG.cpuPrintoutFigures)} CPU`
+            );
+            cpu = Game.cpu.getUsed();
 
             //#region RCL planning
 
@@ -136,20 +144,37 @@ class BasePlanner {
 
             //#endregion
 
-            this.printDebugMessage("Completed RCL planning...");
-            this.printDebugMessage("Beginning plan serialization...");
+            this.printDebugMessage(
+                `Completed RCL planning in ${(Game.cpu.getUsed() - cpu).toFixed(
+                    DEBUG.cpuPrintoutFigures
+                )} CPU`
+            );
+            cpu = Game.cpu.getUsed();
 
             this.serializedPlans = serializeBasePlan(
                 rclStructures,
                 rclRamparts
             );
 
-            if (DEBUG.validateBasePlans) {
+            this.printDebugMessage(
+                `Completed plan serialization in ${(
+                    Game.cpu.getUsed() - cpu
+                ).toFixed(DEBUG.cpuPrintoutFigures)} CPU`
+            );
+
+            if (DEBUG.testBasePlanSerialization) {
                 runTests(rclStructures, rclRamparts);
-                this.printDebugMessage(
-                    "planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!"
-                );
             }
+
+            this.printDebugMessage(
+                "-".repeat(HEADER_SIZE) +
+                    " Completed base planning in " +
+                    (Game.cpu.getUsed() - totalCpu).toFixed(
+                        DEBUG.cpuPrintoutFigures
+                    ) +
+                    " CPU " +
+                    "-".repeat(HEADER_SIZE)
+            );
         }
 
         const mapping = _.omit(numberToStructure, [

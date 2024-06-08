@@ -1,6 +1,9 @@
 const matrixUtility = require("./base.matrixUtility");
-const { structureToNumber, MAX_VALUE } = require("./base.planningConstants");
-const overlay = require("./overlay");
+const {
+    structureToNumber,
+    MAX_VALUE,
+    HEADER_SIZE,
+} = require("./base.planningConstants");
 
 const numberToChar = {
     [structureToNumber[STRUCTURE_SPAWN]]: "a",
@@ -97,6 +100,12 @@ const deserializeBasePlan = (serializedPlans, rcl) => {
 };
 
 const runTests = (rclStructures, rclRamparts) => {
+    console.log(
+        "-".repeat(HEADER_SIZE) +
+            " Validating serialization " +
+            "-".repeat(HEADER_SIZE)
+    );
+
     const completeRCLStructures = [];
     const completeRCLRamparts = [];
 
@@ -122,7 +131,9 @@ const runTests = (rclStructures, rclRamparts) => {
     const serializeCPU = Game.cpu.getUsed();
     const serializedPlans = serializeBasePlan(rclStructures, rclRamparts);
     console.log(
-        `Serialized base plans with ${Game.cpu.getUsed() - serializeCPU} CPU`
+        `Serialized base plans with ${(
+            Game.cpu.getUsed() - serializeCPU
+        ).toFixed(DEBUG.cpuPrintoutFigures)} CPU`
     );
 
     const deserializeCPU = Game.cpu.getUsed();
@@ -144,9 +155,9 @@ const runTests = (rclStructures, rclRamparts) => {
         }
     }
     console.log(
-        `Deserialized base plans with ${
+        `Deserialized base plans with ${(
             Game.cpu.getUsed() - deserializeCPU
-        } CPU`
+        ).toFixed(DEBUG.cpuPrintoutFigures)} CPU`
     );
 
     // Determine the size of our serialized plans
@@ -161,7 +172,11 @@ const runTests = (rclStructures, rclRamparts) => {
         `Plan serialization successful and matches deserialization. ` +
             `All base plans serialized with a size of: ${size} chars`
     );
-
+    console.log(
+        "-".repeat(HEADER_SIZE) +
+            " Serialized plans for each RCL " +
+            "-".repeat(HEADER_SIZE)
+    );
     let rcl = 0;
     for (const plan of serializedPlans) {
         console.log("RCL " + rcl + ": " + plan);

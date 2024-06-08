@@ -38,6 +38,10 @@ const MAX_RCL = parseInt(
     Object.keys(CONTROLLER_STRUCTURES[STRUCTURE_ROAD]).slice(-1)
 );
 
+// For debug logs
+const TITLE_SIZE = 20;
+const HEADER_SIZE = 10;
+
 module.exports = {
     MAX_VALUE,
     MIN_BUILD_AREA,
@@ -47,4 +51,6 @@ module.exports = {
     numberToStructure,
     MAX_STRUCTURES,
     MAX_RCL,
+    TITLE_SIZE,
+    HEADER_SIZE,
 };
