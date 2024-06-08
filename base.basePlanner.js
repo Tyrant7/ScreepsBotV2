@@ -6,6 +6,8 @@ const RCLPlanner = require("./base.RCLPlanner");
 const {
     serializeBasePlan,
     deserializeBasePlan,
+    verifyIndenticality,
+    runTests,
 } = require("./base.serializeBasePlan");
 const {
     MAX_VALUE,
@@ -134,6 +136,8 @@ class BasePlanner {
             this.deserializedStructures = deserializedStructures;
             this.deserializedRamparts = deserializedRamparts;
 
+            runTests(rclStructures, rclRamparts);
+
             console.log(
                 "planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!"
             );
@@ -146,7 +150,7 @@ class BasePlanner {
         overlay.visualizeBasePlan(
             roomInfo.room.name,
             this.deserializedStructures,
-            this.deserializedRamparts,
+            this.ramparts,
             mapping
         );
     }

@@ -1,22 +1,6 @@
-const { iterateMatrix } = require("./base.matrixUtility");
+const matrixUtility = require("./base.matrixUtility");
 const { structureToNumber, MAX_VALUE } = require("./base.planningConstants");
 const overlay = require("./overlay");
-
-/*
-        // Now we have a plan of our RCL deltas, let's combine each plan with all lower plans
-        for (let i = 0; i < this.rclStructures.length; i++) {
-            for (let past = 0; past < i; past++) {
-                this.rclStructures[i] = matrixUtility.combineMatrices(
-                    this.rclStructures[i],
-                    this.rclStructures[past]
-                );
-                this.rclRamparts[i] = matrixUtility.combineMatrices(
-                    this.rclRamparts[i],
-                    this.rclRamparts[past]
-                );
-            }
-        }
-*/
 
 const numberToChar = {
     [structureToNumber[STRUCTURE_SPAWN]]: "a",
@@ -49,7 +33,7 @@ const serializeBasePlan = (rclStructures, rclRamparts) => {
 
     for (let rcl = 0; rcl < serializedPlans.length; rcl++) {
         let whiteSpace = 0;
-        iterateMatrix((x, y) => {
+        matrixUtility.iterateMatrix((x, y) => {
             const struc = rclStructures[rcl].get(x, y);
             const hasRampart = rclRamparts[rcl].get(x, y);
             if (struc || hasRampart) {
@@ -65,10 +49,14 @@ const serializeBasePlan = (rclStructures, rclRamparts) => {
             }
             whiteSpace++;
         });
-
-        // console.log("plan for RCL " + rcl + ": ");
-        // console.log(serializedPlans[rcl]);
     }
+
+    console.log(
+        `serialized all base plans with a size of: ${roughSizeOfObject(
+            serializedPlans
+        )} bytes`
+    );
+
     return serializedPlans;
 };
 
@@ -102,17 +90,82 @@ const deserializeBasePlan = (serializedPlans, rcl) => {
             const x = position / 50;
             const y = position % 50;
             const trueChar = char.toLowerCase();
-            if (trueChar !== char) {
+            const hasRampart = trueChar !== char;
+            if (hasRampart) {
                 ramparts.set(x, y, MAX_VALUE);
             }
-            structures.set(x, y, charToNumber[trueChar]);
+            // An edge case here is where a rampart can cover a structure at a later RCL to when it was built
+            // In that case, we don't want to overwrite the structure with nothing
+            if (charToNumber[trueChar] > 0 || !hasRampart) {
+                structures.set(x, y, charToNumber[trueChar]);
+            }
             position++;
         }
     }
     return { structures, ramparts };
 };
 
-module.exports = { serializeBasePlan, deserializeBasePlan };
+const runTests = (rclStructures, rclRamparts) => {
+    const completeRCLStructures = [];
+    const completeRCLRamparts = [];
+
+    // Since rclStructures is only deltas, we'll combine them with
+    // all lower plans to get the "complete" plan for that RCL
+    for (let i = 0; i < rclStructures.length; i++) {
+        let nextStructures = rclStructures[i];
+        let nextRamparts = rclRamparts[i];
+        for (let past = i - 1; past >= 0; past--) {
+            nextStructures = matrixUtility.combineMatrices(
+                nextStructures,
+                rclStructures[past]
+            );
+            nextRamparts = matrixUtility.combineMatrices(
+                nextStructures,
+                rclRamparts[past]
+            );
+        }
+        completeRCLStructures.push(nextStructures);
+        completeRCLRamparts.push(nextRamparts);
+    }
+
+    const serializedPlans = serializeBasePlan(rclStructures, rclRamparts);
+    for (let rcl = 0; rcl < completeRCLStructures.length; rcl++) {
+        const { structures: deserializedStructures } = deserializeBasePlan(
+            serializedPlans,
+            rcl
+        );
+        const error = verifyIndenticality(
+            completeRCLStructures[rcl],
+            deserializedStructures
+        );
+        if (error) {
+            console.log(
+                `Plans at RCL ${rcl} do not match after deserialization!`
+            );
+            console.log(`Error at ${error}`);
+            return;
+        }
+    }
+    console.log("Plan is serialization and deserialization matches!");
+};
+
+const verifyIndenticality = (beforePlan, afterPlan) => {
+    for (let x = 0; x < 50; x++) {
+        for (let y = 0; y < 50; y++) {
+            const before = beforePlan.get(x, y);
+            const after = afterPlan.get(x, y);
+            if (before !== after) {
+                return `Position { x: ${x}, ${y} }. Before serialization: ${before}, after deserialization: ${after}`;
+            }
+        }
+    }
+};
+
+module.exports = {
+    serializeBasePlan,
+    deserializeBasePlan,
+    runTests,
+};
 
 function roughSizeOfObject(object) {
     const objectList = [];
