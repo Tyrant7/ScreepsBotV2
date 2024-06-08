@@ -1,5 +1,4 @@
 const matrixUtility = require("./base.matrixUtility");
-const { core } = require("./base.stamps");
 const {
     MAX_VALUE,
     EXCLUSION_ZONE,
@@ -18,56 +17,60 @@ const RAMPART_RCL = 4;
 
 const STRUCTURE_GROUP_SIZE = 10;
 
+// We'll place these based on different criteria than simply when and where we're able to
+const SPECIAL_RCL_STRUCTURES = [
+    STRUCTURE_ROAD,
+    STRUCTURE_CONTAINER,
+    STRUCTURE_TOWER,
+];
+
 class RCLPlanner {
-    planBuildRCLs(
-        structures,
-        ramparts,
-        corePos,
-        roomInfo,
-        upgraderContainerPos
-    ) {
-        const rclStructures = Array.from(
+    constructor(structures, corePos, roomInfo) {
+        this.rclStructures = Array.from(
             { length: MAX_RCL + 1 },
             () => new PathFinder.CostMatrix()
         );
-        const rclRamparts = Array.from(
+        this.rclRamparts = Array.from(
             { length: MAX_RCL + 1 },
             () => new PathFinder.CostMatrix()
         );
 
-        // We'll place these based on different criteria
-        const skipDistancePlans = [
-            STRUCTURE_ROAD,
-            STRUCTURE_CONTAINER,
-            STRUCTURE_TOWER,
-        ];
+        this.structures = structures;
+        this.corePos = corePos;
+        this.ri = roomInfo;
 
         // Track which structures we need to place and how many we've placed already
-        const plannedStructures = {};
-        const placedStructureCounts = {};
+        this.plannedStructures = {};
+        this.placedStructureCounts = {};
         for (const key in MAX_STRUCTURES) {
-            plannedStructures[structureToNumber[key]] = [];
-            placedStructureCounts[structureToNumber[key]] = 0;
+            this.plannedStructures[structureToNumber[key]] = [];
+            this.placedStructureCounts[structureToNumber[key]] = 0;
         }
         matrixUtility.iterateMatrix((x, y) => {
-            const s = structures.get(x, y);
+            const s = this.structures.get(x, y);
             if (!s || s === structureToNumber[EXCLUSION_ZONE]) {
                 return;
             }
-            plannedStructures[s].push({ x, y });
+            this.plannedStructures[s].push({ x, y });
         });
+    }
 
-        // Then iterate over each structure type, and plan them closest to furthest from the core,
+    planGenericStructures() {
+        // Iterate over each structure type, and plan them closest to furthest from the core,
         // moving up an RCL when we hit the placement limit for the current one
-        for (const structureType in plannedStructures) {
-            if (skipDistancePlans.includes(numberToStructure[structureType])) {
+        for (const structureType in this.plannedStructures) {
+            if (
+                SPECIAL_RCL_STRUCTURES.includes(
+                    numberToStructure[structureType]
+                )
+            ) {
                 continue;
             }
 
-            const structures = [...plannedStructures[structureType]];
+            const structures = [...this.plannedStructures[structureType]];
             const sorted = [];
             while (structures.length) {
-                let lastPos = corePos;
+                let lastPos = this.corePos;
                 const currentGroup = [];
                 for (let i = 0; i < STRUCTURE_GROUP_SIZE; i++) {
                     if (!structures.length) {
@@ -93,29 +96,31 @@ class RCLPlanner {
             }
 
             for (const structure of sorted) {
-                const count = placedStructureCounts[structureType];
+                const count = this.placedStructureCounts[structureType];
                 const mapping =
                     CONTROLLER_STRUCTURES[numberToStructure[structureType]];
                 const currentRCL = Object.entries(mapping).find(
                     ([key, value]) => value > count
                 )[0];
 
-                rclStructures[currentRCL].set(
+                this.rclStructures[currentRCL].set(
                     structure.x,
                     structure.y,
                     structureType
                 );
-                placedStructureCounts[structureType]++;
+                this.placedStructureCounts[structureType]++;
             }
         }
+    }
 
+    planContainers(upgraderContainerPos) {
         // Let's push all containers at appropriate RCLs based on their type
-        function identifyContainerRCL(pos) {
+        const identifyContainerRCL = (pos) => {
             for (let x = pos.x - 1; x <= pos.x + 1; x++) {
                 for (let y = pos.y - 1; y <= pos.y + 1; y++) {
                     // Source container
                     if (
-                        roomInfo.sources.find(
+                        this.ri.sources.find(
                             (s) => s.pos.x === x && s.pos.y === y
                         )
                     ) {
@@ -123,8 +128,8 @@ class RCLPlanner {
                     }
 
                     if (
-                        roomInfo.mineral.pos.x === x &&
-                        roomInfo.mineral.pos.y === y
+                        this.ri.mineral.pos.x === x &&
+                        this.ri.mineral.pos.y === y
                     ) {
                         return MINERAL_CONTAINER_RCL;
                     }
@@ -138,26 +143,29 @@ class RCLPlanner {
                 }
             }
             return MISC_CONTAINER_RCL;
-        }
+        };
         matrixUtility.iterateMatrix((x, y) => {
             if (
-                structures.get(x, y) === structureToNumber[STRUCTURE_CONTAINER]
+                this.structures.get(x, y) ===
+                structureToNumber[STRUCTURE_CONTAINER]
             ) {
                 const rcl = identifyContainerRCL({ x, y });
-                rclStructures[rcl].set(
+                this.rclStructures[rcl].set(
                     x,
                     y,
                     structureToNumber[STRUCTURE_CONTAINER]
                 );
             }
         });
+    }
 
-        // Next, we'll push towers into our plan
+    planTowers() {
+        // Push towers into our plan
         // We want to spread out our towers, so for each one,
         // we'll build the furthest one from the existing towers
         const towerNumber = structureToNumber[STRUCTURE_TOWER];
         const placedTowers = [];
-        const remainingTowers = [...plannedStructures[towerNumber]];
+        const remainingTowers = [...this.plannedStructures[towerNumber]];
         function sumDistance(tower) {
             return placedTowers.reduce(
                 (sum, t) =>
@@ -175,17 +183,20 @@ class RCLPlanner {
             const currentRCL = Object.entries(
                 CONTROLLER_STRUCTURES[STRUCTURE_TOWER]
             ).find(([key, value]) => value >= placedTowers.length)[0];
-            rclStructures[currentRCL].set(next.x, next.y, towerNumber);
+            this.rclStructures[currentRCL].set(next.x, next.y, towerNumber);
         }
+    }
 
-        // Finally, we'll place ramparts in plans above our minimum threshold
+    planRamparts(ramparts) {
+        // Place ramparts in plans above our minimum threshold
         matrixUtility.iterateMatrix((x, y) => {
             if (ramparts.get(x, y)) {
-                rclRamparts[RAMPART_RCL].set(x, y, MAX_VALUE);
+                this.rclRamparts[RAMPART_RCL].set(x, y, MAX_VALUE);
                 if (
-                    structures.get(x, y) === structureToNumber[STRUCTURE_ROAD]
+                    this.structures.get(x, y) ===
+                    structureToNumber[STRUCTURE_ROAD]
                 ) {
-                    rclStructures[RAMPART_RCL].set(
+                    this.rclStructures[RAMPART_RCL].set(
                         x,
                         y,
                         structureToNumber[STRUCTURE_ROAD]
@@ -193,26 +204,29 @@ class RCLPlanner {
                 }
             }
         });
+    }
 
-        // Now that we've planned out all of the basic structures, we can revisit our exceptions
+    planRoads(coreStamp) {
         // For roads, let's ensure that we only plan roads to connect what we want to
         const roadMatrix = new PathFinder.CostMatrix();
         matrixUtility.iterateMatrix((x, y) => {
-            if (structures.get(x, y) === structureToNumber[STRUCTURE_ROAD]) {
+            if (
+                this.structures.get(x, y) === structureToNumber[STRUCTURE_ROAD]
+            ) {
                 roadMatrix.set(x, y, 1);
                 return;
             }
             roadMatrix.set(x, y, MAX_VALUE);
         });
         let i = 0;
-        for (const rcl of rclStructures) {
+        for (const rcl of this.rclStructures) {
             const rclStructures = [];
             const containers = [];
             matrixUtility.iterateMatrix((x, y) => {
                 if (rcl.get(x, y)) {
                     rclStructures.push({ x, y });
                 }
-                if (rclRamparts[i].get(x, y)) {
+                if (this.rclRamparts[i].get(x, y)) {
                     rclStructures.push({ x, y });
                 }
                 if (rcl.get(x, y) === structureToNumber[STRUCTURE_CONTAINER]) {
@@ -227,18 +241,20 @@ class RCLPlanner {
                 const goals = [
                     ...containers.map((c) => {
                         return {
-                            pos: roomInfo.room.getPositionAt(c.x, c.y),
+                            pos: this.ri.room.getPositionAt(c.x, c.y),
                             range: 1,
                         };
                     }),
                     {
-                        pos: corePos,
-                        range: Math.min(core.center.x, core.center.y) - 1,
+                        pos: this.corePos,
+                        range:
+                            Math.min(coreStamp.center.x, coreStamp.center.y) -
+                            1,
                     },
                 ];
                 for (const goal of goals) {
                     const result = PathFinder.search(
-                        roomInfo.room.getPositionAt(structure.x, structure.y),
+                        this.ri.room.getPositionAt(structure.x, structure.y),
                         goal,
                         {
                             roomCallback: function (roomName) {
@@ -257,22 +273,26 @@ class RCLPlanner {
             }
             i++;
         }
+    }
 
+    getProduct() {
         // Now we have a plan of our RCL deltas, let's combine each plan with all lower plans
-        for (let i = 0; i < rclStructures.length; i++) {
+        for (let i = 0; i < this.rclStructures.length; i++) {
             for (let past = 0; past < i; past++) {
-                rclStructures[i] = matrixUtility.combineMatrices(
-                    rclStructures[i],
-                    rclStructures[past]
+                this.rclStructures[i] = matrixUtility.combineMatrices(
+                    this.rclStructures[i],
+                    this.rclStructures[past]
                 );
-                rclRamparts[i] = matrixUtility.combineMatrices(
-                    rclRamparts[i],
-                    rclRamparts[past]
+                this.rclRamparts[i] = matrixUtility.combineMatrices(
+                    this.rclRamparts[i],
+                    this.rclRamparts[past]
                 );
             }
         }
-
-        return { rclStructures, rclRamparts };
+        return {
+            rclStructures: this.rclStructures,
+            rclRamparts: this.rclRamparts,
+        };
     }
 }
 

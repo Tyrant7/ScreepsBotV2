@@ -103,14 +103,18 @@ class BasePlanner {
             this.ramparts = ramparts;
 
             // Plan build RCLs
-            const rclPlanner = new RCLPlanner();
-            const { rclStructures, rclRamparts } = rclPlanner.planBuildRCLs(
+            const rclPlanner = new RCLPlanner(
                 structures,
-                ramparts,
                 planBuilder.corePos,
-                roomInfo,
-                planBuilder.upgraderContainer
+                roomInfo
             );
+            rclPlanner.planGenericStructures();
+            rclPlanner.planContainers(planBuilder.upgraderContainer);
+            rclPlanner.planTowers();
+            rclPlanner.planRamparts(ramparts);
+            rclPlanner.planRoads(stamps.core);
+            const { rclStructures, rclRamparts } = rclPlanner.getProduct();
+
             this.rclStructures = rclStructures;
             this.rclRamparts = rclRamparts;
 
