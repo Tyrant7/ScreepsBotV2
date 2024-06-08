@@ -303,24 +303,12 @@ class RCLPlanner {
     }
 
     /**
-     * Gets the completed RCL plans for structures and ramparts.
+     * Gets the completed RCL plans for structures and ramparts. Each RCL contains only the additional structures
+     * from the previous RCL, and not all structures found at that RCL.
      * @returns {{ rclStructures: PathFinder.CostMatrix[], rclRamparts: PathFinder.CostMatrix[] }}
      * An object with all RCL structures, and RCL ramparts, where each property is an array of length MAX_RCL + 1.
      */
     getProduct() {
-        // Now we have a plan of our RCL deltas, let's combine each plan with all lower plans
-        for (let i = 0; i < this.rclStructures.length; i++) {
-            for (let past = 0; past < i; past++) {
-                this.rclStructures[i] = matrixUtility.combineMatrices(
-                    this.rclStructures[i],
-                    this.rclStructures[past]
-                );
-                this.rclRamparts[i] = matrixUtility.combineMatrices(
-                    this.rclRamparts[i],
-                    this.rclRamparts[past]
-                );
-            }
-        }
         return {
             rclStructures: this.rclStructures,
             rclRamparts: this.rclRamparts,

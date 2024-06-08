@@ -4,6 +4,10 @@ const stamps = require("./base.stamps");
 const PlanBuilder = require("./base.planBuilder");
 const RCLPlanner = require("./base.RCLPlanner");
 const {
+    serializeBasePlan,
+    deserializeBasePlan,
+} = require("./base.serializeBasePlan");
+const {
     MAX_VALUE,
     EXCLUSION_ZONE,
     structureToNumber,
@@ -118,13 +122,18 @@ class BasePlanner {
             this.rclStructures = rclStructures;
             this.rclRamparts = rclRamparts;
 
+            const serializedPlans = serializeBasePlan(
+                rclStructures,
+                rclRamparts
+            );
+            deserializeBasePlan(serializedPlans, 8);
+
             console.log(
                 "planned base in " + (Game.cpu.getUsed() - cpu) + " cpu!"
             );
-
-            // overlay.visualizeCostMatrix(roomInfo.room.name, weightMatrix);
         }
 
+        /*
         const mapping = _.omit(numberToStructure, [
             structureToNumber[EXCLUSION_ZONE],
         ]);
@@ -135,6 +144,7 @@ class BasePlanner {
             this.rclRamparts[rclVis],
             mapping
         );
+        */
     }
 
     generateWeightMatrix(roomInfo, terrainMatrix, distanceTransform) {
