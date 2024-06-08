@@ -239,6 +239,7 @@ class RCLPlanner {
             roadMatrix.set(x, y, MAX_VALUE);
         });
         let i = 0;
+        let pathTarget = this.corePos;
         for (const rcl of this.rclStructures) {
             const rclStructures = [];
             const containers = [];
@@ -266,7 +267,7 @@ class RCLPlanner {
                         };
                     }),
                     {
-                        pos: this.corePos,
+                        pos: pathTarget,
                         range:
                             Math.min(coreStamp.center.x, coreStamp.center.y) -
                             1,
@@ -295,6 +296,10 @@ class RCLPlanner {
                             point.y,
                             MULTIPLE_USE_ROAD_PLAN_COST
                         );
+
+                        // Encourage keeping more roads accessible by pathing to
+                        // the last road instead of always to the core
+                        pathTarget = point;
                     }
                 }
             }
