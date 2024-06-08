@@ -58,6 +58,9 @@ class RCLPlanner {
         });
     }
 
+    /**
+     * Plans out each structure type for each RCL in clusters based on distance to the core.
+     */
     planGenericStructures() {
         // Iterate over each structure type, and plan them closest to furthest from the core,
         // moving up an RCL when we hit the placement limit for the current one
@@ -116,6 +119,10 @@ class RCLPlanner {
         }
     }
 
+    /**
+     * Plans out container RCLs based on constants provided in this module.
+     * @param {{ x: number, y: number }} upgraderContainerPos The planned position of the upgrader container.
+     */
     planContainers(upgraderContainerPos) {
         // Let's push all containers at appropriate RCLs based on their type
         const identifyContainerRCL = (pos) => {
@@ -162,10 +169,11 @@ class RCLPlanner {
         });
     }
 
+    /**
+     * Plans towers for each RCL by spreading them out the from the currently built towers,
+     * starting with the closest tower to the core.
+     */
     planTowers() {
-        // Push towers into our plan
-        // We want to spread out our towers, so for each one,
-        // we'll build the furthest one from the existing towers
         const towerNumber = structureToNumber[STRUCTURE_TOWER];
         const placedTowers = [];
         const remainingTowers = [...this.plannedStructures[towerNumber]];
@@ -190,6 +198,10 @@ class RCLPlanner {
         }
     }
 
+    /**
+     * Plans ramparts for RCL of `RAMPART_RCL`.
+     * @param {PathFinder.CostMatrix} ramparts A costmatrix of all planned ramparts.
+     */
     planRamparts(ramparts) {
         // Place ramparts in plans above our minimum threshold
         matrixUtility.iterateMatrix((x, y) => {
@@ -209,6 +221,11 @@ class RCLPlanner {
         });
     }
 
+    /**
+     * Plans roads for each RCL, taking into account only structures that are relevant at that RCL.
+     * @param {{}} coreStamp The stamp of the core used when planning making this plan. Used for determining
+     * necessary path distance to reach our core.
+     */
     planRoads(coreStamp) {
         // For roads, let's ensure that we only plan roads to connect what we want to
         const roadMatrix = new PathFinder.CostMatrix();
@@ -285,6 +302,11 @@ class RCLPlanner {
         }
     }
 
+    /**
+     * Gets the completed RCL plans for structures and ramparts.
+     * @returns {{ rclStructures: PathFinder.CostMatrix[], rclRamparts: PathFinder.CostMatrix[] }}
+     * An object with all RCL structures, and RCL ramparts, where each property is an array of length MAX_RCL + 1.
+     */
     getProduct() {
         // Now we have a plan of our RCL deltas, let's combine each plan with all lower plans
         for (let i = 0; i < this.rclStructures.length; i++) {
