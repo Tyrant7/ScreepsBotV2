@@ -1123,7 +1123,7 @@ class PlanBuilder {
             for (const check in checks) {
                 const message = checks[check]();
                 if (message) {
-                    console.log("Invalid base plan: " + message);
+                    console.log("❌ Invalid base plan: " + message);
                     return {
                         structures: this.roomPlan,
                         ramparts: this.ramparts,

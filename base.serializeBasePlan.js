@@ -131,7 +131,7 @@ const runTests = (rclStructures, rclRamparts) => {
     const serializeCPU = Game.cpu.getUsed();
     const serializedPlans = serializeBasePlan(rclStructures, rclRamparts);
     console.log(
-        `Serialized base plans with ${(
+        `🟢 Serialized base plans with ${(
             Game.cpu.getUsed() - serializeCPU
         ).toFixed(DEBUG.cpuPrintoutFigures)} CPU`
     );
@@ -148,14 +148,14 @@ const runTests = (rclStructures, rclRamparts) => {
         );
         if (error) {
             console.log(
-                `Plans at RCL ${rcl} do not match after deserialization!`
+                `🔴 Plans at RCL ${rcl} do not match after deserialization!`
             );
-            console.log(`Error at ${error}`);
+            console.log(`🔴 Error at ${error}`);
             return;
         }
     }
     console.log(
-        `Deserialized base plans with ${(
+        `🟢 Deserialized base plans with ${(
             Game.cpu.getUsed() - deserializeCPU
         ).toFixed(DEBUG.cpuPrintoutFigures)} CPU`
     );
@@ -169,7 +169,7 @@ const runTests = (rclStructures, rclRamparts) => {
     }
 
     console.log(
-        `Plan serialization successful and matches deserialization. ` +
+        `🟢 Plan serialization successful and matches deserialization. ` +
             `All base plans serialized with a size of: ${size} chars`
     );
     console.log(
@@ -190,7 +190,7 @@ const verifyIndenticality = (beforePlan, afterPlan) => {
             const before = beforePlan.get(x, y);
             const after = afterPlan.get(x, y);
             if (before !== after) {
-                return `Position { x: ${x}, ${y} }. Before serialization: ${before}, after deserialization: ${after}`;
+                return `Position { x: ${x}, y: ${y} }. Before serialization: ${before}, after deserialization: ${after}`;
             }
         }
     }

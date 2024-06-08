@@ -122,7 +122,7 @@ class BasePlanner {
             //#endregion
 
             this.printDebugMessage(
-                `Completed plan creation in ${(
+                `🟢 Completed plan creation in ${(
                     Game.cpu.getUsed() - cpu
                 ).toFixed(DEBUG.cpuPrintoutFigures)} CPU`
             );
@@ -145,9 +145,9 @@ class BasePlanner {
             //#endregion
 
             this.printDebugMessage(
-                `Completed RCL planning in ${(Game.cpu.getUsed() - cpu).toFixed(
-                    DEBUG.cpuPrintoutFigures
-                )} CPU`
+                `🟢 Completed RCL planning in ${(
+                    Game.cpu.getUsed() - cpu
+                ).toFixed(DEBUG.cpuPrintoutFigures)} CPU`
             );
             cpu = Game.cpu.getUsed();
 
@@ -157,7 +157,7 @@ class BasePlanner {
             );
 
             this.printDebugMessage(
-                `Completed plan serialization in ${(
+                `🟢 Completed plan serialization in ${(
                     Game.cpu.getUsed() - cpu
                 ).toFixed(DEBUG.cpuPrintoutFigures)} CPU`
             );
