@@ -213,7 +213,7 @@ class RCLPlanner {
             if (
                 this.structures.get(x, y) === structureToNumber[STRUCTURE_ROAD]
             ) {
-                roadMatrix.set(x, y, 1);
+                roadMatrix.set(x, y, 3);
                 return;
             }
             roadMatrix.set(x, y, MAX_VALUE);
@@ -268,6 +268,9 @@ class RCLPlanner {
                             point.y,
                             structureToNumber[STRUCTURE_ROAD]
                         );
+
+                        // Slightly encourage road reuse between paths
+                        roadMatrix.set(point.x, point.y, 2);
                     }
                 }
             }
