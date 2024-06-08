@@ -41,7 +41,7 @@ class BasePlanner {
             this.printDebugMessage(
                 "<" +
                     "-".repeat(TITLE_SIZE) +
-                    " Tyrant's Base Planner V1.0.0 " +
+                    " Tyrant's Base Planner V1.0.1 " +
                     "-".repeat(TITLE_SIZE) +
                     ">"
             );
