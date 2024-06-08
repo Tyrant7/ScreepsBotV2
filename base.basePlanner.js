@@ -119,6 +119,8 @@ class BasePlanner {
             planBuilder.cleanup();
             const { structures, ramparts } = planBuilder.getProduct();
 
+            this.structures = structures;
+
             //#endregion
 
             this.printDebugMessage(

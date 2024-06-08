@@ -239,7 +239,7 @@ class RCLPlanner {
             roadMatrix.set(x, y, MAX_VALUE);
         });
         let i = 0;
-        let pathTarget = this.corePos;
+        let extraTarget;
         for (const rcl of this.rclStructures) {
             const rclStructures = [];
             const containers = [];
@@ -267,17 +267,25 @@ class RCLPlanner {
                         };
                     }),
                     {
-                        pos: pathTarget,
+                        pos: this.corePos,
                         range:
                             Math.min(coreStamp.center.x, coreStamp.center.y) -
                             1,
                     },
                 ];
+                if (extraTarget) {
+                    goals.push({
+                        pos: extraTarget,
+                        range: 1,
+                    });
+                }
                 for (const goal of goals) {
                     const result = PathFinder.search(
                         this.ri.room.getPositionAt(structure.x, structure.y),
                         goal,
                         {
+                            maxRooms: 1,
+                            maxOps: 2500,
                             roomCallback: function (roomName) {
                                 return roadMatrix;
                             },
@@ -298,8 +306,8 @@ class RCLPlanner {
                         );
 
                         // Encourage keeping more roads accessible by pathing to
-                        // the last road instead of always to the core
-                        pathTarget = point;
+                        // the last road instead in addition to the core
+                        extraTarget = point;
                     }
                 }
             }
