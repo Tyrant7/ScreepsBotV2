@@ -225,7 +225,6 @@ class RoomInfo {
             keys.sourceContainerPositions
         );
         for (const container of sourceContainers) {
-            console.log(JSON.stringify(container));
             miningSpots.push({
                 pos: new RoomPosition(container.x, container.y, this.room.name),
                 sourceID: container.sourceID,
