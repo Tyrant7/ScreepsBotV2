@@ -19,7 +19,7 @@ const UTILITY_CONSTANTS = {
 const DEFENSE_THRESHOLD_TICKS = 1500;
 const DEFENSE_UTILITY_BONUS = 200;
 
-const MAX_SITES = 3;
+const MAX_SITES = 2;
 
 const CONTAINER_PATHING_COST = 6;
 const ROAD_PATHING_COST = 1;
@@ -59,6 +59,13 @@ const requestSite = (roomInfo) => {
         (s) =>
             !roomInfo.room
                 .lookForAt(LOOK_STRUCTURES, s.pos.x, s.pos.y)
+                .concat(
+                    roomInfo.room.lookForAt(
+                        LOOK_CONSTRUCTION_SITES,
+                        s.pos.x,
+                        s.pos.y
+                    )
+                )
                 .find((t) => t.structureType === s.type)
     );
 

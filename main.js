@@ -131,7 +131,6 @@ module.exports.loop = function () {
             (DEBUG.replanBaseOnReload && RELOAD)
         ) {
             basePlanner.generateNewRoomPlan(info);
-            basePlanner.visualizePlan(info.room.name, 8);
         }
         requestSite(info);
 

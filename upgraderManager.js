@@ -23,7 +23,7 @@ class UpgraderManager extends CreepManager {
             const upgraderContainerPos = new RoomPosition(
                 upContPos.x,
                 upContPos.y,
-                upContPos.roomName
+                target.room.name
             );
 
             // We're within range of our container already!
