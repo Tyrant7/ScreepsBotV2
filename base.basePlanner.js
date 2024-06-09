@@ -28,170 +28,174 @@ const STAMP_COUNT_SPAWN = 2;
 const STAMP_COUNT_EXTENSION = 2;
 const STAMP_COUNT_LAB = 1;
 
+const BUCKET_MINIMUM = 300;
+
 class BasePlanner {
-    run(roomInfo) {
-        if (Game.cpu.bucket <= 250) {
-            console.log("bucket is empty");
+    getPlan(roomName) {
+        return Memory.bases[roomName].rclPlans;
+    }
+
+    savePlan(roomName, serializedPlans) {
+        Memory.bases[roomName].rclPlans = serializedPlans;
+    }
+
+    generateNewRoomPlan(roomInfo) {
+        if (Game.cpu.bucket <= BUCKET_MINIMUM) {
             return;
         }
 
-        if (!this.serializedPlans) {
-            const totalCpu = Game.cpu.getUsed();
-            let cpu = Game.cpu.getUsed();
-            this.printDebugMessage(
-                "<" +
-                    "-".repeat(TITLE_SIZE) +
-                    " Tyrant's Base Planner V1.0.2 " +
-                    "-".repeat(TITLE_SIZE) +
-                    ">"
-            );
+        const totalCpu = Game.cpu.getUsed();
+        let cpu = Game.cpu.getUsed();
+        this.printDebugMessage(
+            "<" +
+                "-".repeat(TITLE_SIZE) +
+                " Tyrant's Base Planner V1.0.2 " +
+                "-".repeat(TITLE_SIZE) +
+                ">"
+        );
 
-            //#region Initialization
+        //#region Initialization
 
-            // Generate our necessary matrices for planning
-            const terrainMatrix = matrixUtility.generateTerrainMatrix(
-                roomInfo.room.name
-            );
-            const distanceTransform = matrixUtility.generateDistanceTransform(
-                roomInfo.room.name
-            );
-            const weightMatrix = this.generateWeightMatrix(
-                roomInfo,
-                terrainMatrix,
-                distanceTransform
-            );
+        // Generate our necessary matrices for planning
+        const terrainMatrix = matrixUtility.generateTerrainMatrix(
+            roomInfo.room.name
+        );
+        const distanceTransform = matrixUtility.generateDistanceTransform(
+            roomInfo.room.name
+        );
+        const weightMatrix = this.generateWeightMatrix(
+            roomInfo,
+            terrainMatrix,
+            distanceTransform
+        );
 
-            //#endregion
+        //#endregion
 
-            //#region Room Plan
+        //#region Room Plan
 
-            const planBuilder = new PlanBuilder(
-                terrainMatrix,
-                distanceTransform,
-                weightMatrix,
-                stamps.core,
-                roomInfo
-            );
+        const planBuilder = new PlanBuilder(
+            terrainMatrix,
+            distanceTransform,
+            weightMatrix,
+            stamps.core,
+            roomInfo
+        );
 
-            planBuilder.planUpgraderContainer();
-            planBuilder.planExtractor();
-            planBuilder.planMiningSpots();
+        planBuilder.planUpgraderContainer();
+        planBuilder.planExtractor();
+        planBuilder.planMiningSpots();
 
-            // Resort our spaces by distance to the core
-            planBuilder.resortSpaces(
-                (a, b) =>
-                    planBuilder.floodfillFromCore.get(a.x, a.y) -
-                    planBuilder.floodfillFromCore.get(b.x, b.y)
-            );
+        // Resort our spaces by distance to the core
+        planBuilder.resortSpaces(
+            (a, b) =>
+                planBuilder.floodfillFromCore.get(a.x, a.y) -
+                planBuilder.floodfillFromCore.get(b.x, b.y)
+        );
 
-            // Plan out our future routes to the exits for remotes
-            planBuilder.planRemoteRoads();
+        // Plan out our future routes to the exits for remotes
+        planBuilder.planRemoteRoads();
 
-            // Spawn stamps
-            planBuilder.placeStamps(
-                stamps.extensionStampXWithSpawn,
-                STAMP_COUNT_SPAWN
-            );
+        // Spawn stamps
+        planBuilder.placeStamps(
+            stamps.extensionStampXWithSpawn,
+            STAMP_COUNT_SPAWN
+        );
 
-            // Lab stamps
-            planBuilder.placeStamps(stamps.labs, STAMP_COUNT_LAB);
+        // Lab stamps
+        planBuilder.placeStamps(stamps.labs, STAMP_COUNT_LAB);
 
-            // Ordinary extension stamps
-            planBuilder.placeStamps(
-                stamps.extensionStampX,
-                STAMP_COUNT_EXTENSION
-            );
+        // Ordinary extension stamps
+        planBuilder.placeStamps(stamps.extensionStampX, STAMP_COUNT_EXTENSION);
 
-            // Plan our artery roads
-            planBuilder.planRoads();
+        // Plan our artery roads
+        planBuilder.planRoads();
 
-            // Connect up straggling roads
-            planBuilder.connectStragglingRoads();
+        // Connect up straggling roads
+        planBuilder.connectStragglingRoads();
 
-            // Place all of our dynamic structures
-            planBuilder.filterBadSpaces();
-            planBuilder.placeDynamicStructures();
+        // Place all of our dynamic structures
+        planBuilder.filterBadSpaces();
+        planBuilder.placeDynamicStructures();
 
-            // Finally, let's rampart our entire base
-            planBuilder.planRamparts();
+        // Finally, let's rampart our entire base
+        planBuilder.planRamparts();
 
-            // Cleanup any roads placed over terrain
-            planBuilder.cleanup();
-            const { structures, ramparts } = planBuilder.getProduct();
+        // Cleanup any roads placed over terrain
+        planBuilder.cleanup();
+        const { structures, ramparts } = planBuilder.getProduct();
 
-            this.structures = structures;
+        //#endregion
 
-            //#endregion
+        this.printDebugMessage(
+            `🟢 Completed plan creation in ${(Game.cpu.getUsed() - cpu).toFixed(
+                DEBUG.cpuPrintoutFigures
+            )} CPU`
+        );
+        cpu = Game.cpu.getUsed();
 
-            this.printDebugMessage(
-                `🟢 Completed plan creation in ${(
-                    Game.cpu.getUsed() - cpu
-                ).toFixed(DEBUG.cpuPrintoutFigures)} CPU`
-            );
-            cpu = Game.cpu.getUsed();
+        //#region RCL planning
 
-            //#region RCL planning
+        const rclPlanner = new RCLPlanner(
+            structures,
+            planBuilder.corePos,
+            roomInfo
+        );
+        rclPlanner.planGenericStructures();
+        rclPlanner.planContainers(planBuilder.upgraderContainer);
+        rclPlanner.planTowers();
+        rclPlanner.planRamparts(ramparts);
+        rclPlanner.planRoads(stamps.core);
+        const { rclStructures, rclRamparts } = rclPlanner.getProduct();
 
-            const rclPlanner = new RCLPlanner(
-                structures,
-                planBuilder.corePos,
-                roomInfo
-            );
-            rclPlanner.planGenericStructures();
-            rclPlanner.planContainers(planBuilder.upgraderContainer);
-            rclPlanner.planTowers();
-            rclPlanner.planRamparts(ramparts);
-            rclPlanner.planRoads(stamps.core);
-            const { rclStructures, rclRamparts } = rclPlanner.getProduct();
+        //#endregion
 
-            //#endregion
+        this.printDebugMessage(
+            `🟢 Completed RCL planning in ${(Game.cpu.getUsed() - cpu).toFixed(
+                DEBUG.cpuPrintoutFigures
+            )} CPU`
+        );
+        cpu = Game.cpu.getUsed();
 
-            this.printDebugMessage(
-                `🟢 Completed RCL planning in ${(
-                    Game.cpu.getUsed() - cpu
-                ).toFixed(DEBUG.cpuPrintoutFigures)} CPU`
-            );
-            cpu = Game.cpu.getUsed();
+        // Save the serialized plans to memory
+        this.savePlan(
+            roomInfo.room.name,
+            serializeBasePlan(rclStructures, rclRamparts)
+        );
+        this.printDebugMessage(
+            `🟢 Completed plan serialization in ${(
+                Game.cpu.getUsed() - cpu
+            ).toFixed(DEBUG.cpuPrintoutFigures)} CPU`
+        );
 
-            this.serializedPlans = serializeBasePlan(
-                rclStructures,
-                rclRamparts
-            );
+        //#region Debug
+        if (DEBUG.testBasePlanSerialization) {
+            runTests(rclStructures, rclRamparts);
+        }
 
-            this.printDebugMessage(
-                `🟢 Completed plan serialization in ${(
-                    Game.cpu.getUsed() - cpu
-                ).toFixed(DEBUG.cpuPrintoutFigures)} CPU`
-            );
+        this.printDebugMessage(
+            "-".repeat(HEADER_SIZE) +
+                " Completed base planning in " +
+                (Game.cpu.getUsed() - totalCpu).toFixed(
+                    DEBUG.cpuPrintoutFigures
+                ) +
+                " CPU " +
+                "-".repeat(HEADER_SIZE)
+        );
 
-            if (DEBUG.testBasePlanSerialization) {
-                runTests(rclStructures, rclRamparts);
-            }
+        //#endregion
+    }
 
-            this.printDebugMessage(
-                "-".repeat(HEADER_SIZE) +
-                    " Completed base planning in " +
-                    (Game.cpu.getUsed() - totalCpu).toFixed(
-                        DEBUG.cpuPrintoutFigures
-                    ) +
-                    " CPU " +
-                    "-".repeat(HEADER_SIZE)
-            );
+    visualizePlan(roomName, rcl = (Game.time % MAX_RCL) + 1) {
+        const plan = this.getPlan(roomName);
+        if (!plan) {
+            return;
         }
 
         const mapping = _.omit(numberToStructure, [
             structureToNumber[EXCLUSION_ZONE],
         ]);
-        const { structures, ramparts } = deserializeBasePlan(
-            this.serializedPlans,
-            (Game.time % MAX_RCL) + 1
-        );
-        overlay.visualizeBasePlan(
-            roomInfo.room.name,
-            structures,
-            ramparts,
-            mapping
-        );
+        const { structures, ramparts } = deserializeBasePlan(plan, rcl);
+        overlay.visualizeBasePlan(roomName, structures, ramparts, mapping);
     }
 
     generateWeightMatrix(roomInfo, terrainMatrix, distanceTransform) {

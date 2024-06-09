@@ -161,7 +161,10 @@ module.exports.loop = function () {
         haulingRequester.generateBasicRequests(info);
 
         // DEBUG
-        basePlanner.run(info);
+        if (!basePlanner.getPlan(info.room.name)) {
+            basePlanner.generateNewRoomPlan(info);
+        }
+        basePlanner.visualizePlan(info.room.name);
     }
 
     // Run creeps
