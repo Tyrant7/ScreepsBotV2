@@ -144,8 +144,8 @@ class RCLPlanner {
             }
             if (
                 upgraderContainerPos &&
-                upgraderContainerPos.x === x &&
-                upgraderContainerPos.y === y
+                upgraderContainerPos.x === pos.x &&
+                upgraderContainerPos.y === pos.y
             ) {
                 return UPGRADER_CONTAINER_RCL;
             }

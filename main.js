@@ -125,6 +125,15 @@ module.exports.loop = function () {
         roomInfos[room].initializeTickInfo();
         const info = roomInfos[room];
 
+        // DEBUG
+        if (
+            !getBasePlan(info.room.name) ||
+            (DEBUG.replanBaseOnReload && RELOAD)
+        ) {
+            basePlanner.generateNewRoomPlan(info);
+        }
+        requestSite(info);
+
         // Handle economy (remotes and spawns)
         profiler.startSample("Economy " + room);
         economyManager.run(info);
@@ -153,15 +162,6 @@ module.exports.loop = function () {
 
         // Hauling requests
         haulingRequester.generateBasicRequests(info);
-
-        // DEBUG
-        if (
-            !getBasePlan(info.room.name) ||
-            (DEBUG.replanBaseOnReload && RELOAD)
-        ) {
-            basePlanner.generateNewRoomPlan(info);
-        }
-        requestSite(info);
     }
 
     // Run creeps
