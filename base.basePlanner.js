@@ -185,7 +185,7 @@ class BasePlanner {
         //#endregion
     }
 
-    visualizePlan(roomName, rcl = (Game.time % MAX_RCL) + 1) {
+    visualizePlan(roomName, rcl = Game.time % MAX_RCL) {
         const plan = this.getPlan(roomName);
         if (!plan) {
             return;

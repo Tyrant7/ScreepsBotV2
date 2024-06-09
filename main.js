@@ -38,6 +38,7 @@ global.DEBUG = {
 
     runProfiler: false,
 
+    replanBaseOnReload: true,
     validateBasePlans: true,
     testBasePlanSerialization: true,
     cpuPrintoutFigures: 4,
@@ -161,7 +162,10 @@ module.exports.loop = function () {
         haulingRequester.generateBasicRequests(info);
 
         // DEBUG
-        if (!basePlanner.getPlan(info.room.name)) {
+        if (
+            !basePlanner.getPlan(info.room.name) ||
+            (DEBUG.replanBaseOnReload && RELOAD)
+        ) {
             basePlanner.generateNewRoomPlan(info);
         }
         basePlanner.visualizePlan(info.room.name);
