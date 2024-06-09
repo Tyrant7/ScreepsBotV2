@@ -1,5 +1,5 @@
 const { iterateMatrix } = require("./base.matrixUtility");
-const { numberToStructure } = require("./base.planningConstants");
+const { numberToStructure, MAX_VALUE } = require("./base.planningConstants");
 const { getPlan } = require("./base.planningUtility");
 const { deserializeBasePlan } = require("./base.serializeBasePlan");
 
@@ -20,6 +20,9 @@ const DEFENSE_THRESHOLD_TICKS = 1500;
 const DEFENSE_UTILITY_BONUS = 200;
 
 const MAX_SITES = 3;
+
+const CONTAINER_PATHING_COST = 6;
+const ROAD_PATHING_COST = 1;
 
 const requestSite = (roomInfo) => {
     if (roomInfo.constructionSites.length >= MAX_SITES) {
@@ -81,7 +84,39 @@ const requestSite = (roomInfo) => {
     const result = roomInfo.room
         .getPositionAt(bestStructure.pos.x, bestStructure.pos.y)
         .createConstructionSite(bestStructure.type);
-    if (result !== OK) {
+
+    if (result === OK) {
+        // Update our cost matrix for creeps using our better pathing system
+        const roomMatrix =
+            betterPathing.getCachedMatrix(
+                CONSTANTS.pathSets.default,
+                roomInfo.room.name
+            ) || betterPathing.generateDefaultCostMatrix(roomInfo.room.name);
+
+        if (bestStructure.type === STRUCTURE_ROAD) {
+            roomMatrix.set(
+                bestStructure.pos.x,
+                bestStructure.pos.y,
+                ROAD_PATHING_COST
+            );
+        } else if (bestStructure.type === STRUCTURE_CONTAINER) {
+            roomMatrix.set(
+                bestStructure.pos.x,
+                bestStructure.pos.y,
+                CONTAINER_PATHING_COST
+            );
+        } else if (OBSTACLE_OBJECT_TYPES[bestStructure.type]) {
+            roomMatrix.set(bestStructure.pos.x, bestStructure.pos.y, MAX_VALUE);
+            return;
+        }
+
+        // Now cache it
+        betterPathing.cacheMatrix(
+            roomMatrix,
+            CONSTANTS.pathSets.default,
+            roomInfo.room.name
+        );
+    } else {
         console.log(
             "result from placing construction site resulted in issue with code " +
                 result
