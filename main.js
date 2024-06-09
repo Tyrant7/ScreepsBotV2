@@ -88,6 +88,7 @@ const economyManager = new EconomyManager();
 const BasePlanner = require("./base.basePlanner");
 const basePlanner = new BasePlanner();
 const { getPlan: getBasePlan } = require("./base.planningUtility");
+const { handleSites } = require("./base.constructionManager");
 
 // Defense
 const towerManager = new TowerManager();
@@ -100,7 +101,6 @@ const haulingRequester = new BasicHaulingRequester();
 const overlay = require("./overlay");
 const trackStats = require("./trackStats");
 const profiler = require("./profiler");
-const { requestSite } = require("./base.constructionManager");
 
 module.exports.loop = function () {
     // Passive pixel generation
@@ -132,7 +132,14 @@ module.exports.loop = function () {
         ) {
             basePlanner.generateNewRoomPlan(info);
         }
-        requestSite(info);
+        handleSites(info);
+        if (RELOAD) {
+            betterPathing.cacheMatrix(
+                betterPathing.generateDefaultCostMatrix(info.room.name),
+                CONSTANTS.pathSets.default,
+                info.room.name
+            );
+        }
 
         // Handle economy (remotes and spawns)
         profiler.startSample("Economy " + room);

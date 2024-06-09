@@ -24,7 +24,7 @@ const MAX_SITES = 2;
 const CONTAINER_PATHING_COST = 6;
 const ROAD_PATHING_COST = 1;
 
-const requestSite = (roomInfo) => {
+const handleSites = (roomInfo) => {
     if (roomInfo.constructionSites.length >= MAX_SITES) {
         return;
     }
@@ -147,4 +147,4 @@ const scoreUtility = (structure) => {
     return baseUtility;
 };
 
-module.exports = { requestSite };
+module.exports = { handleSites };

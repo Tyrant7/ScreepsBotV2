@@ -1,6 +1,5 @@
 const remoteUtility = require("./remoteUtility");
 const estimateTravelTime = require("./estimateTravelTime");
-const haulerUtility = require("./haulerUtility");
 const { getPlanData, keys } = require("./base.planningUtility");
 
 class RoomInfo {
