@@ -182,12 +182,13 @@ class BasePlanner {
         if (!plan) {
             return;
         }
-
-        const mapping = _.omit(numberToStructure, [
-            structureToNumber[EXCLUSION_ZONE],
-        ]);
         const { structures, ramparts } = deserializeBasePlan(plan, rcl);
-        overlay.visualizeBasePlan(roomName, structures, ramparts, mapping);
+        overlay.visualizeBasePlan(
+            roomName,
+            structures,
+            ramparts,
+            structureToNumber
+        );
     }
 
     generateWeightMatrix(roomInfo, terrainMatrix, distanceTransform) {
