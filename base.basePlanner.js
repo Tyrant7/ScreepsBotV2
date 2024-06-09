@@ -6,7 +6,6 @@ const RCLPlanner = require("./base.RCLPlanner");
 const {
     serializeBasePlan,
     deserializeBasePlan,
-    verifyIndenticality,
     runTests,
 } = require("./base.serializeBasePlan");
 const {
@@ -18,6 +17,7 @@ const {
     TITLE_SIZE,
     HEADER_SIZE,
 } = require("./base.planningConstants");
+const { getPlan, savePlan } = require("./base.planningUtility");
 
 const WEIGHT_CONTROLLER = 1.2;
 const WEIGHT_SOURCES = 0.85;
@@ -31,14 +31,6 @@ const STAMP_COUNT_LAB = 1;
 const BUCKET_MINIMUM = 300;
 
 class BasePlanner {
-    getPlan(roomName) {
-        return Memory.bases[roomName].rclPlans;
-    }
-
-    savePlan(roomName, serializedPlans) {
-        Memory.bases[roomName].rclPlans = serializedPlans;
-    }
-
     generateNewRoomPlan(roomInfo) {
         if (Game.cpu.bucket <= BUCKET_MINIMUM) {
             return;
@@ -157,7 +149,7 @@ class BasePlanner {
         cpu = Game.cpu.getUsed();
 
         // Save the serialized plans to memory
-        this.savePlan(
+        savePlan(
             roomInfo.room.name,
             serializeBasePlan(rclStructures, rclRamparts)
         );
@@ -186,7 +178,7 @@ class BasePlanner {
     }
 
     visualizePlan(roomName, rcl = Game.time % MAX_RCL) {
-        const plan = this.getPlan(roomName);
+        const plan = getPlan(roomName);
         if (!plan) {
             return;
         }

@@ -16,4 +16,12 @@ module.exports = {
             y <= MAX_BUILD_AREA
         );
     },
+
+    getPlan(roomName) {
+        return Memory.bases[roomName].rclPlans;
+    },
+
+    savePlan(roomName, serializedPlans) {
+        Memory.bases[roomName].rclPlans = serializedPlans;
+    },
 };

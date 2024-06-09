@@ -88,6 +88,7 @@ const economyManager = new EconomyManager();
 // Base planning
 const BasePlanner = require("./base.basePlanner");
 const basePlanner = new BasePlanner();
+const { getPlan: getBasePlan } = require("./base.planningUtility");
 
 // Defense
 const towerManager = new TowerManager();
@@ -103,6 +104,7 @@ const haulingRequester = new BasicHaulingRequester();
 const overlay = require("./overlay");
 const trackStats = require("./trackStats");
 const profiler = require("./profiler");
+const { requestSite } = require("./base.constructionManager");
 
 module.exports.loop = function () {
     // Passive pixel generation
@@ -163,12 +165,12 @@ module.exports.loop = function () {
 
         // DEBUG
         if (
-            !basePlanner.getPlan(info.room.name) ||
+            !getBasePlan(info.room.name) ||
             (DEBUG.replanBaseOnReload && RELOAD)
         ) {
             basePlanner.generateNewRoomPlan(info);
         }
-        basePlanner.visualizePlan(info.room.name);
+        requestSite(info);
     }
 
     // Run creeps
