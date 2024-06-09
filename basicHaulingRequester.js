@@ -1,5 +1,6 @@
 const RoomInfo = require("./roomInfo");
 const remoteUtility = require("./remoteUtility");
+const { getPlanData, keys } = require("./base.planningUtility");
 
 class BasicHaulingRequester {
     /**
@@ -38,8 +39,11 @@ class BasicHaulingRequester {
         }
 
         // Add miner containers for our base
-        const base = Memory.bases[roomInfo.room.name];
-        for (const containerPos of base.sourceContainers) {
+        const sourceContainers = getPlanData(
+            roomInfo.room.name,
+            keys.sourceContainerPositions
+        ).map((p) => new RoomPosition(p.x, p.y, roomInfo.room.name));
+        for (const containerPos of sourceContainers) {
             const container = containerPos
                 .lookFor(LOOK_STRUCTURES)
                 .find((s) => s.structureType === STRUCTURE_CONTAINER);

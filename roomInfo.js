@@ -221,9 +221,16 @@ class RoomInfo {
         const miningSpots = [];
 
         // Get the mining sites for this room
-        const base = Memory.bases[this.room.name];
-        for (const container of base.sourceContainers) {
-            miningSpots.push(container);
+        const sourceContainers = getPlanData(
+            this.room.name,
+            keys.sourceContainerPositions
+        );
+        for (const container of sourceContainers) {
+            console.log(JSON.stringify(container));
+            miningSpots.push({
+                pos: new RoomPosition(container.x, container.y, this.room.name),
+                sourceID: container.sourceID,
+            });
         }
 
         // Get the mining sites for remote rooms
@@ -276,9 +283,10 @@ class RoomInfo {
      */
     getMineralSites() {
         const mineralSpots = [];
-        const base = Memory.bases[this.room.name];
-
-        const mineralContainer = base.mineralContainer;
+        const mineralContainer = getPlanData(
+            this.room.name,
+            keys.mineralContainerPos
+        );
         const mineral = Game.getObjectById(mineralContainer.mineralID);
         const extractor = mineral.pos
             .lookFor(LOOK_STRUCTURES)

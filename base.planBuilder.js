@@ -286,9 +286,17 @@ class PlanBuilder {
             );
 
             if (point instanceof Source) {
-                this.sourceContainers.push({ ...lastStep, sourceID: point.id });
+                this.sourceContainers.push({
+                    x: lastStep.x,
+                    y: lastStep.y,
+                    sourceID: point.id,
+                });
             } else {
-                this.mineralContainer = { ...lastStep, mineralID: point.id };
+                this.mineralContainer = {
+                    x: lastStep.x,
+                    y: lastStep.y,
+                    mineralID: point.id,
+                };
                 continue;
             }
 

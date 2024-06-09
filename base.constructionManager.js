@@ -35,7 +35,7 @@ const requestSite = (roomInfo) => {
 
     const { structures, ramparts } = deserializeBasePlan(
         plans,
-        roomInfo.room.controller.level - 1
+        roomInfo.room.controller.level
     );
 
     // Figure out all structures we want to build that we haven't already

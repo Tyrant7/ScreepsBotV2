@@ -211,7 +211,7 @@ class BasePlanner {
             roomName,
             structures,
             ramparts,
-            structureToNumber
+            numberToStructure
         );
     }
 

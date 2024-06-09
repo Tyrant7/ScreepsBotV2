@@ -58,7 +58,7 @@ const deserializeBasePlan = (serializedPlans, rcl) => {
     const structures = new PathFinder.CostMatrix();
     const ramparts = new PathFinder.CostMatrix();
     const isNumeric = (char) => /^[+-]?\d+(\.\d+)?$/.test(char);
-    for (let current = 0; current <= rcl; current++) {
+    for (let current = 0; current < rcl; current++) {
         const plan = serializedPlans[current];
         let position = 0;
         for (let i = 0; i < plan.length; i++) {
