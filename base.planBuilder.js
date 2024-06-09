@@ -286,7 +286,7 @@ class PlanBuilder {
             );
 
             if (point instanceof Source) {
-                this.sourceContainers.push(lastStep);
+                this.sourceContainers.push({ ...lastStep, sourceID: point.id });
             } else {
                 this.mineralContainer = lastStep;
                 continue;

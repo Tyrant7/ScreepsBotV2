@@ -21,7 +21,15 @@ module.exports = {
         return Memory.bases[roomName].rclPlans;
     },
 
+    getPlanData(roomName, key) {
+        return Memory.bases[roomName][key];
+    },
+
     savePlan(roomName, serializedPlans) {
         Memory.bases[roomName].rclPlans = serializedPlans;
+    },
+
+    savePlanData(roomName, key, data) {
+        Memory.bases[roomName][key] = data;
     },
 };

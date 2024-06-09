@@ -56,7 +56,6 @@ const roomInfos = {};
 // Managers
 const EconomyManager = require("./economyManager");
 const TowerManager = require("./towerManager");
-const ColonyConstructionManager = require("./colonyConstructionManager");
 
 // Tasks
 const HaulerManager = require("./haulerManager");
@@ -92,9 +91,6 @@ const { getPlan: getBasePlan } = require("./base.planningUtility");
 
 // Defense
 const towerManager = new TowerManager();
-
-// Construction
-const constructionManager = new ColonyConstructionManager();
 
 // Hauling
 const BasicHaulingRequester = require("./basicHaulingRequester");
@@ -133,11 +129,6 @@ module.exports.loop = function () {
         profiler.startSample("Economy " + room);
         economyManager.run(info);
         profiler.endSample("Economy " + room);
-
-        // Handle construction
-        profiler.startSample("Construction " + room);
-        constructionManager.run(info);
-        profiler.endSample("Construction " + room);
 
         // Track RCL progress
         if (DEBUG.trackRCLProgress) {

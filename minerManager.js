@@ -3,15 +3,17 @@ const Task = require("./task");
 
 class MinerManager extends CreepManager {
     createTask(creep, roomInfo) {
-
         // Generate default miner behaviour -> miners only behave in one specific way
         const actionStack = [];
-        actionStack.push(function(creep, miningSite) {
-
+        actionStack.push(function (creep, miningSite) {
             // Extremely simple here
 
             // Move to mining site
-            const sitePos = new RoomPosition(miningSite.pos.x, miningSite.pos.y, miningSite.pos.roomName);
+            const sitePos = new RoomPosition(
+                miningSite.pos.x,
+                miningSite.pos.y,
+                miningSite.pos.roomName
+            );
             if (creep.pos.getRangeTo(sitePos) > 0) {
                 creep.betterMoveTo(sitePos, {
                     range: 0,
@@ -22,22 +24,28 @@ class MinerManager extends CreepManager {
             // Repair our container
             const source = Game.getObjectById(miningSite.sourceID);
             if (source && !source.energy && creep.pos.isEqualTo(sitePos)) {
-
                 // Repair our container
                 if (creep.store[RESOURCE_ENERGY]) {
-                    const container = sitePos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER);
+                    const container = sitePos
+                        .lookFor(LOOK_STRUCTURES)
+                        .find((s) => s.structureType === STRUCTURE_CONTAINER);
                     if (container && container.hits < container.hitsMax) {
                         creep.repair(container);
                     }
                 }
                 // Pickup some energy
                 else {
-                    const dropped = sitePos.lookFor(LOOK_RESOURCES).find((r) => r.resourceType === RESOURCE_ENERGY);
+                    const dropped = sitePos
+                        .lookFor(LOOK_RESOURCES)
+                        .find((r) => r.resourceType === RESOURCE_ENERGY);
                     if (dropped) {
                         creep.pickup(dropped);
-                    }
-                    else {
-                        const container = sitePos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_CONTAINER);
+                    } else {
+                        const container = sitePos
+                            .lookFor(LOOK_STRUCTURES)
+                            .find(
+                                (s) => s.structureType === STRUCTURE_CONTAINER
+                            );
                         if (container && container.store[RESOURCE_ENERGY]) {
                             creep.withdraw(container, RESOURCE_ENERGY);
                         }

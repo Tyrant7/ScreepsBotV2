@@ -1,12 +1,12 @@
 const remoteUtility = require("./remoteUtility");
 const estimateTravelTime = require("./estimateTravelTime");
 const haulerUtility = require("./haulerUtility");
+const { getPlanData } = require("./base.planningUtility");
 
 class RoomInfo {
-
     /**
      * Initializes some data for this room that is guaranteed to be persistent between ticks.
-     * @param {*} room 
+     * @param {*} room
      */
     constructor(room) {
         this.room = room;
@@ -18,9 +18,10 @@ class RoomInfo {
      * Initializes some data for this room that is not guaranteed to be persistent between ticks.
      */
     initializeTickInfo() {
-
         // Find all creeps that this room is responsible for, not just ones in it
-        this.creeps = Object.values(Game.creeps).filter((c) => c.memory.home === this.room.name);
+        this.creeps = Object.values(Game.creeps).filter(
+            (c) => c.memory.home === this.room.name
+        );
 
         // Dynamically intialize an array for each role
         for (const role in CONSTANTS.roles) {
@@ -58,7 +59,11 @@ class RoomInfo {
     }
 
     getMaxIncome() {
-        return this.sources.reduce((total, source) => total + (source.energyCapacity / ENERGY_REGEN_TIME), 0);
+        return this.sources.reduce(
+            (total, source) =>
+                total + source.energyCapacity / ENERGY_REGEN_TIME,
+            0
+        );
     }
 
     /**
@@ -96,13 +101,17 @@ class RoomInfo {
     }
 
     getUpgraderContainer() {
-        const containerPos = Memory.bases[this.room.name].upgraderContainer;
-        return this.room.lookForAt(LOOK_STRUCTURES, containerPos.x, containerPos.y).find(
-            (s) => s.structureType === STRUCTURE_CONTAINER);
+        const containerPos = getPlanData(
+            this.room.name,
+            "upgraderContainerPos"
+        );
+        return this.room
+            .lookForAt(LOOK_STRUCTURES, containerPos.x, containerPos.y)
+            .find((s) => s.structureType === STRUCTURE_CONTAINER);
     }
 
     // #region Maintenance
-    
+
     /**
      * Finds all structures wanted by this room, including remotes.
      * @returns An array of all planned structures currently visible and wanted by this room.
@@ -119,9 +128,16 @@ class RoomInfo {
                 continue;
             }
             if (Game.rooms[remote.room]) {
-                structures.push(...Game.rooms[remote.room].find(FIND_STRUCTURES, { 
-                    filter: (s) => remoteUtility.isStructurePlanned(this.room.name, s.pos, s.structureType)
-                }));
+                structures.push(
+                    ...Game.rooms[remote.room].find(FIND_STRUCTURES, {
+                        filter: (s) =>
+                            remoteUtility.isStructurePlanned(
+                                this.room.name,
+                                s.pos,
+                                s.structureType
+                            ),
+                    })
+                );
             }
         }
 
@@ -154,10 +170,18 @@ class RoomInfo {
             // Start with containers
             const room = Game.rooms[remote.room];
             if (room) {
-                const existingContainer = room.lookForAt(LOOK_STRUCTURES, remote.container.x, remote.container.y)
+                const existingContainer = room
+                    .lookForAt(
+                        LOOK_STRUCTURES,
+                        remote.container.x,
+                        remote.container.y
+                    )
                     .find((s) => s.structureType === STRUCTURE_CONTAINER);
                 if (!existingContainer) {
-                    unbuilt.push({ pos: remote.container, type: STRUCTURE_CONTAINER });
+                    unbuilt.push({
+                        pos: remote.container,
+                        type: STRUCTURE_CONTAINER,
+                    });
                 }
             }
 
@@ -165,7 +189,9 @@ class RoomInfo {
             remote.roads.forEach((road) => {
                 const room = Game.rooms[road.roomName];
                 if (room) {
-                    const existingRoad = room.lookForAt(LOOK_STRUCTURES, road.x, road.y).find((s) => s.structureType === STRUCTURE_ROAD);
+                    const existingRoad = room
+                        .lookForAt(LOOK_STRUCTURES, road.x, road.y)
+                        .find((s) => s.structureType === STRUCTURE_ROAD);
                     if (!existingRoad) {
                         unbuilt.push({ pos: road, type: STRUCTURE_ROAD });
                     }
@@ -196,11 +222,8 @@ class RoomInfo {
 
         // Get the mining sites for this room
         const base = Memory.bases[this.room.name];
-        for (const key in base.minerContainers) {
-            miningSpots.push({
-                pos: base.minerContainers[key],
-                sourceID: key,
-            });
+        for (const container of base.sourceContainers) {
+            miningSpots.push(container);
         }
 
         // Get the mining sites for remote rooms
@@ -231,11 +254,20 @@ class RoomInfo {
      */
     getFirstUnreservedMiningSite(pos) {
         const sites = this.getMiningSites().sort((a, b) => {
-            return estimateTravelTime(pos, a.pos) - estimateTravelTime(pos, b.pos);
+            return (
+                estimateTravelTime(pos, a.pos) - estimateTravelTime(pos, b.pos)
+            );
         });
 
         // Find the first site where no miner has reserved
-        return sites.find((site) => !this.miners.find((m) => m.memory.miningSite && m.memory.miningSite.sourceID === site.sourceID));
+        return sites.find(
+            (site) =>
+                !this.miners.find(
+                    (m) =>
+                        m.memory.miningSite &&
+                        m.memory.miningSite.sourceID === site.sourceID
+                )
+        );
     }
 
     /**
@@ -247,7 +279,9 @@ class RoomInfo {
         const base = Memory.bases[this.room.name];
         for (const key in base.mineralContainers) {
             const mineral = Game.getObjectById(key);
-            const extractor = mineral.pos.lookFor(LOOK_STRUCTURES).find((s) => s.structureType === STRUCTURE_EXTRACTOR);
+            const extractor = mineral.pos
+                .lookFor(LOOK_STRUCTURES)
+                .find((s) => s.structureType === STRUCTURE_EXTRACTOR);
             if (extractor) {
                 mineralSpots.push({
                     pos: base.mineralContainers[key],
@@ -269,7 +303,7 @@ class RoomInfo {
      * @param {ResourceConstant} resourceType The type of resource.
      * @param {number} fillrate The approximate rate at which the resource will accumulate at the pickup location.
      * Can be negative if resource will decay.
-     * @param {boolean} isSource Is this request under a source? If yes, it will only be returned 
+     * @param {boolean} isSource Is this request under a source? If yes, it will only be returned
      * if the energy is greater than or equal to the requesting hauler's carry capacity.
      * @param {RoomPosition} pos The position of the resources to pickup.
      */
@@ -280,7 +314,10 @@ class RoomInfo {
 
         // If a pickup request already exists for this position, let's group it
         const existingRequest = this._pickupRequests.find((request) => {
-            return request.pos.isEqualTo(pos) && request.resourceType === resourceType;
+            return (
+                request.pos.isEqualTo(pos) &&
+                request.resourceType === resourceType
+            );
         });
         if (existingRequest) {
             existingRequest.amount += amount;
@@ -289,12 +326,16 @@ class RoomInfo {
         }
 
         // Search for haulers currently assigned to this job
-        const assignedHaulers = this.haulers.filter((h) => {
-            return h.memory.pickup && 
-                h.memory.pickup.pos.x === pos.x &&
-                h.memory.pickup.pos.y === pos.y &&
-                h.memory.pickup.pos.roomName === pos.roomName;
-        }).map((h) => h.id);
+        const assignedHaulers = this.haulers
+            .filter((h) => {
+                return (
+                    h.memory.pickup &&
+                    h.memory.pickup.pos.x === pos.x &&
+                    h.memory.pickup.pos.y === pos.y &&
+                    h.memory.pickup.pos.roomName === pos.roomName
+                );
+            })
+            .map((h) => h.id);
         this._pickupRequests.push({
             requestID: this._pickupRequests.length,
             amount,
@@ -310,14 +351,19 @@ class RoomInfo {
      * Creates a dropoff request for haulers with the given parameters.
      * @param {ResourceConstant} resourceType The type of resource.
      * @param {number} amount The amount.
-     * @param {string[]} dropoffIDs The game IDs of the structures/creeps requesting a dropoff. 
+     * @param {string[]} dropoffIDs The game IDs of the structures/creeps requesting a dropoff.
      * Pass multiple if multiple dropoff points are acceptable (primarily for link usage).
      */
     createDropoffRequest(amount, resourceType, dropoffIDs) {
         if (amount === 0) {
             return;
         }
-        const assignedHaulers = this.haulers.filter((h) => h.memory.dropoff && dropoffIDs.includes(h.memory.dropoff.id)).map((h) => h.id);
+        const assignedHaulers = this.haulers
+            .filter(
+                (h) =>
+                    h.memory.dropoff && dropoffIDs.includes(h.memory.dropoff.id)
+            )
+            .map((h) => h.id);
         this._dropoffRequests.push({
             requestID: this._dropoffRequests.length,
             amount,
@@ -328,7 +374,7 @@ class RoomInfo {
     }
 
     /**
-     * Returns all pickup requests, source requests will be filtered so that only ones who's amounts are 
+     * Returns all pickup requests, source requests will be filtered so that only ones who's amounts are
      * greater than or equal to the carry capacity of the requesting creep will be returned.
      * @param {Creep} creep The hauler requesting the pickup request.
      * @returns {{}[]} An array of pickup requests.
@@ -336,18 +382,27 @@ class RoomInfo {
     getPickupRequests(creep) {
         // Add a property that tells us if this pickup point has enough haulers assigned to fill its request or not
         this._pickupRequests.forEach((pickup) => {
-            pickup.assignedHaulers = pickup.assignedHaulers.filter((hauler) => Game.getObjectById(hauler));
+            pickup.assignedHaulers = pickup.assignedHaulers.filter((hauler) =>
+                Game.getObjectById(hauler)
+            );
             const total = pickup.assignedHaulers.reduce((total, currID) => {
-                return total + Game.getObjectById(currID).store.getFreeCapacity();
+                return (
+                    total + Game.getObjectById(currID).store.getFreeCapacity()
+                );
             }, 0);
             pickup.hasEnough = total >= pickup.amount;
         });
 
         return this._pickupRequests.filter((pickup) => {
-            return !pickup.isSource || 
+            return (
+                !pickup.isSource ||
                 // Using our core as our distance since we don't want further haulers accepting the orders
                 // before earlier because the further ones see there as being more energy than the closer ones
-                pickup.amount + (pickup.fillrate * estimateTravelTime(this.core, pickup.pos)) >= creep.store.getCapacity();
+                pickup.amount +
+                    pickup.fillrate *
+                        estimateTravelTime(this.core, pickup.pos) >=
+                    creep.store.getCapacity()
+            );
         });
     }
 
@@ -365,9 +420,14 @@ class RoomInfo {
         // Add a property that tells us if this dropoff point has enough haulers assigned to it to fill its request or not
         this._dropoffRequests.forEach((dropoff) => {
             // Filter to exclude haulers that no longer exist
-            dropoff.assignedHaulers = dropoff.assignedHaulers.filter((hauler) => Game.getObjectById(hauler));
+            dropoff.assignedHaulers = dropoff.assignedHaulers.filter((hauler) =>
+                Game.getObjectById(hauler)
+            );
             const total = dropoff.assignedHaulers.reduce((total, currID) => {
-                return total + Game.getObjectById(currID).store[dropoff.resourceType];
+                return (
+                    total +
+                    Game.getObjectById(currID).store[dropoff.resourceType]
+                );
             }, 0);
             dropoff.hasEnough = total >= dropoff.amount;
         });
@@ -376,12 +436,14 @@ class RoomInfo {
         if (!validDropoffs.length && this.room.storage) {
             // It won't matter how much, what type, or who's assigned
             // We will accept all haulers
-            return [{
-                amount: this.room.storage.store.getFreeCapacity(),
-                resourceType: resourceType,
-                dropoffIDs: [this.room.storage.id],
-                assignedHaulers: [],
-            }];
+            return [
+                {
+                    amount: this.room.storage.store.getFreeCapacity(),
+                    resourceType: resourceType,
+                    dropoffIDs: [this.room.storage.id],
+                    assignedHaulers: [],
+                },
+            ];
         }
         return validDropoffs;
     }
@@ -392,7 +454,9 @@ class RoomInfo {
      * @param {string} haulerID The ID of the hauler to add.
      */
     acceptPickupRequest(requestID, haulerID) {
-        const request = this._pickupRequests.find((r) => r.requestID === requestID);
+        const request = this._pickupRequests.find(
+            (r) => r.requestID === requestID
+        );
         if (request) {
             request.assignedHaulers.push(haulerID);
         }
@@ -404,7 +468,9 @@ class RoomInfo {
      * @param {string} haulerID The ID of the hauler to add.
      */
     acceptDropoffRequest(requestID, haulerID) {
-        const request = this._dropoffRequests.find((r) => r.requestID === requestID);
+        const request = this._dropoffRequests.find(
+            (r) => r.requestID === requestID
+        );
         if (request) {
             request.assignedHaulers.push(haulerID);
         }
@@ -416,9 +482,13 @@ class RoomInfo {
      * @param {string} haulerID The ID of the hauler to remove.
      */
     unassignPickup(requestID, haulerID) {
-        const request = this._pickupRequests.find((r) => r.requestID === requestID);
+        const request = this._pickupRequests.find(
+            (r) => r.requestID === requestID
+        );
         if (request) {
-            request.assignedHaulers = request.assignedHaulers.filter((id) => id !== haulerID);
+            request.assignedHaulers = request.assignedHaulers.filter(
+                (id) => id !== haulerID
+            );
         }
         delete Game.getObjectById(haulerID).memory.pickup;
     }
@@ -429,9 +499,13 @@ class RoomInfo {
      * @param {string} haulerID The ID of the hauler to remove.
      */
     unassignDropoff(requestID, haulerID) {
-        const request = this._dropoffRequests.find((r) => r.requestID === requestID);
+        const request = this._dropoffRequests.find(
+            (r) => r.requestID === requestID
+        );
         if (request) {
-            request.assignedHaulers = request.assignedHaulers.filter((id) => id !== haulerID);
+            request.assignedHaulers = request.assignedHaulers.filter(
+                (id) => id !== haulerID
+            );
         }
         delete Game.getObjectById(haulerID).memory.dropoff;
     }

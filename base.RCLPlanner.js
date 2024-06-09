@@ -122,35 +122,32 @@ class RCLPlanner {
     /**
      * Plans out container RCLs based on constants provided in this module.
      * @param {{ x: number, y: number }} upgraderContainerPos The planned position of the upgrader container.
+     * @param {{ x: number, y: number }} mineralContainer The planned position of the mineral container.
+     * @param {{ x: number, y: number }[]} sourceContainers The planned positions of the sources containers.
      */
-    planContainers(upgraderContainerPos) {
+    planContainers(
+        upgraderContainerPos = undefined,
+        mineralContainer = undefined,
+        sourceContainers = []
+    ) {
         // Let's push all containers at appropriate RCLs based on their type
         const identifyContainerRCL = (pos) => {
-            for (let x = pos.x - 1; x <= pos.x + 1; x++) {
-                for (let y = pos.y - 1; y <= pos.y + 1; y++) {
-                    // Source container
-                    if (
-                        this.ri.sources.find(
-                            (s) => s.pos.x === x && s.pos.y === y
-                        )
-                    ) {
-                        return SOURCE_CONTAINER_RCL;
-                    }
-
-                    if (
-                        this.ri.mineral.pos.x === x &&
-                        this.ri.mineral.pos.y === y
-                    ) {
-                        return MINERAL_CONTAINER_RCL;
-                    }
-
-                    if (
-                        upgraderContainerPos.x === x &&
-                        upgraderContainerPos.y === y
-                    ) {
-                        return UPGRADER_CONTAINER_RCL;
-                    }
-                }
+            if (sourceContainers.find((c) => c.x === pos.x && c.y === pos.y)) {
+                return SOURCE_CONTAINER_RCL;
+            }
+            if (
+                mineralContainer &&
+                mineralContainer.x === pos.x &&
+                mineralContainer.y === pos.y
+            ) {
+                return MINERAL_CONTAINER_RCL;
+            }
+            if (
+                upgraderContainerPos &&
+                upgraderContainerPos.x === x &&
+                upgraderContainerPos.y === y
+            ) {
+                return UPGRADER_CONTAINER_RCL;
             }
             return MISC_CONTAINER_RCL;
         };

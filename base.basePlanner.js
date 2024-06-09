@@ -17,7 +17,7 @@ const {
     TITLE_SIZE,
     HEADER_SIZE,
 } = require("./base.planningConstants");
-const { getPlan, savePlan } = require("./base.planningUtility");
+const { getPlan, savePlan, savePlanData } = require("./base.planningUtility");
 
 const WEIGHT_CONTROLLER = 1.2;
 const WEIGHT_SOURCES = 0.85;
@@ -133,7 +133,11 @@ class BasePlanner {
             roomInfo
         );
         rclPlanner.planGenericStructures();
-        rclPlanner.planContainers(planBuilder.upgraderContainer);
+        rclPlanner.planContainers(
+            planBuilder.upgraderContainer,
+            planBuilder.mineralContainer,
+            planBuilder.sourceContainers
+        );
         rclPlanner.planTowers();
         rclPlanner.planRamparts(ramparts);
         rclPlanner.planRoads(stamps.core);
@@ -152,6 +156,21 @@ class BasePlanner {
         savePlan(
             roomInfo.room.name,
             serializeBasePlan(rclStructures, rclRamparts)
+        );
+        savePlanData(
+            roomInfo.room.name,
+            "upgraderContainerPos",
+            planBuilder.upgraderContainer
+        );
+        savePlanData(
+            roomInfo.room.name,
+            "mineralContainerPos",
+            planBuilder.mineralContainer
+        );
+        savePlanData(
+            roomInfo.room.name,
+            "sourceContainerPositions",
+            planBuilder.sourceContainers
         );
         this.printDebugMessage(
             `🟢 Completed plan serialization in ${(
