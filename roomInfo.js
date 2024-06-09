@@ -398,7 +398,6 @@ class RoomInfo {
             }, 0);
             pickup.hasEnough = total >= pickup.amount;
         });
-
         return this._pickupRequests.filter((pickup) => {
             return (
                 !pickup.isSource ||

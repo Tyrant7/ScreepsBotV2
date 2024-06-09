@@ -21,10 +21,12 @@ global.DEBUG = {
     logTasks: true,
     alertOnIdle: false,
 
-    drawOverlay: false,
+    drawOverlay: true,
     drawRemoteOwnership: false,
     drawContainerOverlay: false,
+
     drawTrafficArrows: true,
+    drawPathMatrices: false,
 
     trackCPUUsage: true,
     trackRCLProgress: true,
@@ -169,6 +171,14 @@ module.exports.loop = function () {
 
         // Hauling requests
         haulingRequester.generateBasicRequests(info);
+
+        if (DEBUG.drawPathMatrices) {
+            const matrix = betterPathing.getCachedMatrix(
+                CONSTANTS.pathSets.default,
+                info.room.name
+            );
+            overlay.visualizeCostMatrix(info.room.name, matrix, []);
+        }
     }
 
     // Run creeps
