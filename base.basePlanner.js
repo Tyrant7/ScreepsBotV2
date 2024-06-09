@@ -17,7 +17,12 @@ const {
     TITLE_SIZE,
     HEADER_SIZE,
 } = require("./base.planningConstants");
-const { getPlan, savePlan, savePlanData } = require("./base.planningUtility");
+const {
+    getPlan,
+    savePlan,
+    savePlanData,
+    keys,
+} = require("./base.planningUtility");
 
 const WEIGHT_CONTROLLER = 1.2;
 const WEIGHT_SOURCES = 0.85;
@@ -159,17 +164,17 @@ class BasePlanner {
         );
         savePlanData(
             roomInfo.room.name,
-            "upgraderContainerPos",
+            keys.upgraderContainerPos,
             planBuilder.upgraderContainer
         );
         savePlanData(
             roomInfo.room.name,
-            "mineralContainerPos",
+            keys.mineralContainerPos,
             planBuilder.mineralContainer
         );
         savePlanData(
             roomInfo.room.name,
-            "sourceContainerPositions",
+            keys.sourceContainerPositions,
             planBuilder.sourceContainers
         );
         this.printDebugMessage(

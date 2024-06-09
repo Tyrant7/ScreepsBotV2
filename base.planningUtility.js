@@ -1,6 +1,14 @@
 const { MAX_BUILD_AREA, MIN_BUILD_AREA } = require("./base.planningConstants");
 
+const keys = {
+    upgraderContainerPos: "ucp",
+    mineralContainerPos: "mcp",
+    sourceContainerPositions: "scps",
+};
+
 module.exports = {
+    keys,
+
     /**
      * Returns whether of not this tile is within the valid base building area.
      * @param {number} x The X component of the position.

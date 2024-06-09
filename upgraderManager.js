@@ -1,6 +1,7 @@
 const CreepManager = require("./creepManager");
 const Task = require("./task");
 const RoomInfo = require("./roomInfo");
+const { getPlanData, keys } = require("./base.planningUtility");
 
 class UpgraderManager extends CreepManager {
     /**
@@ -15,11 +16,14 @@ class UpgraderManager extends CreepManager {
             const target = Game.getObjectById(data.controllerID);
 
             // Find our upgrader container
-            const base = Memory.bases[target.room.name];
+            const upContPos = getPlanData(
+                target.room.name,
+                keys.upgraderContainerPos
+            );
             const upgraderContainerPos = new RoomPosition(
-                base.upgraderContainerPos.x,
-                base.upgraderContainerPos.y,
-                base.upgraderContainerPos.roomName
+                upContPos.x,
+                upContPos.y,
+                upContPos.roomName
             );
 
             // We're within range of our container already!

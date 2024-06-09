@@ -1,7 +1,7 @@
 const remoteUtility = require("./remoteUtility");
 const estimateTravelTime = require("./estimateTravelTime");
 const haulerUtility = require("./haulerUtility");
-const { getPlanData } = require("./base.planningUtility");
+const { getPlanData, keys } = require("./base.planningUtility");
 
 class RoomInfo {
     /**
@@ -103,7 +103,7 @@ class RoomInfo {
     getUpgraderContainer() {
         const containerPos = getPlanData(
             this.room.name,
-            "upgraderContainerPos"
+            keys.upgraderContainerPos
         );
         return this.room
             .lookForAt(LOOK_STRUCTURES, containerPos.x, containerPos.y)
@@ -277,18 +277,18 @@ class RoomInfo {
     getMineralSites() {
         const mineralSpots = [];
         const base = Memory.bases[this.room.name];
-        for (const key in base.mineralContainers) {
-            const mineral = Game.getObjectById(key);
-            const extractor = mineral.pos
-                .lookFor(LOOK_STRUCTURES)
-                .find((s) => s.structureType === STRUCTURE_EXTRACTOR);
-            if (extractor) {
-                mineralSpots.push({
-                    pos: base.mineralContainers[key],
-                    mineralID: key,
-                    extractorID: extractor.id,
-                });
-            }
+
+        const mineralContainer = base.mineralContainer;
+        const mineral = Game.getObjectById(mineralContainer.mineralID);
+        const extractor = mineral.pos
+            .lookFor(LOOK_STRUCTURES)
+            .find((s) => s.structureType === STRUCTURE_EXTRACTOR);
+        if (extractor) {
+            mineralSpots.push({
+                pos: { x: mineralContainer.x, y: mineralContainer.y },
+                mineralID: mineralContainer.mineralID,
+                extractorID: extractor.id,
+            });
         }
         return mineralSpots;
     }
