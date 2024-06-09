@@ -140,7 +140,7 @@ const runTests = (rclStructures, rclRamparts) => {
     for (let rcl = 0; rcl < completeRCLStructures.length; rcl++) {
         const { structures: deserializedStructures } = deserializeBasePlan(
             serializedPlans,
-            rcl
+            rcl + 1
         );
         const error = verifyIndenticality(
             completeRCLStructures[rcl],
