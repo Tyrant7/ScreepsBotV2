@@ -239,7 +239,11 @@ class RoomInfo {
                     continue;
                 }
                 miningSpots.push({
-                    pos: remote.container,
+                    pos: new RoomPosition(
+                        remote.container.x,
+                        remote.container.y,
+                        remote.container.roomName
+                    ),
                     sourceID: remote.source.id,
                 });
             }
@@ -275,11 +279,12 @@ class RoomInfo {
                 );
                 const source = Game.getObjectById(site.sourceID);
                 if (!source) {
-                    // No view of source
-                    return false;
+                    // No view of source -> no miner there yet, so
+                    // this must be a valid site since all sites can hold at least one miner
+                    return true;
                 }
                 const sourcePos = source.pos;
-                const roomTerrain = this.room.getTerrain();
+                const roomTerrain = Game.map.getRoomTerrain(site.pos.roomName);
                 let openSpaces = 0;
                 for (let x = sourcePos.x - 1; x <= sourcePos.x + 1; x++) {
                     for (let y = sourcePos.y - 1; y <= sourcePos.y + 1; y++) {
@@ -328,7 +333,11 @@ class RoomInfo {
             .find((s) => s.structureType === STRUCTURE_EXTRACTOR);
         if (extractor) {
             mineralSpots.push({
-                pos: { x: mineralContainer.x, y: mineralContainer.y },
+                pos: new RoomPosition(
+                    mineralContainer.x,
+                    mineralContainer.y,
+                    this.room.name
+                ),
                 mineralID: mineralContainer.mineralID,
                 extractorID: extractor.id,
             });

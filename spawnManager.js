@@ -143,6 +143,10 @@ class ProductionSpawnHandler extends SpawnHandler {
                 continue;
             }
 
+            // If we can't see the room we'll send one miner
+            if (!Game.rooms[remote.room]) {
+                wantedMiners++;
+            }
             wantedCarry += remote.neededCarry;
 
             // Since some remotes have the same room, we'll use a set to track the ones we need to reserve
