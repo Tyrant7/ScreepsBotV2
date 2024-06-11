@@ -81,8 +81,8 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
 
         // Something went wrong with our pathing
         const obstruction = nextStep
-            .look(LOOK_STRUCTURES)
-            .concat(nextStep.look(LOOK_CONSTRUCTION_SITES))
+            .lookFor(LOOK_STRUCTURES)
+            .concat(nextStep.lookFor(LOOK_CONSTRUCTION_SITES))
             .filter((o) => OBSTACLE_OBJECT_TYPES[o.structureType]);
         if (creep.pos.getRangeTo(nextStep) > 1 || obstruction) {
             return newPath(creep);
