@@ -21,7 +21,7 @@ global.DEBUG = {
     logTasks: true,
     alertOnIdle: false,
 
-    drawOverlay: true,
+    drawOverlay: false,
     drawRemoteOwnership: false,
     drawContainerOverlay: false,
 
