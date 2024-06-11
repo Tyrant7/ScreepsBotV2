@@ -252,27 +252,64 @@ class RoomInfo {
 
     /**
      * Gets the first unreserved mining site, sorting by estimated distance.
-     * @param {RoomPosition} pos The position to order the sites by distance to.
+     * @param {RoomPosition?} pos The position to order the sites by distance to.
      * @returns An object containing some data about the mining site:
      * - The position of the mining site (place to stand).
      * - The ID of the source to mine.
      */
-    getFirstUnreservedMiningSite(pos) {
-        const sites = this.getMiningSites().sort((a, b) => {
-            return (
-                estimateTravelTime(pos, a.pos) - estimateTravelTime(pos, b.pos)
-            );
-        });
-
-        // Find the first site where no miner has reserved
-        return sites.find(
-            (site) =>
-                !this.miners.find(
+    getFirstOpenMiningSite(pos = null) {
+        const validSites = this.getMiningSites()
+            .sort((a, b) => {
+                return pos
+                    ? estimateTravelTime(pos, a.pos) -
+                          estimateTravelTime(pos, b.pos)
+                    : 0;
+            })
+            .filter((site) => {
+                // We're going to look for sites where the number of allocated miners is
+                // less than the amount of open spaces
+                const allocatedMiners = this.miners.filter(
                     (m) =>
                         m.memory.miningSite &&
                         m.memory.miningSite.sourceID === site.sourceID
-                )
-        );
+                );
+                const source = Game.getObjectById(site.sourceID);
+                if (!source) {
+                    // No view of source
+                    return false;
+                }
+                const sourcePos = source.pos;
+                const roomTerrain = this.room.getTerrain();
+                let openSpaces = 0;
+                for (let x = sourcePos.x - 1; x <= sourcePos.x + 1; x++) {
+                    for (let y = sourcePos.y - 1; y <= sourcePos.y + 1; y++) {
+                        if (x < 1 || x > 48 || y < 1 || y > 48) {
+                            continue;
+                        }
+                        if (roomTerrain.get(x, y) === TERRAIN_MASK_WALL) {
+                            continue;
+                        }
+                        openSpaces++;
+                    }
+                }
+                if (allocatedMiners.length >= openSpaces) {
+                    return false;
+                }
+
+                // And where the total number of WORK parts is less than that needed to fully mine a source
+                const totalWork = allocatedMiners.reduce((total, curr) => {
+                    return (
+                        total + curr.body.filter((p) => p.type === WORK).length
+                    );
+                }, 0);
+                const neededWork =
+                    SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME / HARVEST_POWER;
+                if (totalWork >= neededWork) {
+                    return false;
+                }
+                return true;
+            });
+        return validSites[0];
     }
 
     /**

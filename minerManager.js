@@ -1,4 +1,5 @@
 const CreepManager = require("./creepManager");
+const { visualizeCostMatrix } = require("./overlay");
 const Task = require("./task");
 
 class MinerManager extends CreepManager {
@@ -9,21 +10,63 @@ class MinerManager extends CreepManager {
             // Extremely simple here
 
             // Move to mining site
+            const source = Game.getObjectById(miningSite.sourceID);
             const sitePos = new RoomPosition(
                 miningSite.pos.x,
                 miningSite.pos.y,
                 miningSite.pos.roomName
             );
-            if (creep.pos.getRangeTo(sitePos) > 0) {
-                creep.betterMoveTo(sitePos, {
+
+            const isBlocked = (x, y) => {
+                const blocker = creep.room.lookForAt(LOOK_CREEPS, x, y)[0];
+                return (
+                    blocker &&
+                    blocker !== creep &&
+                    blocker.memory.role === CONSTANTS.roles.miner
+                );
+            };
+
+            // If site position is occupied, let's look for another, unoccupied spot near the source
+            let movePos = sitePos;
+            if (isBlocked(sitePos)) {
+                const findPosAdjacent = (pos) => {
+                    const terrain = creep.room.getTerrain();
+                    for (let x = pos.x - 1; x <= pos.x + 1; x++) {
+                        for (let y = pos.y - 1; y <= pos.y + 1; y++) {
+                            if (x < 1 || x > 48 || y < 1 || y > 48) {
+                                continue;
+                            }
+                            if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+                                continue;
+                            }
+                            // Position is occupied as well
+                            if (isBlocked(x, y)) {
+                                continue;
+                            }
+                            return new RoomPosition(x, y, pos.roomName);
+                        }
+                    }
+                };
+                movePos = findPosAdjacent(source.pos);
+            }
+            if (!movePos) {
+                creep.say("No spot");
+                return false;
+            }
+
+            if (creep.pos.getRangeTo(movePos) > 0) {
+                creep.betterMoveTo(movePos, {
                     range: 0,
                     pathSet: CONSTANTS.pathSets.default,
                 });
             }
 
             // Repair our container
-            const source = Game.getObjectById(miningSite.sourceID);
-            if (source && !source.energy && creep.pos.isEqualTo(sitePos)) {
+            if (
+                source &&
+                !source.energy &&
+                creep.pos.getRangeTo(sitePos.x, sitePos.y) <= 3
+            ) {
                 // Repair our container
                 if (creep.store[RESOURCE_ENERGY]) {
                     const container = sitePos
@@ -65,7 +108,7 @@ class MinerManager extends CreepManager {
             return new Task(creep.memory.miningSite, "mine", actionStack);
         }
 
-        const unreserved = roomInfo.getFirstUnreservedMiningSite(creep.pos);
+        const unreserved = roomInfo.getFirstOpenMiningSite(creep.pos);
         if (!unreserved) {
             // Wait for an opening
             // TODO //

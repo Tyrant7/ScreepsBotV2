@@ -40,7 +40,7 @@ global.DEBUG = {
 
     runProfiler: false,
 
-    replanBaseOnReload: true,
+    replanBaseOnReload: false,
     validateBasePlans: true,
     testBasePlanSerialization: true,
     cpuPrintoutFigures: 4,
