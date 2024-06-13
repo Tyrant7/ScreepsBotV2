@@ -1,11 +1,11 @@
 const { getCost } = require("./creepSpawnUtility");
 const { MINER_WORK } = require("./spawn.spawnConstants");
-const { roles } = require("./constants");
+const { roles, maxLevels } = require("./constants");
 
 //#region Energy Production
 
 const makeMiner = (energy) => {
-    let body = [];
+    const body = [];
     let lvl = 0;
     for (let i = 0; i < MINER_WORK / 2; i++) {
         lvl++;
@@ -29,18 +29,10 @@ const makeMiner = (energy) => {
     };
 };
 
-const makeRecoveryMiner = () => {
-    return {
-        body: [WORK, WORK, MOVE],
-        name: "Recovery_Miner " + Game.time + " [1]",
-        memory: { role: roles.miner },
-    };
-};
-
-const makeHauler = (desiredLevel, energy) => {
-    let body = [];
+const makeHauler = (energy) => {
+    const body = [];
     let lvl = 0;
-    for (let i = 0; i < desiredLevel; i++) {
+    for (let i = 0; i < maxLevels.hauler; i++) {
         lvl = i + 1;
         body.push(MOVE, CARRY, CARRY);
         if (getCost(body) > energy || body.length > MAX_CREEP_SIZE) {
@@ -72,10 +64,10 @@ const makeReserver = () => {
 
 //#region Development
 
-const makeUpgrader = (desiredLevel, energy) => {
-    let body = [CARRY, CARRY];
+const makeUpgrader = (energy) => {
+    const body = [CARRY, CARRY];
     let lvl = 0;
-    while (lvl < desiredLevel) {
+    while (lvl < maxLevels.upgrader) {
         lvl++;
         body.push(MOVE, WORK, WORK, WORK, WORK);
         if (getCost(body) > energy || body.length > MAX_CREEP_SIZE) {
@@ -103,13 +95,13 @@ const makeMiniUpgrader = () => {
     };
 };
 
-const makeBuilder = (desiredLevel, energy) => {
+const makeBuilder = (energy) => {
     const builderParts = [WORK, CARRY, MOVE];
-    let body = builderParts;
+    const body = builderParts;
     let lvl = 1;
     const levelCost = getCost(body);
     while (
-        lvl < desiredLevel &&
+        lvl < maxLevels.builder &&
         (lvl + 1) * levelCost <= energy &&
         body.length <= MAX_CREEP_SIZE - builderParts.length
     ) {
@@ -123,10 +115,10 @@ const makeBuilder = (desiredLevel, energy) => {
     };
 };
 
-const makeRepairer = (desiredLevel, energy) => {
-    let body = [];
+const makeRepairer = (energy) => {
+    const body = [];
     let lvl = 0;
-    for (let i = 0; i < desiredLevel; i++) {
+    for (let i = 0; i < maxLevels.repairer; i++) {
         lvl = i + 1;
         body.push(MOVE, CARRY, CARRY, WORK);
         if (getCost(body) > energy) {
@@ -144,10 +136,10 @@ const makeRepairer = (desiredLevel, energy) => {
     };
 };
 
-const makeMineralMiner = (desiredLevel, energy) => {
-    let body = [];
+const makeMineralMiner = (energy) => {
+    const body = [];
     let lvl = 0;
-    while (lvl < desiredLevel) {
+    while (lvl < maxLevels.mineralMiner) {
         lvl++;
         body.push(...[MOVE, WORK, WORK, WORK, WORK]);
         if (getCost(body) > energy || body.length > MAX_CREEP_SIZE) {
@@ -184,7 +176,7 @@ const makeScout = () => {
 //#region Defense
 
 const makeMiniDefender = (desiredLevel, maxCost) => {
-    let body = [];
+    const body = [];
     let lvl = 0;
     for (let i = 0; i < desiredLevel; i++) {
         lvl = i + 1;

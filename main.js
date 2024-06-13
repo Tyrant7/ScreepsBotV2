@@ -16,6 +16,7 @@ if (!Memory.bases) {
 }
 
 // Globals
+global.ME = "Tyrant7";
 global.DEBUG = {
     logTasks: true,
     alertOnIdle: false,
