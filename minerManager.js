@@ -1,6 +1,7 @@
 const CreepManager = require("./creepManager");
 const { visualizeCostMatrix } = require("./overlay");
 const Task = require("./task");
+const { pathSets, roles } = require("./constants");
 
 class MinerManager extends CreepManager {
     createTask(creep, roomInfo) {
@@ -22,7 +23,7 @@ class MinerManager extends CreepManager {
                 return (
                     blocker &&
                     blocker !== creep &&
-                    blocker.memory.role === CONSTANTS.roles.miner
+                    blocker.memory.role === roles.miner
                 );
             };
 
@@ -57,7 +58,7 @@ class MinerManager extends CreepManager {
             if (creep.pos.getRangeTo(movePos) > 0) {
                 creep.betterMoveTo(movePos, {
                     range: 0,
-                    pathSet: CONSTANTS.pathSets.default,
+                    pathSet: pathSets.default,
                 });
             }
 

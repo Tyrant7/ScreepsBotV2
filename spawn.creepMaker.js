@@ -1,5 +1,6 @@
 const { getCost } = require("./creepSpawnUtility");
 const { MINER_WORK } = require("./spawn.spawnConstants");
+const { roles } = require("./constants");
 
 //#region Energy Production
 
@@ -24,7 +25,7 @@ const makeMiner = (energy) => {
     return {
         body: body,
         name: "Miner " + Game.time + " [" + lvl + "]",
-        memory: { role: CONSTANTS.roles.miner },
+        memory: { role: roles.miner },
     };
 };
 
@@ -32,7 +33,7 @@ const makeRecoveryMiner = () => {
     return {
         body: [WORK, WORK, MOVE],
         name: "Recovery_Miner " + Game.time + " [1]",
-        memory: { role: CONSTANTS.roles.miner },
+        memory: { role: roles.miner },
     };
 };
 
@@ -53,7 +54,7 @@ const makeHauler = (desiredLevel, energy) => {
     return {
         body: body,
         name: "Hauler " + Game.time + " [" + lvl + "]",
-        memory: { role: CONSTANTS.roles.hauler },
+        memory: { role: roles.hauler },
     };
 };
 
@@ -63,7 +64,7 @@ const makeReserver = () => {
     return {
         body: [MOVE, CLAIM, MOVE, CLAIM],
         name: "Reserver " + Game.time + " [2]",
-        memory: { role: CONSTANTS.roles.reserver },
+        memory: { role: roles.reserver },
     };
 };
 
@@ -90,7 +91,7 @@ const makeUpgrader = (desiredLevel, energy) => {
     return {
         body: body,
         name: "Upgrader " + Game.time + " [" + lvl + "]",
-        memory: { role: CONSTANTS.roles.upgrader },
+        memory: { role: roles.upgrader },
     };
 };
 
@@ -98,7 +99,7 @@ const makeMiniUpgrader = () => {
     return {
         body: [CARRY, MOVE, WORK, WORK],
         name: "Mini_Upgrader " + Game.time + " [1]",
-        memory: { role: CONSTANTS.roles.upgrader },
+        memory: { role: roles.upgrader },
     };
 };
 
@@ -118,7 +119,7 @@ const makeBuilder = (desiredLevel, energy) => {
     return {
         body: body,
         name: "Builder " + Game.time + " [" + lvl + "]",
-        memory: { role: CONSTANTS.roles.builder },
+        memory: { role: roles.builder },
     };
 };
 
@@ -139,7 +140,7 @@ const makeRepairer = (desiredLevel, energy) => {
     return {
         body: body,
         name: "Repairer " + Game.time + " [" + lvl + "]",
-        memory: { role: CONSTANTS.roles.repairer },
+        memory: { role: roles.repairer },
     };
 };
 
@@ -162,7 +163,7 @@ const makeMineralMiner = (desiredLevel, energy) => {
     return {
         body: body,
         name: "Excavator " + Game.time + " [" + lvl + "]",
-        memory: { role: CONSTANTS.roles.mineralMiner },
+        memory: { role: roles.mineralMiner },
     };
 };
 
@@ -174,7 +175,7 @@ const makeScout = () => {
     return {
         body: [MOVE],
         name: "Scout " + Game.time + " [1]",
-        memory: { role: CONSTANTS.roles.scout },
+        memory: { role: roles.scout },
     };
 };
 
@@ -205,7 +206,7 @@ const makeMiniDefender = (desiredLevel, maxCost) => {
     return {
         body: body,
         name: "Baby_Defender " + Game.time + " [" + lvl + "]",
-        memory: { role: CONSTANTS.roles.defender },
+        memory: { role: roles.defender },
     };
 };
 

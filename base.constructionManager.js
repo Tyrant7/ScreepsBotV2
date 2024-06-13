@@ -2,6 +2,7 @@ const { iterateMatrix } = require("./base.matrixUtility");
 const { numberToStructure, MAX_VALUE } = require("./base.planningConstants");
 const { getPlan } = require("./base.planningUtility");
 const { deserializeBasePlan } = require("./base.serializeBasePlan");
+const { pathSets } = require("./constants");
 
 const UTILITY_CONSTANTS = {
     [STRUCTURE_SPAWN]: 100,
@@ -96,7 +97,7 @@ const handleSites = (roomInfo) => {
         // Update our cost matrix for creeps using our better pathing system
         const roomMatrix =
             betterPathing.getCachedMatrix(
-                CONSTANTS.pathSets.default,
+                pathSets.default,
                 roomInfo.room.name
             ) || betterPathing.generateDefaultCostMatrix(roomInfo.room.name);
 
@@ -120,7 +121,7 @@ const handleSites = (roomInfo) => {
         // Now cache it
         betterPathing.cacheMatrix(
             roomMatrix,
-            CONSTANTS.pathSets.default,
+            pathSets.default,
             roomInfo.room.name
         );
     } else {

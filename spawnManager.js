@@ -1,6 +1,7 @@
 const creepMaker = require("./creepMaker");
 const remoteUtility = require("./remoteUtility");
 const creepSpawnUtility = require("./creepSpawnUtility");
+const { maxLevels, maxCounts } = require("./constants");
 
 // 10_000 energy -> one build part worth of workers
 const WORK_TO_BUILD_RATIO = 10000;
@@ -14,7 +15,7 @@ const REPAIR_THRESHOLDS = {
 };
 
 // We'll need at least this many levels of upgrader missing before we spawn a new one
-const UPGRADER_LEVEL_MARGIN = Math.floor(CONSTANTS.maxUpgraderLevel / 1.5);
+const UPGRADER_LEVEL_MARGIN = Math.floor(maxLevels.upgrader / 1.5);
 
 // How many planned structures should we have before we allocate additional repairers
 const PLANNED_STRUCTURE_TO_REPAIRER_RATIO = 450;
@@ -42,7 +43,7 @@ class CrashSpawnHandler extends SpawnHandler {
         if (roomInfo.miners.length) {
             // Make sure we can afford any hauler at all
             const hauler = creepMaker.makeHauler(
-                CONSTANTS.maxHaulerLevel,
+                maxLevels.hauler,
                 Math.max(roomInfo.room.energyAvailable, SPAWN_ENERGY_START)
             );
             if (hauler.body.length) {
@@ -98,16 +99,16 @@ class ProductionSpawnHandler extends SpawnHandler {
             }
             if (wantedCarry > existingSpawns.haulerCarry) {
                 return creepMaker.makeHauler(
-                    CONSTANTS.maxHaulerLevel,
+                    maxLevels.hauler,
                     roomInfo.room.energyCapacityAvailable
                 );
             }
             if (
                 wantedBuilderWork > existingSpawns.builderWork &&
-                roomInfo.builders.length < CONSTANTS.maxBuilderCount
+                roomInfo.builders.length < maxLevels.builder
             ) {
                 const builder = creepMaker.makeBuilder(
-                    CONSTANTS.smallBuilderLevel,
+                    maxLevels.smallBuilder,
                     roomInfo.room.energyCapacityAvailable
                 );
                 // Make sure this builder prioritizes building in remotes over our base room
@@ -239,7 +240,7 @@ class UsageSpawnHandler extends SpawnHandler {
 
     trySpawnUpgrader(roomInfo) {
         // We won't have enough spaces to support an additional
-        if (roomInfo.upgraders.length >= CONSTANTS.maxUpgraders) {
+        if (roomInfo.upgraders.length >= maxCounts.upgraders) {
             return;
         }
 
@@ -258,7 +259,7 @@ class UsageSpawnHandler extends SpawnHandler {
                 while (remainingLevel > 0) {
                     const nextLevel = Math.min(
                         remainingLevel,
-                        CONSTANTS.maxUpgraderLevel
+                        maxLevels.upgrader
                     );
                     const upgraderBody = creepMaker.makeUpgrader(
                         nextLevel,
@@ -278,7 +279,7 @@ class UsageSpawnHandler extends SpawnHandler {
                         return allowOver ? level : level - 1;
                     }
 
-                    remainingLevel -= CONSTANTS.maxUpgraderLevel;
+                    remainingLevel -= maxLevels.upgrader;
                 }
             }
         }
@@ -342,7 +343,7 @@ class UsageSpawnHandler extends SpawnHandler {
         // so we'll leave a margin of difference between our wanted and existing counts
         if (wantedLevels - actualLevels >= UPGRADER_LEVEL_MARGIN) {
             return creepMaker.makeUpgrader(
-                CONSTANTS.maxUpgraderLevel,
+                maxLevels.upgrader,
                 roomInfo.room.energyCapacityAvailable
             );
         }
@@ -375,7 +376,7 @@ class UsageSpawnHandler extends SpawnHandler {
         });
         if (repairStructure) {
             return creepMaker.makeRepairer(
-                CONSTANTS.maxRepairerLevel,
+                maxLevels.repairer,
                 roomInfo.room.energyCapacityAvailable
             );
         }
@@ -383,7 +384,7 @@ class UsageSpawnHandler extends SpawnHandler {
 
     trySpawnScout(roomInfo) {
         // Don't need more than one scout per room
-        if (roomInfo.scouts.length >= CONSTANTS.maxScouts) {
+        if (roomInfo.scouts.length >= maxCounts.scouts) {
             return;
         }
         return creepMaker.makeScout();
@@ -396,7 +397,7 @@ class UsageSpawnHandler extends SpawnHandler {
         }
 
         // Don't allow us to exceed a hard max of builders
-        if (roomInfo.builders.length >= CONSTANTS.maxBuilderCount) {
+        if (roomInfo.builders.length >= maxCounts.builder) {
             return;
         }
 
@@ -427,7 +428,7 @@ class UsageSpawnHandler extends SpawnHandler {
         const nextWork = wantedWork - existingWork;
         if (nextWork > 0) {
             // If we really don't need much work, let's just spawn a smaller builder
-            if (wantedWork < CONSTANTS.maxBuilderLevel) {
+            if (wantedWork < maxLevels.builder) {
                 return creepMaker.makeBuilder(
                     nextWork,
                     roomInfo.room.energyCapacityAvailable
@@ -435,7 +436,7 @@ class UsageSpawnHandler extends SpawnHandler {
             }
             // Otherwise, let's always spawn a max size one
             return creepMaker.makeBuilder(
-                CONSTANTS.maxBuilderLevel,
+                maxLevels.builder,
                 roomInfo.room.energyCapacityAvailable
             );
         }
@@ -451,7 +452,7 @@ class UsageSpawnHandler extends SpawnHandler {
             return;
         }
         return creepMaker.makeMineralMiner(
-            CONSTANTS.maxMineralMinerLevel,
+            maxLevels.mineralMiner,
             roomInfo.room.energyCapacityAvailable
         );
     }

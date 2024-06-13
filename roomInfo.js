@@ -1,6 +1,7 @@
 const remoteUtility = require("./remoteUtility");
 const estimateTravelTime = require("./estimateTravelTime");
 const { getPlanData, keys } = require("./base.planningUtility");
+const { roles } = require("./constants");
 
 class RoomInfo {
     /**
@@ -23,15 +24,15 @@ class RoomInfo {
         );
 
         // Dynamically intialize an array for each role
-        for (const role in CONSTANTS.roles) {
+        for (const role in roles) {
             const propName = role + "s";
             this[propName] = [];
         }
 
         // Map each role's string name found on creeps to it's code name
         const roleToArrayMap = {};
-        Object.keys(CONSTANTS.roles).forEach((roleName) => {
-            roleToArrayMap[CONSTANTS.roles[roleName]] = this[roleName + "s"];
+        Object.keys(roles).forEach((roleName) => {
+            roleToArrayMap[roles[roleName]] = this[roleName + "s"];
         });
 
         // Push each creep to their matching array

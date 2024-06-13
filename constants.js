@@ -1,26 +1,40 @@
+const roles = {
+    miner: "miner",
+    hauler: "hauler",
+    upgrader: "upgrader",
+    repairer: "repairer",
+    builder: "builder",
+    scout: "scout",
+    reserver: "reserver",
+    defender: "defender",
+    mineralMiner: "mineral_miner",
+};
+
+const pathSets = {
+    default: "default",
+};
+
+const maxLevels = {
+    hauler: 16,
+    upgrader: 9,
+    repairer: 4,
+    builder: 6,
+    smallBuilder: 4,
+    mineralMiner: 8,
+};
+
+const maxCounts = {
+    builder: 5,
+    scouts: 1,
+    upgraders: 8,
+};
+
+const controllerDowngradeDangerLevel = 5000;
+
 module.exports = {
-    roles: {
-        miner: "miner",
-        hauler: "hauler",
-        upgrader: "upgrader",
-        repairer: "repairer",
-        builder: "builder",
-        scout: "scout",
-        reserver: "reserver",
-        defender: "defender",
-        mineralMiner: "mineral_miner",
-    },
-    pathSets: {
-        default: "default",
-    },
-    maxHaulerLevel: 16,
-    maxUpgraderLevel: 9,
-    maxRepairerLevel: 4,
-    maxBuilderLevel: 10,
-    smallBuilderLevel: 6,
-    maxBuilderCount: 5,
-    maxScouts: 1,
-    maxUpgraders: 8,
-    maxMineralMinerLevel: 8,
-    controllerDowngradeDangerLevel: 5000,
+    roles,
+    pathSets,
+    maxLevels,
+    maxCounts,
+    controllerDowngradeDangerLevel,
 };

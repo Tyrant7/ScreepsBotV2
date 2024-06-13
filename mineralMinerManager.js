@@ -1,17 +1,21 @@
+const { pathSets } = require("./constants");
 const CreepManager = require("./creepManager");
 const Task = require("./task");
 
 class MineralMinerManager extends CreepManager {
     createTask(creep, roomInfo) {
         const actionStack = [];
-        actionStack.push(function(creep, mineralSite) {
-
+        actionStack.push(function (creep, mineralSite) {
             // Move to mining site
-            const sitePos = new RoomPosition(mineralSite.pos.x, mineralSite.pos.y, mineralSite.pos.roomName);
+            const sitePos = new RoomPosition(
+                mineralSite.pos.x,
+                mineralSite.pos.y,
+                mineralSite.pos.roomName
+            );
             if (creep.pos.getRangeTo(sitePos) > 0) {
                 creep.betterMoveTo(sitePos, {
                     range: 0,
-                    pathSet: CONSTANTS.pathSets.default,
+                    pathSet: pathSets.default,
                 });
             }
 
@@ -32,7 +36,7 @@ class MineralMinerManager extends CreepManager {
 
         // Memorize this site
         const site = roomInfo.getMineralSites()[0];
-        creep.memory.miningSite = site;   
+        creep.memory.miningSite = site;
         return new Task(site, "mine", actionStack);
     }
 }

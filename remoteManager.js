@@ -2,11 +2,11 @@ const RemotePlanner = require("./remotePlanner");
 const remotePlanner = new RemotePlanner();
 
 const utility = require("./remoteUtility");
+const { pathSets } = require("./constants");
 
 const overlay = require("./overlay");
 
 class RemoteManager {
-
     /**
      * Draws enabled overlays for remotes.
      * @param {{}[]} remotes An array of remotes.
@@ -28,7 +28,10 @@ class RemoteManager {
             let i = 0;
             for (const remote in Memory.temp.roads) {
                 for (const road of Memory.temp.roads[remote]) {
-                    overlay.circles([road], { fill: colours[i % colours.length], radius: 0.25 });
+                    overlay.circles([road], {
+                        fill: colours[i % colours.length],
+                        radius: 0.25,
+                    });
                 }
                 i++;
             }
@@ -44,16 +47,21 @@ class RemoteManager {
      * @returns The active plans for remotes for this room.
      */
     ensurePlansExist(roomInfo) {
-        if (!utility.getRemotePlans(roomInfo.room.name) || (RELOAD && DEBUG.replanRemotesOnReload)) {
+        if (
+            !utility.getRemotePlans(roomInfo.room.name) ||
+            (RELOAD && DEBUG.replanRemotesOnReload)
+        ) {
             // Then, filter out construction sites on invalid locations (room transitions)
             // and give each remote an activity status
             const finalPlans = [];
             for (const plan of this.planRemotes(roomInfo)) {
-                plan.roads = plan.roads.filter((r) => r.x > 0 && r.x < 49 && r.y > 0 && r.y < 49);
+                plan.roads = plan.roads.filter(
+                    (r) => r.x > 0 && r.x < 49 && r.y > 0 && r.y < 49
+                );
                 plan.active = false;
                 finalPlans.push(plan);
             }
-            
+
             utility.setRemotePlans(roomInfo.room.name, finalPlans);
         }
 
@@ -71,7 +79,7 @@ class RemoteManager {
                     }
                     // We'll heavily discourage searching outside of the planned path, but not forbid it
                     // to still allow us to pickup dropped energy outside of our path set
-                    unwalkableMatrix.set(x, y, 255-1);
+                    unwalkableMatrix.set(x, y, 255 - 1);
                 }
             }
             const plans = utility.getRemotePlans(roomInfo.room.name);
@@ -83,14 +91,23 @@ class RemoteManager {
                         continue;
                     }
                     if (!matricesByRoom[road.roomName]) {
-                        matricesByRoom[road.roomName] = unwalkableMatrix.clone();
+                        matricesByRoom[road.roomName] =
+                            unwalkableMatrix.clone();
                     }
                     matricesByRoom[road.roomName].set(road.x, road.y, 1);
                 }
-                matricesByRoom[plan.container.roomName].set(plan.container.x, plan.container.y, 4);
+                matricesByRoom[plan.container.roomName].set(
+                    plan.container.x,
+                    plan.container.y,
+                    4
+                );
             }
             for (const roomName in matricesByRoom) {
-                betterPathing.cacheMatrix(matricesByRoom[roomName], CONSTANTS.pathSets.default, roomName);
+                betterPathing.cacheMatrix(
+                    matricesByRoom[roomName],
+                    pathSets.default,
+                    roomName
+                );
             }
         }
 
@@ -114,16 +131,29 @@ class RemoteManager {
                 }
             }
             if (DEBUG.drawContainerOverlay) {
-                const allContainerPositions = remotes.reduce((containers, current) => containers.concat(current.container), []);
+                const allContainerPositions = remotes.reduce(
+                    (containers, current) =>
+                        containers.concat(current.container),
+                    []
+                );
                 Memory.temp.containerPositions = allContainerPositions;
             }
         }
 
         // CPU tracking
         if (DEBUG.logRemotePlanning) {
-            console.log("Planned remotes with: " + (Game.cpu.getUsed() - cpu) + " cpu");
+            console.log(
+                "Planned remotes with: " + (Game.cpu.getUsed() - cpu) + " cpu"
+            );
             remotes.forEach((remote) => {
-                console.log("Source at " + remote.source.pos + " with score: " + remote.score + " and cost: " + remote.cost);
+                console.log(
+                    "Source at " +
+                        remote.source.pos +
+                        " with score: " +
+                        remote.score +
+                        " and cost: " +
+                        remote.cost
+                );
             });
         }
 

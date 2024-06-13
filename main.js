@@ -16,7 +16,6 @@ if (!Memory.bases) {
 }
 
 // Globals
-global.CONSTANTS = require("./constants");
 global.DEBUG = {
     logTasks: true,
     alertOnIdle: false,
@@ -71,16 +70,17 @@ const DefenderManager = require("./defenderManager");
 const MineralMinerManager = require("./mineralMinerManager");
 
 // Mapping
+const { roles, pathSets } = require("./constants");
 const creepRoleMap = {
-    [CONSTANTS.roles.hauler]: new HaulerManager(),
-    [CONSTANTS.roles.miner]: new MinerManager(),
-    [CONSTANTS.roles.upgrader]: new UpgraderManager(),
-    [CONSTANTS.roles.scout]: new ScoutManager(),
-    [CONSTANTS.roles.repairer]: new RepairerManager(),
-    [CONSTANTS.roles.builder]: new BuilderManager(),
-    [CONSTANTS.roles.reserver]: new ReserverManager(),
-    [CONSTANTS.roles.defender]: new DefenderManager(),
-    [CONSTANTS.roles.mineralMiner]: new MineralMinerManager(),
+    [roles.hauler]: new HaulerManager(),
+    [roles.miner]: new MinerManager(),
+    [roles.upgrader]: new UpgraderManager(),
+    [roles.scout]: new ScoutManager(),
+    [roles.repairer]: new RepairerManager(),
+    [roles.builder]: new BuilderManager(),
+    [roles.reserver]: new ReserverManager(),
+    [roles.defender]: new DefenderManager(),
+    [roles.mineralMiner]: new MineralMinerManager(),
 };
 
 // Economy
@@ -138,7 +138,7 @@ module.exports.loop = function () {
         if (RELOAD) {
             betterPathing.cacheMatrix(
                 betterPathing.generateDefaultCostMatrix(info.room.name),
-                CONSTANTS.pathSets.default,
+                pathSets.default,
                 info.room.name
             );
         }
@@ -174,7 +174,7 @@ module.exports.loop = function () {
 
         if (DEBUG.drawPathMatrices) {
             const matrix = betterPathing.getCachedMatrix(
-                CONSTANTS.pathSets.default,
+                pathSets.default,
                 info.room.name
             );
             overlay.visualizeCostMatrix(info.room.name, matrix, []);
@@ -187,7 +187,7 @@ module.exports.loop = function () {
         const creep = Game.creeps[name];
         if (creep) {
             // Skip haulers until the end
-            if (creep.memory.role === CONSTANTS.roles.hauler) {
+            if (creep.memory.role === roles.hauler) {
                 continue;
             }
 
