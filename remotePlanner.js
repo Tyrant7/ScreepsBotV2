@@ -1,5 +1,5 @@
-const creepMaker = require("./creepMaker");
-const creepSpawnUtility = require("./creepSpawnUtility");
+const { makeMiner, makeHauler, makeReserver } = require("./spawn.creepMaker");
+const { getCost, getSpawnTime } = require("./spawn.spawnUtility");
 const { maxLevels } = require("./constants");
 
 const PLANNING_PLAINS = 5;
@@ -367,37 +367,29 @@ class RemotePlanner {
         const upkeep = { energy: 0, spawnTime: 0 };
 
         // Start with a miner
-        const miner = creepMaker.makeMiner(maxEnergy);
-        upkeep.energy +=
-            creepSpawnUtility.getCost(miner.body) / CREEP_LIFE_TIME;
-        upkeep.spawnTime +=
-            creepSpawnUtility.getSpawnTime(miner.body) / CREEP_LIFE_TIME;
+        const miner = makeMiner(maxEnergy);
+        upkeep.energy += getCost(miner.body) / CREEP_LIFE_TIME;
+        upkeep.spawnTime += getSpawnTime(miner.body) / CREEP_LIFE_TIME;
 
         // Then haulers until we hit our needed carry
         let totalCarry = 0;
         while (totalCarry < neededCarry) {
-            const newHauler = creepMaker.makeHauler(
-                maxLevels.hauler,
-                maxEnergy
-            );
+            const newHauler = makeHauler(maxLevels.hauler, maxEnergy);
             totalCarry += newHauler.body.filter((p) => p === CARRY).length;
-            upkeep.energy +=
-                creepSpawnUtility.getCost(newHauler.body) / CREEP_LIFE_TIME;
-            upkeep.spawnTime +=
-                creepSpawnUtility.getSpawnTime(newHauler.body) /
-                CREEP_LIFE_TIME;
+            upkeep.energy += getCost(newHauler.body) / CREEP_LIFE_TIME;
+            upkeep.spawnTime += getSpawnTime(newHauler.body) / CREEP_LIFE_TIME;
         }
 
         // Then reservers
         // Rooms have about 1.5 sources on average (just a guess to make our estimates more accurate)
         const AVG_SOURCES_PER_ROOM = 1.5;
-        const reserver = creepMaker.makeReserver();
+        const reserver = makeReserver();
         upkeep.energy +=
-            creepSpawnUtility.getCost(reserver.body) /
+            getCost(reserver.body) /
             CREEP_CLAIM_LIFE_TIME /
             AVG_SOURCES_PER_ROOM;
         upkeep.spawnTime +=
-            creepSpawnUtility.getSpawnTime(reserver.body) /
+            getSpawnTime(reserver.body) /
             CREEP_CLAIM_LIFE_TIME /
             AVG_SOURCES_PER_ROOM;
 

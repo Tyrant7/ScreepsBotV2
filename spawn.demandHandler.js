@@ -8,7 +8,7 @@ const DEFAULT_DEMANDS = {
 const NUDGE_RATE = 300;
 
 const ensureDefaults = (roomName) => {
-    for (const role of roles) {
+    for (const role in roles) {
         if (getRoleDemand(roomName, role) !== undefined) {
             continue;
         }
@@ -23,7 +23,7 @@ const setRoleDemand = (roomName, role, value, freeze = 0) => {
         return;
     }
     if (!base.spawnDemand) {
-        base.spawnDemand = [];
+        base.spawnDemand = {};
     }
     base.spawnDemand[role] = { freeze, value };
 };
@@ -31,7 +31,7 @@ const setRoleDemand = (roomName, role, value, freeze = 0) => {
 const getRoleDemand = (roomName, role) => {
     try {
         return Memory.bases[roomName].spawnDemand[role];
-    } catch {
+    } catch (e) {
         return undefined;
     }
 };

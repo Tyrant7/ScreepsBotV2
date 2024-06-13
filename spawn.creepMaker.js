@@ -1,4 +1,4 @@
-const { getCost } = require("./creepSpawnUtility");
+const { getCost } = require("./spawn.spawnUtility");
 const { MINER_WORK } = require("./spawn.spawnConstants");
 const { roles, maxLevels } = require("./constants");
 
@@ -206,7 +206,6 @@ const makeMiniDefender = (desiredLevel, maxCost) => {
 
 module.exports = {
     makeMiner,
-    makeRecoveryMiner,
     makeHauler,
     makeReserver,
     makeUpgrader,

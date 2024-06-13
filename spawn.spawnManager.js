@@ -8,9 +8,9 @@ const {
 } = require("./spawn.demandHandler");
 const haulerUtility = require("./haulerUtility");
 const remoteUtility = require("./remoteUtility");
+const { getCost } = require("./spawn.spawnUtility");
 
 const creepMaker = require("./spawn.creepMaker");
-const { RESERVER_COST } = require("./spawn.spawnConstants");
 
 const RAISE_HAULER_THRESHOLD = 2;
 const LOWER_HAULER_THRESHOLD = 1;
@@ -100,9 +100,12 @@ const demandHandlers = {
             : 0;
         set(amount);
     },
-    [roles.repairer]: (roomInfo, set, nudge, bump) => {},
+    [roles.repairer]: (roomInfo, set, nudge, bump) => {
+        // TODO //
+    },
     [roles.reserver]: (roomInfo, set, nudge, bump) => {
-        if (roomInfo.room.energyCapacityAvailable < RESERVER_COST) {
+        const reserverCost = getCost(creepMaker.makeReserver().body);
+        if (roomInfo.room.energyCapacityAvailable < reserverCost) {
             return set(0);
         }
         const remotePlans = remoteUtility.getRemotePlans(roomInfo.room.name);
@@ -176,7 +179,7 @@ class SpawnManager {
         for (const role in demandHandlers) {
             const handler = demandHandlers[role];
             handler(
-                roomInfo.room.name,
+                roomInfo,
                 (amount) => setRoleDemand(roomInfo.room.name, role, amount),
                 (amount) => nudgeRoleDemand(roomInfo.room.name, role, amount),
                 (amount) => bumpRoleDemand(roomInfo.room.name, role, amount)
@@ -200,11 +203,17 @@ class SpawnManager {
             // Let's look for our highest priority role that needs a creep
             for (const role in spawnsByRole) {
                 const demand = getRoleDemand(roomInfo.room.name, role);
-                const current = roomInfo[role + "s"].length;
+
+                // Here we have to look for the key rather than use the value of the role,
+                // since that's what's used in the RoomInfo object
+                const matchingRole = Object.keys(roles).find(
+                    (r) => roles[r] === role
+                );
+                const current = roomInfo[matchingRole + "s"].length;
                 const thisTick = spawnedThisTick[role] || 0;
                 if (demand > current + thisTick) {
                     thisTick[role] = thisTick + 1;
-                    return spawnsByRole[role];
+                    return spawnsByRole[role](roomInfo);
                 }
             }
         };
@@ -213,6 +222,7 @@ class SpawnManager {
             const spawn = inactiveSpawns.pop();
             const next = getNextSpawn();
             if (!next) {
+                inactiveSpawns.push(spawn);
                 break;
             }
 
