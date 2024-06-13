@@ -59,16 +59,16 @@ const demandHandlers = {
             store: { getCapacity: () => currentHaulerSize },
         }).length;
         if (untendedPickups >= RAISE_HAULER_THRESHOLD) {
-            return nudge(1);
+            return nudge(untendedPickups);
         }
 
         const idleHaulers = roomInfo.haulers.filter(
             (hauler) =>
                 !haulerUtility.getAssignedDropoffID(hauler) &&
                 !haulerUtility.getAssignedPickupID(hauler)
-        );
+        ).length;
         if (idleHaulers >= LOWER_HAULER_THRESHOLD) {
-            return nudge(-1);
+            return nudge(-idleHaulers);
         }
     },
     [roles.upgrader]: (roomInfo, set, nudge, bump) => {
@@ -79,7 +79,7 @@ const demandHandlers = {
         );
         const unfilledUpgraders = upgraders.length - fullUpgraders.length;
         if (unfilledUpgraders > LOWER_UPGRADER_THRESHOLD) {
-            return nudge(-1);
+            return nudge(-unfilledUpgraders);
         }
 
         // Priority #2: do all haulers have dropoff points?
@@ -87,9 +87,9 @@ const demandHandlers = {
             (hauler) =>
                 hauler.store[RESOURCE_ENERGY] &&
                 !haulerUtility.getAssignedDropoffID(hauler)
-        );
-        if (fullHaulers.length > RAISE_UPGRADER_THRESHOLD) {
-            return nudge(1);
+        ).length;
+        if (fullHaulers > RAISE_UPGRADER_THRESHOLD) {
+            return nudge(fullHaulers);
         }
     },
     [roles.scout]: (roomInfo, set, nudge, bump) => {
