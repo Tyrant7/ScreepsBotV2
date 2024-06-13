@@ -100,7 +100,7 @@ const makeMiniUpgrader = () => {
 
 const makeBuilder = (energy) => {
     const builderParts = [WORK, CARRY, MOVE];
-    const body = builderParts;
+    let body = builderParts;
     let lvl = 1;
     const levelCost = getCost(body);
     while (

@@ -25,6 +25,7 @@ const setRoleDemand = (roomName, role, value, freeze = 0) => {
     if (!base.spawnDemand) {
         base.spawnDemand = {};
     }
+    value = Math.max(value, 0);
     base.spawnDemand[role] = { freeze, value };
 };
 

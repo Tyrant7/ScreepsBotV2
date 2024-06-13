@@ -13,7 +13,7 @@ const { getCost } = require("./spawn.spawnUtility");
 const creepMaker = require("./spawn.creepMaker");
 const overlay = require("./overlay");
 
-const RAISE_HAULER_THRESHOLD = 2;
+const RAISE_HAULER_THRESHOLD = 3;
 const LOWER_HAULER_THRESHOLD = 1;
 
 const RAISE_UPGRADER_THRESHOLD = 1;
@@ -46,7 +46,10 @@ const demandHandlers = {
         set(diff);
     },
     [roles.miner]: (roomInfo, set, nudge, bump) => {
-        const amount = roomInfo.getFirstOpenMiningSite() ? 1 : 0;
+        if (!roomInfo.haulers.length) {
+            return set(1);
+        }
+        const amount = roomInfo.getFirstOpenMiningSite() ? 1 : -1;
         bump(amount);
     },
     [roles.hauler]: (roomInfo, set, nudge, bump) => {
@@ -55,10 +58,20 @@ const demandHandlers = {
             creepMaker
                 .makeHauler(roomInfo.room.energyCapacityAvailable)
                 .body.filter((p) => p.type === CARRY).length * CARRY_CAPACITY;
-        const untendedPickups = roomInfo.getPickupRequests({
-            store: { getCapacity: () => currentHaulerSize },
-        }).length;
-        if (untendedPickups >= RAISE_HAULER_THRESHOLD) {
+        const untendedPickups = roomInfo
+            .getPickupRequests({
+                store: { getCapacity: () => currentHaulerSize },
+            })
+            .filter((r) => r.assignedHaulers.length === 0).length;
+        console.log(untendedPickups);
+
+        // Initially we won't be able to raise our count
+        // because only 1 request will be able to exist
+        const threshold = Math.min(
+            roomInfo.miners.length,
+            RAISE_HAULER_THRESHOLD
+        );
+        if (untendedPickups >= threshold) {
             return nudge(untendedPickups);
         }
 
