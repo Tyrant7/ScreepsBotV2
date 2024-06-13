@@ -65,6 +65,9 @@ const makeReserver = () => {
 //#region Development
 
 const makeUpgrader = (energy) => {
+    if (energy < 550) {
+        return makeMiniUpgrader();
+    }
     const body = [CARRY, CARRY];
     let lvl = 0;
     while (lvl < maxLevels.upgrader) {
@@ -209,7 +212,6 @@ module.exports = {
     makeHauler,
     makeReserver,
     makeUpgrader,
-    makeMiniUpgrader,
     makeBuilder,
     makeRepairer,
     makeMineralMiner,

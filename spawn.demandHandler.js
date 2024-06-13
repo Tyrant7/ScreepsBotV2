@@ -1,13 +1,19 @@
 const { roles } = require("./constants");
 
-const NUDGE_RATE = 300;
+const DEFAULT_DEMANDS = {
+    [roles.hauler]: 0.9,
+    [roles.miner]: 0.5,
+};
+
+const NUDGE_RATE = 250;
 
 const ensureDefaults = (roomName) => {
     for (const role in roles) {
         if (getRoleDemand(roomName, role) !== undefined) {
             continue;
         }
-        setRoleDemand(roomName, role, 0);
+        const value = DEFAULT_DEMANDS[role] || 0;
+        setRoleDemand(roomName, role, value);
     }
 };
 

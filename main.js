@@ -144,11 +144,6 @@ module.exports.loop = function () {
             );
         }
 
-        // Handle economy (remotes and spawns)
-        profiler.startSample("Economy " + room);
-        economyManager.run(info);
-        profiler.endSample("Economy " + room);
-
         // Track RCL progress
         if (DEBUG.trackRCLProgress) {
             overlay.addHeading(info.room.name, "- RCL -");
@@ -172,6 +167,11 @@ module.exports.loop = function () {
 
         // Hauling requests
         haulingRequester.generateBasicRequests(info);
+
+        // Handle economy (remotes and spawns)
+        profiler.startSample("Economy " + room);
+        economyManager.run(info);
+        profiler.endSample("Economy " + room);
 
         if (DEBUG.drawPathMatrices) {
             const matrix = betterPathing.getCachedMatrix(
