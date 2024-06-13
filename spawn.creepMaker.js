@@ -224,5 +224,4 @@ module.exports = {
     makeMineralMiner,
     makeScout,
     makeMiniDefender,
-    mapping,
 };

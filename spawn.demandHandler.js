@@ -5,7 +5,7 @@ const DEFAULT_DEMANDS = {
     [roles.miner]: 1,
 };
 
-const FREEZE_TIME = 50;
+const NUDGE_RATE = 300;
 
 const ensureDefaults = (roomName) => {
     for (const role of roles) {
@@ -30,20 +30,41 @@ const setRoleDemand = (roomName, role, value, freeze = 0) => {
 
 const getRoleDemand = (roomName, role) => {
     try {
-        return Memory.bases[roomName].spawnDemand[role].value;
+        return Memory.bases[roomName].spawnDemand[role];
     } catch {
         return undefined;
     }
 };
 
 const bumpRoleDemand = (roomName, role, amount) => {
-    const oldValue = getRoleDemand() || 0;
-    const freezeTime = Math.floor(FREEZE_TIME * amount);
+    const demand = getRoleDemand(roomName, role);
+    const oldValue = (demand && demand.value) || 0;
+    const freezeTime = Math.floor(NUDGE_RATE * amount);
     setRoleDemand(roomName, role, oldValue + amount, freezeTime);
+};
+
+const updateDemands = (roomName, demandHandlers) => {
+    for (const role in demandHandlers) {
+        const demand = getRoleDemand(roomName, role);
+        if (!demand) {
+            setRoleDemand(roomName, role, 0);
+            continue;
+        }
+        if (demand.freeze > 0) {
+            demand.freeze--;
+            continue;
+        }
+        const amount = demandHandlers[role]();
+        const oldValue = (demand && demand.value) || 0;
+        const freeze = (demand && demand.freeze) || 0;
+        const newValue = oldValue + amount / NUDGE_RATE;
+        setRoleDemand(roomName, role, newValue, freeze);
+    }
 };
 
 module.exports = {
     ensureDefaults,
     getRoleDemand,
     bumpRoleDemand,
+    updateDemands,
 };

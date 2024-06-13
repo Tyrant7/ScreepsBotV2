@@ -2,6 +2,7 @@ const remoteUtility = require("./remoteUtility");
 const estimateTravelTime = require("./estimateTravelTime");
 const { getPlanData, keys } = require("./base.planningUtility");
 const { roles } = require("./constants");
+const { MINER_WORK } = require("./spawn.spawnConstants");
 
 class RoomInfo {
     /**
@@ -308,9 +309,7 @@ class RoomInfo {
                         total + curr.body.filter((p) => p.type === WORK).length
                     );
                 }, 0);
-                const neededWork =
-                    SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME / HARVEST_POWER;
-                if (totalWork >= neededWork) {
+                if (totalWork >= MINER_WORK) {
                     return false;
                 }
                 return true;
