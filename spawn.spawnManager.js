@@ -11,6 +11,7 @@ const remoteUtility = require("./remoteUtility");
 const { getCost } = require("./spawn.spawnUtility");
 
 const creepMaker = require("./spawn.creepMaker");
+const overlay = require("./overlay");
 
 const RAISE_HAULER_THRESHOLD = 2;
 const LOWER_HAULER_THRESHOLD = 1;
@@ -202,7 +203,7 @@ class SpawnManager {
         const getNextSpawn = () => {
             // Let's look for our highest priority role that needs a creep
             for (const role in spawnsByRole) {
-                const demand = getRoleDemand(roomInfo.room.name, role);
+                const demand = getRoleDemand(roomInfo.room.name, role).value;
 
                 // Here we have to look for the key rather than use the value of the role,
                 // since that's what's used in the RoomInfo object
@@ -212,7 +213,7 @@ class SpawnManager {
                 const current = roomInfo[matchingRole + "s"].length;
                 const thisTick = spawnedThisTick[role] || 0;
                 if (demand > current + thisTick) {
-                    thisTick[role] = thisTick + 1;
+                    spawnedThisTick[role] = thisTick + 1;
                     return spawnsByRole[role](roomInfo);
                 }
             }
@@ -232,6 +233,8 @@ class SpawnManager {
                 memory: next.memory,
             });
         }
+
+        this.drawOverlay(roomInfo);
 
         // Track our spawn usage
         return roomInfo.spawns.length - inactiveSpawns.length;
@@ -256,6 +259,15 @@ class SpawnManager {
             );
         } catch (e) {
             console.log("Error when showing spawn visual: " + e);
+        }
+    }
+
+    drawOverlay(roomInfo) {
+        overlay.addHeading(roomInfo.room.name, "- Spawn Demands -");
+        for (const role in roles) {
+            const demand = getRoleDemand(roomInfo.room.name, role).value;
+            const display = " ".repeat(15 - role.length) + demand.toFixed(4);
+            overlay.addText(roomInfo.room.name, { [role]: display });
         }
     }
 }

@@ -1,10 +1,5 @@
 const { roles } = require("./constants");
 
-const DEFAULT_DEMANDS = {
-    [roles.hauler]: 1,
-    [roles.miner]: 1,
-};
-
 const NUDGE_RATE = 300;
 
 const ensureDefaults = (roomName) => {
@@ -12,8 +7,7 @@ const ensureDefaults = (roomName) => {
         if (getRoleDemand(roomName, role) !== undefined) {
             continue;
         }
-        const value = DEFAULT_DEMANDS[role] || 0;
-        setRoleDemand(role, value);
+        setRoleDemand(roomName, role, 0);
     }
 };
 
@@ -38,7 +32,15 @@ const getRoleDemand = (roomName, role) => {
 
 const bumpRoleDemand = (roomName, role, amount) => {
     const demand = getRoleDemand(roomName, role);
-    const oldValue = (demand && demand.value) || 0;
+    if (!demand) {
+        setRoleDemand(roomName, role, amount);
+        return;
+    }
+    if (demand.freeze > 0) {
+        demand.freeze--;
+        return;
+    }
+    const oldValue = demand.value || 0;
     const freezeTime = Math.floor(NUDGE_RATE * amount);
     setRoleDemand(roomName, role, oldValue + amount, freezeTime);
 };
