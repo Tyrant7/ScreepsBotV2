@@ -110,6 +110,7 @@ class MinerManager extends CreepManager {
 
         const unreserved = roomInfo.getFirstOpenMiningSite(creep.pos);
         if (!unreserved) {
+            creep.say("No site");
             // Wait for an opening
             // TODO //
             // Fix this so that early replacement can function
