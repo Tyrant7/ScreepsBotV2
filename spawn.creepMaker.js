@@ -65,8 +65,13 @@ const makeReserver = () => {
 //#region Development
 
 const makeUpgrader = (energy) => {
+    // Special configuration is more efficient for low energy rooms
     if (energy < 550) {
-        return makeMiniUpgrader();
+        return {
+            body: [CARRY, MOVE, WORK, WORK],
+            name: "Upgrader " + Game.time + " [0]",
+            memory: { role: roles.upgrader },
+        };
     }
     const body = [CARRY, CARRY];
     let lvl = 0;
@@ -86,14 +91,6 @@ const makeUpgrader = (energy) => {
     return {
         body: body,
         name: "Upgrader " + Game.time + " [" + lvl + "]",
-        memory: { role: roles.upgrader },
-    };
-};
-
-const makeMiniUpgrader = () => {
-    return {
-        body: [CARRY, MOVE, WORK, WORK],
-        name: "Mini_Upgrader " + Game.time + " [1]",
         memory: { role: roles.upgrader },
     };
 };
