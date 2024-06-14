@@ -51,14 +51,14 @@ const demandHandlers = {
         }
         // If we have an open site, bump miners
         if (roomInfo.getFirstOpenMiningSite()) {
-            return bump(1);
+            return nudge(2);
         }
         // Otherwise, decrease while there are unassigned miners
         const unassignedMiners = roomInfo.miners.filter(
-            (miner) => !miner.miningSite
+            (miner) => !miner.memory.miningSite
         );
         if (unassignedMiners.length) {
-            bump(-1);
+            nudge(-1);
         }
     },
     [roles.hauler]: (roomInfo, set, nudge, bump) => {
@@ -104,11 +104,14 @@ const demandHandlers = {
         }
 
         // Priority #2: do all haulers have dropoff points?
-        const fullHaulers = roomInfo.haulers.filter(
-            (hauler) =>
+        const fullHaulers = roomInfo.haulers.filter((hauler) => {
+            const dropoff = haulerUtility.getAssignedDropoffID(hauler);
+            const storageID = roomInfo.room.storage && roomInfo.room.storage.id;
+            return (
                 hauler.store[RESOURCE_ENERGY] &&
-                !haulerUtility.getAssignedDropoffID(hauler)
-        ).length;
+                (!dropoff || dropoff === storageID)
+            );
+        }).length;
         if (fullHaulers > RAISE_UPGRADER_THRESHOLD) {
             return nudge(fullHaulers);
         }
