@@ -41,12 +41,15 @@ const REPAIR_THRESHOLDS = {
 
 const demandHandlers = {
     [roles.defender]: (roomInfo, set, nudge, bump) => {
+        if (!roomInfo.miners.length || !roomInfo.haulers.length) {
+            return set(0);
+        }
         const enemies = roomInfo.getEnemies();
         const diff = Math.max(enemies.length - roomInfo.defenders.length, 0);
         set(diff);
     },
     [roles.miner]: (roomInfo, set, nudge, bump) => {
-        if (!roomInfo.haulers.length) {
+        if (!roomInfo.miners.length || !roomInfo.haulers.length) {
             return set(1);
         }
         // If we have an open site, bump miners
@@ -62,6 +65,9 @@ const demandHandlers = {
         }
     },
     [roles.hauler]: (roomInfo, set, nudge, bump) => {
+        if (!roomInfo.miners.length || !roomInfo.haulers.length) {
+            return set(1);
+        }
         // We'll consider haulers of the current spawn size
         const currentHaulerSize =
             creepMaker
@@ -178,10 +184,8 @@ const spawnsByRole = {
             );
         }
     },
-    [roles.miner]: (roomInfo) =>
-        creepMaker.makeMiner(roomInfo.room.energyCapacityAvailable),
-    [roles.hauler]: (roomInfo) =>
-        creepMaker.makeHauler(roomInfo.room.energyCapacityAvailable),
+    [roles.miner]: (roomInfo) => creepMaker.makeMiner(getMinEnergy(roomInfo)),
+    [roles.hauler]: (roomInfo) => creepMaker.makeHauler(getMinEnergy(roomInfo)),
     [roles.upgrader]: (roomInfo) =>
         creepMaker.makeUpgrader(roomInfo.room.energyCapacityAvailable),
     [roles.scout]: (roomInfo) => creepMaker.makeScout(),
@@ -193,6 +197,11 @@ const spawnsByRole = {
     [roles.mineralMiner]: (roomInfo) =>
         creepMaker.makeMineralMiner(roomInfo.room.energyCapacityAvailable),
 };
+
+const getMinEnergy = (roomInfo) =>
+    roomInfo.miners.length && roomInfo.haulers.length
+        ? roomInfo.room.energyCapacityAvailable
+        : SPAWN_ENERGY_START;
 
 class SpawnManager {
     run(roomInfo) {
