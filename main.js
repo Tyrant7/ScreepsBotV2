@@ -41,6 +41,7 @@ global.DEBUG = {
     runProfiler: false,
     profileHeapUsage: true,
 
+    visualizeBasePlan: false,
     replanBaseOnReload: false,
     validateBasePlans: true,
     testBasePlanSerialization: true,
@@ -129,7 +130,6 @@ module.exports.loop = function () {
         roomInfos[room].initializeTickInfo();
         const info = roomInfos[room];
 
-        // DEBUG
         if (
             !getBasePlan(info.room.name) ||
             (DEBUG.replanBaseOnReload && RELOAD)
@@ -143,6 +143,9 @@ module.exports.loop = function () {
                 pathSets.default,
                 info.room.name
             );
+        }
+        if (DEBUG.visualizeBasePlan) {
+            basePlanner.visualizePlan(info.room.name);
         }
 
         // Track RCL progress
