@@ -49,8 +49,17 @@ const demandHandlers = {
         if (!roomInfo.haulers.length) {
             return set(1);
         }
-        const amount = roomInfo.getFirstOpenMiningSite() ? 1 : -0.5;
-        bump(amount);
+        // If we have an open site, bump miners
+        if (roomInfo.getFirstOpenMiningSite()) {
+            return bump(1);
+        }
+        // Otherwise, decrease while there are unassigned miners
+        const unassignedMiners = roomInfo.miners.filter(
+            (miner) => !miner.miningSite
+        );
+        if (unassignedMiners.length) {
+            bump(-1);
+        }
     },
     [roles.hauler]: (roomInfo, set, nudge, bump) => {
         // We'll consider haulers of the current spawn size
