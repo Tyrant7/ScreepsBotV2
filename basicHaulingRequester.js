@@ -29,7 +29,7 @@ class BasicHaulingRequester {
             );
         }
         const upgraderContainer = roomInfo.getUpgraderContainer();
-        if (upgraderContainer) {
+        if (roomInfo.upgraders.length && upgraderContainer) {
             // Request energy for our container
             roomInfo.createDropoffRequest(
                 upgraderContainer.store.getFreeCapacity(),
