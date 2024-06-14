@@ -39,6 +39,7 @@ global.DEBUG = {
     replanRemotesOnReload: false,
 
     runProfiler: false,
+    profileHeapUsage: true,
 
     replanBaseOnReload: false,
     validateBasePlans: true,
@@ -219,14 +220,26 @@ module.exports.loop = function () {
 
     // Track CPU usage
     // (don't track reload because it leads to innacurate averages which take a long time to equalize)
-    if (DEBUG.trackCPUUsage && !RELOAD) {
+    if (!RELOAD) {
         const rollingAverage = trackStats.trackCPU();
+        const heapData = Game.cpu.getHeapStatistics();
+        const heapUsage =
+            (heapData.total_heap_size + heapData.externally_allocated_size) /
+            heapData.heap_size_limit;
         for (const info of Object.values(roomInfos)) {
-            overlay.addHeading(info.room.name, "- CPU Usage -");
-            overlay.addText(info.room.name, {
-                "Average CPU": rollingAverage.toFixed(3),
-                "Last CPU": Game.cpu.getUsed().toFixed(3),
-            });
+            if (DEBUG.trackCPUUsage) {
+                overlay.addHeading(info.room.name, "- CPU Usage -");
+                overlay.addText(info.room.name, {
+                    "Average CPU": rollingAverage.toFixed(3),
+                    "Last CPU": Game.cpu.getUsed().toFixed(3),
+                });
+            }
+            if (DEBUG.profileHeapUsage) {
+                overlay.addHeading(info.room.name, "- Heap Usage -");
+                overlay.addText(info.room.name, {
+                    "Last Heap": heapUsage.toFixed(4) + "%",
+                });
+            }
         }
     }
 
