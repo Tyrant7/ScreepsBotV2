@@ -3,6 +3,7 @@ const { roles } = require("./constants");
 const DEFAULT_DEMANDS = {
     [roles.hauler]: 0.9,
     [roles.miner]: 0.5,
+    [roles.upgrader]: 0.5,
 };
 
 const NUDGE_RATE = 250;

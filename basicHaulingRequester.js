@@ -57,49 +57,52 @@ class BasicHaulingRequester {
         }
 
         // Here we'll add all containers as pickup requests, and track remote rooms
-        const importantRooms = new Set();
-        importantRooms.add(roomInfo.room.name);
         const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
-        for (const remote of remotes) {
-            if (!Game.rooms[remote.room]) {
-                continue;
-            }
-            const containerPos = new RoomPosition(
-                remote.container.x,
-                remote.container.y,
-                remote.container.roomName
-            );
-            const container = containerPos
-                .lookFor(LOOK_STRUCTURES)
-                .find((s) => s.structureType === STRUCTURE_CONTAINER);
-            roomInfo.createPickupRequest(
-                container ? container.store[RESOURCE_ENERGY] : 0,
-                RESOURCE_ENERGY,
-                SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME,
-                true,
-                containerPos
-            );
-            importantRooms.add(remote.room);
-        }
+        if (remotes) {
+            const importantRooms = new Set();
+            importantRooms.add(roomInfo.room.name);
 
-        // Then, for each remote, let's search and add all dropped resources
-        // Dropped energy should combine automatically with the container's request if it's on the same time
-        for (const remoteRoom of importantRooms) {
-            const droppedResources = Game.rooms[remoteRoom].find(
-                FIND_DROPPED_RESOURCES
-            );
-            for (const dropped of droppedResources) {
-                roomInfo.createPickupRequest(
-                    dropped.amount,
-                    dropped.resourceType,
-                    Math.ceil(dropped.amount / ENERGY_DECAY),
-                    false,
-                    dropped.pos
+            for (const remote of remotes) {
+                if (!Game.rooms[remote.room]) {
+                    continue;
+                }
+                const containerPos = new RoomPosition(
+                    remote.container.x,
+                    remote.container.y,
+                    remote.container.roomName
                 );
+                const container = containerPos
+                    .lookFor(LOOK_STRUCTURES)
+                    .find((s) => s.structureType === STRUCTURE_CONTAINER);
+                roomInfo.createPickupRequest(
+                    container ? container.store[RESOURCE_ENERGY] : 0,
+                    RESOURCE_ENERGY,
+                    SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME,
+                    true,
+                    containerPos
+                );
+                importantRooms.add(remote.room);
             }
 
-            // TODO //
-            // Tombstones and ruins
+            // Then, for each remote, let's search and add all dropped resources
+            // Dropped energy should combine automatically with the container's request if it's on the same time
+            for (const remoteRoom of importantRooms) {
+                const droppedResources = Game.rooms[remoteRoom].find(
+                    FIND_DROPPED_RESOURCES
+                );
+                for (const dropped of droppedResources) {
+                    roomInfo.createPickupRequest(
+                        dropped.amount,
+                        dropped.resourceType,
+                        Math.ceil(dropped.amount / ENERGY_DECAY),
+                        false,
+                        dropped.pos
+                    );
+                }
+
+                // TODO //
+                // Tombstones and ruins
+            }
         }
     }
 }

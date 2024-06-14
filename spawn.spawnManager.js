@@ -49,7 +49,7 @@ const demandHandlers = {
         if (!roomInfo.haulers.length) {
             return set(1);
         }
-        const amount = roomInfo.getFirstOpenMiningSite() ? 1 : -1;
+        const amount = roomInfo.getFirstOpenMiningSite() ? 1 : -0.5;
         bump(amount);
     },
     [roles.hauler]: (roomInfo, set, nudge, bump) => {
@@ -63,7 +63,6 @@ const demandHandlers = {
                 store: { getCapacity: () => currentHaulerSize },
             })
             .filter((r) => r.assignedHaulers.length === 0).length;
-        console.log(untendedPickups);
 
         // Initially we won't be able to raise our count
         // because only 1 request will be able to exist
