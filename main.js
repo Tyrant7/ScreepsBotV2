@@ -224,8 +224,9 @@ module.exports.loop = function () {
         const rollingAverage = trackStats.trackCPU();
         const heapData = Game.cpu.getHeapStatistics();
         const heapUsage =
-            (heapData.total_heap_size + heapData.externally_allocated_size) /
-            heapData.heap_size_limit;
+            ((heapData.total_heap_size + heapData.externally_allocated_size) /
+                heapData.heap_size_limit) *
+            100;
         for (const info of Object.values(roomInfos)) {
             if (DEBUG.trackCPUUsage) {
                 overlay.addHeading(info.room.name, "- CPU Usage -");
@@ -237,7 +238,7 @@ module.exports.loop = function () {
             if (DEBUG.profileHeapUsage) {
                 overlay.addHeading(info.room.name, "- Heap Usage -");
                 overlay.addText(info.room.name, {
-                    "Last Heap": heapUsage.toFixed(4) + "%",
+                    "Last Heap": heapUsage.toFixed(2) + "%",
                 });
             }
         }
