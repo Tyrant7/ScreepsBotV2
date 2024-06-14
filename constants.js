@@ -24,7 +24,7 @@ const maxLevels = {
 };
 
 const maxCounts = {
-    builder: 5,
+    builder: 3,
     scouts: 1,
     upgraders: 8,
 };
