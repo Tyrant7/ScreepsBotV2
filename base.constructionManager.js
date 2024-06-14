@@ -80,9 +80,12 @@ const handleSites = (roomInfo) => {
         missingStructures.length > 1
             ? missingStructures.reduce((best, curr) => {
                   if (best.score === undefined) {
-                      best = { score: scoreUtility(best), structure: best };
+                      best = {
+                          score: scoreUtility(roomInfo, best),
+                          structure: best,
+                      };
                   }
-                  const currScore = scoreUtility(curr);
+                  const currScore = scoreUtility(roomInfo, curr);
                   return currScore > best.score
                       ? { score: currScore, structure: curr }
                       : best;
@@ -132,7 +135,7 @@ const handleSites = (roomInfo) => {
     }
 };
 
-const scoreUtility = (structure) => {
+const scoreUtility = (roomInfo, structure) => {
     const baseUtility = UTILITY_CONSTANTS[structure.type] || 1;
     const isDefensive =
         structure.type === STRUCTURE_RAMPART ||
