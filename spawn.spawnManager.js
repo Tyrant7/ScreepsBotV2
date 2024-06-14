@@ -14,7 +14,7 @@ const creepMaker = require("./spawn.creepMaker");
 const overlay = require("./overlay");
 
 const RAISE_HAULER_THRESHOLD = 3;
-const LOWER_HAULER_THRESHOLD = 1;
+const LOWER_HAULER_THRESHOLD = 2;
 
 const RAISE_UPGRADER_THRESHOLD = 1;
 const LOWER_UPGRADER_THRESHOLD = 2;
