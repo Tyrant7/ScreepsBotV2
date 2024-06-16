@@ -70,9 +70,7 @@ const demandHandlers = {
 
         // Reduce proportional to the number of idle haulers
         const idleHaulers = roomInfo.haulers.filter(
-            (hauler) =>
-                !haulerUtility.getAssignedDropoffID(hauler) &&
-                !haulerUtility.getAssignedPickupID(hauler)
+            (hauler) => !haulerUtility.getAssignedPickupID(hauler)
         ).length;
         const workingHaulers = roomInfo.haulers.length - idleHaulers;
         const haulerDemand = getRoleDemand(
