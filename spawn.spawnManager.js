@@ -60,7 +60,7 @@ const demandHandlers = {
             (miner) => !miner.memory.miningSite
         );
         if (unassignedMiners.length) {
-            nudge(-1);
+            return bump(-1);
         }
     },
     [roles.hauler]: (roomInfo, set, nudge, bump) => {
