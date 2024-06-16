@@ -8,12 +8,6 @@ const defaultText = {
     font: "0.7 monospace",
 };
 
-const panelTitleText = {
-    color: "#FFFFFF",
-    align: "left",
-    font: "0.9 monospace",
-};
-
 const panelStyle = {
     fill: "#000000",
     opacity: 0.35,
@@ -23,6 +17,9 @@ const panelStyle = {
 
 const matrixDisplayColor = "#fcba03";
 const columnSpacing = 14;
+
+const defaultSpacing = 0.9;
+const headerSpacing = 1.3;
 
 const panels = {};
 const drawnPanels = {};
@@ -43,7 +40,7 @@ class Panel {
     }
 
     draw(roomName, key) {
-        if (this.elements.length <= 1) {
+        if (!this.elements.length) {
             return;
         }
 
@@ -137,7 +134,7 @@ const addHeading = (panelName, heading) => {
     panels[panelName].add({
         content: `- ${heading} -`,
         style: defaultText,
-        spacing: 1.5,
+        spacing: headerSpacing,
     });
 };
 
@@ -150,7 +147,7 @@ const addText = (panelName, figures) => {
             return {
                 content: fig + ": " + figures[fig],
                 style: defaultText,
-                spacing: 1,
+                spacing: defaultSpacing,
             };
         })
     );
@@ -166,7 +163,7 @@ const addColumns = (panelName, leftElement, rightElement) => {
             " ".repeat(columnSpacing - leftElement.length) +
             rightElement,
         style: defaultText,
-        spacing: 1,
+        spacing: defaultSpacing,
     });
 };
 
