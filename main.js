@@ -130,6 +130,9 @@ module.exports.loop = function () {
         roomInfos[room].initializeTickInfo();
         const info = roomInfos[room];
 
+        // Initialize our panels for this room
+        overlay.createPanel(info.room.name, "tr");
+
         if (
             !getBasePlan(info.room.name) ||
             (DEBUG.replanBaseOnReload && RELOAD)
@@ -150,7 +153,7 @@ module.exports.loop = function () {
 
         // Track RCL progress
         if (DEBUG.trackRCLProgress) {
-            overlay.addHeading(info.room.name, "- RCL -");
+            overlay.addHeading(info.room.name, "RCL");
             const averageRCL = trackStats.trackRCL(info.room.name);
             overlay.addText(info.room.name, {
                 "RCL Per Tick": averageRCL.toFixed(3),
@@ -232,14 +235,14 @@ module.exports.loop = function () {
             100;
         for (const info of Object.values(roomInfos)) {
             if (DEBUG.trackCPUUsage) {
-                overlay.addHeading(info.room.name, "- CPU Usage -");
+                overlay.addHeading(info.room.name, "CPU Usage");
                 overlay.addText(info.room.name, {
                     "Average CPU": rollingAverage.toFixed(3),
                     "Last CPU": Game.cpu.getUsed().toFixed(3),
                 });
             }
             if (DEBUG.profileHeapUsage) {
-                overlay.addHeading(info.room.name, "- Heap Usage -");
+                overlay.addHeading(info.room.name, "Heap Usage");
                 overlay.addText(info.room.name, {
                     "Last Heap": heapUsage.toFixed(2) + "%",
                 });
@@ -249,8 +252,11 @@ module.exports.loop = function () {
 
     // Track creeps
     if (DEBUG.trackCreepCounts) {
+        // TODO //
+        // Can use "in" here because we only care about the room name
+
         for (const info of Object.values(roomInfos)) {
-            overlay.addHeading(info.room.name, "- Creeps -");
+            overlay.addHeading(info.room.name, "Creeps");
             overlay.addText(info.room.name, {
                 Count: Object.values(Memory.creeps).length,
             });
@@ -260,8 +266,8 @@ module.exports.loop = function () {
     profiler.printout();
 
     // Finalize overlays
-    for (const info of Object.values(roomInfos)) {
-        overlay.finalizePanels(info.room.name);
+    for (const roomName in roomInfos) {
+        overlay.finalizePanels(roomName);
     }
 
     // If we reloaded

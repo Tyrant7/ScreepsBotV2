@@ -20,49 +20,66 @@ const matrixDisplayColor = "#fcba03";
 const panels = {};
 
 class Panel {
-    constructor(style, anchor, elements) {
+    constructor(style, anchor) {
         this.style = style;
         this.anchor = anchor;
-        this.elements = [...elements];
+        this.elements = [];
 
         this.mx = 0.5;
         this.my = 0.5;
     }
 
-    add(element) {
-        this.elements.push(element);
+    add(...elements) {
+        this.elements.push(...elements);
     }
 
-    draw() {
+    draw(roomName) {
         const height =
             this.elements.reduce((total, curr) => total + curr.spacing, 0) +
-            this.my;
-        const longestElement = this.elements.reduce((longest, curr) =>
-            curr.text.length > longest.text.length ? curr : longest
-        );
-        const width = longestElement.text.length * this.style.strokeWidth;
+            this.my * 2 -
+            // Last element doesn't need a spacing below it
+            this.elements.slice(-1)[0].spacing;
 
-        const x = this.anchor.includes("l")
-            ? -0.5 + panelStyle.strokeWidth / 2
-            : -panelWidth - panelStyle.strokeWidth / 2;
+        const elementSizes = this.elements.map((element) => {
+            if (!element.style || !element.style.font) {
+                return 0;
+            }
+            const scale = parseFloat(
+                element.style.font.match(/^\D*(\d+(?:\.\d+)?)/)
+            );
+            // For some unknown reason, this game has this magic scaling constant
+            // of about 1.9 from text to game units
+            // No idea why
+            return element.content.length * (scale / 1.9);
+        });
+        const largestElement = elementSizes.reduce((largest, curr) =>
+            curr > largest ? curr : largest
+        );
+        const width = largestElement + this.style.strokeWidth + this.mx * 2;
+
+        const x = this.anchor.includes("r")
+            ? 49.5 - width - this.style.strokeWidth / 2
+            : -0.5 + this.style.strokeWidth / 2;
 
         const y = this.anchor.includes("b")
-            ? -panelHeight - panelStyle.strokeWidth / 2
-            : -0.5 + panelStyle.strokeWidth / 2;
+            ? 49.5 - height - this.style.strokeWidth / 2
+            : -0.5 + this.style.strokeWidth / 2;
 
         const visual = new RoomVisual(roomName).rect(
             x,
             y,
             width,
             height,
-            panelStyle
+            this.style
         );
 
         // Add text to the panel for each element
-        let offset = 0.5 + panelStyle.strokeWidth / 2;
+        let offset = this.my + this.style.strokeWidth / 2;
         for (const element of this.elements) {
+            if (element !== this.elements[0]) {
+                offset += element.spacing;
+            }
             visual.text(element.content, x + this.mx, offset, element.style);
-            offset += element.spacing;
         }
     }
 }
@@ -72,95 +89,47 @@ class Panel {
  * @param {string} name The name of the panel to reference when drawing later.
  * @param {"tr" | "tl" | "br" | "bl"} anchor The side of the screen to anchor the panel.
  */
-const createPanel = (name, anchor) => {};
+const createPanel = (name, anchor) => {
+    panels[name] = new Panel(panelStyle, anchor);
+};
 
-const addHeading = () => {};
+const addHeading = (panelName, heading) => {
+    if (!panels[panelName]) {
+        return;
+    }
+    panels[panelName].add({
+        content: `- ${heading} -`,
+        style: defaultText,
+        spacing: 1.5,
+    });
+};
+
+const addText = (panelName, figures) => {
+    if (!panels[panelName]) {
+        return;
+    }
+    panels[panelName].add(
+        ...Object.keys(figures).map((fig) => {
+            return {
+                content: fig + ": " + figures[fig],
+                style: defaultText,
+                spacing: 1,
+            };
+        })
+    );
+};
+
+const finalizePanels = (roomName) => {
+    for (const key in panels) {
+        panels[key].draw(roomName);
+    }
+};
 
 module.exports = {
-    addText: function (roomName, importantFigures) {
-        if (!DEBUG.drawOverlay) {
-            return;
-        }
-
-        if (!this.panels) {
-            this.panels = {};
-        }
-        if (!this.panels[roomName] || this.panels[roomName].shouldRedraw) {
-            this.panels[roomName] = { shouldRedraw: false, elements: [] };
-        }
-        this.panels[roomName].elements.push(
-            ...Object.keys(importantFigures).map((fig) => {
-                return {
-                    content: fig + ": " + importantFigures[fig],
-                    style: defaultText,
-                    spacing: 1,
-                };
-            })
-        );
-    },
-
-    addHeading: function (roomName, title) {
-        if (!DEBUG.drawOverlay) {
-            return;
-        }
-
-        if (!this.panels) {
-            this.panels = {};
-        }
-        if (!this.panels[roomName] || this.panels[roomName].shouldRedraw) {
-            this.panels[roomName] = { shouldRedraw: false, elements: [] };
-        }
-        this.panels[roomName].elements.push({
-            content: title,
-            style: defaultText,
-            spacing: 1.5,
-        });
-    },
-
-    finalizePanels: function (roomName, anchor = "right") {
-        if (!DEBUG.drawOverlay) {
-            return;
-        }
-
-        if (!this.panels) {
-            return;
-        }
-
-        const panel = this.panels[roomName];
-        if (!panel) {
-            return;
-        }
-
-        // Draw the panel itself first
-        const panelHeight =
-            panel.elements.reduce((total, curr) => total + curr.spacing, 0) +
-            0.5;
-        const panelWidth = 11;
-        const x =
-            anchor === "left"
-                ? -0.5 + panelStyle.strokeWidth / 2
-                : 49.5 - panelWidth - panelStyle.strokeWidth / 2;
-        const y = -0.5 + panelStyle.strokeWidth / 2;
-        const visual = new RoomVisual(roomName).rect(
-            x,
-            y,
-            panelWidth,
-            panelHeight,
-            panelStyle
-        );
-
-        // Add text to the panel for each element
-        let offset = 0.5 + panelStyle.strokeWidth / 2;
-        for (const element of panel.elements) {
-            if (element !== panel.elements[0]) {
-                offset += element.spacing;
-            }
-            visual.text(element.content, x + 0.5, offset, element.style);
-        }
-
-        // Mark this panel to redraw
-        panel.shouldRedraw = true;
-    },
+    createPanel,
+    addText,
+    addHeading,
+    finalizePanels,
 
     rects: function (
         positions,

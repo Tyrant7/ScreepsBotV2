@@ -340,7 +340,7 @@ class SpawnManager {
     }
 
     drawOverlay(roomInfo) {
-        overlay.addHeading(roomInfo.room.name, "- Spawn Demands -");
+        overlay.addHeading(roomInfo.room.name, "Spawn Demands");
         for (const role in roles) {
             const demand = getRoleDemand(roomInfo.room.name, role).value;
             if (!demand) {

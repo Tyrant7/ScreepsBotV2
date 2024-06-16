@@ -195,7 +195,7 @@ class EconomyManager {
 
         if (DEBUG.trackSpawnUsage) {
             const spawnDisplay = spawnEstimate.toFixed(3);
-            overlay.addHeading(roomInfo.room.name, "- Spawns -");
+            overlay.addHeading(roomInfo.room.name, "Spawns");
             overlay.addText(roomInfo.room.name, {
                 "Spawn Usage": spawnDisplay + " / " + roomInfo.spawns.length,
             });
@@ -209,7 +209,7 @@ class EconomyManager {
                         " (" + remote.score.toFixed(3) + "E/t)";
                 }
             }
-            overlay.addHeading(roomInfo.room.name, "- Remotes -");
+            overlay.addHeading(roomInfo.room.name, "Remotes");
             overlay.addText(roomInfo.room.name, remoteDisplay);
         }
     }
