@@ -69,8 +69,11 @@ const demandHandlers = {
         }
 
         // Reduce proportional to the number of idle haulers
+        // Idle meaning empty and not picking up
         const idleHaulers = roomInfo.haulers.filter(
-            (hauler) => !haulerUtility.getAssignedPickupID(hauler)
+            (hauler) =>
+                hauler.store.getCapacity() === hauler.store.getFreeCapacity() &&
+                !haulerUtility.getAssignedPickupID(hauler)
         ).length;
         const workingHaulers = roomInfo.haulers.length - idleHaulers;
         const haulerDemand = getRoleDemand(
