@@ -75,7 +75,10 @@ const demandHandlers = {
                 !haulerUtility.getAssignedPickupID(hauler)
         ).length;
         const workingHaulers = roomInfo.haulers.length - idleHaulers;
-        const haulerDemand = getRoleDemand(roomInfo.room.name, roles.hauler);
+        const haulerDemand = getRoleDemand(
+            roomInfo.room.name,
+            roles.hauler
+        ).value;
         if (
             idleHaulers >= LOWER_HAULER_THRESHOLD &&
             haulerDemand >= workingHaulers
