@@ -493,7 +493,12 @@ const matrixHandler = {
                     s.structureType === STRUCTURE_ROAD &&
                     s instanceof Structure
                 ) {
-                    matrix.set(s.pos.x, s.pos.y, 1);
+                    // Disallow lowering the cost if another structure is already there
+                    matrix.set(
+                        s.pos.x,
+                        s.pos.y,
+                        Math.max(matrix.get(s.pos.x, s.pos.y, 1))
+                    );
                 } else if (
                     s.structureType !== STRUCTURE_CONTAINER &&
                     (s.structureType !== STRUCTURE_RAMPART || !s.my)
