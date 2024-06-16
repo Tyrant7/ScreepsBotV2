@@ -6,6 +6,13 @@ const { pathSets } = require("./constants");
 
 const overlay = require("./overlay");
 
+/**
+ * This will be the cost to path outside of our planned roads.
+ * In this case, 100 times more than doing it, which will result
+ * in CPU savings when pathing in remotes
+ */
+const OUTSIDE_PATH_COST = 100;
+
 class RemoteManager {
     /**
      * Draws enabled overlays for remotes.
@@ -79,7 +86,7 @@ class RemoteManager {
                     }
                     // We'll heavily discourage searching outside of the planned path, but not forbid it
                     // to still allow us to pickup dropped energy outside of our path set
-                    unwalkableMatrix.set(x, y, 255 - 1);
+                    unwalkableMatrix.set(x, y, OUTSIDE_PATH_COST);
                 }
             }
             const plans = utility.getRemotePlans(roomInfo.room.name);
