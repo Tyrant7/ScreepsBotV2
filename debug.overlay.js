@@ -1,6 +1,4 @@
-const defaultStyle = {
-    fill: "#FFFFFF",
-};
+//#region Panels
 
 const defaultText = {
     color: "#FFFFFF",
@@ -15,7 +13,6 @@ const panelStyle = {
     strokeWidth: 0.35,
 };
 
-const matrixDisplayColor = "#fcba03";
 const columnSpacing = 14;
 
 const defaultSpacing = 0.9;
@@ -173,95 +170,114 @@ const finalizePanels = (roomName) => {
     }
 };
 
+//#endregion
+
+//#region Shapes
+
+const defaultStyle = {
+    fill: "#FFFFFF",
+};
+
+const rects = (positions, width = 0.5, height = 0.5, style = defaultStyle) => {
+    if (!DEBUG.drawOverlay) {
+        return;
+    }
+
+    const visuals = {};
+    positions.forEach((pos) => {
+        if (!visuals[pos.roomName]) {
+            visuals[pos.roomName] = new RoomVisual(pos.roomName);
+        }
+        visuals[pos.roomName].rect(
+            pos.x - width / 2,
+            pos.y - height / 2,
+            width,
+            height,
+            style
+        );
+    });
+};
+
+const circles = (positions, style = defaultStyle) => {
+    if (!DEBUG.drawOverlay) {
+        return;
+    }
+
+    const visuals = {};
+    positions.forEach((pos) => {
+        if (!visuals[pos.roomName]) {
+            visuals[pos.roomName] = new RoomVisual(pos.roomName);
+        }
+        visuals[pos.roomName].circle(pos.x, pos.y, style);
+    });
+};
+
+//#endregion
+
+//#region Matrices
+
+const matrixDisplayColor = "#fcba03";
+const visualizeCostMatrix = (
+    roomName,
+    matrix,
+    excludedValues = [0, 255],
+    color = matrixDisplayColor
+) => {
+    let highestValue = 0;
+    for (let x = 0; x < 50; x++) {
+        for (let y = 0; y < 50; y++) {
+            highestValue = Math.max(matrix.get(x, y), highestValue);
+        }
+    }
+    const visual = new RoomVisual(roomName);
+    for (let x = 0; x < 50; x++) {
+        for (let y = 0; y < 50; y++) {
+            const value = matrix.get(x, y);
+            if (excludedValues.includes(value)) {
+                continue;
+            }
+            visual.rect(x - 0.5, y - 0.5, 1, 1, {
+                fill: color,
+                opacity: value / highestValue,
+            });
+            visual.text(value, x, y, {
+                font: "0.5 monospace",
+                opacity: 0.8,
+            });
+        }
+    }
+};
+
+//#endregion
+
+//#region Structures
+
+const visualizeBasePlan = (roomName, planMatrix, rampartMatrix, mapping) => {
+    const visual = new RoomVisual(roomName);
+    for (let x = 0; x < 50; x++) {
+        for (let y = 0; y < 50; y++) {
+            const value = planMatrix.get(x, y);
+            if (rampartMatrix.get(x, y)) {
+                visual.structure(x, y, STRUCTURE_RAMPART);
+            }
+            if (mapping[value]) {
+                visual.structure(x, y, mapping[value]);
+            }
+        }
+    }
+    visual.connectRoads();
+};
+
+//#endregion
+
 module.exports = {
     createPanel,
     addText,
     addHeading,
     addColumns,
     finalizePanels,
-
-    rects: function (
-        positions,
-        width = 0.5,
-        height = 0.5,
-        style = defaultStyle
-    ) {
-        if (!DEBUG.drawOverlay) {
-            return;
-        }
-
-        const visuals = {};
-        positions.forEach((pos) => {
-            if (!visuals[pos.roomName]) {
-                visuals[pos.roomName] = new RoomVisual(pos.roomName);
-            }
-            visuals[pos.roomName].rect(
-                pos.x - width / 2,
-                pos.y - height / 2,
-                width,
-                height,
-                style
-            );
-        });
-    },
-
-    circles: function (positions, style = defaultStyle) {
-        if (!DEBUG.drawOverlay) {
-            return;
-        }
-
-        const visuals = {};
-        positions.forEach((pos) => {
-            if (!visuals[pos.roomName]) {
-                visuals[pos.roomName] = new RoomVisual(pos.roomName);
-            }
-            visuals[pos.roomName].circle(pos.x, pos.y, style);
-        });
-    },
-
-    visualizeCostMatrix: function (
-        roomName,
-        matrix,
-        excludedValues = [0, 255]
-    ) {
-        let highestValue = 0;
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                highestValue = Math.max(matrix.get(x, y), highestValue);
-            }
-        }
-        const visual = new RoomVisual(roomName);
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                const value = matrix.get(x, y);
-                if (excludedValues.includes(value)) {
-                    continue;
-                }
-                visual.rect(x - 0.5, y - 0.5, 1, 1, {
-                    fill: matrixDisplayColor,
-                    opacity: value / highestValue,
-                });
-                visual.text(value, x, y, {
-                    font: "0.5 monospace",
-                    opacity: 0.8,
-                });
-            }
-        }
-    },
-
-    visualizeBasePlan: function (roomName, planMatrix, rampartMatrix, mapping) {
-        const visual = new RoomVisual(roomName);
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
-                const value = planMatrix.get(x, y);
-                if (rampartMatrix.get(x, y)) {
-                    visual.structure(x, y, STRUCTURE_RAMPART);
-                }
-                if (mapping[value]) {
-                    visual.structure(x, y, mapping[value]);
-                }
-            }
-        }
-        visual.connectRoads();
-    },
+    rects,
+    circles,
+    visualizeCostMatrix,
+    visualizeBasePlan,
 };
