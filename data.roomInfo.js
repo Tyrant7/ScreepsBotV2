@@ -19,6 +19,11 @@ class RoomInfo {
      * Initializes some data for this room that is not guaranteed to be persistent between ticks.
      */
     initializeTickInfo() {
+        // Reinitialize stale objects
+        this.room = Game.rooms[this.room.name];
+        this.sources = this.sources.map((s) => Game.getObjectById(s.id));
+        this.mineral = Game.getObjectById(this.mineral.id);
+
         // Find all creeps that this room is responsible for, not just ones in it
         this.creeps = Object.values(Game.creeps).filter(
             (c) => c.memory.home === this.room.name
@@ -47,12 +52,7 @@ class RoomInfo {
         this.spawns = this.room.find(FIND_MY_SPAWNS);
         this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES);
 
-        // Used for planning remotes and hauler orders
-        // (temporarily hardcoded)
-        // TODO //
-        // Dynamically calculate this
-        // Start by using a flag or something
-        // Then have the base planner eventually determine this
+        // Used for distance calculations of hauler orders
         this.core = this.spawns[0].pos;
 
         this._pickupRequests = [];
