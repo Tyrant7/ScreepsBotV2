@@ -118,7 +118,6 @@ const handleSites = (roomInfo) => {
             );
         } else if (OBSTACLE_OBJECT_TYPES.includes(bestStructure.type)) {
             roomMatrix.set(bestStructure.pos.x, bestStructure.pos.y, MAX_VALUE);
-            return;
         }
 
         // Now cache it
