@@ -378,41 +378,30 @@ const utility = {
     },
 
     getNewPath: function (startPos, goals, options) {
-        const MAX_ATTEMPTS = 2;
-        let attempts = 1;
-        let result;
-        while (attempts <= MAX_ATTEMPTS) {
-            result = PathFinder.search(startPos, goals, {
-                maxRooms: options.maxRooms * attempts,
-                maxOps: options.maxOps * attempts,
-                plainCost: options.plainCost,
-                swampCost: options.swampCost,
-                roomCallback: function (roomName) {
-                    if (options.pathSet) {
-                        const matrix = matrixHandler.getCachedMatrix(
-                            options.pathSet,
-                            roomName
-                        );
-                        if (matrix) {
-                            return matrix;
-                        }
+        const result = PathFinder.search(startPos, goals, {
+            maxRooms: options.maxRooms,
+            maxOps: options.maxOps,
+            plainCost: options.plainCost,
+            swampCost: options.swampCost,
+            roomCallback: function (roomName) {
+                if (options.pathSet) {
+                    const matrix = matrixHandler.getCachedMatrix(
+                        options.pathSet,
+                        roomName
+                    );
+                    if (matrix) {
+                        return matrix;
                     }
-                    return matrixHandler.generateDefaultCostMatrix(roomName);
-                },
-            });
-            if (!result.incomplete) {
-                break;
-            }
-            // Raise maxOps and try again
-            attempts++;
-        }
+                }
+                return matrixHandler.generateDefaultCostMatrix(roomName);
+            },
+        });
         if (result.incomplete) {
             if (options.warnOnIncompletePath) {
                 console.log(
-                    "Couldn't find path from " +
-                        startPos +
-                        " to goals: " +
-                        JSON.stringify(goals)
+                    `Couldn't find path from ${startPos} to goals: ${JSON.stringify(
+                        goals
+                    )}. Using incomplete path!`
                 );
             }
         }
