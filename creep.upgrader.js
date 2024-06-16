@@ -1,6 +1,6 @@
-const CreepManager = require("./creepManager");
-const Task = require("./task");
-const RoomInfo = require("./roomInfo");
+const CreepManager = require("./manager.creepManager");
+const Task = require("./data.task");
+const RoomInfo = require("./data.roomInfo");
 const { getPlanData, keys } = require("./base.planningUtility");
 
 class UpgraderManager extends CreepManager {

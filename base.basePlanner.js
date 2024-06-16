@@ -1,4 +1,4 @@
-const overlay = require("./overlay");
+const overlay = require("./debug.overlay");
 const matrixUtility = require("./base.matrixUtility");
 const stamps = require("./base.stamps");
 const PlanBuilder = require("./base.planBuilder");

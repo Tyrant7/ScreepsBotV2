@@ -1,6 +1,6 @@
-const CreepManager = require("./creepManager");
-const Task = require("./task");
-const estimateTravelTime = require("./estimateTravelTime");
+const CreepManager = require("./manager.creepManager");
+const Task = require("./data.task");
+const estimateTravelTime = require("./util.estimateTravelTime");
 const { pathSets } = require("./constants");
 
 class BuilderManager extends CreepManager {

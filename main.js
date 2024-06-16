@@ -50,27 +50,27 @@ global.DEBUG = {
 global.RELOAD = true;
 
 // Extensions
-global.betterPathing = require("./betterPathing");
-require("betterRoomVisual");
+global.betterPathing = require("./extension.betterPathing");
+require("./extension.betterRoomVisual");
 
 // Data
-const RoomInfo = require("./roomInfo");
+const RoomInfo = require("./data.roomInfo");
 const roomInfos = {};
 
 // Managers
-const EconomyManager = require("./economyManager");
-const TowerManager = require("./towerManager");
+const EconomyManager = require("./manager.economyManager");
+const TowerManager = require("./manager.towerManager");
 
-// Tasks
-const HaulerManager = require("./haulerManager");
-const MinerManager = require("./minerManager");
-const UpgraderManager = require("./upgraderManager");
-const ScoutManager = require("./scoutManager");
-const RepairerManager = require("./repairerManager");
-const BuilderManager = require("./builderManager");
-const ReserverManager = require("./reserverManager");
-const DefenderManager = require("./defenderManager");
-const MineralMinerManager = require("./mineralMinerManager");
+// Creeps
+const HaulerManager = require("./creep.hauler");
+const MinerManager = require("./creep.miner");
+const UpgraderManager = require("./creep.upgrader");
+const ScoutManager = require("./creep.scout");
+const RepairerManager = require("./creep.repairer");
+const BuilderManager = require("./creep.builder");
+const ReserverManager = require("./creep.reserver");
+const DefenderManager = require("./creep.defender");
+const MineralMinerManager = require("./creep.mineralMiner");
 
 // Mapping
 const { roles, pathSets } = require("./constants");
@@ -99,13 +99,13 @@ const { handleSites } = require("./base.constructionManager");
 const towerManager = new TowerManager();
 
 // Hauling
-const BasicHaulingRequester = require("./basicHaulingRequester");
-const haulingRequester = new BasicHaulingRequester();
+const HaulingRequester = require("./manager.haulingRequestManager");
+const haulingRequester = new HaulingRequester();
 
 // Stats and Debug
-const overlay = require("./overlay");
-const trackStats = require("./trackStats");
-const profiler = require("./profiler");
+const overlay = require("./debug.overlay");
+const trackStats = require("./debug.trackStats");
+const profiler = require("./debug.profiler");
 
 module.exports.loop = function () {
     // Passive pixel generation

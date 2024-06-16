@@ -6,12 +6,12 @@ const {
     nudgeRoleDemand,
     bumpRoleDemand,
 } = require("./spawn.demandHandler");
-const haulerUtility = require("./haulerUtility");
-const remoteUtility = require("./remoteUtility");
+const haulerUtility = require("./util.haulerUtility");
+const remoteUtility = require("./remote.remoteUtility");
 const { getCost } = require("./spawn.spawnUtility");
 
 const creepMaker = require("./spawn.creepMaker");
-const overlay = require("./overlay");
+const overlay = require("./debug.overlay");
 
 const RAISE_HAULER_THRESHOLD = 2;
 const LOWER_HAULER_THRESHOLD = 2;

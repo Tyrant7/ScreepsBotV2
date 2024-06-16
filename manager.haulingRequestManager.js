@@ -1,8 +1,8 @@
-const RoomInfo = require("./roomInfo");
-const remoteUtility = require("./remoteUtility");
+const RoomInfo = require("./data.roomInfo");
+const remoteUtility = require("./remote.remoteUtility");
 const { getPlanData, keys } = require("./base.planningUtility");
 
-class BasicHaulingRequester {
+class HaulingRequestManager {
     /**
      * Creates some basic requests for a colony, including:
      * Dropoff requests:
@@ -134,4 +134,4 @@ class BasicHaulingRequester {
     }
 }
 
-module.exports = BasicHaulingRequester;
+module.exports = HaulingRequestManager;

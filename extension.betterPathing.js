@@ -1,4 +1,4 @@
-const profiler = require("./profiler");
+const profiler = require("./debug.profiler");
 
 //#region Pathing
 

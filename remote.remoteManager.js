@@ -1,10 +1,10 @@
-const RemotePlanner = require("./remotePlanner");
+const RemotePlanner = require("./remote.remotePlanner");
 const remotePlanner = new RemotePlanner();
 
-const utility = require("./remoteUtility");
+const utility = require("./remote.remoteUtility");
 const { pathSets } = require("./constants");
 
-const overlay = require("./overlay");
+const overlay = require("./debug.overlay");
 
 /**
  * This will be the cost to path outside of our planned roads.

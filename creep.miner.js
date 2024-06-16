@@ -1,6 +1,6 @@
-const CreepManager = require("./creepManager");
-const { visualizeCostMatrix } = require("./overlay");
-const Task = require("./task");
+const CreepManager = require("./manager.creepManager");
+const { visualizeCostMatrix } = require("./debug.overlay");
+const Task = require("./data.task");
 const { pathSets, roles } = require("./constants");
 
 class MinerManager extends CreepManager {

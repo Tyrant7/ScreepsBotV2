@@ -3,10 +3,9 @@ module.exports = {
      * Performs a breadth-first search of neighbouring rooms until an unexplored room has been found.
      * @param {string} startingRoom The name of the room to start in.
      * @param {number} maxIterations The max iterations to search for. After this, null will be returned.
-     * @returns 
+     * @returns
      */
-    searchForUnexploredRoomsNearby: function(startingRoom, maxIterations) {
-
+    searchForUnexploredRoomsNearby: function (startingRoom, maxIterations) {
         // Perform a breadth-first search of neighbouring rooms
         // If all of them have been explored, repeat with their neighbours
         // Continue until an unexplored room has been found
@@ -24,5 +23,5 @@ module.exports = {
 
         // None found before maxIterations expired
         return null;
-    }
-}
+    },
+};

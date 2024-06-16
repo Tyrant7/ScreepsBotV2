@@ -1,36 +1,36 @@
-const CreepManager = require("./creepManager");
-const Task = require("./task");
-const scoutingUtility = require("./scoutingUtility");
+const CreepManager = require("./manager.creepManager");
+const Task = require("./data.task");
+const scoutingUtility = require("./util.scoutingUtility");
 
 class ScoutManager extends CreepManager {
-
     createTask(creep, roomInfo) {
-
         // Let's generate a new 'explore' task for the closest room within an arbitrary range to the creep's current room
-        const targetName = scoutingUtility.searchForUnexploredRoomsNearby(creep.room.name, 3) 
+        const targetName =
+            scoutingUtility.searchForUnexploredRoomsNearby(
+                creep.room.name,
+                3
+            ) ||
             // If we've explored all directions, just go somewhere random
             // TODO //
             // Make this better
-            || Object.values(Game.map.describeExits(creep.room.name))[0];
+            Object.values(Game.map.describeExits(creep.room.name))[0];
         const actionStack = [];
-        actionStack.push(function(creep, data) {
-
+        actionStack.push(function (creep, data) {
             // We should only update data when leaving or entering a room to be efficient with CPU
-            const leavingOrEntering = creep.pos.x >= 49 ||
-                                      creep.pos.x <= 0  ||
-                                      creep.pos.y >= 49 ||
-                                      creep.pos.y <= 0;
+            const leavingOrEntering =
+                creep.pos.x >= 49 ||
+                creep.pos.x <= 0 ||
+                creep.pos.y >= 49 ||
+                creep.pos.y <= 0;
 
             // We've hit our target room -> we can request a new task!
             if (creep.room.name === data.roomName && !leavingOrEntering) {
                 return true;
-            }
-            else {
+            } else {
                 data.maxRooms = 3;
                 data.moveToRoom(creep, data);
                 creep.say("🔭", true);
             }
-
 
             // Update room data if needed
             let roomData = Memory.rooms[creep.room.name];
@@ -43,20 +43,34 @@ class ScoutManager extends CreepManager {
                 const controller = creep.room.controller;
                 if (controller) {
                     roomData.controller = {};
-                    roomData.controller.pos = { x: controller.pos.x, y: controller.pos.y };
+                    roomData.controller.pos = {
+                        x: controller.pos.x,
+                        y: controller.pos.y,
+                    };
                     roomData.controller.id = controller.id;
                 }
 
                 // Source positions
                 roomData.sources = [];
                 const sources = creep.room.find(FIND_SOURCES);
-                sources.forEach((source) => roomData.sources.push({ pos: { x: source.pos.x, y: source.pos.y }, id: source.id }));
+                sources.forEach((source) =>
+                    roomData.sources.push({
+                        pos: { x: source.pos.x, y: source.pos.y },
+                        id: source.id,
+                    })
+                );
 
                 // Mineral position, if one exists
                 roomData.minerals = [];
                 const minerals = creep.room.find(FIND_MINERALS);
-                minerals.forEach((mineral) => roomData.minerals.push(
-                    { pos: { x: mineral.pos.x, y: mineral.pos.y }, density: mineral.density, type: mineral.mineralType, id: mineral.id }));
+                minerals.forEach((mineral) =>
+                    roomData.minerals.push({
+                        pos: { x: mineral.pos.x, y: mineral.pos.y },
+                        density: mineral.density,
+                        type: mineral.mineralType,
+                        id: mineral.id,
+                    })
+                );
             }
 
             // These things change, so let's record them every time
@@ -65,7 +79,9 @@ class ScoutManager extends CreepManager {
 
                 // Update controller information
                 if (roomData.controller && roomData.controller.owner) {
-                    const controllerObject = Game.getObjectById(roomData.controller.id);
+                    const controllerObject = Game.getObjectById(
+                        roomData.controller.id
+                    );
                     roomData.controller.owner = controllerObject.owner.username;
                     roomData.controller.level = controllerObject.level;
                 }
@@ -85,8 +101,7 @@ class ScoutManager extends CreepManager {
                             roomData.sourceKeepers = [];
                         }
                         roomData.sourceKeepers.push(hostile.name);
-                    }
-                    else if (hostile.owner.username === "Invader") {
+                    } else if (hostile.owner.username === "Invader") {
                         if (!roomData.invaders) {
                             roomData.invaders = [];
                         }
@@ -95,17 +110,25 @@ class ScoutManager extends CreepManager {
                 }
 
                 // Record invader structures as well
-                const invaderCores = creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_INVADER_CORE });
+                const invaderCores = creep.room.find(FIND_STRUCTURES, {
+                    filter: (s) => s.structureType === STRUCTURE_INVADER_CORE,
+                });
                 if (invaderCores.length) {
-                    roomData.invaderCores = invaderCores.map(function(core) {
-                        return { x: core.pos.x, y: core.pos.y, level: core.level };
+                    roomData.invaderCores = invaderCores.map(function (core) {
+                        return {
+                            x: core.pos.x,
+                            y: core.pos.y,
+                            level: core.level,
+                        };
                     });
                 }
 
                 // And keeper lairs
-                const keeperLairs = creep.room.find(FIND_STRUCTURES, { filter: (s) => s.structureType === STRUCTURE_KEEPER_LAIR });
+                const keeperLairs = creep.room.find(FIND_STRUCTURES, {
+                    filter: (s) => s.structureType === STRUCTURE_KEEPER_LAIR,
+                });
                 if (keeperLairs.length) {
-                    roomData.keeperLairs = keeperLairs.map(function(lair) {
+                    roomData.keeperLairs = keeperLairs.map(function (lair) {
                         return { x: lair.pos.x, y: lair.pos.y };
                     });
                 }
@@ -115,7 +138,11 @@ class ScoutManager extends CreepManager {
             }
         });
 
-        return new Task({ moveToRoom: this.basicActions.moveToRoom, roomName: targetName }, "explore", actionStack);
+        return new Task(
+            { moveToRoom: this.basicActions.moveToRoom, roomName: targetName },
+            "explore",
+            actionStack
+        );
     }
 }
 

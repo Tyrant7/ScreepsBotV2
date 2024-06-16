@@ -1,5 +1,5 @@
-const remoteUtility = require("./remoteUtility");
-const estimateTravelTime = require("./estimateTravelTime");
+const remoteUtility = require("./remote.remoteUtility");
+const estimateTravelTime = require("./util.estimateTravelTime");
 const { getPlanData, keys } = require("./base.planningUtility");
 const { roles } = require("./constants");
 const { MINER_WORK } = require("./spawn.spawnConstants");

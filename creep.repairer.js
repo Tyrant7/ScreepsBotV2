@@ -1,5 +1,5 @@
-const CreepManager = require("./creepManager");
-const Task = require("./task");
+const CreepManager = require("./manager.creepManager");
+const Task = require("./data.task");
 const { pathSets } = require("./constants");
 
 class RepairerManager extends CreepManager {
