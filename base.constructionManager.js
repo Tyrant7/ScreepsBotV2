@@ -116,7 +116,7 @@ const handleSites = (roomInfo) => {
                 bestStructure.pos.y,
                 CONTAINER_PATHING_COST
             );
-        } else if (OBSTACLE_OBJECT_TYPES[bestStructure.type]) {
+        } else if (OBSTACLE_OBJECT_TYPES.includes(bestStructure.type)) {
             roomMatrix.set(bestStructure.pos.x, bestStructure.pos.y, MAX_VALUE);
             return;
         }
