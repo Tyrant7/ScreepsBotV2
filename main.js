@@ -236,15 +236,15 @@ module.exports.loop = function () {
             100;
         for (const info of Object.values(roomInfos)) {
             if (DEBUG.trackCPUUsage) {
-                overlay.addHeading(info.room.name + "0", "CPU Usage");
-                overlay.addText(info.room.name + "0", {
+                overlay.addHeading(info.room.name, "CPU Usage");
+                overlay.addText(info.room.name, {
                     "Average CPU": rollingAverage.toFixed(3),
                     "Last CPU": Game.cpu.getUsed().toFixed(3),
                 });
             }
             if (DEBUG.profileHeapUsage) {
-                overlay.addHeading(info.room.name + "0", "Heap Usage");
-                overlay.addText(info.room.name + "0", {
+                overlay.addHeading(info.room.name, "Heap Usage");
+                overlay.addText(info.room.name, {
                     "Last Heap": heapUsage.toFixed(2) + "%",
                 });
             }
@@ -257,8 +257,8 @@ module.exports.loop = function () {
         // Can use "in" here because we only care about the room name
 
         for (const info of Object.values(roomInfos)) {
-            overlay.addHeading(info.room.name, "Creeps");
-            overlay.addText(info.room.name, {
+            overlay.addHeading(info.room.name + "0", "Creeps");
+            overlay.addText(info.room.name + "0", {
                 Count: Object.values(Memory.creeps).length,
             });
         }

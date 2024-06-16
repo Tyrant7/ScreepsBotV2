@@ -22,6 +22,7 @@ const panelStyle = {
 };
 
 const matrixDisplayColor = "#fcba03";
+const columnSpacing = 14;
 
 const panels = {};
 
@@ -129,6 +130,20 @@ const addText = (panelName, figures) => {
     );
 };
 
+const addColumns = (panelName, leftElement, rightElement) => {
+    if (!panels[panelName]) {
+        return;
+    }
+    panels[panelName].add({
+        content:
+            leftElement +
+            " ".repeat(columnSpacing - leftElement.length) +
+            rightElement,
+        style: defaultText,
+        spacing: 1,
+    });
+};
+
 const finalizePanels = (roomName) => {
     for (const key in panels) {
         panels[key].draw(roomName);
@@ -139,6 +154,7 @@ module.exports = {
     createPanel,
     addText,
     addHeading,
+    addColumns,
     finalizePanels,
 
     rects: function (

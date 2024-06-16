@@ -340,14 +340,17 @@ class SpawnManager {
     }
 
     drawOverlay(roomInfo) {
-        overlay.addHeading(roomInfo.room.name, "Spawn Demands");
+        overlay.addHeading(roomInfo.room.name + "0", "Spawn Demands");
         for (const role in roles) {
             const demand = getRoleDemand(roomInfo.room.name, role).value;
             if (!demand) {
                 continue;
             }
-            const display = " ".repeat(15 - role.length) + demand.toFixed(4);
-            overlay.addText(roomInfo.room.name, { [role]: display });
+            overlay.addColumns(
+                roomInfo.room.name + "0",
+                role,
+                demand.toFixed(4)
+            );
         }
     }
 }
