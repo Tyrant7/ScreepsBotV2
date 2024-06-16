@@ -17,6 +17,65 @@ const panelStyle = {
 
 const matrixDisplayColor = "#fcba03";
 
+const panels = {};
+
+class Panel {
+    constructor(style, anchor, elements) {
+        this.style = style;
+        this.anchor = anchor;
+        this.elements = [...elements];
+
+        this.mx = 0.5;
+        this.my = 0.5;
+    }
+
+    add(element) {
+        this.elements.push(element);
+    }
+
+    draw() {
+        const height =
+            this.elements.reduce((total, curr) => total + curr.spacing, 0) +
+            this.my;
+        const longestElement = this.elements.reduce((longest, curr) =>
+            curr.text.length > longest.text.length ? curr : longest
+        );
+        const width = longestElement.text.length * this.style.strokeWidth;
+
+        const x = this.anchor.includes("l")
+            ? -0.5 + panelStyle.strokeWidth / 2
+            : -panelWidth - panelStyle.strokeWidth / 2;
+
+        const y = this.anchor.includes("b")
+            ? -panelHeight - panelStyle.strokeWidth / 2
+            : -0.5 + panelStyle.strokeWidth / 2;
+
+        const visual = new RoomVisual(roomName).rect(
+            x,
+            y,
+            width,
+            height,
+            panelStyle
+        );
+
+        // Add text to the panel for each element
+        let offset = 0.5 + panelStyle.strokeWidth / 2;
+        for (const element of this.elements) {
+            visual.text(element.content, x + this.mx, offset, element.style);
+            offset += element.spacing;
+        }
+    }
+}
+
+/**
+ * Creates a panel which can be drawn to.
+ * @param {string} name The name of the panel to reference when drawing later.
+ * @param {"tr" | "tl" | "br" | "bl"} anchor The side of the screen to anchor the panel.
+ */
+const createPanel = (name, anchor) => {};
+
+const addHeading = () => {};
+
 module.exports = {
     addText: function (roomName, importantFigures) {
         if (!DEBUG.drawOverlay) {
