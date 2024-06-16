@@ -1,9 +1,9 @@
 const { roles } = require("./constants");
 
 const DEFAULT_DEMANDS = {
-    [roles.hauler]: 0.9,
+    [roles.hauler]: 0.7,
     [roles.miner]: 0.5,
-    [roles.upgrader]: 0.5,
+    [roles.upgrader]: 0.4,
 };
 
 const NUDGE_RATE = 250;
@@ -69,6 +69,7 @@ const nudgeRoleDemand = (roomName, role, amount, urgent = false) => {
 };
 
 module.exports = {
+    DEFAULT_DEMANDS,
     ensureDefaults,
     getRoleDemand,
     setRoleDemand,

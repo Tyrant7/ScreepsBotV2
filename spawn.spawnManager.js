@@ -1,5 +1,6 @@
 const { roles, maxCounts } = require("./constants");
 const {
+    DEFAULT_DEMANDS,
     ensureDefaults,
     getRoleDemand,
     setRoleDemand,
@@ -49,7 +50,7 @@ const demandHandlers = {
     },
     [roles.miner]: (roomInfo, set, nudge, bump) => {
         if (!roomInfo.miners.length || !roomInfo.haulers.length) {
-            return set(1);
+            return set(DEFAULT_DEMANDS[roles.miner]);
         }
         // If we have an open site, bump miners
         if (roomInfo.getFirstOpenMiningSite()) {
@@ -65,7 +66,7 @@ const demandHandlers = {
     },
     [roles.hauler]: (roomInfo, set, nudge, bump) => {
         if (!roomInfo.miners.length || !roomInfo.haulers.length) {
-            return set(1);
+            return set(DEFAULT_DEMANDS[roles.hauler]);
         }
 
         // Reduce proportional to the number of idle haulers
@@ -109,6 +110,10 @@ const demandHandlers = {
         }
     },
     [roles.upgrader]: (roomInfo, set, nudge, bump) => {
+        if (!roomInfo.miners.length || !roomInfo.haulers.length) {
+            return set(DEFAULT_DEMANDS[roles.upgrader]);
+        }
+
         // Priority #1: are upgraders full?
         const upgraders = roomInfo.upgraders;
         const fullUpgraders = upgraders.filter(
