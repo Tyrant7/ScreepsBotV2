@@ -120,9 +120,14 @@ class Panel {
  * @param {"tr" | "tl" | "br" | "bl"} anchor The side of the screen to anchor the panel.
  * @param {string?} parent The name of the parent panel. When given, this panel will
  * be drawn relative to its parent.
+ * @returns {{ addChild: (childName: string) => ...}}
+ * An object with a method to add children to the created panel.
  */
 const createPanel = (name, anchor, parent) => {
     panels[name] = new Panel(panelStyle, anchor, parent);
+    return {
+        addChild: (childName) => createPanel(childName, anchor, name),
+    };
 };
 
 const addHeading = (panelName, heading) => {

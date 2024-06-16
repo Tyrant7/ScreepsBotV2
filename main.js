@@ -131,8 +131,10 @@ module.exports.loop = function () {
         const info = roomInfos[room];
 
         // Initialize our panels for this room
-        overlay.createPanel(info.room.name, "tr");
-        overlay.createPanel(info.room.name + "0", "tr", info.room.name);
+        overlay
+            .createPanel(info.room.name, "tl")
+            .addChild(info.room.name + "0")
+            .addChild(info.room.name + "1");
 
         if (
             !getBasePlan(info.room.name) ||
@@ -154,9 +156,9 @@ module.exports.loop = function () {
 
         // Track RCL progress
         if (DEBUG.trackRCLProgress) {
-            overlay.addHeading(info.room.name, "RCL");
+            overlay.addHeading(info.room.name + "1", "RCL");
             const averageRCL = trackStats.trackRCL(info.room.name);
-            overlay.addText(info.room.name, {
+            overlay.addText(info.room.name + "1", {
                 "RCL Per Tick": averageRCL.toFixed(3),
             });
             const neededEnergyToNextRCL =
@@ -165,7 +167,7 @@ module.exports.loop = function () {
             const ticksUntilNextRCL = Math.floor(
                 neededEnergyToNextRCL / averageRCL
             );
-            overlay.addText(info.room.name, {
+            overlay.addText(info.room.name + "1", {
                 "Next RCL In": ticksUntilNextRCL,
             });
         }
