@@ -124,6 +124,11 @@ const createPanel = (name, anchor, parent) => {
     };
 };
 
+/**
+ * Adds a heading to the panel with the specified name.
+ * @param {string} panelName The panel to add the heading.
+ * @param {string} heading The heading text.
+ */
 const addHeading = (panelName, heading) => {
     if (!panels[panelName]) {
         return;
@@ -135,6 +140,12 @@ const addHeading = (panelName, heading) => {
     });
 };
 
+/**
+ * Adds text to the panel with the specified name.
+ * @param {string} panelName The panel to add the text.
+ * @param {{}[]} figures An object array where the in each object,
+ * the key represents the prefix for the text, and the value represents to value.
+ */
 const addText = (panelName, figures) => {
     if (!panels[panelName]) {
         return;
@@ -150,6 +161,12 @@ const addText = (panelName, figures) => {
     );
 };
 
+/**
+ * Adds a preformatted 2 column row to the specified panel.
+ * @param {string} panelName The panel to add the text.
+ * @param {string} leftElement The left text.
+ * @param {string} rightElement The right text.
+ */
 const addColumns = (panelName, leftElement, rightElement) => {
     if (!panels[panelName]) {
         return;
@@ -164,6 +181,10 @@ const addColumns = (panelName, leftElement, rightElement) => {
     });
 };
 
+/**
+ * Draws all panels on the specified room.
+ * @param {string} roomName The name of the room to draw panels in.
+ */
 const finalizePanels = (roomName) => {
     if (!DEBUG.drawOverlay) {
         return;
@@ -290,6 +311,3 @@ module.exports = {
     visualizeCostMatrix,
     visualizeBasePlan,
 };
-
-// TODO //
-// Docstring for everything
