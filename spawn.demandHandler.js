@@ -49,8 +49,7 @@ const bumpRoleDemand = (roomName, role, amount, urgent = false) => {
         return;
     }
     const oldValue = demand.value || 0;
-    const freezeTime = Math.floor(NUDGE_RATE * amount);
-    setRoleDemand(roomName, role, oldValue + amount, freezeTime);
+    setRoleDemand(roomName, role, oldValue + amount, NUDGE_RATE);
 };
 
 const nudgeRoleDemand = (roomName, role, amount, urgent = false) => {
