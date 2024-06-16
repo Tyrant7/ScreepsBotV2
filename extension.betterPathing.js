@@ -1,3 +1,4 @@
+const { CONTAINER_PATHING_COST, ROAD_PATHING_COST } = require("./constants");
 const profiler = require("./debug.profiler");
 
 //#region Pathing
@@ -486,12 +487,14 @@ const matrixHandler = {
                     matrix.set(
                         s.pos.x,
                         s.pos.y,
-                        Math.max(matrix.get(s.pos.x, s.pos.y, 1))
+                        Math.max(
+                            matrix.get(s.pos.x, s.pos.y),
+                            ROAD_PATHING_COST
+                        )
                     );
-                } else if (
-                    s.structureType !== STRUCTURE_CONTAINER &&
-                    (s.structureType !== STRUCTURE_RAMPART || !s.my)
-                ) {
+                } else if (s.structureType === STRUCTURE_CONTAINER) {
+                    matrix.set(s.pos.x, s.pos.y, CONTAINER_PATHING_COST);
+                } else if (s.structureType !== STRUCTURE_RAMPART || !s.my) {
                     matrix.set(s.pos.x, s.pos.y, 255);
                 }
             });

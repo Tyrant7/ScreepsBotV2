@@ -2,7 +2,11 @@ const { iterateMatrix } = require("./base.matrixUtility");
 const { numberToStructure, MAX_VALUE } = require("./base.planningConstants");
 const { getPlan } = require("./base.planningUtility");
 const { deserializeBasePlan } = require("./base.serializeBasePlan");
-const { pathSets } = require("./constants");
+const {
+    pathSets,
+    CONTAINER_PATHING_COST,
+    ROAD_PATHING_COST,
+} = require("./constants");
 
 const UTILITY_CONSTANTS = {
     [STRUCTURE_SPAWN]: 100,
@@ -21,9 +25,6 @@ const DEFENSE_THRESHOLD_TICKS = 1500;
 const DEFENSE_UTILITY_BONUS = 200;
 
 const MAX_SITES = 2;
-
-const CONTAINER_PATHING_COST = 6;
-const ROAD_PATHING_COST = 1;
 
 const handleSites = (roomInfo) => {
     if (roomInfo.constructionSites.length >= MAX_SITES) {
