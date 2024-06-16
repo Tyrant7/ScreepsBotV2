@@ -78,7 +78,7 @@ class EconomyManager {
                 base.spawnUsage -= worst.cost;
 
                 // Let depending modules know that we've dropped a remote
-                onRemoteDrop.invoke(roomInfo.room.name, worst);
+                onRemoteDrop.invoke(roomInfo, worst);
 
                 if (DEBUG.logRemoteDropping) {
                     console.log(
@@ -121,7 +121,7 @@ class EconomyManager {
                     base.spawnUsage += nextRemote.cost;
 
                     // Let depending modules know that we've added a remote
-                    onRemoteAdd.invoke(roomInfo.room.name, nextRemote);
+                    onRemoteAdd.invoke(roomInfo, nextRemote);
 
                     if (DEBUG.logRemoteDropping) {
                         console.log(

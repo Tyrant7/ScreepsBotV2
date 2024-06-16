@@ -164,14 +164,25 @@ const demandHandlers = {
  * impact our spawn demands, like the adding or dropping of remotes.
  */
 const { onRemoteAdd, onRemoteDrop } = require("./remote.remoteEvents");
-onRemoteAdd.subscribe((roomName, remote) => {
-    console.log(roomName);
-    console.log(remote);
-
+onRemoteAdd.subscribe((roomInfo, remote) => {
     // Bump hauler and miner demand accordingly
+    const newHauler = creepMaker.makeHauler(
+        roomInfo.room.energyCapacityAvailable
+    );
+    const carryPerHauler = newHauler.body.filter((p) => p === CARRY).length;
+    const neededHaulers = Math.floor(remote.neededCarry / carryPerHauler);
+    bumpRoleDemand(roomInfo.room.name, roles.hauler, neededHaulers, true);
+    bumpRoleDemand(roomInfo.room.name, roles.miner, 1, true);
 });
-onRemoteDrop.subscribe((roomName, remote) => {
+onRemoteDrop.subscribe((roomInfo, remote) => {
     // Bump hauler and miner demand accordingly
+    const newHauler = creepMaker.makeHauler(
+        roomInfo.room.energyCapacityAvailable
+    );
+    const carryPerHauler = newHauler.body.filter((p) => p === CARRY).length;
+    const neededHaulers = Math.floor(remote.neededCarry / carryPerHauler);
+    bumpRoleDemand(roomInfo.room.name, roles.hauler, -neededHaulers, true);
+    bumpRoleDemand(roomInfo.room.name, roles.miner, -1, true);
 });
 
 /**
