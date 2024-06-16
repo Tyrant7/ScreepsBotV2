@@ -13,7 +13,7 @@ const { getCost } = require("./spawn.spawnUtility");
 const creepMaker = require("./spawn.creepMaker");
 const overlay = require("./overlay");
 
-const RAISE_HAULER_THRESHOLD = 3;
+const RAISE_HAULER_THRESHOLD = 2;
 const LOWER_HAULER_THRESHOLD = 2;
 
 const RAISE_UPGRADER_THRESHOLD = 1;
@@ -67,16 +67,32 @@ const demandHandlers = {
         if (!roomInfo.miners.length || !roomInfo.haulers.length) {
             return set(1);
         }
+
+        // Reduce proportional to the number of idle haulers
+        const idleHaulers = roomInfo.haulers.filter(
+            (hauler) =>
+                !haulerUtility.getAssignedDropoffID(hauler) &&
+                !haulerUtility.getAssignedPickupID(hauler)
+        ).length;
+        const workingHaulers = roomInfo.haulers.length - idleHaulers;
+        const haulerDemand = getRoleDemand(roomInfo.room.name, roles.hauler);
+        if (
+            idleHaulers >= LOWER_HAULER_THRESHOLD &&
+            haulerDemand >= workingHaulers
+        ) {
+            return nudge(-idleHaulers);
+        }
+
         // We'll consider haulers of the current spawn size
         const currentHaulerSize =
             creepMaker
                 .makeHauler(roomInfo.room.energyCapacityAvailable)
-                .body.filter((p) => p.type === CARRY).length * CARRY_CAPACITY;
+                .body.filter((p) => p === CARRY).length * CARRY_CAPACITY;
         const untendedPickups = roomInfo
             .getPickupRequests({
                 store: { getCapacity: () => currentHaulerSize },
             })
-            .filter((r) => r.assignedHaulers.length === 0).length;
+            .filter((r) => r.assignedHaulers.length === 0);
 
         // Initially we won't be able to raise our count
         // because only 1 request will be able to exist
@@ -84,17 +100,8 @@ const demandHandlers = {
             roomInfo.miners.length,
             RAISE_HAULER_THRESHOLD
         );
-        if (untendedPickups >= threshold) {
-            return nudge(untendedPickups);
-        }
-
-        const idleHaulers = roomInfo.haulers.filter(
-            (hauler) =>
-                !haulerUtility.getAssignedDropoffID(hauler) &&
-                !haulerUtility.getAssignedPickupID(hauler)
-        ).length;
-        if (idleHaulers >= LOWER_HAULER_THRESHOLD) {
-            return nudge(-idleHaulers);
+        if (untendedPickups.length >= threshold) {
+            return nudge(untendedPickups.length);
         }
     },
     [roles.upgrader]: (roomInfo, set, nudge, bump) => {

@@ -85,17 +85,44 @@ class BasicHaulingRequester {
             }
 
             // Then, for each remote, let's search and add all dropped resources
-            // Dropped energy should combine automatically with the container's request if it's on the same time
-            for (const remoteRoom of importantRooms) {
-                const droppedResources = Game.rooms[remoteRoom].find(
+            for (const room of importantRooms) {
+                const droppedResources = Game.rooms[room].find(
                     FIND_DROPPED_RESOURCES
                 );
                 for (const dropped of droppedResources) {
+                    const hasSourceNeighbour = () => {
+                        for (
+                            let x = dropped.pos.x - 1;
+                            x <= dropped.pos.x + 1;
+                            x++
+                        ) {
+                            for (
+                                let y = dropped.pos.y - 1;
+                                y <= dropped.pos.y + 1;
+                                y++
+                            ) {
+                                if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
+                                    continue;
+                                }
+                                if (
+                                    Game.rooms[room].lookForAt(
+                                        LOOK_SOURCES,
+                                        x,
+                                        y
+                                    )[0]
+                                ) {
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    };
+
                     roomInfo.createPickupRequest(
                         dropped.amount,
                         dropped.resourceType,
                         Math.ceil(dropped.amount / ENERGY_DECAY),
-                        false,
+                        hasSourceNeighbour(),
                         dropped.pos
                     );
                 }
