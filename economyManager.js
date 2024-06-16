@@ -7,6 +7,8 @@ const spawnManager = new SpawnManager();
 const { getSpawnTime } = require("./spawn.spawnUtility");
 const { makeReserver } = require("./spawn.creepMaker");
 
+const { onRemoteAdd, onRemoteDrop } = require("./remote.remoteEvents");
+
 const remoteUtility = require("./remoteUtility");
 const overlay = require("./overlay");
 
@@ -74,6 +76,10 @@ class EconomyManager {
                 // Let's be sure to update our estimate so don't drop more than necessary
                 worst.active = false;
                 base.spawnUsage -= worst.cost;
+
+                // Let depending modules know that we've dropped a remote
+                onRemoteDrop.invoke(roomInfo.room.name, worst);
+
                 if (DEBUG.logRemoteDropping) {
                     console.log(
                         roomInfo.room.name +
@@ -113,6 +119,10 @@ class EconomyManager {
 
                     // Update our estimate so we don't add more than necessary
                     base.spawnUsage += nextRemote.cost;
+
+                    // Let depending modules know that we've added a remote
+                    onRemoteAdd.invoke(roomInfo.room.name, nextRemote);
+
                     if (DEBUG.logRemoteDropping) {
                         console.log(
                             roomInfo.room.name +

@@ -38,13 +38,13 @@ const getRoleDemand = (roomName, role) => {
     }
 };
 
-const bumpRoleDemand = (roomName, role, amount) => {
+const bumpRoleDemand = (roomName, role, amount, urgent = false) => {
     const demand = getRoleDemand(roomName, role);
     if (!demand) {
         setRoleDemand(roomName, role, amount);
         return;
     }
-    if (demand.freeze > 0) {
+    if (demand.freeze > 0 && !urgent) {
         demand.freeze--;
         return;
     }
@@ -53,7 +53,7 @@ const bumpRoleDemand = (roomName, role, amount) => {
     setRoleDemand(roomName, role, oldValue + amount, freezeTime);
 };
 
-const nudgeRoleDemand = (roomName, role, amount) => {
+const nudgeRoleDemand = (roomName, role, amount, urgent = false) => {
     amount /= NUDGE_RATE;
 
     const demand = getRoleDemand(roomName, role);
@@ -61,12 +61,12 @@ const nudgeRoleDemand = (roomName, role, amount) => {
         setRoleDemand(roomName, role, amount);
         return;
     }
-    if (demand.freeze > 0) {
+    if (demand.freeze > 0 && !urgent) {
         demand.freeze--;
         return;
     }
     const oldValue = (demand && demand.value) || 0;
-    setRoleDemand(roomName, role, oldValue + amount);
+    setRoleDemand(roomName, role, oldValue + amount, demand.freeze);
 };
 
 module.exports = {

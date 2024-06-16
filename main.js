@@ -36,7 +36,7 @@ global.DEBUG = {
 
     logRemotePlanning: true,
     logRemoteDropping: true,
-    replanRemotesOnReload: false,
+    replanRemotesOnReload: true,
 
     runProfiler: false,
     profileHeapUsage: true,

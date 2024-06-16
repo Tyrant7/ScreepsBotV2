@@ -38,7 +38,6 @@ const REPAIR_THRESHOLDS = {
  * Other role types will have to have their spawn demand bumped
  * up or down depending on other, less predictable factors.
  */
-
 const demandHandlers = {
     [roles.defender]: (roomInfo, set, nudge, bump) => {
         if (!roomInfo.miners.length || !roomInfo.haulers.length) {
@@ -160,7 +159,25 @@ const demandHandlers = {
     },
 };
 
-// Listed in order by spawn priority
+/**
+ * Here we can subscribe to any important colony events that might
+ * impact our spawn demands, like the adding or dropping of remotes.
+ */
+const { onRemoteAdd, onRemoteDrop } = require("./remote.remoteEvents");
+onRemoteAdd.subscribe((roomName, remote) => {
+    console.log(roomName);
+    console.log(remote);
+
+    // Bump hauler and miner demand accordingly
+});
+onRemoteDrop.subscribe((roomName, remote) => {
+    // Bump hauler and miner demand accordingly
+});
+
+/**
+ * Define how our roles should be spawned.
+ * Ordered by spawn priority.
+ */
 const spawnsByRole = {
     [roles.defender]: (roomInfo) => {
         const enemies = roomInfo.getEnemies();
@@ -299,6 +316,9 @@ class SpawnManager {
         overlay.addHeading(roomInfo.room.name, "- Spawn Demands -");
         for (const role in roles) {
             const demand = getRoleDemand(roomInfo.room.name, role).value;
+            if (!demand) {
+                continue;
+            }
             const display = " ".repeat(15 - role.length) + demand.toFixed(4);
             overlay.addText(roomInfo.room.name, { [role]: display });
         }
