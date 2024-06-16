@@ -132,6 +132,7 @@ module.exports.loop = function () {
 
         // Initialize our panels for this room
         overlay.createPanel(info.room.name, "tr");
+        overlay.createPanel(info.room.name + "0", "tl");
 
         if (
             !getBasePlan(info.room.name) ||
@@ -235,15 +236,15 @@ module.exports.loop = function () {
             100;
         for (const info of Object.values(roomInfos)) {
             if (DEBUG.trackCPUUsage) {
-                overlay.addHeading(info.room.name, "CPU Usage");
-                overlay.addText(info.room.name, {
+                overlay.addHeading(info.room.name + "0", "CPU Usage");
+                overlay.addText(info.room.name + "0", {
                     "Average CPU": rollingAverage.toFixed(3),
                     "Last CPU": Game.cpu.getUsed().toFixed(3),
                 });
             }
             if (DEBUG.profileHeapUsage) {
-                overlay.addHeading(info.room.name, "Heap Usage");
-                overlay.addText(info.room.name, {
+                overlay.addHeading(info.room.name + "0", "Heap Usage");
+                overlay.addText(info.room.name + "0", {
                     "Last Heap": heapUsage.toFixed(2) + "%",
                 });
             }

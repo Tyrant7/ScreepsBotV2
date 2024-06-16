@@ -8,6 +8,12 @@ const defaultText = {
     font: "0.7 monospace",
 };
 
+const panelTitleText = {
+    color: "#FFFFFF",
+    align: "left",
+    font: "0.9 monospace",
+};
+
 const panelStyle = {
     fill: "#000000",
     opacity: 0.35,
@@ -34,6 +40,10 @@ class Panel {
     }
 
     draw(roomName) {
+        if (this.elements.length <= 1) {
+            return;
+        }
+
         const height =
             this.elements.reduce((total, curr) => total + curr.spacing, 0) +
             this.my * 2 -
