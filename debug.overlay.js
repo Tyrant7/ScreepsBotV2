@@ -165,6 +165,9 @@ const addColumns = (panelName, leftElement, rightElement) => {
 };
 
 const finalizePanels = (roomName) => {
+    if (!DEBUG.drawOverlay) {
+        return;
+    }
     for (const key in panels) {
         panels[key].draw(roomName, key);
     }
@@ -223,6 +226,9 @@ const visualizeCostMatrix = (
     excludedValues = [0, 255],
     color = matrixDisplayColor
 ) => {
+    if (!DEBUG.drawOverlay) {
+        return;
+    }
     let highestValue = 0;
     for (let x = 0; x < 50; x++) {
         for (let y = 0; y < 50; y++) {
@@ -253,6 +259,9 @@ const visualizeCostMatrix = (
 //#region Structures
 
 const visualizeBasePlan = (roomName, planMatrix, rampartMatrix, mapping) => {
+    if (!DEBUG.drawOverlay) {
+        return;
+    }
     const visual = new RoomVisual(roomName);
     for (let x = 0; x < 50; x++) {
         for (let y = 0; y < 50; y++) {
