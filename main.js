@@ -132,7 +132,7 @@ module.exports.loop = function () {
 
         // Initialize our panels for this room
         overlay.createPanel(info.room.name, "tr");
-        overlay.createPanel(info.room.name + "0", "tl");
+        overlay.createPanel(info.room.name + "0", "tr", info.room.name);
 
         if (
             !getBasePlan(info.room.name) ||

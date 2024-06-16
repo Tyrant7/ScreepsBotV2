@@ -25,11 +25,13 @@ const matrixDisplayColor = "#fcba03";
 const columnSpacing = 14;
 
 const panels = {};
+const drawnPanels = {};
 
 class Panel {
-    constructor(style, anchor) {
+    constructor(style, anchor, parent) {
         this.style = style;
         this.anchor = anchor;
+        this.parent = parent;
         this.elements = [];
 
         this.mx = 0.5;
@@ -40,7 +42,7 @@ class Panel {
         this.elements.push(...elements);
     }
 
-    draw(roomName) {
+    draw(roomName, key) {
         if (this.elements.length <= 1) {
             return;
         }
@@ -68,9 +70,18 @@ class Panel {
         );
         const width = largestElement + this.style.strokeWidth + this.mx * 2;
 
+        // If we have a parent panel, let's draw this one relative to it instead
+        let parentOffset = 0;
+        if (this.parent && drawnPanels[this.parent]) {
+            const parent = drawnPanels[this.parent];
+            parentOffset = this.anchor.includes("r")
+                ? parent.x
+                : parent.x + parent.width;
+        }
+
         const x = this.anchor.includes("r")
-            ? 49.5 - width - this.style.strokeWidth / 2
-            : -0.5 + this.style.strokeWidth / 2;
+            ? (parentOffset || 49.5) - width - this.style.strokeWidth / 2
+            : (parentOffset || -0.5) + this.style.strokeWidth / 2;
 
         const y = this.anchor.includes("b")
             ? 49.5 - height - this.style.strokeWidth / 2
@@ -92,6 +103,14 @@ class Panel {
             }
             visual.text(element.content, x + this.mx, offset, element.style);
         }
+
+        // Let's mark this panel as drawn so any future children can draw relative to it
+        drawnPanels[key] = {
+            x,
+            y,
+            width,
+            height,
+        };
     }
 }
 
@@ -99,9 +118,11 @@ class Panel {
  * Creates a panel which can be drawn to.
  * @param {string} name The name of the panel to reference when drawing later.
  * @param {"tr" | "tl" | "br" | "bl"} anchor The side of the screen to anchor the panel.
+ * @param {string?} parent The name of the parent panel. When given, this panel will
+ * be drawn relative to its parent.
  */
-const createPanel = (name, anchor) => {
-    panels[name] = new Panel(panelStyle, anchor);
+const createPanel = (name, anchor, parent) => {
+    panels[name] = new Panel(panelStyle, anchor, parent);
 };
 
 const addHeading = (panelName, heading) => {
@@ -146,7 +167,7 @@ const addColumns = (panelName, leftElement, rightElement) => {
 
 const finalizePanels = (roomName) => {
     for (const key in panels) {
-        panels[key].draw(roomName);
+        panels[key].draw(roomName, key);
     }
 };
 
