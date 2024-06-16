@@ -1,6 +1,5 @@
 const { makeMiner, makeHauler, makeReserver } = require("./spawn.creepMaker");
 const { getCost, getSpawnTime } = require("./spawn.spawnUtility");
-const { maxLevels } = require("./constants");
 
 const PLANNING_PLAINS = 5;
 const PLANNING_SWAMP = 8;
@@ -374,7 +373,7 @@ class RemotePlanner {
         // Then haulers until we hit our needed carry
         let totalCarry = 0;
         while (totalCarry < neededCarry) {
-            const newHauler = makeHauler(maxLevels.hauler, maxEnergy);
+            const newHauler = makeHauler(maxEnergy);
             totalCarry += newHauler.body.filter((p) => p === CARRY).length;
             upkeep.energy += getCost(newHauler.body) / CREEP_LIFE_TIME;
             upkeep.spawnTime += getSpawnTime(newHauler.body) / CREEP_LIFE_TIME;
