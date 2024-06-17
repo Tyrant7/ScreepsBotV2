@@ -1,4 +1,4 @@
-const { roles } = require("./constants");
+const { roles, storageThresholds } = require("./constants");
 const {
     DEFAULT_DEMANDS,
     MIN_MAX_DEMAND,
@@ -140,7 +140,13 @@ const demandHandlers = {
                 (!dropoff || dropoff === storageID)
             );
         }).length;
-        if (fullHaulers > RAISE_UPGRADER_THRESHOLD) {
+        const threshold =
+            storageThresholds[roomInfo.room.controller.level] ||
+            Object.values(storageThresholds).slice(-1)[0];
+        if (
+            fullHaulers > RAISE_UPGRADER_THRESHOLD ||
+            roomInfo.room.storage.store[RESOURCE_ENERGY] >= threshold
+        ) {
             return nudge(fullHaulers);
         }
 

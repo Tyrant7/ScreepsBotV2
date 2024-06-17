@@ -22,6 +22,14 @@ const maxLevels = {
     mineralMiner: 8,
 };
 
+const storageThresholds = {
+    4: 5000,
+    5: 10000,
+    6: 15000,
+    7: 20000,
+    8: 25000,
+};
+
 const ROAD_PATHING_COST = 1;
 const CONTAINER_PATHING_COST = 6;
 
@@ -31,4 +39,5 @@ module.exports = {
     maxLevels,
     ROAD_PATHING_COST,
     CONTAINER_PATHING_COST,
+    storageThresholds,
 };
