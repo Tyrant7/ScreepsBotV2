@@ -166,13 +166,15 @@ const demandHandlers = {
         set(1);
     },
     [roles.builder]: (roomInfo, set, nudge, bump) => {
-        const amount =
-            roomInfo.constructionSites.length === 1
-                ? 0.5
-                : roomInfo.constructionSites.length > 1
-                ? MIN_MAX_DEMAND[roles.builder].max
-                : 0;
-        set(amount);
+        if (roomInfo.miners.length >= roomInfo.sources.length) {
+            if (roomInfo.constructionSites.length > 1) {
+                return set(MIN_MAX_DEMAND[roles.builder].max);
+            }
+            if (roomInfo.constructionSites.length === 1) {
+                return set(0.5);
+            }
+        }
+        return set(0);
     },
     [roles.repairer]: (roomInfo, set, nudge, bump) => {
         // TODO //

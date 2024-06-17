@@ -33,7 +33,7 @@ const setRoleDemand = (roomName, role, value, freeze = 0) => {
     if (!base.spawnDemand) {
         base.spawnDemand = {};
     }
-    const constraints = MIN_MAX_DEMAND[roles] || {};
+    const constraints = MIN_MAX_DEMAND[role] || {};
     value = Math.max(value, constraints.min || 0);
     value = Math.min(value, constraints.max || Infinity);
     base.spawnDemand[role] = { freeze, value };
