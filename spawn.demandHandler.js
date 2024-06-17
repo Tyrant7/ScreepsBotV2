@@ -6,6 +6,13 @@ const DEFAULT_DEMANDS = {
     [roles.upgrader]: 0.4,
 };
 
+const MIN_MAX_DEMAND = {
+    [roles.miner]: { min: 0.5 },
+    [roles.hauler]: { min: 0.5 },
+    [roles.upgrader]: { min: 0.4 },
+    [roles.builder]: { max: 2.5 },
+};
+
 const NUDGE_RATE = 250;
 
 const ensureDefaults = (roomName) => {
@@ -26,7 +33,9 @@ const setRoleDemand = (roomName, role, value, freeze = 0) => {
     if (!base.spawnDemand) {
         base.spawnDemand = {};
     }
-    value = Math.max(value, 0);
+    const constraints = MIN_MAX_DEMAND[roles] || {};
+    value = Math.max(value, constraints.min || 0);
+    value = Math.min(value, constraints.max || Infinity);
     base.spawnDemand[role] = { freeze, value };
 };
 
@@ -70,6 +79,7 @@ const nudgeRoleDemand = (roomName, role, amount, urgent = false) => {
 
 module.exports = {
     DEFAULT_DEMANDS,
+    MIN_MAX_DEMAND,
     ensureDefaults,
     getRoleDemand,
     setRoleDemand,

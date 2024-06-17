@@ -19,17 +19,8 @@ const maxLevels = {
     upgrader: 9,
     repairer: 4,
     builder: 6,
-    smallBuilder: 4,
     mineralMiner: 8,
 };
-
-const maxCounts = {
-    builder: 3,
-    scouts: 1,
-    upgraders: 8,
-};
-
-const controllerDowngradeDangerLevel = 5000;
 
 const ROAD_PATHING_COST = 1;
 const CONTAINER_PATHING_COST = 6;
@@ -38,8 +29,6 @@ module.exports = {
     roles,
     pathSets,
     maxLevels,
-    maxCounts,
-    controllerDowngradeDangerLevel,
     ROAD_PATHING_COST,
     CONTAINER_PATHING_COST,
 };

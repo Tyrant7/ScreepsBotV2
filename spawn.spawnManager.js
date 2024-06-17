@@ -1,6 +1,7 @@
-const { roles, maxCounts } = require("./constants");
+const { roles } = require("./constants");
 const {
     DEFAULT_DEMANDS,
+    MIN_MAX_DEMAND,
     ensureDefaults,
     getRoleDemand,
     setRoleDemand,
@@ -165,9 +166,12 @@ const demandHandlers = {
         set(1);
     },
     [roles.builder]: (roomInfo, set, nudge, bump) => {
-        const amount = roomInfo.constructionSites.length
-            ? maxCounts.builder
-            : 0;
+        const amount =
+            roomInfo.constructionSites.length === 1
+                ? 0.5
+                : roomInfo.constructionSites.length > 1
+                ? MIN_MAX_DEMAND[roles.builder].max
+                : 0;
         set(amount);
     },
     [roles.repairer]: (roomInfo, set, nudge, bump) => {
