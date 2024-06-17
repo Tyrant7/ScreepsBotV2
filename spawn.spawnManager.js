@@ -52,16 +52,18 @@ const demandHandlers = {
         if (!roomInfo.miners.length || !roomInfo.haulers.length) {
             return set(DEFAULT_DEMANDS[roles.miner]);
         }
-        // If we have an open site, bump miners
+        // If we have an open site, nudge miners
         if (roomInfo.getFirstOpenMiningSite()) {
-            return nudge(2);
+            return nudge(4);
         }
-        // Otherwise, decrease while there are unassigned miners
+        // Otherwise, if there are unassigned miners, lower to our working miner count
         const unassignedMiners = roomInfo.miners.filter(
             (miner) => !miner.memory.miningSite
         );
+        const workingMinerCount =
+            roomInfo.miners.length - unassignedMiners.length;
         if (unassignedMiners.length) {
-            return bump(-1);
+            return set(workingMinerCount);
         }
     },
     [roles.hauler]: (roomInfo, set, nudge, bump) => {
@@ -97,7 +99,9 @@ const demandHandlers = {
             .getPickupRequests({
                 store: { getCapacity: () => currentHaulerSize },
             })
-            .filter((r) => r.assignedHaulers.length === 0);
+            .filter(
+                (r) => r.assignedHaulers.length * currentHaulerSize < r.amount
+            );
 
         // Initially we won't be able to raise our count
         // because only 1 request will be able to exist
