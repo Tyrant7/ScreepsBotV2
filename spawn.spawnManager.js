@@ -54,7 +54,7 @@ const demandHandlers = {
         }
         // If we have an open site, nudge miners
         if (roomInfo.getFirstOpenMiningSite()) {
-            return nudge(4);
+            return nudge(2);
         }
         // Otherwise, if there are unassigned miners, lower to our working miner count
         const unassignedMiners = roomInfo.miners.filter(
@@ -65,6 +65,14 @@ const demandHandlers = {
         if (unassignedMiners.length) {
             return set(workingMinerCount);
         }
+
+        // If there's no problems at all, let's nudge towards our current count
+        const minerDemand = getRoleDemand(
+            roomInfo.room.name,
+            roles.miner
+        ).value;
+        const target = roomInfo.miners.length - 0.5;
+        return nudge(minerDemand < target ? 1 : -1);
     },
     [roles.hauler]: (roomInfo, set, nudge, bump) => {
         if (!roomInfo.miners.length || !roomInfo.haulers.length) {
@@ -110,8 +118,12 @@ const demandHandlers = {
             RAISE_HAULER_THRESHOLD
         );
         if (untendedPickups.length >= threshold) {
-            return nudge(untendedPickups.length);
+            return bump(1);
         }
+
+        // If there's no problems at all, let's nudge towards our current count
+        const target = roomInfo.haulers.length - 0.5;
+        return nudge(haulerDemand < target ? 1 : -1);
     },
     [roles.upgrader]: (roomInfo, set, nudge, bump) => {
         if (!roomInfo.miners.length || !roomInfo.haulers.length) {
@@ -140,6 +152,14 @@ const demandHandlers = {
         if (fullHaulers > RAISE_UPGRADER_THRESHOLD) {
             return nudge(fullHaulers);
         }
+
+        // If there's no problems at all, let's nudge towards our current count
+        const upgraderDemand = getRoleDemand(
+            roomInfo.room.name,
+            roles.upgrader
+        ).value;
+        const target = roomInfo.upgraders.length - 0.5;
+        return nudge(upgraderDemand < target ? 1 : -1);
     },
     [roles.scout]: (roomInfo, set, nudge, bump) => {
         set(1);
