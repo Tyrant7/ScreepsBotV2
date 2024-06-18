@@ -53,11 +53,30 @@ class RemoteManager {
      * @param {RoomInfo} roomInfo Info object for the room to plan remotes for.
      * @returns The active plans for remotes for this room.
      */
-    ensurePlansExist(roomInfo) {
-        if (
-            !utility.getRemotePlans(roomInfo.room.name) ||
-            (RELOAD && DEBUG.replanRemotesOnReload)
-        ) {
+    validatePlans(roomInfo) {
+        // If we've recently discovered new rooms, let's replan our remotes
+        const remoteRooms = remotePlanner.getPotentialRemoteRooms(
+            roomInfo.room.name
+        );
+        const existingPlans = utility.getRemotePlans(roomInfo.room.name);
+        let shouldReplan = !existingPlans;
+        if (!shouldReplan) {
+            for (const room of remoteRooms) {
+                // If we're lacking scouting data, we'll skip this room
+                if (!Memory.rooms[room]) {
+                    continue;
+                }
+                // If we already have a plan for this room, we can skip it as well
+                if (existingPlans.find((plan) => plan.room === room)) {
+                    continue;
+                }
+                // Otherwise, we should replan remotes since we're missing potential
+                shouldReplan = true;
+                break;
+            }
+        }
+
+        if (shouldReplan || (RELOAD && DEBUG.replanRemotesOnReload)) {
             // Then, filter out construction sites on invalid locations (room transitions)
             // and give each remote an activity status
             const finalPlans = [];

@@ -34,7 +34,7 @@ class EconomyManager {
         }
 
         const lastSpawnUsage = spawnManager.run(roomInfo);
-        remoteManager.ensurePlansExist(roomInfo);
+        remoteManager.validatePlans(roomInfo);
 
         // Let's compare our actual spawn usage to our estimates
         // Since we don't want to wait too long to see results,
