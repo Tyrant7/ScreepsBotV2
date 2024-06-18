@@ -55,6 +55,9 @@ class RoomInfo {
         // Used for distance calculations of hauler orders
         this.core = this.spawns[0].pos;
 
+        // Clear tick caches
+        this.cachedMiningSpots = null;
+
         this._pickupRequests = [];
         this._dropoffRequests = [];
     }
