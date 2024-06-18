@@ -21,13 +21,15 @@ class ReserverManager extends CreepManager {
             // Find the highest priority remote that doesn't have a reserver assigned to it
             const activeRemotes = remotes.filter((r) => {
                 const active = r.active;
-                const reserved = Object.values(this.activeTasks).find(
-                    (task) =>
-                        task.data.roomName === r.room ||
-                        (Memory.rooms[r.room].controller &&
-                            task.data.controllerID ===
-                                Memory.rooms[r.room].controller.id)
-                );
+                const reserved =
+                    this.activeTasks.length &&
+                    Object.values(this.activeTasks).find(
+                        (task) =>
+                            task.data.roomName === r.room ||
+                            (Memory.rooms[r.room].controller &&
+                                task.data.controllerID ===
+                                    Memory.rooms[r.room].controller.id)
+                    );
                 return active && !reserved;
             });
             if (activeRemotes.length) {
