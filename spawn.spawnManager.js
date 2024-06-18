@@ -145,7 +145,8 @@ const demandHandlers = {
             Object.values(storageThresholds).slice(-1)[0];
         if (
             fullHaulers > RAISE_UPGRADER_THRESHOLD ||
-            roomInfo.room.storage.store[RESOURCE_ENERGY] >= threshold
+            (roomInfo.room.storage &&
+                roomInfo.room.storage.store[RESOURCE_ENERGY] >= threshold)
         ) {
             return nudge(fullHaulers);
         }
