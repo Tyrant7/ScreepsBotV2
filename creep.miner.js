@@ -22,8 +22,9 @@ class MinerManager extends CreepManager {
                 const blocker = creep.room.lookForAt(LOOK_CREEPS, x, y)[0];
                 return (
                     blocker &&
-                    blocker !== creep &&
-                    blocker.memory.role === roles.miner
+                    (!blocker.my ||
+                        (blocker !== creep &&
+                            blocker.memory.role === roles.miner))
                 );
             };
 
