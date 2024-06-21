@@ -15,6 +15,8 @@ const { getCost } = require("./spawn.spawnUtility");
 const creepMaker = require("./spawn.creepMaker");
 const overlay = require("./debug.overlay");
 
+const RESERVER_COST = getCost(creepMaker.makeReserver().body);
+
 const RAISE_HAULER_THRESHOLD = 2;
 const LOWER_HAULER_THRESHOLD = 2;
 
@@ -176,26 +178,6 @@ const demandHandlers = {
     [roles.repairer]: (roomInfo, set, nudge, bump) => {
         // TODO //
     },
-    [roles.reserver]: (roomInfo, set, nudge, bump) => {
-        const reserverCost = getCost(creepMaker.makeReserver().body);
-        if (roomInfo.room.energyCapacityAvailable < reserverCost) {
-            return set(0);
-        }
-        const remotePlans = remoteUtility.getRemotePlans(roomInfo.room.name);
-        for (const remote of remotePlans) {
-            if (!remote.active) {
-                continue;
-            }
-            const room = Game.rooms[remote.room];
-            if (
-                !room ||
-                !room.controller.reservation ||
-                room.controller.reservation.username !== ME
-            ) {
-                return bump(1);
-            }
-        }
-    },
     [roles.mineralMiner]: (roomInfo, set, nudge, bump) => {
         const amount = roomInfo.room.find(STRUCTURE_EXTRACTOR)[0] ? 1 : 0;
         set(amount);
@@ -207,30 +189,63 @@ const demandHandlers = {
  * impact our spawn demands, like the adding or dropping of remotes.
  */
 const { onRemoteAdd, onRemoteDrop } = require("./remote.remoteEvents");
-onRemoteAdd.subscribe((roomInfo, remote) => {
-    // Bump hauler and miner demand accordingly
+const { MINER_WORK } = require("./spawn.spawnConstants");
+
+const getDemands = (roomInfo, remote) => {
+    const canReserve = roomInfo.room.energyCapacityAvailable >= RESERVER_COST;
+    const unreservedRatio = canReserve
+        ? 1
+        : SOURCE_ENERGY_CAPACITY / SOURCE_ENERGY_NEUTRAL_CAPACITY;
+
+    // Quickly roughly calculate how many haulers and miners we'll need
+    // to support this remote
     const newHauler = creepMaker.makeHauler(
         roomInfo.room.energyCapacityAvailable
     );
     const carryPerHauler = newHauler.body.filter((p) => p === CARRY).length;
-    const neededHaulers = Math.floor(remote.neededCarry / carryPerHauler);
+    const neededCarry = remote.neededCarry / unreservedRatio;
+    const neededHaulers = Math.floor(neededCarry / carryPerHauler);
+
+    const newMiner = creepMaker.makeMiner(
+        roomInfo.room.energyCapacityAvailable
+    );
+    const workPerMiner = newMiner.body.filter((p) => p === WORK).length;
+    const neededWork = MINER_WORK / unreservedRatio;
+    const neededMiners = Math.ceil(neededWork / workPerMiner);
+
+    // Let's also determine if this remote is the only one in its room
+    const plans = remoteUtility.getRemotePlans(roomInfo.room.name);
+    if (!plans) {
+        return { neededHaulers, neededMiners, alone: true };
+    }
+    const sharingRoom = plans.find((r) => r.active && r.room === remote.room);
+    return { neededHaulers, neededMiners, alone: !sharingRoom };
+};
+onRemoteAdd.subscribe((roomInfo, remote) => {
+    const { neededHaulers, neededMiners, alone } = getDemands(roomInfo, remote);
     bumpRoleDemand(roomInfo.room.name, roles.hauler, neededHaulers, true);
-    bumpRoleDemand(roomInfo.room.name, roles.miner, 1, true);
+    bumpRoleDemand(roomInfo.room.name, roles.miner, neededMiners, true);
+
+    // If this is the only active remote in this room, let's add a reserver
+    if (alone) {
+        bumpRoleDemand(roomInfo.room.name, roles.reserver, 1, true);
+    }
 });
 onRemoteDrop.subscribe((roomInfo, remote) => {
-    // Bump hauler and miner demand accordingly
-    const newHauler = creepMaker.makeHauler(
-        roomInfo.room.energyCapacityAvailable
-    );
-    const carryPerHauler = newHauler.body.filter((p) => p === CARRY).length;
-    const neededHaulers = Math.floor(remote.neededCarry / carryPerHauler);
+    const { neededHaulers, neededMiners, alone } = getDemands(roomInfo, remote);
     bumpRoleDemand(roomInfo.room.name, roles.hauler, -neededHaulers, true);
-    bumpRoleDemand(roomInfo.room.name, roles.miner, -1, true);
+    bumpRoleDemand(roomInfo.room.name, roles.miner, -neededMiners, true);
+
+    // If this was the only active remote in this room, let's remove a reserver
+    if (alone) {
+        bumpRoleDemand(roomInfo.room.name, roles.reserver, -1, true);
+    }
 });
 
 /**
  * Define how our roles should be spawned.
  * Ordered by spawn priority.
+ * All roles we wish to spawn should be included here.
  */
 const spawnsByRole = {
     [roles.defender]: (roomInfo) => {
