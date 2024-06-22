@@ -1,3 +1,5 @@
+const RoomInfo = require("./data.roomInfo");
+
 class CreepManager {
     constructor() {
         this.activeTasks = {};
@@ -203,7 +205,7 @@ class CreepManager {
 
         // Run our task
         if (task) {
-            this.runTask(creep, task);
+            this.runTask(creep, task, roomInfo);
         }
     }
 
@@ -211,8 +213,9 @@ class CreepManager {
      * Runs a given task using a given creep.
      * @param {Creep} creep The creep to run on the given task.
      * @param {Task} task The task to run.
+     * @param {RoomInfo} roomInfo The Info object to use to generate a new task if this one finishes.
      */
-    runTask(creep, task) {
+    runTask(creep, task, roomInfo) {
         // Debug
         if (DEBUG.logTasks) {
             creep.memory.taskKey = task.tag;
@@ -224,8 +227,13 @@ class CreepManager {
 
             // All actions were finished, so the task is complete
             if (task.actionStackPointer >= task.actionStack.length) {
-                delete this.activeTasks[creep.name];
-                break;
+                // If that's the case, we'll generate a new task,
+                // and continue processing it as our current task
+                task = this.createTask(creep, roomInfo);
+                this.activeTasks[creep.name] = task;
+                if (!task) {
+                    break;
+                }
             }
         }
     }
