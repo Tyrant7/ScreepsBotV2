@@ -27,7 +27,7 @@ class ScoutManager extends CreepManager {
             if (creep.room.name === data.roomName && !leavingOrEntering) {
                 return true;
             } else {
-                data.maxRooms = 8;
+                data.maxRooms = 12;
                 data.maxOps = 4000;
                 data.moveToRoom(creep, data);
                 creep.say("🔭", true);
