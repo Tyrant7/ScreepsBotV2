@@ -230,7 +230,10 @@ const utility = {
         // Finally, append our next position to our path
         const direction = serializedPath[0];
         const delta = directionDelta[direction];
-        const nextPos = { x: lastPos.x + delta.x, y: lastPos.y + delta.y };
+        const nextPos = {
+            x: (lastPos.x + delta.x) % 50,
+            y: (lastPos.y + delta.y) % 50,
+        };
         const nextX = nextPos.x < 10 ? "0" + nextPos.x : nextPos.x.toString();
         const nextY = nextPos.y < 10 ? "0" + nextPos.y : nextPos.y.toString();
         const prefix = nextX + nextY;
