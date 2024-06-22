@@ -3,9 +3,6 @@ const profiler = require("./debug.profiler");
 
 //#region Pathing
 
-let moveRegistry = {};
-let registryTick = -1;
-
 /**
  * A better implementation of the engine's default moveTo method.
  * @param {RoomPosition | RoomObject} target A RoomPosition or any object with a room position.
@@ -30,16 +27,8 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
         }
     }
 
-    // Reset the move registry if not yet this tick
-    if (registryTick !== Game.time) {
-        moveRegistry = {};
-        registryTick = Game.time;
-    }
-
-    options = utility.ensureDefaultOptions(options);
-
-    // Save our shove target in case we get shoved
     profiler.startSample(this.name + " moveTo");
+    options = utility.ensureDefaultOptions(options);
     function newPath(creep) {
         // If we use a custom matrix set, it's safe to assume we know where we're pathing
         const endPathIfNoVisibility = !options.pathSet;
@@ -110,115 +99,7 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
     };
     profiler.endSample(this.name + " moveTo");
 };
-Creep.prototype.wrappedMove = Creep.prototype.move;
-Creep.prototype.move = function (direction) {
-    // Record ourselves in the move registry
-    moveRegistry[this.name] = true;
 
-    // Do our ordinary move
-    const intentResult = this.wrappedMove(direction);
-    if (intentResult === OK) {
-        // If there's a creep standing where we want to go, let's request a shove
-        this.shoveIfNecessary(utility.getPosInDirection(this.pos, direction));
-    }
-};
-Creep.prototype.shoveIfNecessary = function (targetPos) {
-    if (!targetPos) {
-        return;
-    }
-
-    const blockingCreep = this.room
-        .lookForAt(LOOK_CREEPS, targetPos.x, targetPos.y)
-        .find((c) => c.my);
-    if (blockingCreep) {
-        // Let's make sure that this creep hasn't scheduled a move already
-        if (registryTick === Game.time && moveRegistry[blockingCreep.name]) {
-            return;
-        }
-
-        // Because shoving moves the creep, this will happen recursively
-        blockingCreep.requestShove();
-    }
-};
-Creep.prototype.requestShove = function () {
-    // Reusable utility method to ensure if a spot is walkable
-    const terrain = Game.map.getRoomTerrain(this.room.name);
-    function isObstructed(room, pos) {
-        // Terrain block
-        return (
-            terrain.get(pos.x, pos.y) === TERRAIN_MASK_WALL ||
-            // Unwalkable structure + construction sites
-            room
-                .lookForAt(LOOK_STRUCTURES, pos)
-                .concat(room.lookForAt(LOOK_CONSTRUCTION_SITES, pos))
-                .find(
-                    (s) =>
-                        s.structureType !== STRUCTURE_ROAD &&
-                        s.structureType !== STRUCTURE_CONTAINER &&
-                        s.structureType !== STRUCTURE_RAMPART &&
-                        s.my
-                )
-        );
-    }
-
-    // Find all valid adjacent spaces
-    const adjacentSpaces = [];
-    for (let x = -1; x <= 1; x++) {
-        for (let y = -1; y <= 1; y++) {
-            if (x === 0 && y === 0) {
-                continue;
-            }
-            const newX = this.pos.x + x;
-            const newY = this.pos.y + y;
-            if (newX > 0 && newX < 49 && newY > 0 && newY < 49) {
-                const newPos = new RoomPosition(newX, newY, this.pos.roomName);
-                if (!isObstructed(this.room, newPos)) {
-                    adjacentSpaces.push(newPos);
-                }
-            }
-        }
-    }
-
-    // We can't move anywhere
-    if (!adjacentSpaces.length) {
-        return;
-    }
-
-    const shoveTarget = this.memory._move;
-    const scoredSpaces = adjacentSpaces.map((space) => {
-        const otherCreep = space.lookFor(LOOK_CREEPS)[0];
-        return {
-            // Discourage moving to spaces with creeps
-            score:
-                (otherCreep ? (moveRegistry[otherCreep.name] ? 3 : 1) : 0) +
-                // If we have a target, let's move towards them, but limit the range to a minimum our movement range
-                // since we don't necessarily want to be pushed directly into our target most of the time
-                // If we don't have a target, let's assign a random weight to this position
-                (shoveTarget
-                    ? Math.max(
-                          space.getRangeTo(
-                              shoveTarget.dest.x,
-                              shoveTarget.dest.y
-                          ),
-                          shoveTarget.range,
-                          1
-                      ) * 2
-                    : Math.random()),
-
-            pos: space,
-        };
-    });
-
-    // Find our lowest scoring space (measured by distance to target)
-    const chosenSpace = scoredSpaces.reduce((lowest, curr) => {
-        return curr.score < lowest.score ? curr : lowest;
-    }).pos;
-
-    drawArrow(this.pos, this.pos.getDirectionTo(chosenSpace), {
-        color: "#FF0000",
-    });
-    this.move(this.pos.getDirectionTo(chosenSpace));
-};
 /**
  * Finds the closest goal to this creep.
  * @param {RoomPosition[] | {pos: RoomPosition}[]} goals A an array of RoomPositions or any objects with a pos property.
