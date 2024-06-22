@@ -218,7 +218,13 @@ const getDemands = (roomInfo, remote) => {
     if (!plans) {
         return { neededHaulers, neededMiners, alone: true };
     }
-    const sharingRoom = plans.find((r) => r.active && r.room === remote.room);
+    const sharingRoom = plans.find(
+        (r) =>
+            // Let's make sure we don't check ourselves
+            r.source.id !== remote.source.id &&
+            r.active &&
+            r.room === remote.room
+    );
     return { neededHaulers, neededMiners, alone: !sharingRoom };
 };
 onRemoteAdd.subscribe((roomInfo, remote) => {
