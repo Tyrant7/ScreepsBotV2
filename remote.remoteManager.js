@@ -85,7 +85,13 @@ class RemoteManager {
                 plan.roads = plan.roads.filter(
                     (r) => r.x > 0 && r.x < 49 && r.y > 0 && r.y < 49
                 );
-                plan.active = false;
+                // If we already had planned remotes, let's ensure that their activity status is kept
+                const wasActive =
+                    existingPlans &&
+                    existingPlans.find(
+                        (r) => r.source.id === plan.source.id && r.active
+                    );
+                plan.active = !!wasActive;
                 finalPlans.push(plan);
             }
 
