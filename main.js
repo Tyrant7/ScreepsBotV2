@@ -27,6 +27,7 @@ global.DEBUG = {
 
     drawTrafficArrows: true,
     drawPathMatrices: false,
+    drawWorkingPositions: false,
 
     trackCPUUsage: true,
     trackRCLProgress: true,
@@ -54,6 +55,7 @@ const {
     cachePathMatrix,
     generateDefaultPathMatrix,
     getCachedPathMatrix,
+    getWorkingPositions,
 } = require("./extension.betterPathing");
 require("./extension.betterRoomVisual");
 const harabiTrafficManager = require("./extension.harabiTraffic");
@@ -78,7 +80,7 @@ const DefenderManager = require("./creep.defender");
 const MineralMinerManager = require("./creep.mineralMiner");
 
 // Mapping
-const { roles, pathSets } = require("./constants");
+const { roles, pathSets, INTERRUPT_PATHING_COST } = require("./constants");
 const creepRoleMap = {
     [roles.hauler]: new HaulerManager(),
     [roles.miner]: new MinerManager(),
@@ -188,12 +190,18 @@ module.exports.loop = function () {
         economyManager.run(info);
         profiler.endSample("Economy " + room);
 
-        if (DEBUG.drawPathMatrices) {
-            const matrix = getCachedPathMatrix(
-                pathSets.default,
-                info.room.name
-            );
-            overlay.visualizeCostMatrix(info.room.name, matrix, []);
+        if (DEBUG.drawPathMatrices || DEBUG.drawWorkingPositions) {
+            const matrix = DEBUG.drawPathMatrices
+                ? getCachedPathMatrix(pathSets.default, info.room.name)
+                : new PathFinder.CostMatrix();
+            const excludedValues = DEBUG.drawPathMatrices ? [] : [0];
+            if (DEBUG.drawWorkingPositions) {
+                const workPositions = getWorkingPositions(info.room.name);
+                for (const pos of workPositions) {
+                    matrix.set(pos.x, pos.y, INTERRUPT_PATHING_COST);
+                }
+            }
+            overlay.visualizeCostMatrix(info.room.name, matrix, excludedValues);
         }
     }
 

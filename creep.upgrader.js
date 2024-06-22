@@ -1,6 +1,5 @@
 const { getPlanData, keys } = require("./base.planningUtility");
-const { pathSets, CREEP_PATHING_COST } = require("./constants");
-const { updateCachedPathMatrix } = require("./extension.betterPathing");
+const { markWorkingPosition } = require("./extension.betterPathing");
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
 const RoomInfo = require("./data.roomInfo");
@@ -43,11 +42,7 @@ class UpgraderManager extends CreepManager {
             creep.upgradeController(target);
 
             // We'll mark this position to discourage creeps from walking through it
-            updateCachedPathMatrix(
-                pathSets.default,
-                creep.pos,
-                CREEP_PATHING_COST
-            );
+            markWorkingPosition(creep.pos);
 
             // If we have a container, we'll walk next to it if we're getting low on energy
             if (upgraderContainer) {

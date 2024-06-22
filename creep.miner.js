@@ -1,7 +1,7 @@
-const { pathSets, roles, CREEP_PATHING_COST } = require("./constants");
-const { updateCachedPathMatrix } = require("./extension.betterPathing");
+const { pathSets, roles } = require("./constants");
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
+const { markWorkingPosition } = require("./extension.betterPathing");
 
 class MinerManager extends CreepManager {
     createTask(creep, roomInfo) {
@@ -102,11 +102,7 @@ class MinerManager extends CreepManager {
                 creep.harvest(source);
 
                 // We'll also mark this position to discourage creeps from walking through it
-                updateCachedPathMatrix(
-                    pathSets.default,
-                    creep.pos,
-                    CREEP_PATHING_COST
-                );
+                markWorkingPosition(creep.pos);
             }
 
             // Always return false since miners can never finish their task

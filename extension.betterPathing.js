@@ -1,6 +1,6 @@
 const {
-    CONTAINER_PATHING_COST,
     ROAD_PATHING_COST,
+    INTERRUPT_PATHING_COST,
     directionDelta,
 } = require("./constants");
 const profiler = require("./debug.profiler");
@@ -234,16 +234,29 @@ const utility = {
             plainCost: options.plainCost,
             swampCost: options.swampCost,
             roomCallback: function (roomName) {
-                if (options.pathSet) {
-                    const matrix = getCachedPathMatrix(
-                        options.pathSet,
-                        roomName
-                    );
-                    if (matrix) {
-                        return matrix;
+                const matrix = (
+                    getCachedPathMatrix(options.pathSet, roomName) ||
+                    generateDefaultPathMatrix(roomName)
+                ).clone();
+
+                // If we have working creeps this tick, let's mark
+                // pathing over them with a penalty
+                if (workPositionsTick === Game.time) {
+                    for (const workingPos of cachedWorkingPositions) {
+                        if (workingPos.roomName !== roomName) {
+                            continue;
+                        }
+                        matrix.set(
+                            workingPos.x,
+                            workingPos.y,
+                            Math.max(
+                                matrix.get(workingPos.x, workingPos.y),
+                                INTERRUPT_PATHING_COST
+                            )
+                        );
                     }
                 }
-                return generateDefaultPathMatrix(roomName);
+                return matrix;
             },
         });
         if (result.incomplete) {
@@ -289,6 +302,9 @@ const utility = {
 
 const cachedCostMatrices = {};
 
+let workPositionsTick = -1;
+let cachedWorkingPositions = [];
+
 /**
  * Caches a CostMatrix as part of a set to be used later.
  * @param {PathFinder.CostMatrix} matrix The CostMatrix to cache.
@@ -316,14 +332,6 @@ const getCachedPathMatrix = (setName, roomName) => {
     return cachedCostMatrices[setName][roomName];
 };
 
-const updateCachedPathMatrix = (setName, position, newValue) => {
-    const matrix = getCachedPathMatrix(setName, position.roomName);
-    if (!matrix) {
-        return;
-    }
-    matrix.set(position.x, position.y, newValue);
-};
-
 const generateDefaultPathMatrix = (roomName) => {
     const matrix = new PathFinder.CostMatrix();
     const room = Game.rooms[roomName];
@@ -344,7 +352,7 @@ const generateDefaultPathMatrix = (roomName) => {
                     Math.max(matrix.get(s.pos.x, s.pos.y), ROAD_PATHING_COST)
                 );
             } else if (s.structureType === STRUCTURE_CONTAINER) {
-                matrix.set(s.pos.x, s.pos.y, CONTAINER_PATHING_COST);
+                return;
             } else if (s.structureType !== STRUCTURE_RAMPART || !s.my) {
                 matrix.set(s.pos.x, s.pos.y, 255);
             }
@@ -353,12 +361,30 @@ const generateDefaultPathMatrix = (roomName) => {
     return matrix;
 };
 
+const markWorkingPosition = (position) => {
+    // Refresh our working positions each tick
+    // We'll mark these positions for next tick
+    if (workPositionsTick !== Game.time + 1) {
+        workPositionsTick = Game.time + 1;
+        cachedWorkingPositions = [];
+    }
+    cachedWorkingPositions.push(position);
+};
+
+const getWorkingPositions = (roomName) => {
+    if (workPositionsTick !== Game.time) {
+        return [];
+    }
+    return cachedWorkingPositions.filter((p) => p.roomName === roomName);
+};
+
 //#endregion
 
 // Here we can create new matrix sets from outside of this class and specify them as part of our move options
 module.exports = {
     cachePathMatrix,
     getCachedPathMatrix,
-    updateCachedPathMatrix,
     generateDefaultPathMatrix,
+    markWorkingPosition,
+    getWorkingPositions,
 };
