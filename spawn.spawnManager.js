@@ -338,8 +338,16 @@ class SpawnManager {
                 const current = roomInfo[matchingRole + "s"].length;
                 const thisTick = spawnedThisTick[role] || 0;
                 if (demand > current + thisTick) {
+                    // If we can't afford the new creep, let's ignore it
+                    const newCreep = spawnsByRole[role](roomInfo);
+                    if (
+                        getCost(newCreep.body) >
+                        roomInfo.room.energyCapacityAvailable
+                    ) {
+                        continue;
+                    }
                     spawnedThisTick[role] = thisTick + 1;
-                    return spawnsByRole[role](roomInfo);
+                    return newCreep;
                 }
             }
         };
