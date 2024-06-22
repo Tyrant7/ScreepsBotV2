@@ -81,14 +81,13 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
         return moveData.path;
     }
 
-    // Don't try to move until we've spawned
     const path = verifyPath(this);
     if (path.length) {
         const nextStep = utility.getNextStep(path, this.pos);
         const direction = this.pos.getDirectionTo(nextStep);
         if (direction) {
             drawArrow(this.pos, direction, { color: "#00FF00" });
-            this.move(direction);
+            this.registerMove(direction);
         }
     }
     // Save our move data
@@ -267,7 +266,7 @@ const utility = {
             swampCost: options.swampCost,
             roomCallback: function (roomName) {
                 if (options.pathSet) {
-                    const matrix = matrixHandler.getCachedMatrix(
+                    const matrix = matrixHandler.getCachedPathMatrix(
                         options.pathSet,
                         roomName
                     );
@@ -327,7 +326,7 @@ const matrixHandler = {
      * @param {string} setName The name of the set to cache to.
      * @param {string} roomName The name of the room that this matrix is for.
      */
-    cacheMatrix: function (matrix, setName, roomName) {
+    cachePathMatrix: function (matrix, setName, roomName) {
         if (!cachedCostMatrices[setName]) {
             cachedCostMatrices[setName] = {};
         }
@@ -341,7 +340,7 @@ const matrixHandler = {
      * @returns {PathFinder.CostMatrix | undefined} The CostMatrix for the specified room as part of the specified set.
      * Undefined if none exists.
      */
-    getCachedMatrix: function (setName, roomName) {
+    getCachedPathMatrix: function (setName, roomName) {
         if (!cachedCostMatrices[setName]) {
             return;
         }

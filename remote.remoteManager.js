@@ -3,6 +3,7 @@ const remotePlanner = new RemotePlanner();
 
 const utility = require("./remote.remoteUtility");
 const { pathSets } = require("./constants");
+const { cachePathMatrix } = require("./extension.betterPathing");
 
 const overlay = require("./debug.overlay");
 
@@ -129,7 +130,7 @@ class RemoteManager {
                 );
             }
             for (const roomName in matricesByRoom) {
-                betterPathing.cacheMatrix(
+                cachePathMatrix(
                     matricesByRoom[roomName],
                     pathSets.default,
                     roomName

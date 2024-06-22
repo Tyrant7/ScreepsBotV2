@@ -3,6 +3,11 @@ const { numberToStructure, MAX_VALUE } = require("./base.planningConstants");
 const { getPlan } = require("./base.planningUtility");
 const { deserializeBasePlan } = require("./base.serializeBasePlan");
 const {
+    getCachedPathMatrix,
+    generateDefaultCostMatrix,
+    cachePathMatrix,
+} = require("./extension.betterPathing");
+const {
     pathSets,
     CONTAINER_PATHING_COST,
     ROAD_PATHING_COST,
@@ -100,10 +105,8 @@ const handleSites = (roomInfo) => {
     if (result === OK) {
         // Update our cost matrix for creeps using our better pathing system
         const roomMatrix =
-            betterPathing.getCachedMatrix(
-                pathSets.default,
-                roomInfo.room.name
-            ) || betterPathing.generateDefaultCostMatrix(roomInfo.room.name);
+            getCachedPathMatrix(pathSets.default, roomInfo.room.name) ||
+            generateDefaultCostMatrix(roomInfo.room.name);
 
         if (bestStructure.type === STRUCTURE_ROAD) {
             roomMatrix.set(
@@ -122,11 +125,7 @@ const handleSites = (roomInfo) => {
         }
 
         // Now cache it
-        betterPathing.cacheMatrix(
-            roomMatrix,
-            pathSets.default,
-            roomInfo.room.name
-        );
+        cachePathMatrix(roomMatrix, pathSets.default, roomInfo.room.name);
     } else {
         console.log(
             "result from placing construction site resulted in issue with code " +

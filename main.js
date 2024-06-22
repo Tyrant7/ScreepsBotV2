@@ -50,8 +50,13 @@ global.DEBUG = {
 global.RELOAD = true;
 
 // Extensions
-global.betterPathing = require("./extension.betterPathing");
+const {
+    cachePathMatrix,
+    generateDefaultCostMatrix,
+    getCachedPathMatrix,
+} = require("./extension.betterPathing");
 require("./extension.betterRoomVisual");
+const harabiTrafficManager = require("./extension.harabiTraffic");
 
 // Data
 const RoomInfo = require("./data.roomInfo");
@@ -144,8 +149,8 @@ module.exports.loop = function () {
         }
         handleSites(info);
         if (RELOAD) {
-            betterPathing.cacheMatrix(
-                betterPathing.generateDefaultCostMatrix(info.room.name),
+            cachePathMatrix(
+                generateDefaultCostMatrix(info.room.name),
                 pathSets.default,
                 info.room.name
             );
@@ -184,7 +189,7 @@ module.exports.loop = function () {
         profiler.endSample("Economy " + room);
 
         if (DEBUG.drawPathMatrices) {
-            const matrix = betterPathing.getCachedMatrix(
+            const matrix = getCachedPathMatrix(
                 pathSets.default,
                 info.room.name
             );
@@ -226,6 +231,15 @@ module.exports.loop = function () {
         }
     }
     profiler.endSample("Creeps");
+
+    // After all creeps have been processed, let's sort out the traffic
+    profiler.startSample("Traffic");
+    for (const room of Object.values(Game.rooms)) {
+        profiler.startSample("Traffic " + room.name);
+        harabiTrafficManager.run(room);
+        profiler.endSample("Traffic " + room.name);
+    }
+    profiler.endSample("Traffic");
 
     // Track CPU usage
     // (don't track reload because it leads to innacurate averages which take a long time to equalize)
