@@ -43,6 +43,7 @@ const directionDelta = {
 
 const ROAD_PATHING_COST = 1;
 const CONTAINER_PATHING_COST = 6;
+const SOURCE_PATHING_COST = 3;
 
 module.exports = {
     roles,
@@ -50,6 +51,7 @@ module.exports = {
     maxLevels,
     ROAD_PATHING_COST,
     CONTAINER_PATHING_COST,
+    SOURCE_PATHING_COST,
     storageThresholds,
     directionDelta,
 };

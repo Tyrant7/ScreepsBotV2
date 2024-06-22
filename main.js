@@ -236,7 +236,10 @@ module.exports.loop = function () {
     profiler.startSample("Traffic");
     for (const room of Object.values(Game.rooms)) {
         profiler.startSample("Traffic " + room.name);
-        harabiTrafficManager.run(room);
+        const costs =
+            getCachedPathMatrix(pathSets.default, room.name) ||
+            new PathFinder.CostMatrix();
+        harabiTrafficManager.run(room, costs);
         profiler.endSample("Traffic " + room.name);
     }
     profiler.endSample("Traffic");

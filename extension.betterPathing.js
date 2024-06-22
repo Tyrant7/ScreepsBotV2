@@ -2,8 +2,8 @@ const {
     CONTAINER_PATHING_COST,
     ROAD_PATHING_COST,
     directionDelta,
+    SOURCE_PATHING_COST,
 } = require("./constants");
-const { drawTrafficArrow } = require("./debug.overlay");
 const profiler = require("./debug.profiler");
 
 //#region Pathing
@@ -348,6 +348,23 @@ const matrixHandler = {
                     matrix.set(s.pos.x, s.pos.y, 255);
                 }
             });
+
+        // We'll also discourage walking in spots next to sources, to avoid disrupting miners
+        const terrain = Game.map.getRoomTerrain(room.name);
+        room.find(FIND_SOURCES).forEach((source) => {
+            for (let x = source.pos.x - 1; x <= source.pos.x + 1; x++) {
+                for (let y = source.pos.y - 1; y <= source.pos.y + 1; y++) {
+                    if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
+                        continue;
+                    }
+                    if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+                        continue;
+                    }
+                    matrix.set(x, y, SOURCE_PATHING_COST);
+                }
+            }
+        });
+
         return matrix;
     },
 };
