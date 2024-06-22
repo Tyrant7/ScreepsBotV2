@@ -33,7 +33,9 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
 
     profiler.startSample(this.name + " moveTo");
     options = utility.ensureDefaultOptions(options);
-    function newPath(creep) {
+    function newPath(creep, additionalWorkingPositions) {
+        options.additionalWorkingPositions = additionalWorkingPositions;
+
         // If we use a custom matrix set, it's safe to assume we know where we're pathing
         const endPathIfNoVisibility = !options.pathSet;
         return utility.serializePath(
@@ -74,12 +76,20 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
         }
 
         // Something went wrong with our pathing
-        const obstruction = nextStep
-            .lookFor(LOOK_STRUCTURES)
-            .concat(nextStep.lookFor(LOOK_CONSTRUCTION_SITES))
-            .filter((o) => OBSTACLE_OBJECT_TYPES.includes(o.structureType));
-        if (creep.pos.getRangeTo(nextStep) > 1 || obstruction) {
+        if (creep.pos.getRangeTo(nextStep) > 1) {
             return newPath(creep);
+        }
+
+        // We're being blocked by a structure, or a slower creep
+        const obstruction =
+            nextStep
+                .lookFor(LOOK_STRUCTURES)
+                .concat(nextStep.lookFor(LOOK_CONSTRUCTION_SITES))
+                .filter((o) =>
+                    OBSTACLE_OBJECT_TYPES.includes(o.structureType)
+                )[0] || nextStep.lookFor(LOOK_CREEPS)[0];
+        if (obstruction) {
+            return newPath(creep, [nextStep]);
         }
 
         return moveData.path;
@@ -256,6 +266,23 @@ const utility = {
                         );
                     }
                 }
+                // Let's also include any unmarked positions as well
+                if (options.additionalWorkingPositions) {
+                    for (const workingPos of options.additionalWorkingPositions) {
+                        if (workingPos.roomName !== roomName) {
+                            continue;
+                        }
+                        matrix.set(
+                            workingPos.x,
+                            workingPos.y,
+                            Math.max(
+                                matrix.get(workingPos.x, workingPos.y),
+                                INTERRUPT_PATHING_COST
+                            )
+                        );
+                    }
+                }
+
                 return matrix;
             },
         });
