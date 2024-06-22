@@ -1,4 +1,4 @@
-const { pathSets } = require("./constants");
+const { pathSets, CREEP_PATHING_COST } = require("./constants");
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
 
@@ -24,6 +24,15 @@ class MineralMinerManager extends CreepManager {
             if (creep.pos.getRangeTo(extractor) <= 1 && !extractor.cooldown) {
                 const mineral = Game.getObjectById(mineralSite.mineralID);
                 creep.harvest(mineral);
+
+                // We'll also mark this position to discourage creeps from walking through it
+                updateCachedPathMatrix(
+                    pathSets.default,
+                    creep.room.name,
+                    creep.pos.x,
+                    creep.pos.y,
+                    CREEP_PATHING_COST
+                );
             }
 
             // Always return false since miners can never finish their task

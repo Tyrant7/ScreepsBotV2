@@ -236,7 +236,7 @@ const utility = {
             swampCost: options.swampCost,
             roomCallback: function (roomName) {
                 if (options.pathSet) {
-                    const matrix = matrixHandler.getCachedPathMatrix(
+                    const matrix = getCachedPathMatrix(
                         options.pathSet,
                         roomName
                     );
@@ -244,7 +244,7 @@ const utility = {
                         return matrix;
                     }
                 }
-                return matrixHandler.generateDefaultCostMatrix(roomName);
+                return generateDefaultPathMatrix(roomName);
             },
         });
         if (result.incomplete) {
@@ -289,87 +289,77 @@ const utility = {
 //#region Matrix Management
 
 const cachedCostMatrices = {};
-const matrixHandler = {
-    /**
-     * Caches a CostMatrix as part of a set to be used later.
-     * @param {PathFinder.CostMatrix} matrix The CostMatrix to cache.
-     * @param {string} setName The name of the set to cache to.
-     * @param {string} roomName The name of the room that this matrix is for.
-     */
-    cachePathMatrix: function (matrix, setName, roomName) {
-        if (!cachedCostMatrices[setName]) {
-            cachedCostMatrices[setName] = {};
-        }
-        cachedCostMatrices[setName][roomName] = matrix;
-    },
 
-    /**
-     * Retrieves a cached CostMatrix from the specified set for the specified room.
-     * @param {string} setName The name of the set to retrieve from.
-     * @param {string} roomName The name of the room that this matrix is for.
-     * @returns {PathFinder.CostMatrix | undefined} The CostMatrix for the specified room as part of the specified set.
-     * Undefined if none exists.
-     */
-    getCachedPathMatrix: function (setName, roomName) {
-        if (!cachedCostMatrices[setName]) {
-            return;
-        }
-        return cachedCostMatrices[setName][roomName];
-    },
+/**
+ * Caches a CostMatrix as part of a set to be used later.
+ * @param {PathFinder.CostMatrix} matrix The CostMatrix to cache.
+ * @param {string} setName The name of the set to cache to.
+ * @param {string} roomName The name of the room that this matrix is for.
+ */
+const cachePathMatrix = (matrix, setName, roomName) => {
+    if (!cachedCostMatrices[setName]) {
+        cachedCostMatrices[setName] = {};
+    }
+    cachedCostMatrices[setName][roomName] = matrix;
+};
 
-    generateDefaultCostMatrix: function (roomName) {
-        const matrix = new PathFinder.CostMatrix();
-        const room = Game.rooms[roomName];
-        if (!room) {
-            return matrix;
-        }
+/**
+ * Retrieves a cached CostMatrix from the specified set for the specified room.
+ * @param {string} setName The name of the set to retrieve from.
+ * @param {string} roomName The name of the room that this matrix is for.
+ * @returns {PathFinder.CostMatrix | undefined} The CostMatrix for the specified room as part of the specified set.
+ * Undefined if none exists.
+ */
+const getCachedPathMatrix = (setName, roomName) => {
+    if (!cachedCostMatrices[setName]) {
+        return;
+    }
+    return cachedCostMatrices[setName][roomName];
+};
 
-        // Simply avoid unwalkable structures + construction sites
-        room.find(FIND_STRUCTURES)
-            .concat(room.find(FIND_CONSTRUCTION_SITES))
-            .forEach((s) => {
-                // Don't count road sites as roads
-                if (
-                    s.structureType === STRUCTURE_ROAD &&
-                    s instanceof Structure
-                ) {
-                    // Disallow lowering the cost if another structure is already there
-                    matrix.set(
-                        s.pos.x,
-                        s.pos.y,
-                        Math.max(
-                            matrix.get(s.pos.x, s.pos.y),
-                            ROAD_PATHING_COST
-                        )
-                    );
-                } else if (s.structureType === STRUCTURE_CONTAINER) {
-                    matrix.set(s.pos.x, s.pos.y, CONTAINER_PATHING_COST);
-                } else if (s.structureType !== STRUCTURE_RAMPART || !s.my) {
-                    matrix.set(s.pos.x, s.pos.y, 255);
-                }
-            });
+const updateCachedPathMatrix = (setName, roomName, x, y, newValue) => {
+    const matrix = getCachedPathMatrix(setName, roomName);
+    if (!matrix) {
+        return;
+    }
+    matrix.set(x, y, newValue);
+};
 
-        // We'll also discourage walking in spots next to sources, to avoid disrupting miners
-        const terrain = Game.map.getRoomTerrain(room.name);
-        room.find(FIND_SOURCES).forEach((source) => {
-            for (let x = source.pos.x - 1; x <= source.pos.x + 1; x++) {
-                for (let y = source.pos.y - 1; y <= source.pos.y + 1; y++) {
-                    if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
-                        continue;
-                    }
-                    if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
-                        continue;
-                    }
-                    matrix.set(x, y, SOURCE_PATHING_COST);
-                }
+const generateDefaultPathMatrix = (roomName) => {
+    const matrix = new PathFinder.CostMatrix();
+    const room = Game.rooms[roomName];
+    if (!room) {
+        return matrix;
+    }
+
+    // Simply avoid unwalkable structures + construction sites
+    room.find(FIND_STRUCTURES)
+        .concat(room.find(FIND_CONSTRUCTION_SITES))
+        .forEach((s) => {
+            // Don't count road sites as roads
+            if (s.structureType === STRUCTURE_ROAD && s instanceof Structure) {
+                // Disallow lowering the cost if another structure is already there
+                matrix.set(
+                    s.pos.x,
+                    s.pos.y,
+                    Math.max(matrix.get(s.pos.x, s.pos.y), ROAD_PATHING_COST)
+                );
+            } else if (s.structureType === STRUCTURE_CONTAINER) {
+                matrix.set(s.pos.x, s.pos.y, CONTAINER_PATHING_COST);
+            } else if (s.structureType !== STRUCTURE_RAMPART || !s.my) {
+                matrix.set(s.pos.x, s.pos.y, 255);
             }
         });
 
-        return matrix;
-    },
+    return matrix;
 };
 
 //#endregion
 
 // Here we can create new matrix sets from outside of this class and specify them as part of our move options
-module.exports = matrixHandler;
+module.exports = {
+    cachePathMatrix,
+    getCachedPathMatrix,
+    updateCachedPathMatrix,
+    generateDefaultCostMatrix: generateDefaultPathMatrix,
+};

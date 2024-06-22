@@ -42,16 +42,17 @@ const directionDelta = {
 };
 
 const ROAD_PATHING_COST = 1;
-const CONTAINER_PATHING_COST = 6;
-const SOURCE_PATHING_COST = 3;
+/**
+ * The cost to path through a working creep, like a miner or upgrader.
+ */
+const CREEP_PATHING_COST = 4;
 
 module.exports = {
     roles,
     pathSets,
     maxLevels,
     ROAD_PATHING_COST,
-    CONTAINER_PATHING_COST,
-    SOURCE_PATHING_COST,
+    CREEP_PATHING_COST,
     storageThresholds,
     directionDelta,
 };
