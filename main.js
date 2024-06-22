@@ -27,7 +27,7 @@ global.DEBUG = {
 
     drawTrafficArrows: true,
     drawPathMatrices: false,
-    drawWorkingPositions: false,
+    drawWorkingPositions: true,
 
     trackCPUUsage: true,
     trackRCLProgress: true,

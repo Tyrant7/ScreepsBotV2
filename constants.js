@@ -45,7 +45,7 @@ const ROAD_PATHING_COST = 1;
 /**
  * The cost to path through a working creep, like a miner or upgrader.
  */
-const INTERRUPT_PATHING_COST = 4;
+const INTERRUPT_PATHING_COST = 7;
 
 module.exports = {
     roles,
