@@ -300,6 +300,23 @@ const visualizeBasePlan = (roomName, planMatrix, rampartMatrix, mapping) => {
 
 //#endregion
 
+//#region Arrows
+
+const { directionDelta } = require("./constants");
+
+const drawTrafficArrow = (pos, direction, style) => {
+    if (!DEBUG.drawOverlay) {
+        return;
+    }
+    const targetX = pos.x + (directionDelta[direction].x % 50);
+    const targetY = pos.y + (directionDelta[direction].y % 50);
+    const x = targetX - (targetX - pos.x) * 0.5;
+    const y = targetY - (targetY - pos.y) * 0.5;
+    Game.rooms[pos.roomName].visual.line(pos.x, pos.y, x, y, style);
+};
+
+//#endregion
+
 module.exports = {
     createPanel,
     addText,
@@ -310,4 +327,5 @@ module.exports = {
     circles,
     visualizeCostMatrix,
     visualizeBasePlan,
+    drawTrafficArrow,
 };

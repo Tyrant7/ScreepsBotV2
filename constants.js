@@ -30,6 +30,17 @@ const storageThresholds = {
     8: 25000,
 };
 
+const directionDelta = {
+    [TOP]: { x: 0, y: -1 },
+    [TOP_RIGHT]: { x: 1, y: -1 },
+    [RIGHT]: { x: 1, y: 0 },
+    [BOTTOM_RIGHT]: { x: 1, y: 1 },
+    [BOTTOM]: { x: 0, y: 1 },
+    [BOTTOM_LEFT]: { x: -1, y: 1 },
+    [LEFT]: { x: -1, y: 0 },
+    [TOP_LEFT]: { x: -1, y: -1 },
+};
+
 const ROAD_PATHING_COST = 1;
 const CONTAINER_PATHING_COST = 6;
 
@@ -40,4 +51,5 @@ module.exports = {
     ROAD_PATHING_COST,
     CONTAINER_PATHING_COST,
     storageThresholds,
+    directionDelta,
 };

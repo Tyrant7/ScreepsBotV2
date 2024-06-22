@@ -2,6 +2,9 @@
  * A modified version of Harabi's traffic manager script.
  */
 
+const { directionDelta } = require("./constants");
+const { drawTrafficArrow } = require("./debug.overlay");
+
 Creep.prototype.registerMove = function (target) {
     let targetPosition;
 
@@ -70,6 +73,15 @@ const trafficManager = {
                 matchedPosition.x,
                 matchedPosition.y
             );
+
+            if (DEBUG.drawTrafficArrows) {
+                drawTrafficArrow(creep.pos, direction, {
+                    color:
+                        creep._matchedPackedCoord === creep._intendedPackedCoord
+                            ? "#00FF00"
+                            : "#FF0000",
+                });
+            }
             creep.move(direction);
         }
     },
@@ -193,17 +205,6 @@ function getPossibleMoves(creep, costs, threshold = 255) {
 
     return [..._.shuffle(possibleMoves), ..._.shuffle(outOfWorkingArea)];
 }
-
-const directionDelta = {
-    [TOP]: { x: 0, y: -1 },
-    [TOP_RIGHT]: { x: 1, y: -1 },
-    [RIGHT]: { x: 1, y: 0 },
-    [BOTTOM_RIGHT]: { x: 1, y: 1 },
-    [BOTTOM]: { x: 0, y: 1 },
-    [BOTTOM_LEFT]: { x: -1, y: 1 },
-    [LEFT]: { x: -1, y: 0 },
-    [TOP_LEFT]: { x: -1, y: -1 },
-};
 
 function assignCreepToCoordinate(creep, coord) {
     const packedCoord = packCoordinates(coord);

@@ -1,4 +1,9 @@
-const { CONTAINER_PATHING_COST, ROAD_PATHING_COST } = require("./constants");
+const {
+    CONTAINER_PATHING_COST,
+    ROAD_PATHING_COST,
+    directionDelta,
+} = require("./constants");
+const { drawTrafficArrow } = require("./debug.overlay");
 const profiler = require("./debug.profiler");
 
 //#region Pathing
@@ -86,7 +91,6 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
         const nextStep = utility.getNextStep(path, this.pos);
         const direction = this.pos.getDirectionTo(nextStep);
         if (direction) {
-            drawArrow(this.pos, direction, { color: "#00FF00" });
             this.registerMove(direction);
         }
     }
@@ -143,20 +147,6 @@ Creep.prototype.getPathLength = function () {
           this.memory._move.path.length - 3
         : 0;
 };
-
-// Debug
-function drawArrow(pos, direction, style) {
-    if (!DEBUG.drawOverlay || !DEBUG.drawTrafficArrows) {
-        return;
-    }
-    const target = utility.getPosInDirection(pos, direction);
-    if (!target) {
-        return;
-    }
-    const x = target.x - (target.x - pos.x) * 0.5;
-    const y = target.y - (target.y - pos.y) * 0.5;
-    Game.rooms[pos.roomName].visual.line(pos.x, pos.y, x, y, style);
-}
 
 //#endregion
 
@@ -227,35 +217,15 @@ const utility = {
         }
 
         // Finally, append our next position to our path
-        const nextPos = this.getPosInDirection(lastPos, serializedPath[0]);
+        const direction = serializedPath[0];
+        const delta = directionDelta[direction];
+        const nextPos = { x: lastPos.x + delta.x, y: lastPos.y + delta.y };
         const nextX = nextPos.x < 10 ? "0" + nextPos.x : nextPos.x.toString();
         const nextY = nextPos.y < 10 ? "0" + nextPos.y : nextPos.y.toString();
         const prefix = nextX + nextY;
 
         // return our new position and directions
         return prefix + serializedPath.substring(1);
-    },
-
-    /**
-     * Gets the position in the given direction, excluding roomName.
-     * @param {RoomPosition} startPos The starting position.
-     * @param {DirectionConstant} direction The direction to go in.
-     * @returns {{x: number, y: number}} An object with X and Y positions from 0 to 49.
-     */
-    getPosInDirection: function (startPos, direction) {
-        const directions = {
-            [TOP]: [0, -1],
-            [TOP_RIGHT]: [1, -1],
-            [RIGHT]: [1, 0],
-            [BOTTOM_RIGHT]: [1, 1],
-            [BOTTOM]: [0, 1],
-            [BOTTOM_LEFT]: [-1, 1],
-            [LEFT]: [-1, 0],
-            [TOP_LEFT]: [-1, -1],
-        };
-        const newX = (startPos.x + directions[direction][0]) % 50;
-        const newY = (startPos.y + directions[direction][1]) % 50;
-        return { x: newX, y: newY };
     },
 
     getNewPath: function (startPos, goals, options) {
