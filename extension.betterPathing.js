@@ -33,8 +33,10 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
 
     profiler.startSample(this.name + " moveTo");
     options = utility.ensureDefaultOptions(options);
-    function newPath(creep, additionalWorkingPositions) {
-        options.additionalWorkingPositions = additionalWorkingPositions;
+    function newPath(creep, avoidPositions) {
+        if (avoidPositions && options.avoidPositions) {
+            options.avoidPositions.push(...avoidPositions);
+        }
 
         // If we use a custom matrix set, it's safe to assume we know where we're pathing
         const endPathIfNoVisibility = !options.pathSet;
@@ -267,8 +269,8 @@ const utility = {
                     }
                 }
                 // Let's also include any unmarked positions as well
-                if (options.additionalWorkingPositions) {
-                    for (const workingPos of options.additionalWorkingPositions) {
+                if (options.avoidPositions) {
+                    for (const workingPos of options.avoidPositions) {
                         if (workingPos.roomName !== roomName) {
                             continue;
                         }
