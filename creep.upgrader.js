@@ -27,62 +27,75 @@ class UpgraderManager extends CreepManager {
                 upContPos.y,
                 target.room.name
             );
+            const upgraderContainer = upgraderContainerPos
+                .lookFor(LOOK_STRUCTURES)
+                .find((s) => s.structureType === STRUCTURE_CONTAINER);
 
-            // We're within range of our container already!
-            const otherUpgrader = creep.room.lookForAt(
-                LOOK_CREEPS,
-                upgraderContainerPos.x,
-                upgraderContainerPos.y
-            )[0];
-            const range = otherUpgrader ? 1 : 0;
-            if (creep.pos.getRangeTo(upgraderContainerPos) > range) {
-                creep.betterMoveTo(upgraderContainerPos, {
-                    range: range,
+            if (creep.pos.getRangeTo(creep.room.controller) > 3) {
+                creep.betterMoveTo(creep.room.controller.pos, {
+                    range: 3,
                     maxRooms: 1,
                 });
-            } else {
-                // We'll mark this position to discourage creeps from walking through it
-                updateCachedPathMatrix(
-                    pathSets.default,
-                    creep.pos,
-                    CREEP_PATHING_COST
-                );
+                return false;
             }
 
             // Always be upgrading when we can
-            if (creep.pos.getRangeTo(creep.room.controller) <= 3) {
-                creep.upgradeController(target);
+            creep.upgradeController(target);
 
-                // Pickup energy if we need it
-                const energyUsage =
-                    creep.body.filter((p) => p.type === WORK).length *
-                    UPGRADE_CONTROLLER_POWER;
-                if (creep.store[RESOURCE_ENERGY] <= energyUsage) {
-                    const container = creep.room
-                        .lookForAt(
-                            LOOK_STRUCTURES,
-                            upgraderContainerPos.x,
-                            upgraderContainerPos.y
-                        )
-                        .find((s) => s.structureType === STRUCTURE_CONTAINER);
-                    if (container && container.store[RESOURCE_ENERGY]) {
-                        creep.withdraw(container, RESOURCE_ENERGY);
+            // We'll mark this position to discourage creeps from walking through it
+            updateCachedPathMatrix(
+                pathSets.default,
+                creep.pos,
+                CREEP_PATHING_COST
+            );
+
+            // If we have a container, we'll walk next to it if we're getting low on energy
+            if (upgraderContainer) {
+                const dist = creep.pos.getRangeTo(
+                    upgraderContainerPos.x,
+                    upgraderContainerPos.y
+                );
+                if (
+                    creep.store[RESOURCE_ENERGY] <=
+                    (dist * data.energyUsage) / data.moveSpeed
+                ) {
+                    if (dist <= 1) {
+                        creep.withdraw(upgraderContainer, RESOURCE_ENERGY);
                     } else {
-                        // Request energy for ourself, if our container doesn't exist yet
-                        // Orders for the container itself will be handled by the basic requester
-                        roomInfo.createDropoffRequest(
-                            creep.store.getFreeCapacity(),
-                            RESOURCE_ENERGY,
-                            [creep.id]
-                        );
+                        creep.betterMoveTo(upgraderContainerPos, {
+                            range: 1,
+                            maxRooms: 1,
+                        });
                     }
                 }
+                return;
+            }
+            if (creep.store[RESOURCE_ENERGY] <= data.energyUsage * 2) {
+                // Otherwise, we don't need to move, we'll simply request
+                // energy for ourself from haulers, if our container doesn't exist yet
+                // Orders for the container itself will be handled by the basic requester
+                roomInfo.createDropoffRequest(
+                    creep.store.getFreeCapacity(),
+                    RESOURCE_ENERGY,
+                    [creep.id]
+                );
             }
         });
 
         // Multiple upgraders should clump up, but not fight for the spot
+        const energyUsage =
+            creep.body.filter((p) => p.type === WORK).length *
+            UPGRADE_CONTROLLER_POWER;
+        const moveSpeed =
+            creep.body.filter((p) => p.type === MOVE).length /
+            creep.body.filter((p) => p.type !== MOVE && p.type !== CARRY)
+                .length;
         return new Task(
-            { controllerID: roomInfo.room.controller.id },
+            {
+                controllerID: roomInfo.room.controller.id,
+                energyUsage,
+                moveSpeed,
+            },
             "upgrade",
             actionStack
         );
