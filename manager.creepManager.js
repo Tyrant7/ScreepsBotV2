@@ -174,7 +174,8 @@ class CreepManager {
                 const pos = new RoomPosition(25, 25, data.roomName);
                 creep.betterMoveTo(pos, {
                     range: 23,
-                    maxRooms: data.maxRooms ? data.maxRooms : 16,
+                    maxRooms: data.maxRooms,
+                    maxOps: data.maxOps,
                 });
                 return false;
             },
