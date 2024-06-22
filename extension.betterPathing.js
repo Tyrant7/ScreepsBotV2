@@ -2,7 +2,6 @@ const {
     CONTAINER_PATHING_COST,
     ROAD_PATHING_COST,
     directionDelta,
-    SOURCE_PATHING_COST,
 } = require("./constants");
 const profiler = require("./debug.profiler");
 
@@ -317,12 +316,12 @@ const getCachedPathMatrix = (setName, roomName) => {
     return cachedCostMatrices[setName][roomName];
 };
 
-const updateCachedPathMatrix = (setName, roomName, x, y, newValue) => {
-    const matrix = getCachedPathMatrix(setName, roomName);
+const updateCachedPathMatrix = (setName, position, newValue) => {
+    const matrix = getCachedPathMatrix(setName, position.roomName);
     if (!matrix) {
         return;
     }
-    matrix.set(x, y, newValue);
+    matrix.set(position.x, position.y, newValue);
 };
 
 const generateDefaultPathMatrix = (roomName) => {
@@ -361,5 +360,5 @@ module.exports = {
     cachePathMatrix,
     getCachedPathMatrix,
     updateCachedPathMatrix,
-    generateDefaultCostMatrix: generateDefaultPathMatrix,
+    generateDefaultPathMatrix,
 };

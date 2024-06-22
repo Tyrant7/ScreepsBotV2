@@ -4,7 +4,7 @@ const { getPlan } = require("./base.planningUtility");
 const { deserializeBasePlan } = require("./base.serializeBasePlan");
 const {
     getCachedPathMatrix,
-    generateDefaultCostMatrix,
+    generateDefaultPathMatrix,
     cachePathMatrix,
 } = require("./extension.betterPathing");
 const {
@@ -106,7 +106,7 @@ const handleSites = (roomInfo) => {
         // Update our cost matrix for creeps using our better pathing system
         const roomMatrix =
             getCachedPathMatrix(pathSets.default, roomInfo.room.name) ||
-            generateDefaultCostMatrix(roomInfo.room.name);
+            generateDefaultPathMatrix(roomInfo.room.name);
 
         if (bestStructure.type === STRUCTURE_ROAD) {
             roomMatrix.set(

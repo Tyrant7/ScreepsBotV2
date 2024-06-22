@@ -52,7 +52,7 @@ global.RELOAD = true;
 // Extensions
 const {
     cachePathMatrix,
-    generateDefaultCostMatrix,
+    generateDefaultPathMatrix,
     getCachedPathMatrix,
 } = require("./extension.betterPathing");
 require("./extension.betterRoomVisual");
@@ -150,7 +150,7 @@ module.exports.loop = function () {
         handleSites(info);
         if (RELOAD) {
             cachePathMatrix(
-                generateDefaultCostMatrix(info.room.name),
+                generateDefaultPathMatrix(info.room.name),
                 pathSets.default,
                 info.room.name
             );
