@@ -91,10 +91,10 @@ module.exports = {
 
     extensionStampX: {
         layout: [
-            [undefined, undefined, undefined, undefined, undefined],
+            [undefined, undefined, STRUCTURE_ROAD, undefined, undefined],
             [
                 undefined,
-                undefined,
+                STRUCTURE_ROAD,
                 STRUCTURE_EXTENSION,
                 STRUCTURE_ROAD,
                 undefined,
@@ -106,7 +106,13 @@ module.exports = {
                 STRUCTURE_EXTENSION,
                 STRUCTURE_ROAD,
             ],
-            [undefined, undefined, STRUCTURE_EXTENSION, undefined, undefined],
+            [
+                undefined,
+                STRUCTURE_ROAD,
+                STRUCTURE_EXTENSION,
+                STRUCTURE_ROAD,
+                undefined,
+            ],
             [undefined, undefined, STRUCTURE_ROAD, undefined, undefined],
         ],
         distancePoints: [
