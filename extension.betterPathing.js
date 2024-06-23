@@ -255,6 +255,7 @@ const utility = {
 
                 // If we have working creeps this tick, let's mark
                 // pathing over them with a penalty
+                const terrain = Game.map.getRoomTerrain(roomName);
                 for (const workingPos of cachedWorkingPositions) {
                     if (workingPos.tick !== Game.time) {
                         continue;
@@ -268,7 +269,9 @@ const utility = {
                         pos.y,
                         Math.max(
                             matrix.get(pos.x, pos.y),
-                            options.plainCost * INTERRUPT_PATHING_COST
+                            (terrain.get(pos.x, pos.y) === TERRAIN_MASK_SWAMP
+                                ? options.swampCost
+                                : options.plainCost) * INTERRUPT_PATHING_COST
                         )
                     );
                 }

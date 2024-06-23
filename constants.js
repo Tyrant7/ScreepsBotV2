@@ -44,8 +44,9 @@ const directionDelta = {
 const ROAD_PATHING_COST = 1;
 /**
  * The cost to path through a working creep, like a miner or upgrader.
+ * This value is a multiplier of the terrain cost underneath.
  */
-const INTERRUPT_PATHING_COST = 7;
+const INTERRUPT_PATHING_COST = 3;
 
 module.exports = {
     roles,
