@@ -197,8 +197,12 @@ module.exports.loop = function () {
             const excludedValues = DEBUG.drawPathMatrices ? [] : [0];
             if (DEBUG.drawWorkingPositions) {
                 const workPositions = getWorkingPositions(info.room.name);
-                for (const pos of workPositions) {
-                    matrix.set(pos.x, pos.y, INTERRUPT_PATHING_COST);
+                for (const cached of workPositions) {
+                    matrix.set(
+                        cached.pos.x,
+                        cached.pos.y,
+                        INTERRUPT_PATHING_COST
+                    );
                 }
             }
             overlay.visualizeCostMatrix(info.room.name, matrix, excludedValues);

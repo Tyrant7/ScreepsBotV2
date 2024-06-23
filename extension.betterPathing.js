@@ -33,11 +33,7 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
 
     profiler.startSample(this.name + " moveTo");
     options = utility.ensureDefaultOptions(options);
-    function newPath(creep, avoidPositions) {
-        if (avoidPositions && options.avoidPositions) {
-            options.avoidPositions.push(...avoidPositions);
-        }
-
+    function newPath(creep) {
         // If we use a custom matrix set, it's safe to assume we know where we're pathing
         const endPathIfNoVisibility = !options.pathSet;
         return utility.serializePath(
@@ -91,7 +87,10 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
                     OBSTACLE_OBJECT_TYPES.includes(o.structureType)
                 )[0] || nextStep.lookFor(LOOK_CREEPS)[0];
         if (obstruction) {
-            return newPath(creep, [nextStep]);
+            // Let's mark this as a working position for only this tick
+            // so when we repath we try to go around
+            markWorkingPosition(nextStep, Game.time);
+            return newPath(creep);
         }
 
         return moveData.path;
@@ -256,38 +255,23 @@ const utility = {
 
                 // If we have working creeps this tick, let's mark
                 // pathing over them with a penalty
-                if (workPositionsTick === Game.time) {
-                    for (const workingPos of cachedWorkingPositions) {
-                        if (workingPos.roomName !== roomName) {
-                            continue;
-                        }
-                        matrix.set(
-                            workingPos.x,
-                            workingPos.y,
-                            Math.max(
-                                matrix.get(workingPos.x, workingPos.y),
-                                INTERRUPT_PATHING_COST
-                            )
-                        );
+                for (const workingPos of cachedWorkingPositions) {
+                    if (workingPos.tick !== Game.time) {
+                        continue;
                     }
-                }
-                // Let's also include any unmarked positions as well
-                if (options.avoidPositions) {
-                    for (const workingPos of options.avoidPositions) {
-                        if (workingPos.roomName !== roomName) {
-                            continue;
-                        }
-                        matrix.set(
-                            workingPos.x,
-                            workingPos.y,
-                            Math.max(
-                                matrix.get(workingPos.x, workingPos.y),
-                                INTERRUPT_PATHING_COST
-                            )
-                        );
+                    const pos = workingPos.pos;
+                    if (pos.roomName !== roomName) {
+                        continue;
                     }
+                    matrix.set(
+                        pos.x,
+                        pos.y,
+                        Math.max(
+                            matrix.get(pos.x, pos.y),
+                            options.plainCost * INTERRUPT_PATHING_COST
+                        )
+                    );
                 }
-
                 return matrix;
             },
         });
@@ -333,8 +317,6 @@ const utility = {
 //#region Matrix Management
 
 const cachedCostMatrices = {};
-
-let workPositionsTick = -1;
 let cachedWorkingPositions = [];
 
 /**
@@ -393,21 +375,18 @@ const generateDefaultPathMatrix = (roomName) => {
     return matrix;
 };
 
-const markWorkingPosition = (position) => {
-    // Refresh our working positions each tick
-    // We'll mark these positions for next tick
-    if (workPositionsTick !== Game.time + 1) {
-        workPositionsTick = Game.time + 1;
-        cachedWorkingPositions = [];
-    }
-    cachedWorkingPositions.push(position);
+const markWorkingPosition = (pos, tick = Game.time + 1) => {
+    // Filter out old positions
+    cachedWorkingPositions = cachedWorkingPositions.filter(
+        (p) => p.tick >= Game.time
+    );
+    cachedWorkingPositions.push({ pos, tick });
 };
 
 const getWorkingPositions = (roomName) => {
-    if (workPositionsTick !== Game.time) {
-        return [];
-    }
-    return cachedWorkingPositions.filter((p) => p.roomName === roomName);
+    return cachedWorkingPositions.filter(
+        (p) => p.tick === Game.time && p.pos.roomName === roomName
+    );
 };
 
 //#endregion
