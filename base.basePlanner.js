@@ -26,6 +26,7 @@ const {
 
 const WEIGHT_CONTROLLER = 1.2;
 const WEIGHT_SOURCES = 0.85;
+const WEIGHT_SOURCE_NEIGHBOURS = 100;
 const WEIGHT_EXIT_DIST = -0.7;
 const WEIGHT_TERRAIN_DIST = -0.9;
 
@@ -230,6 +231,13 @@ class BasePlanner {
                     terrainMatrix.clone()
                 ),
                 weight: WEIGHT_SOURCES,
+            });
+
+            // Heavily discourage structures directly next to sources,
+            // which block miners
+            sourceMatrices.push({
+                matrix: matrixUtility.generateNeighbourMatrix(source.pos, 1),
+                weight: WEIGHT_SOURCE_NEIGHBOURS,
             });
         }
         const exitDistMatrix = {

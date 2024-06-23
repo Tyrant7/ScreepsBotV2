@@ -43,7 +43,7 @@ global.DEBUG = {
     profileHeapUsage: true,
 
     visualizeBasePlan: false,
-    replanBaseOnReload: false,
+    replanBaseOnReload: true,
     validateBasePlans: true,
     testBasePlanSerialization: true,
     cpuPrintoutFigures: 4,
