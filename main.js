@@ -27,7 +27,7 @@ global.DEBUG = {
 
     drawTrafficArrows: true,
     drawPathMatrices: false,
-    drawWorkingPositions: true,
+    drawWorkingPositions: false,
 
     trackCPUUsage: true,
     trackRCLProgress: true,
@@ -42,11 +42,13 @@ global.DEBUG = {
     runProfiler: false,
     profileHeapUsage: true,
 
-    visualizeBasePlan: true,
-    replanBaseOnReload: true,
+    visualizeBasePlan: false,
+    replanBaseOnReload: false,
     validateBasePlans: true,
     testBasePlanSerialization: true,
     cpuPrintoutFigures: 4,
+
+    doRoleCall: true,
 };
 global.RELOAD = true;
 
@@ -113,6 +115,9 @@ const haulingRequester = new HaulingRequester();
 const overlay = require("./debug.overlay");
 const trackStats = require("./debug.trackStats");
 const profiler = require("./debug.profiler");
+
+// For fun
+const { doRoleCall } = require("./fun.roleCall");
 
 module.exports.loop = function () {
     // Passive pixel generation
@@ -189,6 +194,11 @@ module.exports.loop = function () {
         profiler.startSample("Economy " + room);
         economyManager.run(info);
         profiler.endSample("Economy " + room);
+
+        // Do role call
+        if (DEBUG.doRoleCall) {
+            doRoleCall(info);
+        }
 
         if (DEBUG.drawPathMatrices || DEBUG.drawWorkingPositions) {
             const matrix = DEBUG.drawPathMatrices
