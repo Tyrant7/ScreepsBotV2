@@ -1,3 +1,4 @@
+const BAR_LENGTH = 58;
 const MAX_MESSAGE_LENGTH = 50;
 const DECIMAL_PLACES = 5;
 
@@ -73,13 +74,7 @@ const printout = (interval) => {
         return;
     }
 
-    console.log(
-        "-".repeat(50) +
-            " Profiler Results (Over " +
-            interval +
-            " Ticks) " +
-            "-".repeat(50)
-    );
+    let output = "";
     for (const record of Object.values(records)) {
         // Extract some basic stats
         const totalCPU = _.sum(record.usages);
@@ -125,8 +120,16 @@ const printout = (interval) => {
         message += "\tMin: " + minCPU.toFixed(DECIMAL_PLACES);
         message += "\tMax: " + maxCPU.toFixed(DECIMAL_PLACES);
         message += "\tDiff: " + diffCPU.toFixed(DECIMAL_PLACES);
-        console.log(message);
+
+        // Append new message
+        output += "\n";
+        output += message;
     }
+    const bar = "-".repeat(BAR_LENGTH);
+    const heading = `${bar} Profiler Results (Over ${interval} Ticks) ${bar}`;
+    console.log("\n" + heading + output);
+
+    // Clear records for next profile
     clearRecords();
 };
 
