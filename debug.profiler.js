@@ -136,7 +136,9 @@ const printout = (interval) => {
 
     let preOutput = "";
     const bar = "-".repeat(BAR_LENGTH);
-    const heading = `${bar} Profiler Results (Over ${interval} Ticks) ${bar}`;
+    const heading = `${bar} Profiler Results (Over ${interval} Tick${
+        interval === 1 ? "" : "s"
+    }) ${bar}`;
     preOutput += "\n" + heading;
 
     const heapData = Game.cpu.getHeapStatistics();
