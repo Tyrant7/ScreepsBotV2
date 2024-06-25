@@ -95,12 +95,13 @@ const printout = () => {
             indent--;
         }
 
-        let message = `[${prefix}] ${guidelines}${record.label}`;
+        const label = record.label.split(".").slice(-1)[0];
+        let message = `[${prefix}] ${guidelines}${label}`;
         if (message > MAX_MESSAGE_LENGTH) {
             message = message.substring(0, MAX_MESSAGE_LENGTH);
         }
 
-        message += "-".repeat(MAX_MESSAGE_LENGTH - message.length);
+        message += " ".repeat(MAX_MESSAGE_LENGTH - message.length);
         message += " => ";
         message += "\tTotal: " + totalCPU.toFixed(DECIMAL_PLACES);
         message += "\tCalls: " + calls;
