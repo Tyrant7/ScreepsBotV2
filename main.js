@@ -135,14 +135,18 @@ module.exports.loop = function () {
         if (!roomInfos[room]) {
             roomInfos[room] = new RoomInfo(Game.rooms[room]);
         }
-        roomInfos[room].initializeTickInfo();
+        profiler.wrap("initialize colony", () =>
+            roomInfos[room].initializeTickInfo()
+        );
         const info = roomInfos[room];
 
         // Initialize our panels for this room
-        overlay
-            .createPanel(info.room.name, "tl")
-            .addChild(info.room.name + "0")
-            .addChild(info.room.name + "1");
+        profiler.wrap("setup overlay", () =>
+            overlay
+                .createPanel(info.room.name, "tl")
+                .addChild(info.room.name + "0")
+                .addChild(info.room.name + "1")
+        );
 
         if (
             !getBasePlan(info.room.name) ||

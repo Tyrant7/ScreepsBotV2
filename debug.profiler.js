@@ -2,6 +2,9 @@ const BAR_LENGTH = 58;
 const MAX_MESSAGE_LENGTH = 50;
 const DECIMAL_PLACES = 5;
 
+const COLOR_DARK = "#2B2B2B";
+const COLOR_LIGHT = "#3B3B3B";
+
 const symbols = {
     [-1000]: "⚪️",
     0: "🟢",
@@ -75,6 +78,7 @@ const printout = (interval) => {
     }
 
     let output = "";
+    let dark = false;
     for (const record of Object.values(records)) {
         // Extract some basic stats
         const totalCPU = _.sum(record.usages);
@@ -130,8 +134,10 @@ const printout = (interval) => {
         message += formatRow("Diff", diffCPU);
 
         // Append new message
-        output += "\n";
-        output += message;
+        output += `<div style="background:${
+            dark ? COLOR_DARK : COLOR_LIGHT
+        };">${message}<div>`;
+        dark = !dark;
     }
 
     let preOutput = "";
