@@ -111,15 +111,23 @@ const printout = (interval) => {
             message = message.substring(0, MAX_MESSAGE_LENGTH);
         }
 
+        const formatRow = (label, value) => {
+            return (
+                `\t${label}:` +
+                " ".repeat(3 - value.toString().split(".")[0].length) +
+                value.toFixed(DECIMAL_PLACES)
+            );
+        };
+
         // Stats table
         message += " ".repeat(MAX_MESSAGE_LENGTH - message.length);
         message += " => ";
-        message += "\tTotal: " + totalCPU.toFixed(DECIMAL_PLACES);
+        message += formatRow("Total", totalCPU);
         message += "\tCalls: " + calls;
-        message += "\tAvg: " + averageCPU.toFixed(DECIMAL_PLACES);
-        message += "\tMin: " + minCPU.toFixed(DECIMAL_PLACES);
-        message += "\tMax: " + maxCPU.toFixed(DECIMAL_PLACES);
-        message += "\tDiff: " + diffCPU.toFixed(DECIMAL_PLACES);
+        message += formatRow("Avg", averageCPU);
+        message += formatRow("Min", minCPU);
+        message += formatRow("Max", maxCPU);
+        message += formatRow("Diff", diffCPU);
 
         // Append new message
         output += "\n";
