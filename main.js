@@ -40,6 +40,7 @@ global.DEBUG = {
     replanRemotesOnReload: false,
 
     runProfiler: false,
+    profilerPrintoutInterval: 5,
     profileHeapUsage: true,
 
     visualizeBasePlan: false,
@@ -149,7 +150,7 @@ module.exports.loop = function () {
         ) {
             basePlanner.generateNewRoomPlan(info);
         }
-        handleSites(info);
+        profiler.wrap("construction", () => handleSites(info));
         if (RELOAD) {
             cachePathMatrix(
                 generateDefaultPathMatrix(info.room.name),
@@ -180,10 +181,12 @@ module.exports.loop = function () {
         }
 
         // Defense
-        towerManager.run(info);
+        profiler.wrap("towers", () => towerManager.run(info));
 
         // Hauling requests
-        haulingRequester.generateBasicRequests(info);
+        profiler.wrap("hauling", () =>
+            haulingRequester.generateBasicRequests(info)
+        );
 
         // Handle economy (remotes and spawns)
         profiler.wrap("economy", () => economyManager.run(info));
@@ -243,12 +246,14 @@ module.exports.loop = function () {
     profiler.endSample("creeps");
 
     // After all creeps have been processed, let's sort out the traffic
+    profiler.startSample("traffic");
     for (const room of Object.values(Game.rooms)) {
         const costs =
             getCachedPathMatrix(pathSets.default, room.name) ||
             new PathFinder.CostMatrix();
-        harabiTrafficManager.run(room, costs);
+        profiler.wrap(room.name, () => harabiTrafficManager.run(room, costs));
     }
+    profiler.endSample("traffic");
 
     // Track CPU usage
     // (don't track reload because it leads to innacurate averages which take a long time to equalize)
@@ -286,7 +291,7 @@ module.exports.loop = function () {
         }
     }
 
-    profiler.printout();
+    profiler.printout(DEBUG.profilerPrintoutInterval);
 
     // Finalize overlays
     for (const roomName in roomInfos) {

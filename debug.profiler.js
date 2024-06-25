@@ -67,8 +67,19 @@ const endSample = (label) => {
     stack.pop();
 };
 
-const printout = () => {
-    console.log("-".repeat(50) + " Profiler Results " + "-".repeat(50));
+const printout = (interval) => {
+    // Accumulate data over mutliple ticks
+    if (Game.time % interval !== 0) {
+        return;
+    }
+
+    console.log(
+        "-".repeat(50) +
+            " Profiler Results (Over " +
+            interval +
+            " Ticks) " +
+            "-".repeat(50)
+    );
     for (const record of Object.values(records)) {
         // Extract some basic stats
         const totalCPU = _.sum(record.usages);
@@ -78,13 +89,15 @@ const printout = () => {
         const maxCPU = _.max(record.usages);
 
         // Find the smallest symbol that matches our usage
+        // Scale our usage up if we're profiling over multiple ticks
         const prefix =
             symbols[
                 Object.keys(symbols)
                     .sort((a, b) => b - a)
-                    .find((key) => averageCPU >= key)
+                    .find((key) => averageCPU >= key * interval)
             ];
 
+        // Figure out where to place our guidelines
         let guidelines = "";
         let indent = record.layer;
         if (indent > 1) {
@@ -95,12 +108,14 @@ const printout = () => {
             indent--;
         }
 
+        // Our label
         const label = record.label.split(".").slice(-1)[0];
         let message = `[${prefix}] ${guidelines}${label}`;
         if (message > MAX_MESSAGE_LENGTH) {
             message = message.substring(0, MAX_MESSAGE_LENGTH);
         }
 
+        // Stats table
         message += " ".repeat(MAX_MESSAGE_LENGTH - message.length);
         message += " => ";
         message += "\tTotal: " + totalCPU.toFixed(DECIMAL_PLACES);
@@ -111,39 +126,6 @@ const printout = () => {
         console.log(message);
     }
     clearRecords();
-
-    /*
-    for (const record of this.records) {
-        // Find the smallest symbol that matches our usage
-        const prefix =
-            symbols[
-                Object.keys(symbols)
-                    .sort((a, b) => b - a)
-                    .find((key) => record.cpu >= key)
-            ];
-        let guidelines = "";
-        let indent = record.indent - parentIndent;
-        if (indent > 1) {
-            guidelines += "|  ".repeat(indent - 1);
-        }
-        if (indent > 0) {
-            guidelines += "|--";
-            indent--;
-        }
-        parentIndent = Math.min(record.indent, parentIndent);
-
-        let message = "[" + prefix + "] " + guidelines + record.label;
-        if (message.length > MAX_MESSAGE_LENGTH) {
-            message = message.substring(0, MAX_MESSAGE_LENGTH);
-        }
-        console.log(
-            message +
-                " ".repeat(MAX_MESSAGE_LENGTH - message.length) +
-                guidelines +
-                record.cpu.toFixed(DECIMAL_PLACES)
-        );
-    }
-        */
 };
 
 module.exports = { wrap, startSample, endSample, printout };
