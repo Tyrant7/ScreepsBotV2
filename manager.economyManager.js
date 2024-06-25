@@ -34,7 +34,9 @@ class EconomyManager {
             return;
         }
 
-        const lastSpawnUsage = spawnManager.run(roomInfo);
+        const lastSpawnUsage = profiler.wrap("spawn manager", () =>
+            spawnManager.run(roomInfo)
+        );
         profiler.wrap("validate remotes", () =>
             remoteManager.validatePlans(roomInfo)
         );
