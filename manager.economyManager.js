@@ -11,6 +11,7 @@ const { onRemoteAdd, onRemoteDrop } = require("./remote.remoteEvents");
 
 const remoteUtility = require("./remote.remoteUtility");
 const overlay = require("./debug.overlay");
+const profiler = require("./debug.profiler");
 
 const REACTION_SPEED = CREEP_LIFE_TIME / 2;
 const DROP_THRESHOLD = 0.06;
@@ -34,7 +35,9 @@ class EconomyManager {
         }
 
         const lastSpawnUsage = spawnManager.run(roomInfo);
-        remoteManager.validatePlans(roomInfo);
+        profiler.wrap("validate remotes", () =>
+            remoteManager.validatePlans(roomInfo)
+        );
 
         // Let's compare our actual spawn usage to our estimates
         // Since we don't want to wait too long to see results,

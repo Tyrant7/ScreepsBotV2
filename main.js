@@ -25,9 +25,9 @@ global.DEBUG = {
     drawRemoteOwnership: false,
     drawContainerOverlay: false,
 
-    drawTrafficArrows: true,
+    drawTrafficArrows: false,
     drawPathMatrices: false,
-    drawWorkingPositions: true,
+    drawWorkingPositions: false,
 
     trackCPUUsage: true,
     trackRCLProgress: true,
@@ -186,7 +186,7 @@ module.exports.loop = function () {
         haulingRequester.generateBasicRequests(info);
 
         // Handle economy (remotes and spawns)
-        profiler.wrapFunction(economyManager.run(info));
+        profiler.wrap("economy", () => economyManager.run(info));
 
         if (DEBUG.drawPathMatrices || DEBUG.drawWorkingPositions) {
             const matrix = DEBUG.drawPathMatrices
@@ -208,6 +208,7 @@ module.exports.loop = function () {
     }
 
     // Run creeps
+    profiler.startSample("creeps");
     for (const name in Memory.creeps) {
         const creep = Game.creeps[name];
         if (creep) {
@@ -218,9 +219,11 @@ module.exports.loop = function () {
 
             // Map the creep's role to its appropriate manager and run behaviour
             if (creepRoleMap[creep.memory.role]) {
-                creepRoleMap[creep.memory.role].processCreep(
-                    creep,
-                    roomInfos[creep.memory.home]
+                profiler.wrap(creep.memory.role, () =>
+                    creepRoleMap[creep.memory.role].processCreep(
+                        creep,
+                        roomInfos[creep.memory.home]
+                    )
                 );
             } else {
                 creep.say("Missing");
@@ -232,9 +235,12 @@ module.exports.loop = function () {
     // We'll process all haulers after ordinary creeps, in case other creeps created orders this tick
     for (const info of Object.values(roomInfos)) {
         for (const hauler of info.haulers) {
-            creepRoleMap[hauler.memory.role].processCreep(hauler, info);
+            profiler.wrap(hauler.memory.role, () =>
+                creepRoleMap[hauler.memory.role].processCreep(hauler, info)
+            );
         }
     }
+    profiler.endSample("creeps");
 
     // After all creeps have been processed, let's sort out the traffic
     for (const room of Object.values(Game.rooms)) {

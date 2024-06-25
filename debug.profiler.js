@@ -10,16 +10,11 @@ const symbols = {
 };
 
 class ProfilerRecord {
-    constructor(label, id) {
+    constructor(label, id, layer) {
         this.label = label;
         this.id = id;
-        this.layer = 0;
-        this.calls = 0;
-        this.children = [];
-    }
-
-    addChild(record) {
-        this.children.push(record);
+        this.layer = layer;
+        this.usages = [];
     }
 
     startRecording() {
@@ -34,23 +29,33 @@ class ProfilerRecord {
 }
 
 let records = {};
+let stack = [];
 
 const clearRecords = () => {
-    records = [];
+    records = {};
+    stack = [];
 };
 
-const wrapFunction = (method) => {
-    const sample = startSample(method.name);
+const wrap = (label, method) => {
+    startSample(label);
     const returnValue = method();
-    endSample(sample);
+    endSample(label);
     return returnValue;
 };
 
 const startSample = (label) => {
     if (!records[label]) {
-        records[label] = new ProfilerRecord(method.name, records.length);
+        // We'll create separate records for each call stack into different methods
+        const recordLabel =
+            stack.reduce((acc, curr) => acc + curr + ".", "") + label;
+        records[label] = new ProfilerRecord(
+            recordLabel,
+            records.length,
+            stack.length
+        );
     }
     records[label].startRecording();
+    stack.push(label);
     return records[label];
 };
 
@@ -59,24 +64,50 @@ const endSample = (label) => {
         return;
     }
     records[label].endRecording();
+    stack.pop();
 };
 
 const printout = () => {
-    let parentIndent = 0;
-    console.log("-".repeat(15) + " Profiler Results " + "-".repeat(15));
-    for (const record of records) {
-        // Extra some basic stats
+    console.log("-".repeat(50) + " Profiler Results " + "-".repeat(50));
+    for (const record of Object.values(records)) {
+        // Extract some basic stats
         const totalCPU = _.sum(record.usages);
-        const averageCPU = totalCPU / record.usages.length;
+        const calls = record.usages.length;
+        const averageCPU = totalCPU / calls;
         const minCPU = _.min(record.usages);
         const maxCPU = _.max(record.usages);
 
-        let message = record.label;
+        // Find the smallest symbol that matches our usage
+        const prefix =
+            symbols[
+                Object.keys(symbols)
+                    .sort((a, b) => b - a)
+                    .find((key) => averageCPU >= key)
+            ];
+
+        let guidelines = "";
+        let indent = record.layer;
+        if (indent > 1) {
+            guidelines += "|  ".repeat(indent - 1);
+        }
+        if (indent > 0) {
+            guidelines += "|--";
+            indent--;
+        }
+
+        let message = `[${prefix}] ${guidelines}${record.label}`;
         if (message > MAX_MESSAGE_LENGTH) {
             message = message.substring(0, MAX_MESSAGE_LENGTH);
         }
 
-        console.log(message + totalCPU.toFixed(DECIMAL_PLACES));
+        message += "-".repeat(MAX_MESSAGE_LENGTH - message.length);
+        message += " => ";
+        message += "\tTotal: " + totalCPU.toFixed(DECIMAL_PLACES);
+        message += "\tCalls: " + calls;
+        message += "\tAvg: " + averageCPU.toFixed(DECIMAL_PLACES);
+        message += "\tMin: " + minCPU.toFixed(DECIMAL_PLACES);
+        message += "\tMax: " + maxCPU.toFixed(DECIMAL_PLACES);
+        console.log(message);
     }
     clearRecords();
 
@@ -114,4 +145,4 @@ const printout = () => {
         */
 };
 
-module.exports = { wrapFunction, startSample, endSample };
+module.exports = { wrap, startSample, endSample, printout };
