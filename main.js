@@ -27,7 +27,7 @@ global.DEBUG = {
 
     drawTrafficArrows: true,
     drawPathMatrices: false,
-    drawWorkingPositions: false,
+    drawWorkingPositions: true,
 
     trackCPUUsage: true,
     trackRCLProgress: true,
@@ -47,8 +47,6 @@ global.DEBUG = {
     validateBasePlans: true,
     testBasePlanSerialization: true,
     cpuPrintoutFigures: 4,
-
-    doRoleCall: true,
 };
 global.RELOAD = true;
 
@@ -115,9 +113,6 @@ const haulingRequester = new HaulingRequester();
 const overlay = require("./debug.overlay");
 const trackStats = require("./debug.trackStats");
 const profiler = require("./debug.profiler");
-
-// For fun
-const { doRoleCall } = require("./fun.roleCall");
 
 module.exports.loop = function () {
     // Passive pixel generation
@@ -191,14 +186,7 @@ module.exports.loop = function () {
         haulingRequester.generateBasicRequests(info);
 
         // Handle economy (remotes and spawns)
-        profiler.startSample("Economy " + room);
-        economyManager.run(info);
-        profiler.endSample("Economy " + room);
-
-        // Do role call
-        if (DEBUG.doRoleCall) {
-            doRoleCall(info);
-        }
+        profiler.wrapFunction(economyManager.run(info));
 
         if (DEBUG.drawPathMatrices || DEBUG.drawWorkingPositions) {
             const matrix = DEBUG.drawPathMatrices
@@ -220,7 +208,6 @@ module.exports.loop = function () {
     }
 
     // Run creeps
-    profiler.startSample("Creeps");
     for (const name in Memory.creeps) {
         const creep = Game.creeps[name];
         if (creep) {
@@ -231,12 +218,10 @@ module.exports.loop = function () {
 
             // Map the creep's role to its appropriate manager and run behaviour
             if (creepRoleMap[creep.memory.role]) {
-                profiler.startSample(creep.name);
                 creepRoleMap[creep.memory.role].processCreep(
                     creep,
                     roomInfos[creep.memory.home]
                 );
-                profiler.endSample(creep.name);
             } else {
                 creep.say("Missing");
             }
@@ -247,24 +232,17 @@ module.exports.loop = function () {
     // We'll process all haulers after ordinary creeps, in case other creeps created orders this tick
     for (const info of Object.values(roomInfos)) {
         for (const hauler of info.haulers) {
-            profiler.startSample(hauler.name);
             creepRoleMap[hauler.memory.role].processCreep(hauler, info);
-            profiler.endSample(hauler.name);
         }
     }
-    profiler.endSample("Creeps");
 
     // After all creeps have been processed, let's sort out the traffic
-    profiler.startSample("Traffic");
     for (const room of Object.values(Game.rooms)) {
-        profiler.startSample("Traffic " + room.name);
         const costs =
             getCachedPathMatrix(pathSets.default, room.name) ||
             new PathFinder.CostMatrix();
         harabiTrafficManager.run(room, costs);
-        profiler.endSample("Traffic " + room.name);
     }
-    profiler.endSample("Traffic");
 
     // Track CPU usage
     // (don't track reload because it leads to innacurate averages which take a long time to equalize)

@@ -3,7 +3,6 @@ const {
     INTERRUPT_PATHING_COST,
     directionDelta,
 } = require("./constants");
-const profiler = require("./debug.profiler");
 
 //#region Pathing
 
@@ -31,7 +30,6 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
         }
     }
 
-    profiler.startSample(this.name + " moveTo");
     options = utility.ensureDefaultOptions(options);
     function newPath(creep) {
         // If we use a custom matrix set, it's safe to assume we know where we're pathing
@@ -110,7 +108,6 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
         path: path,
         range: options.range,
     };
-    profiler.endSample(this.name + " moveTo");
 };
 
 /**
