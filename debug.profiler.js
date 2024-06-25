@@ -1,4 +1,4 @@
-const BAR_LENGTH = 58;
+const BAR_LENGTH = 76;
 const MAX_MESSAGE_LENGTH = 50;
 const DECIMAL_PLACES = 5;
 
