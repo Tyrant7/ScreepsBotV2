@@ -2,6 +2,10 @@ const BAR_LENGTH = 76;
 const MAX_MESSAGE_LENGTH = 50;
 const DECIMAL_PLACES = 5;
 
+// Flood the console with empty messages to prevent lagging the client
+// with too many large profiler printouts
+const FILLER = 100;
+
 const COLOR_DARK = "#2B2B2B";
 const COLOR_LIGHT = "#3B3B3B";
 
@@ -161,6 +165,7 @@ const printout = (interval) => {
         100;
     preOutput += `\n Heap Usage: ${heapUsage.toFixed(2)}%`;
 
+    for (let i = 0; i < FILLER; i++) console.log(" ");
     console.log(preOutput + output);
 
     // Clear records for next profile
