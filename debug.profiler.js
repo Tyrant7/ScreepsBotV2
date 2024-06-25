@@ -87,6 +87,7 @@ const printout = (interval) => {
         const averageCPU = totalCPU / calls;
         const minCPU = _.min(record.usages);
         const maxCPU = _.max(record.usages);
+        const diffCPU = maxCPU - minCPU;
 
         // Find the smallest symbol that matches our usage
         // Scale our usage up if we're profiling over multiple ticks
@@ -123,6 +124,7 @@ const printout = (interval) => {
         message += "\tAvg: " + averageCPU.toFixed(DECIMAL_PLACES);
         message += "\tMin: " + minCPU.toFixed(DECIMAL_PLACES);
         message += "\tMax: " + maxCPU.toFixed(DECIMAL_PLACES);
+        message += "\tDiff: " + diffCPU.toFixed(DECIMAL_PLACES);
         console.log(message);
     }
     clearRecords();
