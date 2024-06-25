@@ -113,7 +113,7 @@ const printout = (interval) => {
 
         const formatRow = (label, value) => {
             return (
-                `\t${label}:` +
+                `\t| ${label}:` +
                 " ".repeat(4 - value.toString().split(".")[0].length) +
                 value.toFixed(DECIMAL_PLACES)
             );
@@ -123,7 +123,7 @@ const printout = (interval) => {
         message += " ".repeat(MAX_MESSAGE_LENGTH - message.length);
         message += " => ";
         message += formatRow("Total", totalCPU);
-        message += "\tCalls: " + calls;
+        message += "\t| Calls: " + calls;
         message += formatRow("Avg", averageCPU);
         message += formatRow("Min", minCPU);
         message += formatRow("Max", maxCPU);
@@ -133,9 +133,20 @@ const printout = (interval) => {
         output += "\n";
         output += message;
     }
+
+    let preOutput = "";
     const bar = "-".repeat(BAR_LENGTH);
     const heading = `${bar} Profiler Results (Over ${interval} Ticks) ${bar}`;
-    console.log("\n" + heading + output);
+    preOutput += "\n" + heading;
+
+    const heapData = Game.cpu.getHeapStatistics();
+    const heapUsage =
+        ((heapData.total_heap_size + heapData.externally_allocated_size) /
+            heapData.heap_size_limit) *
+        100;
+    preOutput += `\n Heap Usage: ${heapUsage.toFixed(2)}%`;
+
+    console.log(preOutput + output);
 
     // Clear records for next profile
     clearRecords();
