@@ -47,28 +47,35 @@ const wrap = (label, method) => {
     return returnValue;
 };
 
+const getFullLabel = (label) => {
+    if (!stack.length) {
+        return label;
+    }
+    return stack.reduce((acc, curr) => acc + curr + ".", "") + label;
+};
+
 const startSample = (label) => {
-    if (!records[label]) {
-        // We'll create separate records for each call stack into different methods
-        const recordLabel =
-            stack.reduce((acc, curr) => acc + curr + ".", "") + label;
-        records[label] = new ProfilerRecord(
-            recordLabel,
+    // We'll create separate records for each call stack into different methods
+    const fullLabel = getFullLabel(label);
+    if (!records[fullLabel]) {
+        records[fullLabel] = new ProfilerRecord(
+            fullLabel,
             records.length,
             stack.length
         );
     }
-    records[label].startRecording();
+    records[fullLabel].startRecording();
     stack.push(label);
-    return records[label];
 };
 
 const endSample = (label) => {
-    if (!records[label]) {
+    const last = stack.pop();
+    const fullLabel = getFullLabel(label);
+    if (!records[fullLabel]) {
+        stack.push(last);
         return;
     }
-    records[label].endRecording();
-    stack.pop();
+    records[fullLabel].endRecording();
 };
 
 const printout = (interval) => {
