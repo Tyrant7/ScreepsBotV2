@@ -114,7 +114,7 @@ const printout = (interval) => {
         const formatRow = (label, value) => {
             return (
                 `\t${label}:` +
-                " ".repeat(3 - value.toString().split(".")[0].length) +
+                " ".repeat(4 - value.toString().split(".")[0].length) +
                 value.toFixed(DECIMAL_PLACES)
             );
         };
