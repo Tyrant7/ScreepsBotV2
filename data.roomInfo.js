@@ -3,6 +3,7 @@ const estimateTravelTime = require("./util.estimateTravelTime");
 const { getPlanData, keys } = require("./base.planningUtility");
 const { roles } = require("./constants");
 const { MINER_WORK } = require("./spawn.spawnConstants");
+const profiler = require("./debug.profiler");
 
 class RoomInfo {
     /**
@@ -20,11 +21,14 @@ class RoomInfo {
      */
     initializeTickInfo() {
         // Reinitialize stale objects
+        profiler.startSample("cache");
         this.room = Game.rooms[this.room.name];
         this.sources = this.sources.map((s) => Game.getObjectById(s.id));
         this.mineral = Game.getObjectById(this.mineral.id);
+        profiler.endSample("cache");
 
         // Find all creeps that this room is responsible for, not just ones in it
+        profiler.startSample("group creeps");
         this.creeps = Object.values(Game.creeps).filter(
             (c) => c.memory.home === this.room.name
         );
@@ -48,7 +52,9 @@ class RoomInfo {
                 array.push(creep);
             }
         });
+        profiler.endSample("group creeps");
 
+        profiler.startSample("finds");
         this.spawns = this.room.find(FIND_MY_SPAWNS);
         this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES);
 
@@ -60,6 +66,7 @@ class RoomInfo {
 
         this._pickupRequests = [];
         this._dropoffRequests = [];
+        profiler.endSample("finds");
     }
 
     getMaxIncome() {

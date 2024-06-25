@@ -6,6 +6,7 @@ const { pathSets } = require("./constants");
 const { cachePathMatrix } = require("./extension.betterPathing");
 
 const overlay = require("./debug.overlay");
+const profiler = require("./debug.profiler");
 
 /**
  * This will be the cost to path outside of our planned roads.
@@ -56,6 +57,7 @@ class RemoteManager {
      */
     validatePlans(roomInfo) {
         // If we've recently discovered new rooms, let's replan our remotes
+        profiler.startSample("validate rooms");
         const remoteRooms = remotePlanner.getPotentialRemoteRooms(
             roomInfo.room.name
         );
@@ -76,6 +78,7 @@ class RemoteManager {
                 break;
             }
         }
+        profiler.endSample("validate rooms");
 
         if (shouldReplan || (RELOAD && DEBUG.replanRemotesOnReload)) {
             // Then, filter out construction sites on invalid locations (room transitions)

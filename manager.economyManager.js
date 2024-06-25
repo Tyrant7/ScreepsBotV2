@@ -44,6 +44,7 @@ class EconomyManager {
         // let's just nudge our estimated value in the direction of our spawn's activity
         // We're going to nudge towards the fraction of spawns that we have running currently
         // This should hone in on our actual max spawn capacity over a maximum of REACTION_SPEED ticks
+        profiler.startSample("remotes");
         const nudge = 1 / REACTION_SPEED;
         base.spawnUsage =
             nudge * lastSpawnUsage + (1 - nudge) * base.spawnUsage;
@@ -139,10 +140,13 @@ class EconomyManager {
                 }
             }
         }
+        profiler.endSample("remotes");
 
         // Display our active remotes
+        profiler.startSample("remote overlay");
         this.drawOverlay(roomInfo, remotes, base.spawnUsage);
         remoteManager.drawOverlay(roomInfo);
+        profiler.endSample("remote overlay");
     }
 
     /**
