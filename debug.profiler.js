@@ -191,6 +191,9 @@ const printout = (interval) => {
                 childCost += _.sum(recordValues[j].usages);
             }
         }
+        console.log(record.label + ": " + childCost);
+        console.log(intents);
+
         i++;
         const rawCPU = totalCPU - childCost - intents * 0.2;
 
