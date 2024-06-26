@@ -12,9 +12,9 @@ const COLOR_LIGHT = "#3B3B3B";
 const symbols = {
     [-1000]: "⚪️",
     0: "🟢",
-    0.35: "🟡",
-    1: "🟠",
-    2: "🔴",
+    0.2: "🟡",
+    0.5: "🟠",
+    1: "🔴",
 };
 
 class ProfilerRecord {
@@ -174,7 +174,7 @@ const printout = (interval) => {
             symbols[
                 Object.keys(symbols)
                     .sort((a, b) => b - a)
-                    .find((key) => averageCPU >= key * interval)
+                    .find((key) => rawCPU >= key * interval)
             ];
 
         // Figure out where to place our guidelines
