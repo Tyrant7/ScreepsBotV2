@@ -40,7 +40,7 @@ global.DEBUG = {
     replanRemotesOnReload: false,
 
     runProfiler: true,
-    profilerPrintoutInterval: 8,
+    profilerPrintoutInterval: 1,
     profileHeapUsage: true,
 
     visualizeBasePlan: false,

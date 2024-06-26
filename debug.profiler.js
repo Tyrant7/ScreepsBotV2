@@ -4,7 +4,7 @@ const DECIMAL_PLACES = 5;
 
 // Flood the console with empty messages to prevent lagging the client
 // with too many large profiler printouts
-const FILLER = 100;
+const FILLER = 0;
 
 const COLOR_DARK = "#2B2B2B";
 const COLOR_LIGHT = "#3B3B3B";
@@ -41,6 +41,7 @@ let records = {};
 let stack = [];
 
 const initialize = () => {
+    // Does not include Game.notify()
     const intentPrototypes = [
         Creep,
         PowerCreep,
@@ -48,19 +49,23 @@ const initialize = () => {
         Structure,
         StructureController,
         StructureSpawn,
+        StructurePowerSpawn,
         StructureSpawn.Spawning,
         StructureTerminal,
         StructureLab,
         StructureNuker,
+        StructureFactory,
+        StructureTower,
+        StructureObserver,
         StructureRampart,
+        Room,
+        RoomPosition,
+        Game.market,
     ];
     const excludeProps = ["constructor", "toJSON", "toString", "pull", "say"];
 
     for (const type of intentPrototypes) {
-        if (!type || !type.prototype) {
-            continue;
-        }
-        const proto = type.prototype;
+        const proto = type.prototype ? type.prototype : type;
         for (const prop of Object.getOwnPropertyNames(proto)) {
             if (excludeProps.includes(prop)) {
                 continue;
