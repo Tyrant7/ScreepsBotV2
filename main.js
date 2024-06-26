@@ -39,7 +39,7 @@ global.DEBUG = {
     logRemoteDropping: true,
     replanRemotesOnReload: false,
 
-    runProfiler: false,
+    runProfiler: true,
     profilerPrintoutInterval: 1,
     profileHeapUsage: true,
 

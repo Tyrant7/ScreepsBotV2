@@ -153,9 +153,20 @@ const printout = (interval) => {
         return;
     }
 
+    const formatColumn = (label, value) => {
+        return (
+            `\t| ${label}:` +
+            " ".repeat(4 - value.toString().split(".")[0].length) +
+            value.toFixed(DECIMAL_PLACES)
+        );
+    };
+
     let output = "";
     let dark = false;
     let i = 0;
+
+    let finalRawTotal = 0;
+
     const recordValues = Object.values(records);
     for (const record of recordValues) {
         // Extract some basic stats
@@ -182,6 +193,8 @@ const printout = (interval) => {
         }
         i++;
         const rawCPU = totalCPU - childCost - intents * 0.2;
+
+        finalRawTotal += rawCPU;
 
         // Find the smallest symbol that matches our usage
         // Scale our usage up if we're profiling over multiple ticks
@@ -210,25 +223,17 @@ const printout = (interval) => {
             message = message.substring(0, MAX_MESSAGE_LENGTH);
         }
 
-        const formatRow = (label, value) => {
-            return (
-                `\t| ${label}:` +
-                " ".repeat(4 - value.toString().split(".")[0].length) +
-                value.toFixed(DECIMAL_PLACES)
-            );
-        };
-
         // Stats table
         message += " ".repeat(MAX_MESSAGE_LENGTH - message.length);
         message += " => ";
-        message += formatRow("Total", totalCPU);
-        message += formatRow("Raw", rawCPU);
+        message += formatColumn("Total", finalRawTotal);
+        message += formatColumn("Raw", rawCPU);
         message += "\t| Intents: " + intents;
         message += "\t| Calls: " + calls;
-        message += formatRow("Avg", averageCPU);
-        message += formatRow("Min", minCPU);
-        message += formatRow("Max", maxCPU);
-        message += formatRow("Diff", diffCPU);
+        message += formatColumn("Avg", averageCPU);
+        message += formatColumn("Min", minCPU);
+        message += formatColumn("Max", maxCPU);
+        message += formatColumn("Diff", diffCPU);
 
         // Append new message
         output += `<div style="background:${
@@ -250,6 +255,16 @@ const printout = (interval) => {
             heapData.heap_size_limit) *
         100;
     preOutput += `\n Heap Usage: ${heapUsage.toFixed(2)}%`;
+
+    const totalUsage = _.sum(recordValues.map((r) => r.usages));
+    const totalIntents = _.sum(recordValues.map((r) => r.intents));
+
+    let footer = "\nTotals: ";
+    footer += " ".repeat(MAX_MESSAGE_LENGTH - "Totals: ".length);
+    footer += formatColumn("  CPU", totalUsage);
+    footer += formatColumn("Raw", totalUsage - totalIntents * 0.2);
+    footer += "\t| Intents: " + totalIntents;
+    output += `<div style="background:${COLOR_DARK};">${footer}<div>`;
 
     for (let i = 0; i < FILLER; i++) console.log(" ");
     console.log(preOutput + output);
