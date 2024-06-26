@@ -191,9 +191,6 @@ const printout = (interval) => {
                 childCost += _.sum(recordValues[j].usages);
             }
         }
-        console.log(record.label + ": " + childCost);
-        console.log(intents);
-
         i++;
         const rawCPU = totalCPU - childCost - intents * 0.2;
 
@@ -229,7 +226,7 @@ const printout = (interval) => {
         // Stats table
         message += " ".repeat(MAX_MESSAGE_LENGTH - message.length);
         message += " => ";
-        message += formatColumn("Total", finalRawTotal);
+        message += formatColumn("Total", totalCPU);
         message += formatColumn("Raw", rawCPU);
         message += "\t| Intents: " + intents;
         message += "\t| Calls: " + calls;
