@@ -83,7 +83,9 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
                 .concat(nextStep.lookFor(LOOK_CONSTRUCTION_SITES))
                 .filter((o) =>
                     OBSTACLE_OBJECT_TYPES.includes(o.structureType)
-                )[0] || nextStep.lookFor(LOOK_CREEPS)[0];
+                )[0] ||
+            nextStep.lookFor(LOOK_CREEPS)[0] ||
+            nextStep.lookFor(LOOK_SOURCES)[0];
         if (obstruction) {
             // Let's mark this as a working position for only this tick
             // so when we repath we try to go around
