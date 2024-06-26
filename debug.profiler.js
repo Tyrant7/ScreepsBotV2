@@ -95,6 +95,9 @@ const clearRecords = () => {
 };
 
 const wrap = (label, method) => {
+    if (!DEBUG.runProfiler) {
+        return method();
+    }
     startSample(label);
     const returnValue = method();
     endSample(label);
@@ -109,6 +112,10 @@ const getFullLabel = (label) => {
 };
 
 const startSample = (label) => {
+    if (!DEBUG.runProfiler) {
+        return;
+    }
+
     // We'll create separate records for each call stack into different methods
     const fullLabel = getFullLabel(label);
     if (!records[fullLabel]) {
@@ -123,6 +130,10 @@ const startSample = (label) => {
 };
 
 const endSample = (label) => {
+    if (!DEBUG.runProfiler) {
+        return;
+    }
+
     const last = stack.pop();
     const fullLabel = getFullLabel(label);
     if (!records[fullLabel]) {
@@ -133,6 +144,10 @@ const endSample = (label) => {
 };
 
 const printout = (interval) => {
+    if (!DEBUG.runProfiler) {
+        return;
+    }
+
     // Accumulate data over mutliple ticks
     if (Game.time % interval !== 0) {
         return;
@@ -243,5 +258,7 @@ const printout = (interval) => {
     clearRecords();
 };
 
-initialize();
+if (DEBUG.runProfiler) {
+    initialize();
+}
 module.exports = { wrap, startSample, endSample, printout };
