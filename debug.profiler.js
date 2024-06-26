@@ -256,7 +256,7 @@ const printout = (interval) => {
         100;
     preOutput += `\n Heap Usage: ${heapUsage.toFixed(2)}%`;
 
-    const totalUsage = _.sum(recordValues.map((r) => r.usages));
+    const totalUsage = Game.cpu.getUsed();
     const totalIntents = _.sum(recordValues.map((r) => r.intents));
 
     let footer = "\nTotals: ";
