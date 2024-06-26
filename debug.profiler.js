@@ -152,16 +152,18 @@ const printout = (interval) => {
         const maxCPU = _.max(record.usages);
         const diffCPU = maxCPU - minCPU;
 
-        // Let's iterate forward until we find a record the same depth as us
+        // Let's iterate forward over all immediate children of this record
         // that way we can calculate only the overhead from this sample, and not
         // include the cost of children samples
         let childCost = 0;
         for (
             let j = i + 1;
-            recordValues[j] && recordValues[j].layer === record.layer + 1;
+            recordValues[j] && recordValues[j].layer > record.layer;
             j++
         ) {
-            childCost += _.sum(recordValues[j].usages);
+            if (recordValues[j].layer === record.layer + 1) {
+                childCost += _.sum(recordValues[j].usages);
+            }
         }
         i++;
         const rawCPU = totalCPU - childCost - intents * 0.2;
