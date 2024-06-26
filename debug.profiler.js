@@ -4,7 +4,7 @@ const DECIMAL_PLACES = 5;
 
 // Flood the console with empty messages to prevent lagging the client
 // with too many large profiler printouts
-const FILLER = 100;
+const FILLER = 0;
 
 const COLOR_DARK = "#2B2B2B";
 const COLOR_LIGHT = "#3B3B3B";
@@ -23,6 +23,7 @@ class ProfilerRecord {
         this.id = id;
         this.layer = layer;
         this.usages = [];
+        this.intents = 0;
     }
 
     startRecording() {
@@ -38,6 +39,55 @@ class ProfilerRecord {
 
 let records = {};
 let stack = [];
+
+const initialize = () => {
+    const intentPrototypes = [
+        Creep,
+        PowerCreep,
+        ConstructionSite,
+        Structure,
+        StructureController,
+        StructureSpawn,
+        StructureSpawn.Spawning,
+        StructureTerminal,
+        StructureLab,
+        StructureNuker,
+        StructureRampart,
+    ];
+    const excludeProps = ["constructor", "toJSON", "toString", "pull", "say"];
+
+    for (const type of intentPrototypes) {
+        if (!type || !type.prototype) {
+            continue;
+        }
+        const proto = type.prototype;
+        for (const prop of Object.getOwnPropertyNames(proto)) {
+            if (excludeProps.includes(prop)) {
+                continue;
+            }
+            try {
+                if (typeof proto[prop] === "function") {
+                    const originalFunc = proto[prop];
+                    const wrappedFunc = function (...args) {
+                        const result = originalFunc.apply(this, args);
+                        if (result === OK) {
+                            countIntent();
+                        }
+                        return result;
+                    };
+                    proto[prop] = wrappedFunc;
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+    }
+};
+
+const countIntent = () => {
+    const label = getFullLabel("").slice(0, -1);
+    records[label].intents++;
+};
 
 const clearRecords = () => {
     records = {};
@@ -90,14 +140,31 @@ const printout = (interval) => {
 
     let output = "";
     let dark = false;
-    for (const record of Object.values(records)) {
+    let i = 0;
+    const recordValues = Object.values(records);
+    for (const record of recordValues) {
         // Extract some basic stats
         const totalCPU = _.sum(record.usages);
+        const intents = record.intents;
         const calls = record.usages.length;
         const averageCPU = totalCPU / calls;
         const minCPU = _.min(record.usages);
         const maxCPU = _.max(record.usages);
         const diffCPU = maxCPU - minCPU;
+
+        // Let's iterate forward until we find a record the same depth as us
+        // that way we can calculate only the overhead from this sample, and not
+        // include the cost of children samples
+        let childCost = 0;
+        for (
+            let j = i + 1;
+            recordValues[j] && recordValues[j].layer === record.layer + 1;
+            j++
+        ) {
+            childCost += _.sum(recordValues[j].usages);
+        }
+        i++;
+        const rawCPU = totalCPU - childCost - intents * 0.2;
 
         // Find the smallest symbol that matches our usage
         // Scale our usage up if we're profiling over multiple ticks
@@ -138,6 +205,8 @@ const printout = (interval) => {
         message += " ".repeat(MAX_MESSAGE_LENGTH - message.length);
         message += " => ";
         message += formatRow("Total", totalCPU);
+        message += formatRow("Raw", rawCPU);
+        message += "\t| Intents: " + intents;
         message += "\t| Calls: " + calls;
         message += formatRow("Avg", averageCPU);
         message += formatRow("Min", minCPU);
@@ -172,4 +241,5 @@ const printout = (interval) => {
     clearRecords();
 };
 
+initialize();
 module.exports = { wrap, startSample, endSample, printout };
