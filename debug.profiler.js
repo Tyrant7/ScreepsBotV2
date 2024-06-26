@@ -4,7 +4,7 @@ const DECIMAL_PLACES = 5;
 
 // Flood the console with empty messages to prevent lagging the client
 // with too many large profiler printouts
-const FILLER = 0;
+const FILLER = 100;
 
 const COLOR_DARK = "#2B2B2B";
 const COLOR_LIGHT = "#3B3B3B";
@@ -256,7 +256,7 @@ const printout = (interval) => {
         100;
     preOutput += `\n Heap Usage: ${heapUsage.toFixed(2)}%`;
 
-    const totalUsage = Game.cpu.getUsed();
+    const totalUsage = _.sum(recordValues.map((r) => _.sum(r.usages)));
     const totalIntents = _.sum(recordValues.map((r) => r.intents));
 
     let footer = "\nTotals: ";
