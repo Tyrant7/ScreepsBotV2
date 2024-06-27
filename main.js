@@ -40,7 +40,6 @@ global.DEBUG = {
     replanRemotesOnReload: false,
 
     runProfiler: true,
-    profilerPrintoutInterval: 1,
     profileHeapUsage: true,
 
     visualizeBasePlan: false,
@@ -295,7 +294,7 @@ module.exports.loop = function () {
         }
     }
 
-    profiler.printout(DEBUG.profilerPrintoutInterval);
+    profiler.printout();
 
     // Finalize overlays
     for (const roomName in roomInfos) {
