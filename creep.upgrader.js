@@ -35,7 +35,19 @@ class UpgraderManager extends CreepManager {
                     range: 3,
                     maxRooms: 1,
                 });
-                return false;
+                return;
+            }
+
+            // We'll encourage ourselves to not stand on roads
+            if (
+                creep.pos
+                    .lookFor(LOOK_STRUCTURES)
+                    .filter((s) => s.structureType === STRUCTURE_ROAD)[0]
+            ) {
+                creep.betterMoveTo(creep.room.controller.pos, {
+                    range: 1,
+                    maxRooms: 1,
+                });
             }
 
             // Always be upgrading when we can
@@ -46,6 +58,10 @@ class UpgraderManager extends CreepManager {
 
             // If we have a container, we'll walk next to it if we're getting low on energy
             if (upgraderContainer) {
+                if (!upgraderContainer.store[RESOURCE_ENERGY]) {
+                    return;
+                }
+
                 const dist = creep.pos.getRangeTo(
                     upgraderContainerPos.x,
                     upgraderContainerPos.y
