@@ -241,7 +241,6 @@ const printout = (interval) => {
 
         // Stats table
         message += " ".repeat(MAX_MESSAGE_LENGTH - message.length);
-        message += " => ";
         message += formatColumn("Total", totalCPU);
         message += formatColumn("Raw", rawCPU);
         message += "\t| Intents: " + intents;
