@@ -251,7 +251,10 @@ const printout = (interval) => {
         }
 
         // Our label
-        const label = record.label.split(".").slice(-1)[0];
+        const label =
+            SORT_MODE === "default"
+                ? record.label.split(".").slice(-1)[0]
+                : record.label;
         let message = `[${prefix}] ${guidelines}${label}`;
         if (message > MAX_MESSAGE_LENGTH) {
             message = message.substring(0, MAX_MESSAGE_LENGTH);
