@@ -1,4 +1,4 @@
-const BAR_LENGTH = 96;
+const BAR_LENGTH = 110;
 const MAX_MESSAGE_LENGTH = 50;
 const DECIMAL_PLACES = 5;
 
@@ -208,6 +208,7 @@ const printout = (interval) => {
         }
         i++;
         const rawCPU = totalCPU - childCost - intents * 0.2;
+        const rawAvg = rawCPU / calls;
 
         finalRawTotal += rawCPU;
 
@@ -246,6 +247,7 @@ const printout = (interval) => {
         message += "\t| Intents: " + intents;
         message += "\t| Calls: " + calls;
         message += formatColumn("Avg", averageCPU);
+        message += formatColumn("Raw Avg", rawAvg);
         message += formatColumn("Min", minCPU);
         message += formatColumn("Max", maxCPU);
         message += formatColumn("Diff", diffCPU);
