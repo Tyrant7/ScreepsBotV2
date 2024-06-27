@@ -12,6 +12,7 @@ const {
     CONTAINER_PATHING_COST,
     ROAD_PATHING_COST,
 } = require("./constants");
+const profiler = require("./debug.profiler");
 
 const UTILITY_CONSTANTS = {
     [STRUCTURE_SPAWN]: 100,
@@ -40,12 +41,12 @@ const handleSites = (roomInfo) => {
         return;
     }
 
-    const { structures, ramparts } = deserializeBasePlan(
-        plans,
-        roomInfo.room.controller.level
+    const { structures, ramparts } = profiler.wrap("deserialize", () =>
+        deserializeBasePlan(plans, roomInfo.room.controller.level)
     );
 
     // Figure out all structures we want to build that we haven't already
+    profiler.startSample("structure list");
     const neededStructures = [];
     iterateMatrix((x, y) => {
         const structure = structures.get(x, y);
@@ -62,6 +63,8 @@ const handleSites = (roomInfo) => {
             });
         }
     });
+    profiler.endSample("structure list");
+    profiler.startSample("filter list");
     const missingStructures = neededStructures.filter(
         (s) =>
             !roomInfo.room
@@ -75,6 +78,7 @@ const handleSites = (roomInfo) => {
                 )
                 .find((t) => t.structureType === s.type)
     );
+    profiler.endSample("filter list");
 
     if (!missingStructures.length) {
         return;
@@ -82,6 +86,7 @@ const handleSites = (roomInfo) => {
 
     // Next, once we have all unbuilt sites, let's get the one with the highest utility value
     // Utility will be scored based on some constants
+    profiler.startSample("best structure");
     const bestStructure =
         missingStructures.length > 1
             ? missingStructures.reduce((best, curr) => {
@@ -101,7 +106,9 @@ const handleSites = (roomInfo) => {
     const result = roomInfo.room
         .getPositionAt(bestStructure.pos.x, bestStructure.pos.y)
         .createConstructionSite(bestStructure.type);
+    profiler.endSample("best structure");
 
+    profiler.startSample("update costmatrix");
     if (result === OK) {
         // Update our cost matrix for creeps using our better pathing system
         const roomMatrix =
@@ -132,6 +139,7 @@ const handleSites = (roomInfo) => {
                 result
         );
     }
+    profiler.endSample("update costmatrix");
 };
 
 const scoreUtility = (roomInfo, structure) => {

@@ -14,6 +14,7 @@ const { getCost } = require("./spawn.spawnUtility");
 
 const creepMaker = require("./spawn.creepMaker");
 const overlay = require("./debug.overlay");
+const profiler = require("./debug.profiler");
 
 const RESERVER_COST = getCost(creepMaker.makeReserver().body);
 
@@ -302,17 +303,23 @@ class SpawnManager {
 
         // Nudge the spawn demands in whichever direction they need to go in
         // Calculated by the handlers
+        profiler.startSample("demand");
         for (const role in demandHandlers) {
             const handler = demandHandlers[role];
-            handler(
-                roomInfo,
-                (amount) => setRoleDemand(roomInfo.room.name, role, amount),
-                (amount) => nudgeRoleDemand(roomInfo.room.name, role, amount),
-                (amount) => bumpRoleDemand(roomInfo.room.name, role, amount)
+            profiler.wrap(role, () =>
+                handler(
+                    roomInfo,
+                    (amount) => setRoleDemand(roomInfo.room.name, role, amount),
+                    (amount) =>
+                        nudgeRoleDemand(roomInfo.room.name, role, amount),
+                    (amount) => bumpRoleDemand(roomInfo.room.name, role, amount)
+                )
             );
         }
+        profiler.endSample("demand");
 
         // Track our spawning activity
+        profiler.startSample("activity");
         const inactiveSpawns = [];
         for (const spawn of roomInfo.spawns) {
             if (spawn.spawning) {
@@ -321,6 +328,7 @@ class SpawnManager {
             }
             inactiveSpawns.push(spawn);
         }
+        profiler.endSample("activity");
 
         // We'll track how many of each role we've spawned this tick to avoid
         // spawning the same creep at multiple spawns if they become open on the same tick
@@ -347,14 +355,16 @@ class SpawnManager {
                         continue;
                     }
                     spawnedThisTick[role] = thisTick + 1;
+                    profiler.endSample("spawning");
                     return newCreep;
                 }
             }
         };
 
+        profiler.startSample("spawning");
         while (inactiveSpawns.length) {
             const spawn = inactiveSpawns.pop();
-            const next = getNextSpawn();
+            const next = profiler.wrap("next spawn", () => getNextSpawn());
             if (!next) {
                 inactiveSpawns.push(spawn);
                 break;
@@ -366,6 +376,7 @@ class SpawnManager {
                 memory: next.memory,
             });
         }
+        profiler.endSample("spawning");
 
         this.drawOverlay(roomInfo);
 
