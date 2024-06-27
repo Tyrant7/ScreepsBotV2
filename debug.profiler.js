@@ -4,7 +4,7 @@ const DECIMAL_PLACES = 5;
 
 // Flood the console with empty messages to prevent lagging the client
 // with too many large profiler printouts
-const FILLER = 0;
+const FILLER = 100;
 
 const COLOR_DARK = "#2B2B2B";
 const COLOR_LIGHT = "#3B3B3B";
@@ -62,7 +62,17 @@ const initialize = () => {
         RoomPosition,
         Game.market,
     ];
-    const excludeProps = ["constructor", "toJSON", "toString", "pull", "say"];
+
+    // Any property methods that could return 0 should
+    // go here to prevent false-positives
+    const excludeProps = [
+        "constructor",
+        "toJSON",
+        "toString",
+        "pull",
+        "say",
+        "getRangeTo",
+    ];
 
     for (const type of intentPrototypes) {
         const proto = type.prototype ? type.prototype : type;
