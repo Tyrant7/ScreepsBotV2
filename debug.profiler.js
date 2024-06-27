@@ -2,9 +2,25 @@ const BAR_LENGTH = 110;
 const MAX_MESSAGE_LENGTH = 50;
 const DECIMAL_PLACES = 5;
 
+/**
+ * One of the following sort modes, else defaults to call order:
+ * - default
+ * - total
+ * - raw
+ * - intents
+ * - calls
+ * - avg
+ * - rawAvg
+ * - min
+ * - max
+ * - diff
+ */
+const SORT_MODE = "default";
+const SORT_BY_ASCENDING = false;
+
 // Flood the console with empty messages to prevent lagging the client
 // with too many large profiler printouts
-const FILLER = 100;
+const FILLER = 0;
 
 const COLOR_DARK = "#2B2B2B";
 const COLOR_LIGHT = "#3B3B3B";
@@ -177,10 +193,10 @@ const printout = (interval) => {
     };
 
     let output = "";
-    let dark = false;
     let i = 0;
 
     let finalRawTotal = 0;
+    let rows = [];
 
     const recordValues = Object.values(records);
     for (const record of recordValues) {
@@ -223,13 +239,15 @@ const printout = (interval) => {
 
         // Figure out where to place our guidelines
         let guidelines = "";
-        let indent = record.layer;
-        if (indent > 1) {
-            guidelines += "|  ".repeat(indent - 1);
-        }
-        if (indent > 0) {
-            guidelines += "|--";
-            indent--;
+        if (SORT_MODE === "default") {
+            let indent = record.layer;
+            if (indent > 1) {
+                guidelines += "|  ".repeat(indent - 1);
+            }
+            if (indent > 0) {
+                guidelines += "|--";
+                indent--;
+            }
         }
 
         // Our label
@@ -250,11 +268,35 @@ const printout = (interval) => {
         message += formatColumn("Min", minCPU);
         message += formatColumn("Max", maxCPU);
         message += formatColumn("Diff", diffCPU);
+        rows.push({
+            message: message,
+            total: totalCPU,
+            raw: rawCPU,
+            intents: intents,
+            calls: calls,
+            avg: averageCPU,
+            rawAvg: rawAvg,
+            min: minCPU,
+            max: maxCPU,
+            diff: diffCPU,
+        });
+    }
 
+    if (SORT_MODE !== "default") {
+        rows.sort((a, b) => {
+            if (SORT_BY_ASCENDING) {
+                return a[SORT_MODE] - b[SORT_MODE];
+            }
+            return b[SORT_MODE] - a[SORT_MODE];
+        });
+    }
+
+    let dark = false;
+    for (const row of rows) {
         // Append new message
         output += `<div style="background:${
             dark ? COLOR_DARK : COLOR_LIGHT
-        };">${message}<div>`;
+        };">${row.message}<div>`;
         dark = !dark;
     }
 
