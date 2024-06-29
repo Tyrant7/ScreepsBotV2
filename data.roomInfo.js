@@ -1,7 +1,7 @@
 const remoteUtility = require("./remote.remoteUtility");
 const estimateTravelTime = require("./util.estimateTravelTime");
 const { getPlanData, keys } = require("./base.planningUtility");
-const { roles } = require("./constants");
+const { roles, storageThresholds } = require("./constants");
 const { MINER_WORK } = require("./spawn.spawnConstants");
 const profiler = require("./debug.profiler");
 
@@ -495,6 +495,15 @@ class RoomInfo {
 
         // If we don't have any requests, let's add the storage
         if (!validDropoffs.length && this.room.storage) {
+            // If it's energy and we're above our energy threshold though, we'll skip this
+            if (
+                resourceType === RESOURCE_ENERGY &&
+                this.room.storage.store[RESOURCE_ENERGY] >
+                    storageThresholds[this.room.controller.level]
+            ) {
+                return validDropoffs;
+            }
+
             // It won't matter how much, what type, or who's assigned
             // We will accept all haulers
             return [
