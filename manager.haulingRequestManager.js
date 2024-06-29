@@ -1,6 +1,7 @@
 const RoomInfo = require("./data.roomInfo");
 const remoteUtility = require("./remote.remoteUtility");
 const { getPlanData, keys } = require("./base.planningUtility");
+const profiler = require("./debug.profiler");
 
 class HaulingRequestManager {
     /**
@@ -15,6 +16,7 @@ class HaulingRequestManager {
      * @param {RoomInfo} roomInfo The base to create requests for.
      */
     generateBasicRequests(roomInfo) {
+        profiler.startSample("basic structures");
         const spawnStructuresAndTowers = roomInfo.room.find(FIND_STRUCTURES, {
             filter: (s) =>
                 s.structureType === STRUCTURE_EXTENSION ||
@@ -28,6 +30,8 @@ class HaulingRequestManager {
                 [spawnStructure.id]
             );
         }
+        profiler.endSample("basic structures");
+        profiler.startSample("upgraders");
         const upgraderContainer = roomInfo.getUpgraderContainer();
         if (roomInfo.upgraders.length && upgraderContainer) {
             // Request energy for our container
@@ -37,8 +41,10 @@ class HaulingRequestManager {
                 [upgraderContainer.id]
             );
         }
+        profiler.endSample("upgraders");
 
         // Add miner containers for our base
+        profiler.startSample("containers");
         const sourceContainers = getPlanData(
             roomInfo.room.name,
             keys.sourceContainerPositions
@@ -55,8 +61,10 @@ class HaulingRequestManager {
                 containerPos
             );
         }
+        profiler.endSample("containers");
 
         // Here we'll add all containers as pickup requests, and track remote rooms
+        profiler.startSample("remotes");
         const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
         if (remotes) {
             const importantRooms = new Set();
@@ -131,6 +139,7 @@ class HaulingRequestManager {
                 // Tombstones and ruins
             }
         }
+        profiler.endSample("remotes");
     }
 }
 
