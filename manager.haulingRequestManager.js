@@ -17,12 +17,11 @@ class HaulingRequestManager {
      */
     generateBasicRequests(roomInfo) {
         profiler.startSample("basic structures");
-        const spawnStructuresAndTowers = roomInfo.room.find(FIND_STRUCTURES, {
-            filter: (s) =>
-                s.structureType === STRUCTURE_EXTENSION ||
-                s.structureType === STRUCTURE_SPAWN ||
-                s.structureType === STRUCTURE_TOWER,
-        });
+        const spawnStructuresAndTowers = roomInfo.structures[
+            STRUCTURE_SPAWN
+        ].concat(roomInfo.structures[STRUCTURE_EXTENSION]).concat(
+            roomInfo.structures[STRUCTURE_TOWER]
+        );
         for (const spawnStructure of spawnStructuresAndTowers) {
             roomInfo.createDropoffRequest(
                 spawnStructure.store.getFreeCapacity(RESOURCE_ENERGY),

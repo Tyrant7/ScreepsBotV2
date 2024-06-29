@@ -303,23 +303,9 @@ class RemotePlanner {
 
         // To start, we can initialize the matrix for our main room with our existing structures
         matrices[roomInfo.room.name] = new PathFinder.CostMatrix();
-        roomInfo.room
-            .find(FIND_STRUCTURES, {
-                filter: { structureType: STRUCTURE_ROAD },
-            })
-            .forEach((s) => {
-                if (s.structureType === STRUCTURE_ROAD) {
-                    matrices[roomInfo.room.name].set(
-                        s.pos.x,
-                        s.pos.y,
-                        PLANNING_ROAD
-                    );
-                } else if (s.structureType !== STRUCTURE_RAMPART || !s.my) {
-                    // Don't path over any structures except ramparts
-                    // Not including containers here either
-                    matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, 255);
-                }
-            });
+        roomInfo.structures[STRUCTURE_ROAD].forEach((s) => {
+            matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, PLANNING_ROAD);
+        });
 
         for (const remoteRoom of remoteRooms) {
             matrices[remoteRoom] = new PathFinder.CostMatrix();

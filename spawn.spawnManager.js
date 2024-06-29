@@ -170,7 +170,7 @@ const demandHandlers = {
         // TODO //
     },
     [roles.mineralMiner]: (roomInfo, set, nudge, bump) => {
-        const amount = roomInfo.room.find(STRUCTURE_EXTRACTOR)[0] ? 1 : 0;
+        const amount = roomInfo.structures[STRUCTURE_EXTRACTOR] ? 1 : 0;
         set(amount);
     },
 };
@@ -311,7 +311,7 @@ class SpawnManager {
         // Track our spawning activity
         profiler.startSample("activity");
         const inactiveSpawns = [];
-        for (const spawn of roomInfo.spawns) {
+        for (const spawn of roomInfo.structures[STRUCTURE_SPAWN]) {
             if (spawn.spawning) {
                 this.showVisuals(spawn);
                 continue;
@@ -371,7 +371,9 @@ class SpawnManager {
         this.drawOverlay(roomInfo);
 
         // Track our spawn usage
-        return roomInfo.spawns.length - inactiveSpawns.length;
+        return (
+            roomInfo.structures[STRUCTURE_SPAWN].length - inactiveSpawns.length
+        );
     }
 
     /**

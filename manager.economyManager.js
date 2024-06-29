@@ -53,7 +53,7 @@ class EconomyManager {
 
         // Based on our new estimates, we should be able to add/drop remotes according
         // to what we can or can no longer support
-        const maxSpawnUsage = roomInfo.spawns.length;
+        const maxSpawnUsage = roomInfo.structures[STRUCTURE_SPAWN].length;
         const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
         if (base.spawnUsage > maxSpawnUsage - DROP_THRESHOLD) {
             // Drop a remote each tick until our spawn usage is under the threshold
@@ -206,7 +206,10 @@ class EconomyManager {
             const spawnDisplay = spawnEstimate.toFixed(3);
             overlay.addHeading(roomInfo.room.name, "Spawns");
             overlay.addText(roomInfo.room.name, {
-                "Spawn Usage": spawnDisplay + " / " + roomInfo.spawns.length,
+                "Spawn Usage":
+                    spawnDisplay +
+                    " / " +
+                    roomInfo.structures[STRUCTURE_SPAWN].length,
             });
         }
         if (DEBUG.trackActiveRemotes) {

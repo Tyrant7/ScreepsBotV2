@@ -55,11 +55,12 @@ class RoomInfo {
         profiler.endSample("group creeps");
 
         profiler.startSample("finds");
-        this.spawns = this.room.find(FIND_MY_SPAWNS);
+        this.allStructures = this.room.find(FIND_STRUCTURES);
+        this.structures = _.groupBy(this.allStructures, "structureType");
         this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES);
 
         // Used for distance calculations of hauler orders
-        this.core = this.spawns[0].pos;
+        this.core = this.structures[STRUCTURE_SPAWN][0].pos;
 
         // Clear tick caches
         this.cachedMiningSpots = null;
@@ -132,7 +133,7 @@ class RoomInfo {
             return this.wantedStructures;
         }
 
-        const structures = this.room.find(FIND_STRUCTURES);
+        const structures = [...this.allStructures];
         const remotePlans = remoteUtility.getRemotePlans(this.room.name);
         for (const remote of remotePlans) {
             if (!remote.active) {
