@@ -240,6 +240,9 @@ module.exports.loop = function () {
     }
     // We'll process all haulers after ordinary creeps, in case other creeps created orders this tick
     for (const info of Object.values(roomInfos)) {
+        // Cleanup orders for this tick before running haulers
+        info.finalizeRequests();
+
         for (const hauler of info.haulers) {
             profiler.wrap(hauler.memory.role, () =>
                 creepRoleMap[hauler.memory.role].processCreep(hauler, info)

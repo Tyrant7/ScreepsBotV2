@@ -14,6 +14,9 @@ class RoomInfo {
         this.room = room;
         this.sources = this.room.find(FIND_SOURCES);
         this.mineral = this.room.find(FIND_MINERALS)[0];
+
+        this._pickupRequests = {};
+        this._dropoffRequests = {};
     }
 
     /**
@@ -64,9 +67,6 @@ class RoomInfo {
 
         // Clear tick caches
         this.cachedMiningSpots = null;
-
-        this._pickupRequests = [];
-        this._dropoffRequests = [];
         profiler.endSample("finds");
     }
 
@@ -360,8 +360,17 @@ class RoomInfo {
 
     // #region Hauling
 
+    hashPickupRequest(pos, resourceType) {
+        return `${pos.x + pos.y * 50 + pos.roomName},${resourceType}`;
+    }
+
+    hashDropoffRequest(dropoffIDs, amount, resourceType) {
+        return `${dropoffIDs.toString()}+${amount}${resourceType}`;
+    }
+
     /**
-     * Creates a pickup request for haulers with the given parameters. Pickup requests under the same position will be grouped.
+     * Creates a pickup request for haulers with the given parameters.
+     * Pickup requests under the same position and resource type will be grouped.
      * @param {number} amount The amount.
      * @param {ResourceConstant} resourceType The type of resource.
      * @param {number} fillrate The approximate rate at which the resource will accumulate at the pickup location.
@@ -375,39 +384,29 @@ class RoomInfo {
             return;
         }
 
-        // If a pickup request already exists for this position, let's group it
-        const existingRequest = this._pickupRequests.find((request) => {
-            return (
-                request.pos.isEqualTo(pos) &&
-                request.resourceType === resourceType
-            );
-        });
-        if (existingRequest) {
+        // If a pickup request already exists for this tick at this position, let's group it
+        const hash = this.hashPickupRequest(pos, resourceType);
+        const existingRequest = this._pickupRequests[hash];
+        if (existingRequest && existingRequest.tick === Game.time) {
             existingRequest.amount += amount;
             existingRequest.fillrate += fillrate;
             return;
         }
 
-        // Search for haulers currently assigned to this job
-        const assignedHaulers = this.haulers
-            .filter((h) => {
-                return (
-                    h.memory.pickup &&
-                    h.memory.pickup.pos.x === pos.x &&
-                    h.memory.pickup.pos.y === pos.y &&
-                    h.memory.pickup.pos.roomName === pos.roomName
-                );
-            })
-            .map((h) => h.id);
-        this._pickupRequests.push({
-            requestID: this._pickupRequests.length,
+        // Retain knowledge of assigned haulers between ticks
+        const assignedHaulers = this._pickupRequests[hash]
+            ? this._pickupRequests[hash].assignedHaulers
+            : [];
+        this._pickupRequests[hash] = {
+            requestID: hash,
+            tick: Game.time,
             amount,
             resourceType,
             fillrate,
             isSource,
             pos,
             assignedHaulers,
-        });
+        };
     }
 
     /**
@@ -421,19 +420,39 @@ class RoomInfo {
         if (amount === 0) {
             return;
         }
-        const assignedHaulers = this.haulers
-            .filter(
-                (h) =>
-                    h.memory.dropoff && dropoffIDs.includes(h.memory.dropoff.id)
-            )
-            .map((h) => h.id);
-        this._dropoffRequests.push({
-            requestID: this._dropoffRequests.length,
+        const hash = this.hashDropoffRequest(dropoffIDs, amount, resourceType);
+
+        // Retain knowledge of assigned haulers between ticks
+        const assignedHaulers = this._dropoffRequests[hash]
+            ? this._dropoffRequests[hash].assignedHaulers
+            : [];
+        this._dropoffRequests[hash] = {
+            requestID: hash,
+            tick: Game.time,
             amount,
             resourceType,
             dropoffIDs,
             assignedHaulers,
-        });
+        };
+    }
+
+    /**
+     * Filters out any outdated requests from previous ticks. Should be called after
+     * all requests for this tick have been created to avoid loss of information when
+     * carrying over request data from the previous tick.
+     */
+    finalizeRequests() {
+        // Let's filter out any outdated requests here
+        for (const hash in this._pickupRequests) {
+            if (this._pickupRequests[hash].tick !== Game.time) {
+                delete this._pickupRequests[hash];
+            }
+        }
+        for (const hash in this._dropoffRequests) {
+            if (this._dropoffRequests[hash].tick !== Game.time) {
+                delete this._dropoffRequests[hash];
+            }
+        }
     }
 
     /**
@@ -443,11 +462,14 @@ class RoomInfo {
      * @returns {{}[]} An array of pickup requests.
      */
     getPickupRequests(creep) {
-        // Add a property that tells us if this pickup point has enough haulers assigned to fill its request or not
-        this._pickupRequests.forEach((pickup) => {
-            pickup.assignedHaulers = pickup.assignedHaulers.filter((hauler) =>
-                Game.getObjectById(hauler)
+        const requests = Object.values(this._pickupRequests);
+        requests.forEach((pickup) => {
+            // Filter out any assigned haulers that are no longer alive
+            pickup.assignedHaulers = pickup.assignedHaulers.filter((h) =>
+                Game.getObjectById(h)
             );
+
+            // Let's also figure out if this pickup point has enough haulers assigned to fill its request or not
             const total = pickup.assignedHaulers.reduce((total, currID) => {
                 return (
                     total + Game.getObjectById(currID).store.getFreeCapacity()
@@ -455,7 +477,8 @@ class RoomInfo {
             }, 0);
             pickup.hasEnough = total >= pickup.amount;
         });
-        return this._pickupRequests.filter((pickup) => {
+
+        return requests.filter((pickup) => {
             return (
                 !pickup.isSource ||
                 // Using our core as our distance since we don't want further haulers accepting the orders
@@ -475,16 +498,20 @@ class RoomInfo {
      */
     getDropoffRequests(resourceType) {
         // Filter for the correct request type
-        const validDropoffs = this._dropoffRequests.filter((dropoff) => {
-            return dropoff.resourceType === resourceType;
-        });
+        const validDropoffs = Object.values(this._dropoffRequests).filter(
+            (dropoff) => {
+                return dropoff.resourceType === resourceType;
+            }
+        );
 
-        // Add a property that tells us if this dropoff point has enough haulers assigned to it to fill its request or not
-        this._dropoffRequests.forEach((dropoff) => {
-            // Filter to exclude haulers that no longer exist
+        // Add a few properties to each pickup request
+        validDropoffs.forEach((dropoff) => {
+            // Filter out any assigned haulers that are no longer alive
             dropoff.assignedHaulers = dropoff.assignedHaulers.filter((hauler) =>
                 Game.getObjectById(hauler)
             );
+
+            // Let's also figure out if this pickup point has enough haulers assigned to fill its request or not
             const total = dropoff.assignedHaulers.reduce((total, currID) => {
                 return (
                     total +
@@ -525,9 +552,7 @@ class RoomInfo {
      * @param {string} haulerID The ID of the hauler to add.
      */
     acceptPickupRequest(requestID, haulerID) {
-        const request = this._pickupRequests.find(
-            (r) => r.requestID === requestID
-        );
+        const request = this._pickupRequests[requestID];
         if (request) {
             request.assignedHaulers.push(haulerID);
         }
@@ -539,9 +564,7 @@ class RoomInfo {
      * @param {string} haulerID The ID of the hauler to add.
      */
     acceptDropoffRequest(requestID, haulerID) {
-        const request = this._dropoffRequests.find(
-            (r) => r.requestID === requestID
-        );
+        const request = this._dropoffRequests[requestID];
         if (request) {
             request.assignedHaulers.push(haulerID);
         }
@@ -553,9 +576,7 @@ class RoomInfo {
      * @param {string} haulerID The ID of the hauler to remove.
      */
     unassignPickup(requestID, haulerID) {
-        const request = this._pickupRequests.find(
-            (r) => r.requestID === requestID
-        );
+        const request = this._pickupRequests[requestID];
         if (request) {
             request.assignedHaulers = request.assignedHaulers.filter(
                 (id) => id !== haulerID
@@ -570,9 +591,7 @@ class RoomInfo {
      * @param {string} haulerID The ID of the hauler to remove.
      */
     unassignDropoff(requestID, haulerID) {
-        const request = this._dropoffRequests.find(
-            (r) => r.requestID === requestID
-        );
+        const request = this._dropoffRequests[requestID];
         if (request) {
             request.assignedHaulers = request.assignedHaulers.filter(
                 (id) => id !== haulerID
