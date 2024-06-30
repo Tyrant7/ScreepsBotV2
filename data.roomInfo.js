@@ -30,6 +30,19 @@ class RoomInfo {
         this.mineral = Game.getObjectById(this.mineral.id);
         profiler.endSample("cache");
 
+        console.log(
+            "Dropoff: (" + Object.keys(this._dropoffRequests).length + ")"
+        );
+        console.log(
+            Object.values(this._dropoffRequests).map(
+                (r) => Game.getObjectById(r.dropoffIDs[0]).pos
+            )
+        );
+        console.log(
+            "Pickup: (" + Object.keys(this._pickupRequests).length + ")"
+        );
+        console.log(Object.values(this._pickupRequests).map((r) => r.pos));
+
         // Find all creeps that this room is responsible for, not just ones in it
         profiler.startSample("group creeps");
         this.creeps = Object.values(Game.creeps).filter(
