@@ -135,11 +135,19 @@ const demandHandlers = {
         }
 
         // Priority #2: do all haulers have dropoff points?
-        const fullHaulers = roomInfo.haulers.filter(
-            (hauler) =>
-                hauler.store[RESOURCE_ENERGY] &&
-                !haulerUtility.getAssignedDropoffID(hauler)
-        ).length;
+        const fullHaulers = roomInfo.haulers.filter((hauler) => {
+            const full = hauler.store[RESOURCE_ENERGY];
+            const dropoff = haulerUtility.getAssignedDropoffID(hauler);
+            const storageDropoff =
+                roomInfo.room.storage && roomInfo.room.storage.id === dropoff;
+            const storageAboveThreshold =
+                roomInfo.room.storage &&
+                roomInfo.room.storage.store[RESOURCE_ENERGY] >
+                    storageThresholds[roomInfo.room.controller.level];
+            return (
+                full && (!dropoff || (storageDropoff && storageAboveThreshold))
+            );
+        }).length;
         if (fullHaulers > RAISE_UPGRADER_THRESHOLD) {
             return nudge(fullHaulers);
         }
