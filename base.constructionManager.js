@@ -32,6 +32,9 @@ const DEFENSE_UTILITY_BONUS = 200;
 
 const MAX_SITES = 2;
 
+let cachedRCL = -1;
+let cachedMissingStructures = [];
+
 const handleSites = (roomInfo) => {
     if (roomInfo.constructionSites.length >= MAX_SITES) {
         return;
@@ -41,46 +44,54 @@ const handleSites = (roomInfo) => {
         return;
     }
 
-    const { structures, ramparts } = profiler.wrap("deserialize", () =>
-        deserializeBasePlan(plans, roomInfo.room.controller.level)
-    );
+    // Update our list of cached structures if it's been invalidated
+    const rcl = roomInfo.room.controller.level;
+    if (!cachedMissingStructures || cachedRCL !== rcl) {
+        const { structures, ramparts } = profiler.wrap("deserialize", () =>
+            deserializeBasePlan(plans, rcl)
+        );
 
-    // Figure out all structures we want to build that we haven't already
-    profiler.startSample("structure list");
-    const neededStructures = [];
-    iterateMatrix((x, y) => {
-        const structure = structures.get(x, y);
-        if (structure) {
-            neededStructures.push({
-                type: numberToStructure[structure],
-                pos: { x, y },
-            });
-        }
-        if (ramparts.get(x, y)) {
-            neededStructures.push({
-                type: STRUCTURE_RAMPART,
-                pos: { x, y },
-            });
-        }
-    });
-    profiler.endSample("structure list");
-    profiler.startSample("filter list");
-    const missingStructures = neededStructures.filter(
-        (s) =>
-            !roomInfo.room
-                .lookForAt(LOOK_STRUCTURES, s.pos.x, s.pos.y)
-                .concat(
-                    roomInfo.room.lookForAt(
-                        LOOK_CONSTRUCTION_SITES,
-                        s.pos.x,
-                        s.pos.y
+        // Figure out all structures we want to build
+        profiler.startSample("structure list");
+        const wantedStructures = [];
+        iterateMatrix((x, y) => {
+            const structure = structures.get(x, y);
+            if (structure) {
+                wantedStructures.push({
+                    type: numberToStructure[structure],
+                    pos: { x, y },
+                });
+            }
+            if (ramparts.get(x, y)) {
+                wantedStructures.push({
+                    type: STRUCTURE_RAMPART,
+                    pos: { x, y },
+                });
+            }
+        });
+
+        // Find the ones we haven't already
+        profiler.startSample("filter list");
+        cachedMissingStructures = wantedStructures.filter(
+            (s) =>
+                !roomInfo.room
+                    .lookForAt(LOOK_STRUCTURES, s.pos.x, s.pos.y)
+                    .concat(
+                        roomInfo.room.lookForAt(
+                            LOOK_CONSTRUCTION_SITES,
+                            s.pos.x,
+                            s.pos.y
+                        )
                     )
-                )
-                .find((t) => t.structureType === s.type)
-    );
-    profiler.endSample("filter list");
+                    .find((t) => t.structureType === s.type)
+        );
+        profiler.endSample("filter list");
 
-    if (!missingStructures.length) {
+        cachedRCL = rcl;
+        profiler.endSample("structure list");
+    }
+
+    if (!cachedMissingStructures.length) {
         return;
     }
 
@@ -88,8 +99,8 @@ const handleSites = (roomInfo) => {
     // Utility will be scored based on some constants
     profiler.startSample("best structure");
     const bestStructure =
-        missingStructures.length > 1
-            ? missingStructures.reduce((best, curr) => {
+        cachedMissingStructures.length > 1
+            ? cachedMissingStructures.reduce((best, curr) => {
                   if (best.score === undefined) {
                       best = {
                           score: scoreUtility(roomInfo, best),
@@ -101,7 +112,7 @@ const handleSites = (roomInfo) => {
                       ? { score: currScore, structure: curr }
                       : best;
               }).structure
-            : missingStructures[0];
+            : cachedMissingStructures[0];
 
     const result = roomInfo.room
         .getPositionAt(bestStructure.pos.x, bestStructure.pos.y)
@@ -110,7 +121,13 @@ const handleSites = (roomInfo) => {
 
     profiler.startSample("update costmatrix");
     if (result === OK) {
-        // Update our cost matrix for creeps using our better pathing system
+        // If it went through, let's remove it from the structures we want
+        cachedMissingStructures.splice(
+            cachedMissingStructures.indexOf(bestStructure),
+            1
+        );
+
+        // Let's also update our cost matrix for creeps using our better pathing system
         const roomMatrix =
             getCachedPathMatrix(pathSets.default, roomInfo.room.name) ||
             generateDefaultPathMatrix(roomInfo.room.name);

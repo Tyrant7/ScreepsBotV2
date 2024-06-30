@@ -15,7 +15,7 @@ const DECIMAL_PLACES = 5;
  * - max
  * - diff
  */
-const SORT_MODE = "default";
+const SORT_MODE = "rawAvg";
 const SORT_BY_ASCENDING = false;
 
 const PRINTOUT_INTERVAL = 10;
