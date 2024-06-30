@@ -32,6 +32,8 @@ const DEFENSE_UTILITY_BONUS = 200;
 
 const MAX_SITES = 2;
 
+const RESET_CACHE_INTERVAL = 50;
+
 let cachedRCL = -1;
 let cachedMissingStructures = [];
 
@@ -44,9 +46,14 @@ const handleSites = (roomInfo) => {
         return;
     }
 
-    // Update our list of cached structures if it's been invalidated
+    // Update our list of cached structures if it's been invalidated,
+    // or every once and a while to account for structures potentially being destroyed
     const rcl = roomInfo.room.controller.level;
-    if (!cachedMissingStructures || cachedRCL !== rcl) {
+    if (
+        !cachedMissingStructures ||
+        cachedRCL !== rcl ||
+        Game.time % RESET_CACHE_INTERVAL === 0
+    ) {
         const { structures, ramparts } = profiler.wrap("deserialize", () =>
             deserializeBasePlan(plans, rcl)
         );
