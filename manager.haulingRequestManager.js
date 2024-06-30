@@ -23,11 +23,17 @@ class HaulingRequestManager {
             roomInfo.structures[STRUCTURE_TOWER]
         );
         for (const spawnStructure of spawnStructuresAndTowers) {
-            roomInfo.createDropoffRequest(
-                spawnStructure.store.getFreeCapacity(RESOURCE_ENERGY),
-                RESOURCE_ENERGY,
-                [spawnStructure.id]
-            );
+            const freeCapacity =
+                spawnStructure.store.getFreeCapacity(RESOURCE_ENERGY);
+            if (freeCapacity) {
+                profiler.wrap("create request", () =>
+                    roomInfo.createDropoffRequest(
+                        freeCapacity,
+                        RESOURCE_ENERGY,
+                        [spawnStructure.id]
+                    )
+                );
+            }
         }
         profiler.endSample("basic structures");
         profiler.startSample("upgraders");
