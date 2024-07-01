@@ -48,6 +48,8 @@ const ROAD_PATHING_COST = 1;
  */
 const INTERRUPT_PATHING_COST = 3;
 
+const REPLAN_REMOTE_INTERVAL = 500;
+
 module.exports = {
     roles,
     pathSets,
@@ -56,4 +58,5 @@ module.exports = {
     INTERRUPT_PATHING_COST,
     storageThresholds,
     directionDelta,
+    REPLAN_REMOTE_INTERVAL,
 };

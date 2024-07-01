@@ -2,7 +2,7 @@ const RemotePlanner = require("./remote.remotePlanner");
 const remotePlanner = new RemotePlanner();
 
 const utility = require("./remote.remoteUtility");
-const { pathSets } = require("./constants");
+const { pathSets, REPLAN_REMOTE_INTERVAL } = require("./constants");
 const { cachePathMatrix } = require("./extension.betterPathing");
 
 const overlay = require("./debug.overlay");
@@ -62,7 +62,8 @@ class RemoteManager {
             roomInfo.room.name
         );
         const existingPlans = utility.getRemotePlans(roomInfo.room.name);
-        let shouldReplan = !existingPlans;
+        let shouldReplan =
+            !existingPlans || Game.time % REPLAN_REMOTE_INTERVAL === 0;
         if (!shouldReplan) {
             for (const room of remoteRooms) {
                 // If we're lacking scouting data, we'll skip this room
