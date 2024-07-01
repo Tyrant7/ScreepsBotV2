@@ -141,7 +141,6 @@ class HaulerManager extends CreepManager {
 
         function acceptOrder(dropoff, pos, path) {
             roomInfo.acceptDropoffRequest(dropoff.requestID, creep.id);
-            dropoff.assignedHaulers.push(creep.id);
             creep.injectPath(path, pos);
 
             // Let's construct the object we want to store in memory
