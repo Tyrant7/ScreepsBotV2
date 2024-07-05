@@ -8,7 +8,7 @@ class StarterHaulerManager extends HaulerManager {
             creep.memory.role = roles.scout;
             return null;
         }
-        super.createTask(creep, roomInfo);
+        return super.createTask(creep, roomInfo);
     }
 }
 
