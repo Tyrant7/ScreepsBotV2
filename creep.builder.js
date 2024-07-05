@@ -64,7 +64,7 @@ class BuilderManager extends CreepManager {
             }
 
             targetSite = targetRoom
-                .getPositionAt(base.buildTarget.x, base.buildTarget.y)
+                .getPositionAt(buildTarget.x, buildTarget.y)
                 .lookFor(LOOK_CONSTRUCTION_SITES)[0];
 
             // Valid target, keep it in the queue
