@@ -187,7 +187,11 @@ const demandHandlers = {
  * Here we can subscribe to any important colony events that might
  * impact our spawn demands, like the adding or dropping of remotes.
  */
-const { onRemoteAdd, onRemoteDrop } = require("./event.colonyEvents");
+const {
+    onRemoteAdd,
+    onRemoteDrop,
+    onRCLUpgrade,
+} = require("./event.colonyEvents");
 const { MINER_WORK } = require("./spawn.spawnConstants");
 
 const getDemands = (roomInfo, remote) => {
@@ -245,6 +249,15 @@ onRemoteDrop.subscribe((roomInfo, remote) => {
     if (alone) {
         bumpRoleDemand(roomInfo.room.name, roles.reserver, -1, true);
     }
+});
+
+onRCLUpgrade.subscribe((roomInfo, newRCL) => {
+    // Here we'll bump upgrader demand down to make way for new builders
+    bumpRoleDemand(
+        roomInfo.room.name,
+        roles.upgrader,
+        -MIN_MAX_DEMAND[roles.builder].max
+    );
 });
 
 /**
