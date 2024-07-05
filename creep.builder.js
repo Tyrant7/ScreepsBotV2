@@ -11,6 +11,31 @@ class BuilderManager extends CreepManager {
      * @returns The best fitting task object for this creep.
      */
     createTask(creep, roomInfo) {
+        if (creep.memory.lastBuilt) {
+            const repairTarget = creep.memory.lastBuilt;
+            delete creep.memory.lastBuilt;
+
+            // Make sure we repair the constructed structure up to our repair threshold
+            const threshold = REPAIR_THRESHOLDS[repairTarget.structureType];
+            if (threshold) {
+                const constructed = creep.room
+                    .lookForAt(
+                        LOOK_STRUCTURES,
+                        repairTarget.pos.x,
+                        repairTarget.pos.y
+                    )
+                    .filter(
+                        (s) => s.structureType === repairTarget.structureType
+                    );
+                if (
+                    constructed &&
+                    constructed.hits / constructed.hitsMax < threshold
+                ) {
+                    return this.createRepairTask(constructed.id, threshold);
+                }
+            }
+        }
+
         const base = Memory.bases[roomInfo.room.name];
         if (!base) {
             return null;
@@ -47,14 +72,15 @@ class BuilderManager extends CreepManager {
                 base.buildTargets.unshift(buildTarget);
             }
         }
-        return this.createBuildTask(targetSite.id);
+        return this.createBuildTask(targetSite);
     }
 
-    createBuildTask(targetID) {
+    createBuildTask(targetSite) {
         const actionStack = [
-            function (creep, buildTargetID) {
-                const target = Game.getObjectById(buildTargetID);
+            function (creep, { targetID, pos, structureType }) {
+                const target = Game.getObjectById(targetID);
                 if (!target) {
+                    creep.memory.lastBuilt = { pos, structureType };
                     return true;
                 }
                 if (creep.build(target) === ERR_NOT_IN_RANGE) {
@@ -72,8 +98,46 @@ class BuilderManager extends CreepManager {
                 }
             },
         ];
-        return new Task(targetID, "build", actionStack);
+        return new Task(
+            {
+                targetID: targetSite.id,
+                pos: targetSite.pos,
+                structureType: targetSite.structureType,
+            },
+            "build",
+            actionStack
+        );
+    }
+
+    createRepairTask(targetID, threshold) {
+        const actionStack = [
+            function (creep, { targetID, threshold }) {
+                const target = Game.getObjectById(targetID);
+                if (!target || target.hits / target.hitsMax >= threshold) {
+                    return true;
+                }
+                if (creep.repair(target) === ERR_NOT_IN_RANGE) {
+                    creep.betterMoveTo(target, {
+                        range: 2,
+                        pathSet: pathSets.default,
+                    });
+                } else {
+                    // We'll always have a dropoff request open for haulers
+                    roomInfo.createDropoffRequest(
+                        creep.store.getCapacity(),
+                        RESOURCE_ENERGY,
+                        [creep.id]
+                    );
+                }
+            },
+        ];
+        return new Task({ targetID, threshold }, "repair", actionStack);
     }
 }
+
+const REPAIR_THRESHOLDS = {
+    [STRUCTURE_RAMPART]: 0.01,
+    [STRUCTURE_WALL]: 0.005,
+};
 
 module.exports = BuilderManager;
