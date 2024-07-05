@@ -50,6 +50,14 @@ const makeHauler = (energy) => {
     };
 };
 
+const makeBabyHauler = () => {
+    return {
+        body: [MOVE, CARRY],
+        name: "Baby Hauler " + Game.time + " [" + 1 + "]",
+        memory: { role: roles.hauler },
+    };
+};
+
 const makeReserver = () => {
     // It's technically possible with 1 CLAIM 1 MOVE, but give it extra to account for
     // imperfections in pathing and spawning priorities
@@ -207,6 +215,7 @@ const makeMiniDefender = (desiredLevel, maxCost) => {
 module.exports = {
     makeMiner,
     makeHauler,
+    makeBabyHauler,
     makeReserver,
     makeUpgrader,
     makeBuilder,

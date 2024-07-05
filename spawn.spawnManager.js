@@ -289,7 +289,13 @@ const spawnsByRole = {
         }
     },
     [roles.miner]: (roomInfo) => creepMaker.makeMiner(getMinEnergy(roomInfo)),
-    [roles.hauler]: (roomInfo) => creepMaker.makeHauler(getMinEnergy(roomInfo)),
+    [roles.hauler]: (roomInfo) => {
+        if (roomInfo.haulers.length) {
+            return creepMaker.makeHauler(getMinEnergy(roomInfo));
+        }
+        // If we're just starting out, we'll make a recovery hauler
+        return creepMaker.makeBabyHauler();
+    },
     [roles.upgrader]: (roomInfo) =>
         creepMaker.makeUpgrader(roomInfo.room.energyCapacityAvailable),
     [roles.scout]: (roomInfo) => creepMaker.makeScout(),
