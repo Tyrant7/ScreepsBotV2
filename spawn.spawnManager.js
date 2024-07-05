@@ -292,6 +292,7 @@ const spawnsByRole = {
     [roles.hauler]: (roomInfo) => {
         if (
             roomInfo.haulers.length === 0 &&
+            roomInfo.starterHaulers.length === 0 &&
             roomInfo.room.controller.level === 1
         ) {
             // If we're just starting out, we'll make a special small hauler
