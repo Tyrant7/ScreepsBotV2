@@ -15,25 +15,37 @@ class BuilderManager extends CreepManager {
         if (!base) {
             return null;
         }
-        const buildTarget = base.buildTargets.slice(-1)[0];
-        if (!buildTarget) {
-            creep.say("No targets");
-            return null;
-        }
-        const targetRoom = Game.rooms[buildTarget.roomName];
-        if (!targetRoom) {
-            return new Task(
-                { roomName: targetRoom, maxRooms: 16, maxOps: 4500 },
-                "move",
-                [this.basicActions.moveToRoom]
-            );
-        }
-        const targetSite = targetRoom
-            .getPositionAt(base.buildTarget.x, base.buildTarget.y)
-            .lookFor(LOOK_CONSTRUCTION_SITES)[0];
-        if (!targetSite) {
-            creep.say("No Site");
-            return null;
+
+        // Look for the first unbuilt target, removing all built target from the queue
+        let targetSite;
+        while (!targetSite) {
+            // Ensure we still have targets
+            const buildTarget = base.buildTargets.shift();
+            if (!buildTarget) {
+                creep.say("No targets");
+                return null;
+            }
+
+            // Move to our target's room
+            const targetRoom = Game.rooms[buildTarget.roomName];
+            if (!targetRoom) {
+                // This is a valid target, push it back into the queue
+                base.buildTargets.unshift(buildTarget);
+                return new Task(
+                    { roomName: targetRoom, maxRooms: 16, maxOps: 4500 },
+                    "move",
+                    [this.basicActions.moveToRoom]
+                );
+            }
+
+            targetSite = targetRoom
+                .getPositionAt(base.buildTarget.x, base.buildTarget.y)
+                .lookFor(LOOK_CONSTRUCTION_SITES)[0];
+
+            // Valid target, keep it in the queue
+            if (targetSite) {
+                base.buildTargets.unshift(buildTarget);
+            }
         }
         return this.createBuildTask(targetSite.id);
     }
@@ -60,7 +72,7 @@ class BuilderManager extends CreepManager {
                 }
             },
         ];
-        return new Task(base.buildTarget, "build", actionStack);
+        return new Task(targetID, "build", actionStack);
     }
 }
 
