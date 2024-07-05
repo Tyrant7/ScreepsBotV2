@@ -187,7 +187,7 @@ const demandHandlers = {
  * Here we can subscribe to any important colony events that might
  * impact our spawn demands, like the adding or dropping of remotes.
  */
-const { onRemoteAdd, onRemoteDrop } = require("./remote.remoteEvents");
+const { onRemoteAdd, onRemoteDrop } = require("./event.colonyEvents");
 const { MINER_WORK } = require("./spawn.spawnConstants");
 
 const getDemands = (roomInfo, remote) => {

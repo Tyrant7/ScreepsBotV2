@@ -59,6 +59,7 @@ const {
 } = require("./extension.betterPathing");
 require("./extension.betterRoomVisual");
 const harabiTrafficManager = require("./extension.harabiTraffic");
+require("./extension.trackRCL");
 
 // Data
 const RoomInfo = require("./data.roomInfo");
@@ -95,6 +96,7 @@ const creepRoleMap = {
 
 // Economy
 const economyManager = new EconomyManager();
+const { checkRCL } = require("./manager.RCLManager");
 
 // Base planning
 const BasePlanner = require("./base.basePlanner");
@@ -147,6 +149,10 @@ module.exports.loop = function () {
                 .addChild(info.room.name + "1")
         );
 
+        // Run RCL level up events if we've leveled up
+        checkRCL(info);
+
+        // Planning stuff
         if (
             !getBasePlan(info.room.name) ||
             (DEBUG.replanBaseOnReload && RELOAD)

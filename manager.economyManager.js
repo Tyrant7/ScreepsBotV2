@@ -7,7 +7,7 @@ const spawnManager = new SpawnManager();
 const { getSpawnTime } = require("./spawn.spawnUtility");
 const { makeReserver } = require("./spawn.creepMaker");
 
-const { onRemoteAdd, onRemoteDrop } = require("./remote.remoteEvents");
+const { onRemoteAdd, onRemoteDrop } = require("./event.colonyEvents");
 
 const remoteUtility = require("./remote.remoteUtility");
 const overlay = require("./debug.overlay");
