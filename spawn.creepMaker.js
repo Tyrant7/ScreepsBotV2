@@ -96,7 +96,7 @@ const makeUpgrader = (energy) => {
 };
 
 const makeBuilder = (energy) => {
-    const builderParts = [WORK, CARRY, MOVE];
+    const builderParts = [WORK, CARRY, CARRY, CARRY, MOVE];
     let body = builderParts;
     let lvl = 1;
     const levelCost = getCost(body);
