@@ -17,10 +17,11 @@ class HaulingRequestManager {
      */
     generateBasicRequests(roomInfo) {
         profiler.startSample("basic structures");
+
         const spawnStructuresAndTowers = roomInfo.structures[
             STRUCTURE_SPAWN
-        ].concat(roomInfo.structures[STRUCTURE_EXTENSION]).concat(
-            roomInfo.structures[STRUCTURE_TOWER]
+        ].concat(roomInfo.structures[STRUCTURE_EXTENSION] || []).concat(
+            roomInfo.structures[STRUCTURE_TOWER] || []
         );
         for (const spawnStructure of spawnStructuresAndTowers) {
             const freeCapacity =

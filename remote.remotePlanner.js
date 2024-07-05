@@ -303,7 +303,7 @@ class RemotePlanner {
 
         // To start, we can initialize the matrix for our main room with our existing structures
         matrices[roomInfo.room.name] = new PathFinder.CostMatrix();
-        roomInfo.structures[STRUCTURE_ROAD].forEach((s) => {
+        (roomInfo.structures[STRUCTURE_ROAD] || []).forEach((s) => {
             matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, PLANNING_ROAD);
         });
 
