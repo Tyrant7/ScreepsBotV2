@@ -1,6 +1,7 @@
 const roles = {
     miner: "miner",
     hauler: "hauler",
+    starterHauler: "s_hauler",
     upgrader: "upgrader",
     repairer: "repairer",
     builder: "builder",

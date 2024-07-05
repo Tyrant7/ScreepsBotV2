@@ -50,11 +50,11 @@ const makeHauler = (energy) => {
     };
 };
 
-const makeBabyHauler = () => {
+const makeStarterHauler = () => {
     return {
         body: [MOVE, CARRY],
         name: "Baby Hauler " + Game.time + " [" + 1 + "]",
-        memory: { role: roles.hauler },
+        memory: { role: roles.starterHauler },
     };
 };
 
@@ -215,7 +215,7 @@ const makeMiniDefender = (desiredLevel, maxCost) => {
 module.exports = {
     makeMiner,
     makeHauler,
-    makeBabyHauler,
+    makeStarterHauler,
     makeReserver,
     makeUpgrader,
     makeBuilder,

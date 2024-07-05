@@ -71,6 +71,7 @@ const TowerManager = require("./manager.towerManager");
 
 // Creeps
 const HaulerManager = require("./creep.hauler");
+const StarterHaulerManager = require("./creep.starterHauler");
 const MinerManager = require("./creep.miner");
 const UpgraderManager = require("./creep.upgrader");
 const ScoutManager = require("./creep.scout");
@@ -84,6 +85,7 @@ const MineralMinerManager = require("./creep.mineralMiner");
 const { roles, pathSets, INTERRUPT_PATHING_COST } = require("./constants");
 const creepRoleMap = {
     [roles.hauler]: new HaulerManager(),
+    [roles.starterHauler]: new StarterHaulerManager(),
     [roles.miner]: new MinerManager(),
     [roles.upgrader]: new UpgraderManager(),
     [roles.scout]: new ScoutManager(),

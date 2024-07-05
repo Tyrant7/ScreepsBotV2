@@ -290,11 +290,15 @@ const spawnsByRole = {
     },
     [roles.miner]: (roomInfo) => creepMaker.makeMiner(getMinEnergy(roomInfo)),
     [roles.hauler]: (roomInfo) => {
-        if (roomInfo.haulers.length) {
-            return creepMaker.makeHauler(getMinEnergy(roomInfo));
+        if (
+            roomInfo.haulers.length === 0 &&
+            roomInfo.room.controller.level === 1
+        ) {
+            // If we're just starting out, we'll make a special small hauler
+            // that will become a scout in the future
+            return creepMaker.makeStarterHauler();
         }
-        // If we're just starting out, we'll make a recovery hauler
-        return creepMaker.makeBabyHauler();
+        return creepMaker.makeHauler(getMinEnergy(roomInfo));
     },
     [roles.upgrader]: (roomInfo) =>
         creepMaker.makeUpgrader(roomInfo.room.energyCapacityAvailable),
