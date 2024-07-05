@@ -11,78 +11,37 @@ class BuilderManager extends CreepManager {
      * @returns The best fitting task object for this creep.
      */
     createTask(creep, roomInfo) {
-        if (!creep.store[RESOURCE_ENERGY]) {
-            return new Task({}, "harvest", [this.basicActions.seekEnergy]);
+        const base = Memory.bases[roomInfo.room.name];
+        if (!base) {
+            return null;
         }
-
-        // Start by allocating to existing sites
-        const priorities = getBuildPriority(creep);
-        const sites = creep.room.find(FIND_MY_CONSTRUCTION_SITES);
-        if (sites.length) {
-            const bestSite = sites.reduce((best, curr) => {
-                const bestPriority =
-                    (priorities[best.structureType] || 1) * 1000 -
-                    creep.pos.getRangeTo(best.pos);
-                const currPriority =
-                    (priorities[curr.structureType] || 1) * 1000 -
-                    creep.pos.getRangeTo(curr.pos);
-                return currPriority > bestPriority ? curr : best;
-            });
-            return this.createBuildTask(bestSite);
+        const buildTarget = base.buildTargets.slice(-1)[0];
+        if (!buildTarget) {
+            creep.say("No targets");
+            return null;
         }
-
-        // If no existing sites, we can start requesting more
-        const constructionQueue = roomInfo.getConstructionQueue();
-        if (constructionQueue.length) {
-            // Get the highest priority site by build priority, then distance
-            const bestSite = constructionQueue.reduce((best, curr) => {
-                const bestPriority =
-                    (priorities[best.type] || 1) * 1000 -
-                    estimateTravelTime(creep.pos, best.pos);
-                const currPriority =
-                    (priorities[curr.type] || 1) * 1000 -
-                    estimateTravelTime(creep.pos, curr.pos);
-                return currPriority > bestPriority ? curr : best;
-            });
-
-            // Create a new site and instruct the creep to move to that room
-            const realPos = new RoomPosition(
-                bestSite.pos.x,
-                bestSite.pos.y,
-                bestSite.pos.roomName
+        const targetRoom = Game.rooms[buildTarget.roomName];
+        if (!targetRoom) {
+            return new Task(
+                { roomName: targetRoom, maxRooms: 16, maxOps: 4500 },
+                "move",
+                [this.basicActions.moveToRoom]
             );
-            const existingSite = realPos.lookFor(LOOK_CONSTRUCTION_SITES)[0];
-            if (existingSite) {
-                // If there's already a site here, go build it
-                return this.createBuildTask(existingSite);
-            }
-
-            realPos.createConstructionSite(bestSite.type);
-            if (bestSite.pos.roomName !== creep.pos.roomName) {
-                return new Task({ roomName: realPos.roomName }, "move", [
-                    this.basicActions.moveToRoom,
-                ]);
-            } else {
-                // Come back and search for the site we just created next tick
-                return null;
-            }
         }
-
-        // Otherwise, no task -> let's wait 5 ticks and try again
-        return new Task({ lastTick: Game.time }, "idle", [
-            function (creep, data) {
-                creep.say("idle");
-                if (Game.time >= data.lastTick + 5) {
-                    return true;
-                }
-            },
-        ]);
+        const targetSite = targetRoom
+            .getPositionAt(base.buildTarget.x, base.buildTarget.y)
+            .lookFor(LOOK_CONSTRUCTION_SITES)[0];
+        if (!targetSite) {
+            creep.say("No Site");
+            return null;
+        }
+        return this.createBuildTask(targetSite.id);
     }
 
-    createBuildTask(site) {
+    createBuildTask(targetID) {
         const actionStack = [
-            function (creep, data) {
-                const target = Game.getObjectById(data.targetID);
+            function (creep, buildTargetID) {
+                const target = Game.getObjectById(buildTargetID);
                 if (!target) {
                     return true;
                 }
@@ -91,40 +50,18 @@ class BuilderManager extends CreepManager {
                         range: 2,
                         pathSet: pathSets.default,
                     });
+                } else {
+                    // We'll always have a dropoff request open for haulers
+                    roomInfo.createDropoffRequest(
+                        creep.store.getCapacity(),
+                        RESOURCE_ENERGY,
+                        [creep.id]
+                    );
                 }
-                return creep.store[RESOURCE_ENERGY] === 0;
             },
         ];
-        return new Task({ targetID: site.id }, "build", actionStack);
+        return new Task(base.buildTarget, "build", actionStack);
     }
 }
-
-function getBuildPriority(creep) {
-    return creep.memory.remote ? remoteBuildPriorities : buildPriorities;
-}
-
-// Larger builders in our main room prioritize like this
-const buildPriorities = {
-    [STRUCTURE_SPAWN]: 11,
-    [STRUCTURE_STORAGE]: 10,
-    [STRUCTURE_EXTENSION]: 9,
-    [STRUCTURE_CONTAINER]: 8,
-    [STRUCTURE_TOWER]: 7,
-    [STRUCTURE_TERMINAL]: 6,
-    [STRUCTURE_LINK]: 5,
-    [STRUCTURE_LAB]: 4,
-    [STRUCTURE_RAMPART]: 3,
-    [STRUCTURE_ROAD]: 2,
-    [STRUCTURE_WALL]: 1,
-};
-
-// Smaller remote builders prioritize like this
-const remoteBuildPriorities = {
-    [STRUCTURE_SPAWN]: 11,
-    [STRUCTURE_ROAD]: 10,
-    [STRUCTURE_CONTAINER]: 9,
-    [STRUCTURE_LINK]: 8,
-    [STRUCTURE_RAMPART]: 7,
-};
 
 module.exports = BuilderManager;

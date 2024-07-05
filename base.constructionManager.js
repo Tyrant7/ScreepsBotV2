@@ -66,13 +66,13 @@ const handleSites = (roomInfo) => {
             if (structure) {
                 wantedStructures.push({
                     type: numberToStructure[structure],
-                    pos: { x, y },
+                    pos: roomInfo.room.getPositionAt(x, y),
                 });
             }
             if (ramparts.get(x, y)) {
                 wantedStructures.push({
                     type: STRUCTURE_RAMPART,
-                    pos: { x, y },
+                    pos: roomInfo.room.getPositionAt(x, y),
                 });
             }
         });
@@ -129,10 +129,15 @@ const handleSites = (roomInfo) => {
     profiler.startSample("update costmatrix");
     if (result === OK) {
         // If it went through, let's remove it from the structures we want
-        cachedMissingStructures.splice(
-            cachedMissingStructures.indexOf(bestStructure),
-            1
+        cachedMissingStructures = cachedMissingStructures.filter(
+            (s) => s !== bestStructure
         );
+
+        // Let's also set it as our current build target for the room
+        if (!Memory.bases[roomInfo.room.name].buildTargets) {
+            Memory.bases[roomInfo.room.name].buildTargets = [];
+        }
+        Memory.bases[roomInfo.room.name].buildTargets.push(bestStructure.pos);
 
         // Let's also update our cost matrix for creeps using our better pathing system
         const roomMatrix =
