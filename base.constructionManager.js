@@ -13,6 +13,7 @@ const {
     ROAD_PATHING_COST,
 } = require("./constants");
 const profiler = require("./debug.profiler");
+const estimateTravelTime = require("./util.estimateTravelTime");
 
 const UTILITY_CONSTANTS = {
     [STRUCTURE_SPAWN]: 100,
@@ -32,7 +33,7 @@ const DEFENSE_UTILITY_BONUS = 200;
 
 const MAX_SITES = 2;
 
-const RESET_CACHE_INTERVAL = 1;
+const RESET_CACHE_INTERVAL = 50;
 
 let cachedRCL = -1;
 let cachedMissingStructures = [];
@@ -110,11 +111,19 @@ const handleSites = (roomInfo) => {
             ? cachedMissingStructures.reduce((best, curr) => {
                   if (best.score === undefined) {
                       best = {
-                          score: scoreUtility(roomInfo, best),
+                          score: scoreUtility(
+                              roomInfo,
+                              best,
+                              Memory.bases[roomInfo.room.name].buildTargets
+                          ),
                           structure: best,
                       };
                   }
-                  const currScore = scoreUtility(roomInfo, curr);
+                  const currScore = scoreUtility(
+                      roomInfo,
+                      curr,
+                      Memory.bases[roomInfo.room.name].buildTargets
+                  );
                   return currScore > best.score
                       ? { score: currScore, structure: curr }
                       : best;
@@ -176,8 +185,17 @@ const handleSites = (roomInfo) => {
     profiler.endSample("update costmatrix");
 };
 
-const scoreUtility = (roomInfo, structure) => {
+const scoreUtility = (roomInfo, structure, buildTargets) => {
     const baseUtility = UTILITY_CONSTANTS[structure.type] || 1;
+    let distancePenalty = 0;
+    if (buildTargets && buildTargets.length) {
+        const next = buildTargets[buildTargets.length - 1];
+        const dist = estimateTravelTime(
+            structure.pos,
+            new RoomPosition(next.pos.x, next.pos.y, next.pos.roomName)
+        );
+        distancePenalty = dist / 1000;
+    }
     const isDefensive =
         structure.type === STRUCTURE_RAMPART ||
         structure.type === STRUCTURE_TOWER ||
@@ -187,9 +205,9 @@ const scoreUtility = (roomInfo, structure) => {
         (!roomInfo.room.safeMode ||
             roomInfo.room.safeMode <= DEFENSE_THRESHOLD_TICKS)
     ) {
-        return baseUtility + DEFENSE_UTILITY_BONUS;
+        return baseUtility + DEFENSE_UTILITY_BONUS - distancePenalty;
     }
-    return baseUtility;
+    return baseUtility - distancePenalty;
 };
 
 module.exports = { handleSites };
