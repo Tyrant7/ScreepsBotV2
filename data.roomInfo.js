@@ -117,6 +117,9 @@ class RoomInfo {
             this.room.name,
             keys.upgraderContainerPos
         );
+        if (!containerPos) {
+            return null;
+        }
         return this.room
             .lookForAt(LOOK_STRUCTURES, containerPos.x, containerPos.y)
             .find((s) => s.structureType === STRUCTURE_CONTAINER);
