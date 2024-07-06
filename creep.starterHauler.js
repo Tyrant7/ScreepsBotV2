@@ -6,6 +6,9 @@ class StarterHaulerManager extends HaulerManager {
         // Once we have another hauler up and running, we'll turn this hauler into a scout
         if (roomInfo.haulers.length) {
             creep.memory.role = roles.scout;
+            if (creep.store[RESOURCE_ENERGY]) {
+                creep.drop(RESOURCE_ENERGY);
+            }
             return null;
         }
         return super.createTask(creep, roomInfo);
