@@ -163,64 +163,6 @@ class RoomInfo {
 
     // #endregion
 
-    // #region Construction
-
-    /**
-     * Finds all unbuilt planned structures in this room's remotes.
-     * @returns An array of objects, each with a position and STRUCTURE_ constant for the structure intended to be built.
-     */
-    getConstructionQueue() {
-        if (this.constructionQueue) {
-            return this.constructionQueue;
-        }
-
-        // Track all unbuilt structues in our remotes
-        const unbuilt = [];
-
-        const remotes = remoteUtility.getRemotePlans(this.room.name);
-        for (const remote of remotes) {
-            if (!remote.active) {
-                continue;
-            }
-
-            // Start with containers
-            const room = Game.rooms[remote.room];
-            if (room) {
-                const existingContainer = room
-                    .lookForAt(
-                        LOOK_STRUCTURES,
-                        remote.container.x,
-                        remote.container.y
-                    )
-                    .find((s) => s.structureType === STRUCTURE_CONTAINER);
-                if (!existingContainer) {
-                    unbuilt.push({
-                        pos: remote.container,
-                        type: STRUCTURE_CONTAINER,
-                    });
-                }
-            }
-
-            // Then roads
-            remote.roads.forEach((road) => {
-                const room = Game.rooms[road.roomName];
-                if (room) {
-                    const existingRoad = room
-                        .lookForAt(LOOK_STRUCTURES, road.x, road.y)
-                        .find((s) => s.structureType === STRUCTURE_ROAD);
-                    if (!existingRoad) {
-                        unbuilt.push({ pos: road, type: STRUCTURE_ROAD });
-                    }
-                }
-            });
-        }
-
-        this.constructionQueue = unbuilt;
-        return unbuilt;
-    }
-
-    // #endregion
-
     // #region Mining
 
     /**

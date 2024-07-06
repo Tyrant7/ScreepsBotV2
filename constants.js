@@ -51,6 +51,15 @@ const INTERRUPT_PATHING_COST = 3;
 
 const REPLAN_REMOTE_INTERVAL = 500;
 
+/**
+ * Start building remote roads at this RCL.
+ */
+const REMOTE_ROAD_RCL = 3;
+/**
+ * Start building remote containers at this RCL.
+ */
+const REMOTE_CONTAINER_RCL = 4;
+
 module.exports = {
     roles,
     pathSets,
@@ -60,4 +69,6 @@ module.exports = {
     storageThresholds,
     directionDelta,
     REPLAN_REMOTE_INTERVAL,
+    REMOTE_ROAD_RCL,
+    REMOTE_CONTAINER_RCL,
 };

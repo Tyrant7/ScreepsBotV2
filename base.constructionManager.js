@@ -11,9 +11,12 @@ const {
     pathSets,
     CONTAINER_PATHING_COST,
     ROAD_PATHING_COST,
+    REMOTE_ROAD_RCL,
+    REMOTE_CONTAINER_RCL,
 } = require("./constants");
 const profiler = require("./debug.profiler");
 const estimateTravelTime = require("./util.estimateTravelTime");
+const remoteUtility = require("./remote.remoteUtility");
 
 const UTILITY_CONSTANTS = {
     [STRUCTURE_SPAWN]: 100,
@@ -36,67 +39,23 @@ const MAX_SITES = 2;
 const RESET_CACHE_INTERVAL = 50;
 
 let cachedRCL = -1;
+let cachedTick = -RESET_CACHE_INTERVAL;
 let cachedMissingStructures = [];
 
 const handleSites = (roomInfo) => {
     if (roomInfo.constructionSites.length >= MAX_SITES) {
         return;
     }
-    const plans = getPlan(roomInfo.room.name);
-    if (!plans) {
-        return;
-    }
 
     // Update our list of cached structures if it's been invalidated,
-    // or every once and a while to account for structures potentially being destroyed
+    // or every once and a while to account for structures potentially being destroyed and remotes changing
     const rcl = roomInfo.room.controller.level;
     if (
         !cachedMissingStructures ||
         cachedRCL !== rcl ||
-        Game.time % RESET_CACHE_INTERVAL === 0
+        cachedTick + RESET_CACHE_INTERVAL < Game.time
     ) {
-        const { structures, ramparts } = profiler.wrap("deserialize", () =>
-            deserializeBasePlan(plans, rcl)
-        );
-
-        // Figure out all structures we want to build
-        profiler.startSample("structure list");
-        const wantedStructures = [];
-        iterateMatrix((x, y) => {
-            const structure = structures.get(x, y);
-            if (structure) {
-                wantedStructures.push({
-                    type: numberToStructure[structure],
-                    pos: roomInfo.room.getPositionAt(x, y),
-                });
-            }
-            if (ramparts.get(x, y)) {
-                wantedStructures.push({
-                    type: STRUCTURE_RAMPART,
-                    pos: roomInfo.room.getPositionAt(x, y),
-                });
-            }
-        });
-
-        // Find the ones we haven't already
-        profiler.startSample("filter list");
-        cachedMissingStructures = wantedStructures.filter(
-            (s) =>
-                !roomInfo.room
-                    .lookForAt(LOOK_STRUCTURES, s.pos.x, s.pos.y)
-                    .concat(
-                        roomInfo.room.lookForAt(
-                            LOOK_CONSTRUCTION_SITES,
-                            s.pos.x,
-                            s.pos.y
-                        )
-                    )
-                    .find((t) => t.structureType === s.type)
-        );
-        profiler.endSample("filter list");
-
-        cachedRCL = rcl;
-        profiler.endSample("structure list");
+        updateCache(roomInfo, rcl);
     }
 
     if (!cachedMissingStructures.length) {
@@ -108,33 +67,68 @@ const handleSites = (roomInfo) => {
     profiler.startSample("best structure");
     const bestStructure =
         cachedMissingStructures.length > 1
-            ? cachedMissingStructures.reduce((best, curr) => {
-                  if (best.score === undefined) {
-                      best = {
-                          score: scoreUtility(
-                              roomInfo,
-                              best,
-                              Memory.bases[roomInfo.room.name].buildTargets
-                          ),
-                          structure: best,
-                      };
-                  }
-                  const currScore = scoreUtility(
-                      roomInfo,
-                      curr,
-                      Memory.bases[roomInfo.room.name].buildTargets
-                  );
-                  return currScore > best.score
-                      ? { score: currScore, structure: curr }
-                      : best;
-              }).structure
+            ? cachedMissingStructures
+                  // Only allow sites in rooms we can see and aren't reserved by another player
+                  .filter((s) => {
+                      const room = Game.rooms[s.pos.roomName];
+                      if (!room) return false;
+                      return (
+                          !room.controller ||
+                          (room.controller.owner &&
+                              room.controller.owner.username === ME) ||
+                          (room.controller.reservation &&
+                              room.controller.reservation.username === ME)
+                      );
+                  })
+                  .reduce((best, curr) => {
+                      if (best.score === undefined) {
+                          best = {
+                              score: scoreUtility(roomInfo, best),
+                              structure: best,
+                          };
+                      }
+
+                      const currScore = scoreUtility(roomInfo, curr);
+
+                      // If the two candidates have the same score, we'll rank them by distance instead
+                      if (currScore === best.score) {
+                          const buildTargets =
+                              Memory.bases[roomInfo.room.name].buildTargets;
+                          if (buildTargets && buildTargets.length) {
+                              const next =
+                                  buildTargets[buildTargets.length - 1];
+                              const nextPos = new RoomPosition(
+                                  next.pos.x,
+                                  next.pos.y,
+                                  next.pos.roomName
+                              );
+                              const bestDist = estimateTravelTime(
+                                  best.structure.pos,
+                                  nextPos
+                              );
+                              const currDist = estimateTravelTime(
+                                  curr.pos,
+                                  nextPos
+                              );
+                              return currDist < bestDist
+                                  ? { score: currScore, structure: curr }
+                                  : best;
+                          }
+                      }
+
+                      // Otherwise there's a clear winner in utility
+                      return currScore > best.score
+                          ? { score: currScore, structure: curr }
+                          : best;
+                  }).structure
             : cachedMissingStructures[0];
 
-    const result = roomInfo.room
-        .getPositionAt(bestStructure.pos.x, bestStructure.pos.y)
-        .createConstructionSite(bestStructure.type);
+    const result = new RoomPosition(
+        bestStructure.pos.x,
+        bestStructure.pos.y,
+        bestStructure.pos.roomName
+    ).createConstructionSite(bestStructure.type);
     profiler.endSample("best structure");
-
     profiler.startSample("update costmatrix");
     if (result === OK) {
         // If it went through, let's remove it from the structures we want
@@ -185,17 +179,112 @@ const handleSites = (roomInfo) => {
     profiler.endSample("update costmatrix");
 };
 
+const updateCache = (roomInfo, rcl) => {
+    const plans = getPlan(roomInfo.room.name);
+    if (!plans) {
+        return;
+    }
+
+    cachedRCL = rcl;
+    cachedTick = Game.time;
+    const { structures, ramparts } = profiler.wrap("deserialize", () =>
+        deserializeBasePlan(plans, rcl)
+    );
+
+    // Figure out all structures we want to build
+    profiler.startSample("structure list");
+    const wantedStructures = [];
+    iterateMatrix((x, y) => {
+        const structure = structures.get(x, y);
+        if (structure) {
+            wantedStructures.push({
+                type: numberToStructure[structure],
+                pos: roomInfo.room.getPositionAt(x, y),
+            });
+        }
+        if (ramparts.get(x, y)) {
+            wantedStructures.push({
+                type: STRUCTURE_RAMPART,
+                pos: roomInfo.room.getPositionAt(x, y),
+            });
+        }
+    });
+
+    // Find the ones we haven't already
+    profiler.startSample("filter list");
+    cachedMissingStructures = wantedStructures.filter(
+        (s) =>
+            !roomInfo.room
+                .lookForAt(LOOK_STRUCTURES, s.pos.x, s.pos.y)
+                .concat(
+                    roomInfo.room.lookForAt(
+                        LOOK_CONSTRUCTION_SITES,
+                        s.pos.x,
+                        s.pos.y
+                    )
+                )
+                .find((t) => t.structureType === s.type)
+    );
+    profiler.endSample("filter list");
+    profiler.endSample("structure list");
+
+    // Don't forget remotes!
+    if (rcl < REMOTE_ROAD_RCL && rcl < REMOTE_CONTAINER_RCL) {
+        return;
+    }
+    const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
+    for (const remote of remotes) {
+        if (!remote.active) {
+            continue;
+        }
+
+        // Push all potential structures
+        const wantedRemoteStructures = [];
+        if (rcl >= REMOTE_ROAD_RCL) {
+            wantedRemoteStructures.push(
+                ...remote.roads.map((road) => {
+                    return {
+                        type: STRUCTURE_ROAD,
+                        pos: new RoomPosition(road.x, road.y, road.roomName),
+                    };
+                })
+            );
+        }
+        if (rcl >= REMOTE_CONTAINER_RCL) {
+            wantedRemoteStructures.push({
+                type: STRUCTURE_CONTAINER,
+                pos: new RoomPosition(
+                    remote.container.x,
+                    remote.container.y,
+                    remote.container.roomName
+                ),
+            });
+        }
+
+        // Then filter out already-built ones
+        const missingRemoteStructures = wantedRemoteStructures.filter((s) => {
+            const room = Game.rooms[s.pos.roomName];
+            if (!room) {
+                return false;
+            }
+            const existingStructure = room
+                .lookForAt(LOOK_STRUCTURES, s.pos.x, s.pos.y)
+                .concat(
+                    room.lookForAt(LOOK_CONSTRUCTION_SITES, s.pos.x, s.pos.y)
+                )
+                .find((f) => f.structureType === s.type);
+            return !existingStructure;
+        });
+
+        // Finally let's add this to our list of needed structures
+        cachedMissingStructures = cachedMissingStructures.concat(
+            missingRemoteStructures
+        );
+    }
+};
+
 const scoreUtility = (roomInfo, structure, buildTargets) => {
     const baseUtility = UTILITY_CONSTANTS[structure.type] || 1;
-    let distancePenalty = 0;
-    if (buildTargets && buildTargets.length) {
-        const next = buildTargets[buildTargets.length - 1];
-        const dist = estimateTravelTime(
-            structure.pos,
-            new RoomPosition(next.pos.x, next.pos.y, next.pos.roomName)
-        );
-        distancePenalty = dist / 1000;
-    }
     const isDefensive =
         structure.type === STRUCTURE_RAMPART ||
         structure.type === STRUCTURE_TOWER ||
@@ -205,9 +294,9 @@ const scoreUtility = (roomInfo, structure, buildTargets) => {
         (!roomInfo.room.safeMode ||
             roomInfo.room.safeMode <= DEFENSE_THRESHOLD_TICKS)
     ) {
-        return baseUtility + DEFENSE_UTILITY_BONUS - distancePenalty;
+        return baseUtility + DEFENSE_UTILITY_BONUS;
     }
-    return baseUtility - distancePenalty;
+    return baseUtility;
 };
 
 module.exports = { handleSites };
