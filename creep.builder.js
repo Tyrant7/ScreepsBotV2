@@ -1,7 +1,11 @@
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
-const estimateTravelTime = require("./util.estimateTravelTime");
 const { pathSets } = require("./constants");
+
+/**
+ * The number of ticks a builder will request energy before it's finished using its current store.
+ */
+const REQUEST_ADVANCE_TICKS = 10;
 
 class BuilderManager extends CreepManager {
     /**
@@ -114,7 +118,10 @@ class BuilderManager extends CreepManager {
                     });
                 } else {
                     creep.build(target);
-                    if (creep.store[RESOURCE_ENERGY] <= useRate * 10) {
+                    if (
+                        creep.store[RESOURCE_ENERGY] <=
+                        useRate * REQUEST_ADVANCE_TICKS
+                    ) {
                         roomInfo.createDropoffRequest(
                             creep.store.getCapacity(),
                             RESOURCE_ENERGY,
