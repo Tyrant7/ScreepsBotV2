@@ -87,7 +87,7 @@ class BuilderManager extends CreepManager {
 
         console.log("final: " + targetSite);
 
-        return this.createBuildTask(roomInfo, targetSite);
+        return this.createBuildTask(roomInfo, creep, targetSite);
     }
 
     createIdleTask() {
@@ -98,34 +98,40 @@ class BuilderManager extends CreepManager {
         ]);
     }
 
-    createBuildTask(roomInfo, targetSite) {
+    createBuildTask(roomInfo, creep, targetSite) {
         const actionStack = [
-            function (creep, { targetID, pos, structureType }) {
+            function (creep, { targetID, pos, structureType, useRate }) {
                 const target = Game.getObjectById(targetID);
                 if (!target) {
                     creep.memory.lastBuilt = { pos, structureType };
                     return true;
                 }
-                if (creep.build(target) === ERR_NOT_IN_RANGE) {
+
+                if (creep.pos.getRangeTo(target) > 3) {
                     creep.betterMoveTo(target, {
                         range: 2,
                         pathSet: pathSets.default,
                     });
                 } else {
-                    // We'll always have a dropoff request open for haulers
-                    roomInfo.createDropoffRequest(
-                        creep.store.getCapacity(),
-                        RESOURCE_ENERGY,
-                        [creep.id]
-                    );
+                    creep.build(target);
+                    if (creep.store[RESOURCE_ENERGY] <= useRate * 10) {
+                        roomInfo.createDropoffRequest(
+                            creep.store.getCapacity(),
+                            RESOURCE_ENERGY,
+                            [creep.id]
+                        );
+                    }
                 }
             },
         ];
+        const useRate =
+            creep.body.filter((p) => p.type === WORK).length * BUILD_POWER;
         return new Task(
             {
                 targetID: targetSite.id,
                 pos: targetSite.pos,
                 structureType: targetSite.structureType,
+                useRate: useRate,
             },
             "build",
             actionStack
