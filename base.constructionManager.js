@@ -32,7 +32,7 @@ const DEFENSE_UTILITY_BONUS = 200;
 
 const MAX_SITES = 2;
 
-const RESET_CACHE_INTERVAL = 50;
+const RESET_CACHE_INTERVAL = 1;
 
 let cachedRCL = -1;
 let cachedMissingStructures = [];
@@ -137,7 +137,12 @@ const handleSites = (roomInfo) => {
         if (!Memory.bases[roomInfo.room.name].buildTargets) {
             Memory.bases[roomInfo.room.name].buildTargets = [];
         }
-        Memory.bases[roomInfo.room.name].buildTargets.push(bestStructure.pos);
+        // We should mark down the tick the site will be placed so we don't mistakenly remove it this tick
+        // thinking it's already been constructed
+        Memory.bases[roomInfo.room.name].buildTargets.push({
+            pos: bestStructure.pos,
+            tick: Game.time + 1,
+        });
 
         // Let's also update our cost matrix for creeps using our better pathing system
         const roomMatrix =

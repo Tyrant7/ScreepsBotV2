@@ -38,7 +38,7 @@ class BuilderManager extends CreepManager {
 
         const base = Memory.bases[roomInfo.room.name];
         if (!base) {
-            return null;
+            return this.createIdleTask();
         }
 
         // Look for the first unbuilt target, removing all built target from the queue
@@ -47,35 +47,58 @@ class BuilderManager extends CreepManager {
             // Ensure we still have targets
             const buildTarget = base.buildTargets.shift();
             if (!buildTarget) {
-                creep.say("No targets");
-                return null;
+                return this.createIdleTask();
+            }
+
+            // If this site hasn't been placed yet, we'll wait until next tick to look for it
+            if (buildTarget.tick > Game.time) {
+                base.buildTargets.unshift(buildTarget);
+                return this.createIdleTask();
             }
 
             // Move to our target's room
-            const targetRoom = Game.rooms[buildTarget.roomName];
+            const targetRoom = Game.rooms[buildTarget.pos.roomName];
             if (!targetRoom) {
                 // This is a valid target, push it back into the queue
                 base.buildTargets.unshift(buildTarget);
                 return new Task(
-                    { roomName: targetRoom, maxRooms: 16, maxOps: 4500 },
+                    {
+                        roomName: buildTarget.pos.roomName,
+                        maxRooms: 16,
+                        maxOps: 4500,
+                    },
                     "move",
                     [this.basicActions.moveToRoom]
                 );
             }
 
             targetSite = targetRoom
-                .getPositionAt(buildTarget.x, buildTarget.y)
+                .getPositionAt(buildTarget.pos.x, buildTarget.pos.y)
                 .lookFor(LOOK_CONSTRUCTION_SITES)[0];
+
+            console.log(targetSite);
 
             // Valid target, keep it in the queue
             if (targetSite) {
                 base.buildTargets.unshift(buildTarget);
+                break;
             }
         }
-        return this.createBuildTask(targetSite);
+
+        console.log("final: " + targetSite);
+
+        return this.createBuildTask(roomInfo, targetSite);
     }
 
-    createBuildTask(targetSite) {
+    createIdleTask() {
+        return new Task(Game.time, "idle", [
+            function (creep, tick) {
+                return Game.time > tick;
+            },
+        ]);
+    }
+
+    createBuildTask(roomInfo, targetSite) {
         const actionStack = [
             function (creep, { targetID, pos, structureType }) {
                 const target = Game.getObjectById(targetID);
