@@ -1,9 +1,10 @@
 const remoteUtility = require("./remote.remoteUtility");
 const estimateTravelTime = require("./util.estimateTravelTime");
 const { getPlanData, keys } = require("./base.planningUtility");
-const { roles, storageThresholds } = require("./constants");
-const { MINER_WORK } = require("./spawn.spawnConstants");
+const { roles } = require("./constants");
+const { MINER_WORK, REMOTE_MINER_WORK } = require("./spawn.spawnConstants");
 const profiler = require("./debug.profiler");
+const { RESERVER_COST } = require("./spawn.creepMaker");
 
 class RoomInfo {
     /**
@@ -244,6 +245,7 @@ class RoomInfo {
             miningSpots.push({
                 pos: new RoomPosition(container.x, container.y, this.room.name),
                 sourceID: container.sourceID,
+                isReserved: true,
             });
         }
 
@@ -261,6 +263,8 @@ class RoomInfo {
                         remote.container.roomName
                     ),
                     sourceID: remote.source.id,
+                    isReserved:
+                        this.room.energyCapacityAvailable >= RESERVER_COST,
                 });
             }
         }
@@ -323,7 +327,11 @@ class RoomInfo {
                         total + curr.body.filter((p) => p.type === WORK).length
                     );
                 }, 0);
-                if (totalWork >= MINER_WORK) {
+
+                const neededWork = site.isReserved
+                    ? MINER_WORK
+                    : REMOTE_MINER_WORK;
+                if (totalWork >= neededWork) {
                     return false;
                 }
                 return true;

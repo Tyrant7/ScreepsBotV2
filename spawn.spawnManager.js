@@ -16,8 +16,6 @@ const creepMaker = require("./spawn.creepMaker");
 const overlay = require("./debug.overlay");
 const profiler = require("./debug.profiler");
 
-const RESERVER_COST = getCost(creepMaker.makeReserver().body);
-
 const RAISE_HAULER_THRESHOLD = 2;
 const LOWER_HAULER_THRESHOLD = 2;
 
@@ -195,7 +193,8 @@ const {
 const { MINER_WORK } = require("./spawn.spawnConstants");
 
 const getDemands = (roomInfo, remote) => {
-    const canReserve = roomInfo.room.energyCapacityAvailable >= RESERVER_COST;
+    const canReserve =
+        roomInfo.room.energyCapacityAvailable >= creepMaker.RESERVER_COST;
     const unreservedRatio = canReserve
         ? 1
         : SOURCE_ENERGY_CAPACITY / SOURCE_ENERGY_NEUTRAL_CAPACITY;

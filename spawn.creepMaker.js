@@ -212,6 +212,8 @@ const makeMiniDefender = (desiredLevel, maxCost) => {
 
 //#endregion
 
+const RESERVER_COST = getCost(makeReserver().body);
+
 module.exports = {
     makeMiner,
     makeHauler,
@@ -223,4 +225,5 @@ module.exports = {
     makeMineralMiner,
     makeScout,
     makeMiniDefender,
+    RESERVER_COST,
 };
