@@ -80,17 +80,12 @@ class BuilderManager extends CreepManager {
                 .getPositionAt(buildTarget.pos.x, buildTarget.pos.y)
                 .lookFor(LOOK_CONSTRUCTION_SITES)[0];
 
-            console.log(targetSite);
-
             // Valid target, keep it in the queue
             if (targetSite) {
                 base.buildTargets.unshift(buildTarget);
                 break;
             }
         }
-
-        console.log("final: " + targetSite);
-
         return this.createBuildTask(roomInfo, creep, targetSite);
     }
 
