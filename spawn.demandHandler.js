@@ -69,12 +69,8 @@ const nudgeRoleDemand = (roomName, role, amount, urgent = false) => {
         setRoleDemand(roomName, role, amount);
         return;
     }
-    if (demand.freeze > 0 && !urgent) {
-        demand.freeze--;
-        return;
-    }
     const oldValue = (demand && demand.value) || 0;
-    setRoleDemand(roomName, role, oldValue + amount, demand.freeze);
+    setRoleDemand(roomName, role, oldValue + amount, demand.freeze - 1);
 };
 
 module.exports = {

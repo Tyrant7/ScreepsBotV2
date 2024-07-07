@@ -8,7 +8,6 @@ const {
     nudgeRoleDemand,
     bumpRoleDemand,
 } = require("./spawn.demandHandler");
-const haulerUtility = require("./util.haulerUtility");
 const { getCost } = require("./spawn.spawnUtility");
 
 const creepMaker = require("./spawn.creepMaker");
@@ -16,6 +15,7 @@ const overlay = require("./debug.overlay");
 const profiler = require("./debug.profiler");
 
 const RAISE_HAULER_THRESHOLD = 2;
+const RAISE_HAULER_RATIO = 800;
 const LOWER_HAULER_THRESHOLD = 2;
 
 const RAISE_UPGRADER_THRESHOLD = 1;
@@ -76,9 +76,7 @@ const demandHandlers = {
         // Reduce proportional to the number of idle haulers
         // Idle meaning empty and not picking up
         const idleHaulers = colony.haulers.filter(
-            (hauler) =>
-                hauler.store.getCapacity() === hauler.store.getFreeCapacity() &&
-                !haulerUtility.getAssignedPickupID(hauler)
+            (hauler) => !hauler.memory.dropoff && !hauler.memory.pickup
         ).length;
         const workingHaulers = colony.haulers.length - idleHaulers;
         const haulerDemand = getRoleDemand(
@@ -139,7 +137,6 @@ const demandHandlers = {
         // Priority #2: do all haulers have dropoff points?
         const fullHaulers = colony.haulers.filter((hauler) => {
             const full = hauler.store[RESOURCE_ENERGY];
-            const dropoff = haulerUtility.getAssignedDropoffID(hauler);
             const storageDropoff =
                 colony.room.storage && colony.room.storage.id === dropoff;
             const storageAboveThreshold =
@@ -147,7 +144,9 @@ const demandHandlers = {
                 colony.room.storage.store[RESOURCE_ENERGY] >
                     storageThresholds[colony.room.controller.level];
             return (
-                full && (!dropoff || (storageDropoff && storageAboveThreshold))
+                full &&
+                (!hauler.memory.dropoff ||
+                    (storageDropoff && storageAboveThreshold))
             );
         }).length;
         if (fullHaulers > RAISE_UPGRADER_THRESHOLD) {
