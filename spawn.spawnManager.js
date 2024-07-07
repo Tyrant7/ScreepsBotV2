@@ -273,10 +273,28 @@ onRemoteDrop.subscribe((colony, remote) => {
 
 onRCLUpgrade.subscribe((colony, newRCL) => {
     // Here we'll bump upgrader demand down to make way for new builders
+    // we'll do this proportionally to their usage
+    const newBuilder = creepMaker.makeBuilder(
+        colony.room.energyCapacityAvailable
+    );
+    const workPerBuilder = newBuilder.body.filter((p) => p === WORK).length;
+    const builderUsage =
+        workPerBuilder * BUILD_POWER * MIN_MAX_DEMAND[roles.builder].max;
+
+    const newUpgrader = creepMaker.makeUpgrader(
+        colony.room.energyCapacityAvailable
+    );
+    const workPerUpgrader = newUpgrader.body.filter((p) => p === WORK).length;
+    const usagePerUpgrader = workPerUpgrader * UPGRADE_CONTROLLER_POWER;
+
+    const upgradersEquivalentToNewBuilders = builderUsage / usagePerUpgrader;
+
+    console.log(upgradersEquivalentToNewBuilders);
+
     bumpRoleDemand(
         colony.room.name,
         roles.upgrader,
-        -MIN_MAX_DEMAND[roles.builder].max
+        -upgradersEquivalentToNewBuilders
     );
 });
 
