@@ -5,6 +5,7 @@ const { getCost, getSpawnTime } = require("./spawn.spawnUtility");
 const PLANNING_PLAINS = 5;
 const PLANNING_SWAMP = 8;
 const PLANNING_ROAD = 3;
+const PLANNING_RESERVER_SPOT = 13;
 
 class RemotePlanner {
     /**
@@ -316,6 +317,24 @@ class RemotePlanner {
 
         for (const remoteRoom of remoteRooms) {
             matrices[remoteRoom] = new PathFinder.CostMatrix();
+
+            // We'll discourage pathing directly next to the controller
+            // since reservers will be working there
+            const room = Memory.rooms[remoteRoom];
+            if (!room.controller) continue;
+            const contP = room.controller.pos;
+            const terrain = Game.map.getRoomTerrain(remoteRoom);
+            for (let x = contP.x - 1; x <= contP.x + 1; x++) {
+                for (let y = contP.y - 1; y <= contP.y + 1; y++) {
+                    if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
+                        continue;
+                    }
+                    if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+                        continue;
+                    }
+                    matrices[remoteRoom].set(x, y, PLANNING_RESERVER_SPOT);
+                }
+            }
         }
         return matrices;
     }
