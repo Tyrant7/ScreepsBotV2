@@ -42,20 +42,20 @@ let cachedRCL = -1;
 let cachedTick = -RESET_CACHE_INTERVAL;
 let cachedMissingStructures = [];
 
-const handleSites = (roomInfo) => {
-    if (roomInfo.constructionSites.length >= MAX_SITES) {
+const handleSites = (colony) => {
+    if (colony.constructionSites.length >= MAX_SITES) {
         return;
     }
 
     // Update our list of cached structures if it's been invalidated,
     // or every once and a while to account for structures potentially being destroyed and remotes changing
-    const rcl = roomInfo.room.controller.level;
+    const rcl = colony.room.controller.level;
     if (
         !cachedMissingStructures ||
         cachedRCL !== rcl ||
         cachedTick + RESET_CACHE_INTERVAL < Game.time
     ) {
-        updateCache(roomInfo, rcl);
+        updateCache(colony, rcl);
     }
 
     // Only allow sites in rooms we can see and aren't reserved by another player
@@ -85,17 +85,17 @@ const handleSites = (roomInfo) => {
             ? validStructures.reduce((best, curr) => {
                   if (best.score === undefined) {
                       best = {
-                          score: scoreUtility(roomInfo, best),
+                          score: scoreUtility(colony, best),
                           structure: best,
                       };
                   }
 
-                  const currScore = scoreUtility(roomInfo, curr);
+                  const currScore = scoreUtility(colony, curr);
 
                   // If the two candidates have the same score, we'll rank them by distance instead
                   if (currScore === best.score) {
                       const buildTargets =
-                          Memory.bases[roomInfo.room.name].buildTargets;
+                          Memory.bases[colony.room.name].buildTargets;
                       if (buildTargets && buildTargets.length) {
                           const next = buildTargets[buildTargets.length - 1];
                           const nextPos = new RoomPosition(
@@ -138,20 +138,20 @@ const handleSites = (roomInfo) => {
         );
 
         // Let's also set it as our current build target for the room
-        if (!Memory.bases[roomInfo.room.name].buildTargets) {
-            Memory.bases[roomInfo.room.name].buildTargets = [];
+        if (!Memory.bases[colony.room.name].buildTargets) {
+            Memory.bases[colony.room.name].buildTargets = [];
         }
         // We should mark down the tick the site will be placed so we don't mistakenly remove it this tick
         // thinking it's already been constructed
-        Memory.bases[roomInfo.room.name].buildTargets.push({
+        Memory.bases[colony.room.name].buildTargets.push({
             pos: bestStructure.pos,
             tick: Game.time + 1,
         });
 
         // Let's also update our cost matrix for creeps using our better pathing system
         const roomMatrix =
-            getCachedPathMatrix(pathSets.default, roomInfo.room.name) ||
-            generateDefaultPathMatrix(roomInfo.room.name);
+            getCachedPathMatrix(pathSets.default, colony.room.name) ||
+            generateDefaultPathMatrix(colony.room.name);
 
         if (bestStructure.type === STRUCTURE_ROAD) {
             roomMatrix.set(
@@ -170,7 +170,7 @@ const handleSites = (roomInfo) => {
         }
 
         // Now cache it
-        cachePathMatrix(roomMatrix, pathSets.default, roomInfo.room.name);
+        cachePathMatrix(roomMatrix, pathSets.default, colony.room.name);
     } else {
         console.log(
             "result from placing construction site resulted in issue with code " +
@@ -180,8 +180,8 @@ const handleSites = (roomInfo) => {
     profiler.endSample("update costmatrix");
 };
 
-const updateCache = (roomInfo, rcl) => {
-    const plans = getPlan(roomInfo.room.name);
+const updateCache = (colony, rcl) => {
+    const plans = getPlan(colony.room.name);
     if (!plans) {
         return;
     }
@@ -200,13 +200,13 @@ const updateCache = (roomInfo, rcl) => {
         if (structure) {
             wantedStructures.push({
                 type: numberToStructure[structure],
-                pos: roomInfo.room.getPositionAt(x, y),
+                pos: colony.room.getPositionAt(x, y),
             });
         }
         if (ramparts.get(x, y)) {
             wantedStructures.push({
                 type: STRUCTURE_RAMPART,
-                pos: roomInfo.room.getPositionAt(x, y),
+                pos: colony.room.getPositionAt(x, y),
             });
         }
     });
@@ -215,10 +215,10 @@ const updateCache = (roomInfo, rcl) => {
     profiler.startSample("filter list");
     cachedMissingStructures = wantedStructures.filter(
         (s) =>
-            !roomInfo.room
+            !colony.room
                 .lookForAt(LOOK_STRUCTURES, s.pos.x, s.pos.y)
                 .concat(
-                    roomInfo.room.lookForAt(
+                    colony.room.lookForAt(
                         LOOK_CONSTRUCTION_SITES,
                         s.pos.x,
                         s.pos.y
@@ -233,7 +233,7 @@ const updateCache = (roomInfo, rcl) => {
     if (rcl < REMOTE_ROAD_RCL && rcl < REMOTE_CONTAINER_RCL) {
         return;
     }
-    for (const remote of roomInfo.remotePlans) {
+    for (const remote of colony.remotePlans) {
         if (!remote.active) {
             continue;
         }
@@ -283,7 +283,7 @@ const updateCache = (roomInfo, rcl) => {
     }
 };
 
-const scoreUtility = (roomInfo, structure, buildTargets) => {
+const scoreUtility = (colony, structure, buildTargets) => {
     const baseUtility = UTILITY_CONSTANTS[structure.type] || 1;
     const isDefensive =
         structure.type === STRUCTURE_RAMPART ||
@@ -291,8 +291,8 @@ const scoreUtility = (roomInfo, structure, buildTargets) => {
         structure.type === STRUCTURE_WALL;
     if (
         isDefensive &&
-        (!roomInfo.room.safeMode ||
-            roomInfo.room.safeMode <= DEFENSE_THRESHOLD_TICKS)
+        (!colony.room.safeMode ||
+            colony.room.safeMode <= DEFENSE_THRESHOLD_TICKS)
     ) {
         return baseUtility + DEFENSE_UTILITY_BONUS;
     }

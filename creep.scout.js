@@ -3,7 +3,7 @@ const Task = require("./data.task");
 const scoutingUtility = require("./util.scoutingUtility");
 
 class ScoutManager extends CreepManager {
-    createTask(creep, roomInfo) {
+    createTask(creep, colony) {
         // Let's generate a new 'explore' task for the closest room within an arbitrary range to the creep's current room
         const targetName =
             scoutingUtility.searchForUnexploredRoomsNearby(

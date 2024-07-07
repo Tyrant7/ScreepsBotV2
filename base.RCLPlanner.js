@@ -28,7 +28,7 @@ const SPECIAL_RCL_STRUCTURES = [
 ];
 
 class RCLPlanner {
-    constructor(structures, corePos, roomInfo) {
+    constructor(structures, corePos, colony) {
         this.rclStructures = Array.from(
             { length: MAX_RCL + 1 },
             () => new PathFinder.CostMatrix()
@@ -40,7 +40,7 @@ class RCLPlanner {
 
         this.structures = structures;
         this.corePos = corePos;
-        this.ri = roomInfo;
+        this.ri = colony;
 
         // Track which structures we need to place and how many we've placed already
         this.plannedStructures = {};

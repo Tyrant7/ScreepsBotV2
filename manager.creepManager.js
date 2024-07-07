@@ -1,4 +1,4 @@
-const RoomInfo = require("./data.roomInfo");
+const Colony = require("./data.colony");
 
 class CreepManager {
     constructor() {
@@ -187,9 +187,9 @@ class CreepManager {
     /**
      * Runs the appropriate task associated with a given creep. If none exists, assigns a new one.
      * @param {Creep} creep The creep to run.
-     * @param {RoomInfo} roomInfo Info for the creep's homeroom.
+     * @param {Colony} colony Info for the creep's homeroom.
      */
-    processCreep(creep, roomInfo) {
+    processCreep(creep, colony) {
         // Skip spawning creeps
         if (creep.spawning) {
             return;
@@ -199,13 +199,13 @@ class CreepManager {
         let task = this.activeTasks[creep.name];
         if (!task) {
             // No task -> let's get a new one for this creep and cache it for next time
-            task = this.createTask(creep, roomInfo);
+            task = this.createTask(creep, colony);
             this.activeTasks[creep.name] = task;
         }
 
         // Run our task
         if (task) {
-            this.runTask(creep, task, roomInfo);
+            this.runTask(creep, task, colony);
         }
     }
 
@@ -213,9 +213,9 @@ class CreepManager {
      * Runs a given task using a given creep.
      * @param {Creep} creep The creep to run on the given task.
      * @param {Task} task The task to run.
-     * @param {RoomInfo} roomInfo The Info object to use to generate a new task if this one finishes.
+     * @param {Colony} colony The Info object to use to generate a new task if this one finishes.
      */
-    runTask(creep, task, roomInfo) {
+    runTask(creep, task, colony) {
         // Debug
         if (DEBUG.logTasks) {
             creep.memory.taskKey = task.tag;
@@ -229,7 +229,7 @@ class CreepManager {
             if (task.actionStackPointer >= task.actionStack.length) {
                 // If that's the case, we'll generate a new task,
                 // and continue processing it as our current task
-                task = this.createTask(creep, roomInfo);
+                task = this.createTask(creep, colony);
                 this.activeTasks[creep.name] = task;
                 if (!task) {
                     break;
@@ -249,10 +249,10 @@ class CreepManager {
     /**
      * Creates an appropriate task for this creep.
      * @param {Creep} creep The creep to create a task for.
-     * @param {RoomInfo} roomInfo The info object that owns the creep.
+     * @param {Colony} colony The colony object that owns the creep.
      * @returns {Task} A new Task object.
      */
-    createTask(creep, roomInfo) {
+    createTask(creep, colony) {
         throw new Error("You must implement createTask()");
     }
 

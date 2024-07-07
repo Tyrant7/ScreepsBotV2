@@ -18,7 +18,7 @@ const DROP_THRESHOLD = 0.06;
 const ADD_THRESHOLD = 0.085;
 
 class EconomyManager {
-    run(roomInfo) {
+    run(colony) {
         //
         // Overall idea:
         // Keep us stable while honing in on our max economic output
@@ -29,16 +29,16 @@ class EconomyManager {
         //
 
         // Validate our base
-        const base = Memory.bases[roomInfo.room.name];
+        const base = Memory.bases[colony.room.name];
         if (!base) {
             return;
         }
 
         const lastSpawnUsage = profiler.wrap("spawn manager", () =>
-            spawnManager.run(roomInfo)
+            spawnManager.run(colony)
         );
         profiler.wrap("validate remotes", () =>
-            remoteManager.validatePlans(roomInfo)
+            remoteManager.validatePlans(colony)
         );
 
         // Let's compare our actual spawn usage to our estimates
@@ -53,10 +53,10 @@ class EconomyManager {
 
         // Based on our new estimates, we should be able to add/drop remotes according
         // to what we can or can no longer support
-        const maxSpawnUsage = roomInfo.structures[STRUCTURE_SPAWN].length;
+        const maxSpawnUsage = colony.structures[STRUCTURE_SPAWN].length;
         if (base.spawnUsage > maxSpawnUsage - DROP_THRESHOLD) {
             // Drop a remote each tick until our spawn usage is under the threshold
-            const activeRemotes = roomInfo.remotePlans.filter((r) => r.active);
+            const activeRemotes = colony.remotePlans.filter((r) => r.active);
             if (activeRemotes.length) {
                 // We don't want to drop a remote that another one depends on, so let's filter for that
                 const nonDependants = [];
@@ -83,11 +83,11 @@ class EconomyManager {
                 base.spawnUsage -= worst.cost;
 
                 // Let depending modules know that we've dropped a remote
-                onRemoteDrop.invoke(roomInfo, worst);
+                onRemoteDrop.invoke(colony, worst);
 
                 if (DEBUG.logRemoteDropping) {
                     console.log(
-                        roomInfo.room.name +
+                        colony.room.name +
                             " dropping remote: " +
                             worst.source.id +
                             " (" +
@@ -100,7 +100,7 @@ class EconomyManager {
             // Add a remote if we can fit any
             const inactiveRemotes = [];
             const activeRemotes = [];
-            for (const remote of roomInfo.remotePlans) {
+            for (const remote of colony.remotePlans) {
                 if (remote.active) {
                     activeRemotes.push(remote);
                     continue;
@@ -126,11 +126,11 @@ class EconomyManager {
                     base.spawnUsage += nextRemote.cost;
 
                     // Let depending modules know that we've added a remote
-                    onRemoteAdd.invoke(roomInfo, nextRemote);
+                    onRemoteAdd.invoke(colony, nextRemote);
 
                     if (DEBUG.logRemoteDropping) {
                         console.log(
-                            roomInfo.room.name +
+                            colony.room.name +
                                 " adding remote: " +
                                 nextRemote.source.id +
                                 " (" +
@@ -145,8 +145,8 @@ class EconomyManager {
 
         // Display our active remotes
         profiler.startSample("remote overlay");
-        this.drawOverlay(roomInfo, base.spawnUsage);
-        remoteManager.drawOverlay(roomInfo);
+        this.drawOverlay(colony, base.spawnUsage);
+        remoteManager.drawOverlay(colony);
         profiler.endSample("remote overlay");
     }
 
@@ -193,34 +193,34 @@ class EconomyManager {
 
     /**
      * Adds some info about the active remotes to the overlay, if enabled.
-     * @param {RoomInfo} roomInfo The room to draw overlay for.
+     * @param {Colony} colony The room to draw overlay for.
      */
-    drawOverlay(roomInfo, spawnEstimate) {
+    drawOverlay(colony, spawnEstimate) {
         if (!DEBUG.drawOverlay) {
             return;
         }
 
         if (DEBUG.trackSpawnUsage) {
             const spawnDisplay = spawnEstimate.toFixed(3);
-            overlay.addHeading(roomInfo.room.name, "Spawns");
-            overlay.addText(roomInfo.room.name, {
+            overlay.addHeading(colony.room.name, "Spawns");
+            overlay.addText(colony.room.name, {
                 "Spawn Usage":
                     spawnDisplay +
                     " / " +
-                    roomInfo.structures[STRUCTURE_SPAWN].length,
+                    colony.structures[STRUCTURE_SPAWN].length,
             });
         }
         if (DEBUG.trackActiveRemotes) {
             const remoteDisplay = {};
-            for (const remote of roomInfo.remotePlans) {
+            for (const remote of colony.remotePlans) {
                 if (remote.active) {
                     const key = remote.source.id.substring(0, 6);
                     remoteDisplay[key] =
                         " (" + remote.score.toFixed(3) + "E/t)";
                 }
             }
-            overlay.addHeading(roomInfo.room.name, "Remotes");
-            overlay.addText(roomInfo.room.name, remoteDisplay);
+            overlay.addHeading(colony.room.name, "Remotes");
+            overlay.addText(colony.room.name, remoteDisplay);
         }
     }
 }

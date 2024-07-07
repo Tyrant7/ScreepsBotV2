@@ -1,4 +1,4 @@
-const RoomInfo = require("./data.roomInfo");
+const Colony = require("./data.colony");
 const remoteUtility = require("./remote.remoteUtility");
 const { getPlanData, keys } = require("./base.planningUtility");
 const profiler = require("./debug.profiler");
@@ -13,15 +13,15 @@ class HaulingRequestManager {
      * - Dropped energy
      * - Ruins
      * - Tombstones
-     * @param {RoomInfo} roomInfo The base to create requests for.
+     * @param {Colony} colony The base to create requests for.
      */
-    generateBasicRequests(roomInfo) {
+    generateBasicRequests(colony) {
         profiler.startSample("basic structures");
 
-        const spawnStructuresAndTowers = roomInfo.structures[
+        const spawnStructuresAndTowers = colony.structures[
             STRUCTURE_SPAWN
-        ].concat(roomInfo.structures[STRUCTURE_EXTENSION] || []).concat(
-            roomInfo.structures[STRUCTURE_TOWER] || []
+        ].concat(colony.structures[STRUCTURE_EXTENSION] || []).concat(
+            colony.structures[STRUCTURE_TOWER] || []
         );
         for (const spawnStructure of spawnStructuresAndTowers) {
             const freeCapacity =
@@ -30,17 +30,17 @@ class HaulingRequestManager {
                 continue;
             }
             profiler.wrap("create request", () =>
-                roomInfo.createDropoffRequest(freeCapacity, RESOURCE_ENERGY, [
+                colony.createDropoffRequest(freeCapacity, RESOURCE_ENERGY, [
                     spawnStructure.id,
                 ])
             );
         }
         profiler.endSample("basic structures");
         profiler.startSample("upgraders");
-        const upgraderContainer = roomInfo.getUpgraderContainer();
-        if (roomInfo.upgraders.length && upgraderContainer) {
+        const upgraderContainer = colony.getUpgraderContainer();
+        if (colony.upgraders.length && upgraderContainer) {
             // Request energy for our container
-            roomInfo.createDropoffRequest(
+            colony.createDropoffRequest(
                 upgraderContainer.store.getFreeCapacity(),
                 RESOURCE_ENERGY,
                 [upgraderContainer.id]
@@ -51,14 +51,14 @@ class HaulingRequestManager {
         // Add miner containers for our base
         profiler.startSample("containers");
         const sourceContainers = getPlanData(
-            roomInfo.room.name,
+            colony.room.name,
             keys.sourceContainerPositions
-        ).map((p) => new RoomPosition(p.x, p.y, roomInfo.room.name));
+        ).map((p) => new RoomPosition(p.x, p.y, colony.room.name));
         for (const containerPos of sourceContainers) {
             const container = containerPos
                 .lookFor(LOOK_STRUCTURES)
                 .find((s) => s.structureType === STRUCTURE_CONTAINER);
-            roomInfo.createPickupRequest(
+            colony.createPickupRequest(
                 container ? container.store[RESOURCE_ENERGY] : 0,
                 RESOURCE_ENERGY,
                 SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME,
@@ -70,11 +70,11 @@ class HaulingRequestManager {
 
         // Here we'll add all containers as pickup requests, and track remote rooms
         profiler.startSample("remotes");
-        if (roomInfo.remotePlans) {
+        if (colony.remotePlans) {
             const importantRooms = new Set();
-            importantRooms.add(roomInfo.room.name);
+            importantRooms.add(colony.room.name);
 
-            for (const remote of roomInfo.remotePlans) {
+            for (const remote of colony.remotePlans) {
                 if (!Game.rooms[remote.room]) {
                     continue;
                 }
@@ -86,7 +86,7 @@ class HaulingRequestManager {
                 const container = containerPos
                     .lookFor(LOOK_STRUCTURES)
                     .find((s) => s.structureType === STRUCTURE_CONTAINER);
-                roomInfo.createPickupRequest(
+                colony.createPickupRequest(
                     container ? container.store[RESOURCE_ENERGY] : 0,
                     RESOURCE_ENERGY,
                     SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME,
@@ -130,7 +130,7 @@ class HaulingRequestManager {
                         return false;
                     };
 
-                    roomInfo.createPickupRequest(
+                    colony.createPickupRequest(
                         dropped.amount,
                         dropped.resourceType,
                         Math.ceil(dropped.amount / ENERGY_DECAY),

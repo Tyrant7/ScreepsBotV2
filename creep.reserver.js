@@ -6,19 +6,19 @@ class ReserverManager extends CreepManager {
     /**
      * Generates a "reserve" task for this reserver.
      * @param {Creep} creep The creep to create tasks for.
-     * @param {RoomInfo} roomInfo The info object associated with the home room of the creep to generate tasks for.
+     * @param {Colony} colony The colony object associated with the home room of the creep to generate tasks for.
      * @returns The best fitting task for this creep.
      */
-    createTask(creep, roomInfo) {
+    createTask(creep, colony) {
         // Assign this reserver to the highest priority remote currently without a reserver
         if (!creep.memory.targetRoom) {
-            if (!roomInfo.remotePlans) {
+            if (!colony.remotePlans) {
                 return null;
             }
 
             // Find the first remote that doesn't have a reserver assigned to it
             // Find the highest priority remote that doesn't have a reserver assigned to it
-            const activeRemotes = roomInfo.remotePlans.filter((r) => {
+            const activeRemotes = colony.remotePlans.filter((r) => {
                 const active = r.active;
                 const reserved =
                     this.activeTasks.length &&

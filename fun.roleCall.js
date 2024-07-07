@@ -11,9 +11,9 @@ const roleCall = {
 };
 const idleTicks = 4;
 
-const doRoleCall = (roomInfo) => {
+const doRoleCall = (colony) => {
     for (const role in roleCall) {
-        const creeps = roomInfo[role + "s"];
+        const creeps = colony[role + "s"];
         if (!creeps) {
             continue;
         }

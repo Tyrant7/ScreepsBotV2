@@ -2,16 +2,16 @@ const { getPlanData, keys } = require("./base.planningUtility");
 const { markWorkingPosition } = require("./extension.betterPathing");
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
-const RoomInfo = require("./data.roomInfo");
+const Colony = require("./data.colony");
 
 class UpgraderManager extends CreepManager {
     /**
      * Generates an "upgrade" task for this upgrader.
      * @param {Creep} creep The creep to create tasks for.
-     * @param {RoomInfo} roomInfo The info object associated with the home room of the creep to generate tasks for.
+     * @param {Colony} colony The colony object associated with the home room of the creep to generate tasks for.
      * @returns An upgrade task.
      */
-    createTask(creep, roomInfo) {
+    createTask(creep, colony) {
         const actionStack = [];
         actionStack.push(function (creep, data) {
             const target = Game.getObjectById(data.controllerID);
@@ -85,7 +85,7 @@ class UpgraderManager extends CreepManager {
                 // Otherwise, we don't need to move, we'll simply request
                 // energy for ourself from haulers, if our container doesn't exist yet
                 // Orders for the container itself will be handled by the basic requester
-                roomInfo.createDropoffRequest(
+                colony.createDropoffRequest(
                     creep.store.getFreeCapacity(),
                     RESOURCE_ENERGY,
                     [creep.id]
@@ -103,7 +103,7 @@ class UpgraderManager extends CreepManager {
                 .length;
         return new Task(
             {
-                controllerID: roomInfo.room.controller.id,
+                controllerID: colony.room.controller.id,
                 energyUsage,
                 moveSpeed,
             },

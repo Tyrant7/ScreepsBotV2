@@ -11,10 +11,10 @@ class BuilderManager extends CreepManager {
     /**
      * Creates a build task.
      * @param {Creep} creep The creep to create tasks for.
-     * @param {RoomInfo} roomInfo The info object associated with the room to generate tasks for.
+     * @param {Colony} colony The colony object associated with the room to generate tasks for.
      * @returns The best fitting task object for this creep.
      */
-    createTask(creep, roomInfo) {
+    createTask(creep, colony) {
         if (creep.memory.lastBuilt) {
             const repairTarget = creep.memory.lastBuilt;
             delete creep.memory.lastBuilt;
@@ -40,7 +40,7 @@ class BuilderManager extends CreepManager {
             }
         }
 
-        const base = Memory.bases[roomInfo.room.name];
+        const base = Memory.bases[colony.room.name];
         if (!base) {
             return this.createIdleTask();
         }
@@ -86,7 +86,7 @@ class BuilderManager extends CreepManager {
                 break;
             }
         }
-        return this.createBuildTask(roomInfo, creep, targetSite);
+        return this.createBuildTask(colony, creep, targetSite);
     }
 
     createIdleTask() {
@@ -98,7 +98,7 @@ class BuilderManager extends CreepManager {
         ]);
     }
 
-    createBuildTask(roomInfo, creep, targetSite) {
+    createBuildTask(colony, creep, targetSite) {
         const actionStack = [
             function (creep, { targetID, pos, structureType, useRate }) {
                 const target = Game.getObjectById(targetID);
@@ -118,7 +118,7 @@ class BuilderManager extends CreepManager {
                         creep.store[RESOURCE_ENERGY] <=
                         useRate * REQUEST_ADVANCE_TICKS
                     ) {
-                        roomInfo.createDropoffRequest(
+                        colony.createDropoffRequest(
                             creep.store.getCapacity(),
                             RESOURCE_ENERGY,
                             [creep.id]
@@ -155,7 +155,7 @@ class BuilderManager extends CreepManager {
                     });
                 } else {
                     // We'll always have a dropoff request open for haulers
-                    roomInfo.createDropoffRequest(
+                    colony.createDropoffRequest(
                         creep.store.getCapacity(),
                         RESOURCE_ENERGY,
                         [creep.id]

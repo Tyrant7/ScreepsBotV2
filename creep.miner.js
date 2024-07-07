@@ -4,7 +4,7 @@ const Task = require("./data.task");
 const { markWorkingPosition } = require("./extension.betterPathing");
 
 class MinerManager extends CreepManager {
-    createTask(creep, roomInfo) {
+    createTask(creep, colony) {
         // Generate default miner behaviour -> miners only behave in one specific way
         const actionStack = [];
         actionStack.push(function (creep, miningSite) {
@@ -113,7 +113,7 @@ class MinerManager extends CreepManager {
             return new Task(creep.memory.miningSite, "mine", actionStack);
         }
 
-        const unreserved = roomInfo.getFirstOpenMiningSite(creep.pos);
+        const unreserved = colony.getFirstOpenMiningSite(creep.pos);
         if (!unreserved) {
             creep.say("No site");
             // Wait for an opening

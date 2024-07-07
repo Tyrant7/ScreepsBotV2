@@ -2,9 +2,9 @@ const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
 
 class DefenderManager extends CreepManager {
-    createTask(creep, roomInfo) {
+    createTask(creep, colony) {
         // Find our enemies
-        const enemies = roomInfo.getEnemies();
+        const enemies = colony.getEnemies();
         if (enemies.length === 0) {
             // Follow our enemy if they're still in one of our rooms
             if (

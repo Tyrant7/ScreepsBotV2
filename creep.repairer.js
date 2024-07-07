@@ -6,17 +6,17 @@ class RepairerManager extends CreepManager {
     /**
      * Creates a new best-fitting task for this creep.
      * @param {Creep} creep The creep to create tasks for.
-     * @param {RoomInfo} roomInfo The info object associated with the room to generate tasks for.
+     * @param {Colony} colony The colony object associated with the room to generate tasks for.
      * @returns The best fitting task object for this creep.
      */
-    createTask(creep, roomInfo) {
+    createTask(creep, colony) {
         if (!creep.store[RESOURCE_ENERGY]) {
             return new Task({}, "harvest", [this.basicActions.seekEnergy]);
         }
 
         // On the first task, we'll search for the lowest health structure we currently have
         if (!creep.memory.firstPass) {
-            const lowest = roomInfo
+            const lowest = colony
                 .getWantedStructures()
                 .reduce((lowest, curr) => {
                     if (!curr.hits) {

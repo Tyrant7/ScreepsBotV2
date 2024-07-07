@@ -52,16 +52,16 @@ class RemoteManager {
 
     /**
      * Plan our remotes, if we haven't already.
-     * @param {RoomInfo} roomInfo Info object for the room to plan remotes for.
+     * @param {Colony} colony Info object for the room to plan remotes for.
      * @returns The active plans for remotes for this room.
      */
-    validatePlans(roomInfo) {
+    validatePlans(colony) {
         // If we've recently discovered new rooms, let's replan our remotes
         profiler.startSample("validate rooms");
         const remoteRooms = remotePlanner.getPotentialRemoteRooms(
-            roomInfo.room.name
+            colony.room.name
         );
-        const existingPlans = roomInfo.remotePlans;
+        const existingPlans = colony.remotePlans;
         let shouldReplan =
             !existingPlans || Game.time % REPLAN_REMOTE_INTERVAL === 0;
         if (!shouldReplan) {
@@ -85,7 +85,7 @@ class RemoteManager {
             // Then, filter out construction sites on invalid locations (room transitions)
             // and give each remote an activity status
             const finalPlans = [];
-            for (const plan of this.planRemotes(roomInfo)) {
+            for (const plan of this.planRemotes(colony)) {
                 plan.roads = plan.roads.filter(
                     (r) => r.x > 0 && r.x < 49 && r.y > 0 && r.y < 49
                 );
@@ -99,8 +99,8 @@ class RemoteManager {
                 finalPlans.push(plan);
             }
 
-            utility.setRemotePlans(roomInfo.room.name, finalPlans);
-            roomInfo.remotePlans = finalPlans;
+            utility.setRemotePlans(colony.room.name, finalPlans);
+            colony.remotePlans = finalPlans;
         }
 
         if (RELOAD) {
@@ -120,11 +120,11 @@ class RemoteManager {
                     unwalkableMatrix.set(x, y, OUTSIDE_PATH_COST);
                 }
             }
-            for (const plan of roomInfo.remotePlans) {
+            for (const plan of colony.remotePlans) {
                 for (const road of plan.roads) {
                     // Skip generating a matrix for our base since
                     // we want to be able to path freely through our base's room
-                    if (road.roomName === roomInfo.room.name) {
+                    if (road.roomName === colony.room.name) {
                         continue;
                     }
                     if (!matricesByRoom[road.roomName]) {
@@ -148,12 +148,12 @@ class RemoteManager {
             }
         }
 
-        return roomInfo.remotePlans;
+        return colony.remotePlans;
     }
 
-    planRemotes(roomInfo) {
+    planRemotes(colony) {
         const cpu = Game.cpu.getUsed();
-        const remotes = remotePlanner.planRemotes(roomInfo);
+        const remotes = remotePlanner.planRemotes(colony);
 
         // Visuals for debugging
         if (DEBUG.drawOverlay) {

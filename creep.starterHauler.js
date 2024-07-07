@@ -2,16 +2,16 @@ const HaulerManager = require("./creep.hauler");
 const { roles } = require("./constants");
 
 class StarterHaulerManager extends HaulerManager {
-    createTask(creep, roomInfo) {
+    createTask(creep, colony) {
         // Once we have another hauler up and running, we'll turn this hauler into a scout
-        if (roomInfo.haulers.length) {
+        if (colony.haulers.length) {
             creep.memory.role = roles.scout;
             if (creep.store[RESOURCE_ENERGY]) {
                 creep.drop(RESOURCE_ENERGY);
             }
             return null;
         }
-        return super.createTask(creep, roomInfo);
+        return super.createTask(creep, colony);
     }
 }
 

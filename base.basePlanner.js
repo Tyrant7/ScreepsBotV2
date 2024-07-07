@@ -37,7 +37,7 @@ const STAMP_COUNT_LAB = 1;
 const BUCKET_MINIMUM = 300;
 
 class BasePlanner {
-    generateNewRoomPlan(roomInfo) {
+    generateNewRoomPlan(colony) {
         if (Game.cpu.bucket <= BUCKET_MINIMUM) {
             return;
         }
@@ -56,13 +56,13 @@ class BasePlanner {
 
         // Generate our necessary matrices for planning
         const terrainMatrix = matrixUtility.generateTerrainMatrix(
-            roomInfo.room.name
+            colony.room.name
         );
         const distanceTransform = matrixUtility.generateDistanceTransform(
-            roomInfo.room.name
+            colony.room.name
         );
         const weightMatrix = this.generateWeightMatrix(
-            roomInfo,
+            colony,
             terrainMatrix,
             distanceTransform
         );
@@ -76,7 +76,7 @@ class BasePlanner {
             distanceTransform,
             weightMatrix,
             stamps.core,
-            roomInfo
+            colony
         );
 
         planBuilder.planUpgraderContainer();
@@ -136,7 +136,7 @@ class BasePlanner {
         const rclPlanner = new RCLPlanner(
             structures,
             planBuilder.corePos,
-            roomInfo
+            colony
         );
         rclPlanner.planGenericStructures();
         rclPlanner.planContainers(
@@ -160,21 +160,21 @@ class BasePlanner {
 
         // Save the serialized plans to memory
         savePlan(
-            roomInfo.room.name,
+            colony.room.name,
             serializeBasePlan(rclStructures, rclRamparts)
         );
         savePlanData(
-            roomInfo.room.name,
+            colony.room.name,
             keys.upgraderContainerPos,
             planBuilder.upgraderContainer
         );
         savePlanData(
-            roomInfo.room.name,
+            colony.room.name,
             keys.mineralContainerPos,
             planBuilder.mineralContainer
         );
         savePlanData(
-            roomInfo.room.name,
+            colony.room.name,
             keys.sourceContainerPositions,
             planBuilder.sourceContainers
         );
@@ -215,16 +215,16 @@ class BasePlanner {
         overlay.visualizeBasePlan(roomName, structures, ramparts, mapping);
     }
 
-    generateWeightMatrix(roomInfo, terrainMatrix, distanceTransform) {
+    generateWeightMatrix(colony, terrainMatrix, distanceTransform) {
         const controllerMatrix = {
             matrix: matrixUtility.floodfill(
-                roomInfo.room.controller.pos,
+                colony.room.controller.pos,
                 terrainMatrix.clone()
             ),
             weight: WEIGHT_CONTROLLER,
         };
         const sourceMatrices = [];
-        for (const source of roomInfo.sources) {
+        for (const source of colony.sources) {
             sourceMatrices.push({
                 matrix: matrixUtility.floodfill(
                     source.pos,
@@ -242,7 +242,7 @@ class BasePlanner {
         }
         const exitDistMatrix = {
             matrix: matrixUtility.floodfill(
-                roomInfo.room.find(FIND_EXIT),
+                colony.room.find(FIND_EXIT),
                 terrainMatrix.clone()
             ),
             weight: WEIGHT_EXIT_DIST,

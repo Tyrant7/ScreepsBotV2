@@ -35,7 +35,7 @@ class PlanBuilder {
         distanceTransform,
         weightMatrix,
         coreStamp,
-        roomInfo
+        colony
     ) {
         // Initialize a new room plan
         this.roomPlan = new PathFinder.CostMatrix();
@@ -61,14 +61,14 @@ class PlanBuilder {
 
         // Let's start by doing a simple placement of our core on the best space we can find that fits it
         const core = this.placeStamp(coreStamp);
-        this.corePos = new RoomPosition(core.x, core.y, roomInfo.room.name);
+        this.corePos = new RoomPosition(core.x, core.y, colony.room.name);
 
         this.floodfillFromCore = matrixUtility.floodfill(
             this.corePos,
             terrainMatrix.clone()
         );
 
-        this.ri = roomInfo;
+        this.ri = colony;
 
         // Initialize these necessary road planning variables
         this.upgraderContainer = undefined;

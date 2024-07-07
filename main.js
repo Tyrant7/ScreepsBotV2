@@ -62,8 +62,8 @@ const harabiTrafficManager = require("./extension.harabiTraffic");
 require("./extension.trackRCL");
 
 // Data
-const RoomInfo = require("./data.roomInfo");
-const roomInfos = {};
+const Colony = require("./data.colony");
+const colonies = {};
 
 // Managers
 const EconomyManager = require("./manager.economyManager");
@@ -135,80 +135,80 @@ module.exports.loop = function () {
         if (!Memory.bases[room]) {
             Memory.bases[room] = {};
         }
-        if (!roomInfos[room]) {
-            roomInfos[room] = new RoomInfo(Game.rooms[room]);
+        if (!colonies[room]) {
+            colonies[room] = new Colony(Game.rooms[room]);
         }
         profiler.wrap("initialize colony", () =>
-            roomInfos[room].initializeTickInfo()
+            colonies[room].initializeTickInfo()
         );
-        const info = roomInfos[room];
+        const colony = colonies[room];
 
         // Initialize our panels for this room
         profiler.wrap("setup overlay", () =>
             overlay
-                .createPanel(info.room.name, "tl")
-                .addChild(info.room.name + "0")
-                .addChild(info.room.name + "1")
+                .createPanel(colony.room.name, "tl")
+                .addChild(colony.room.name + "0")
+                .addChild(colony.room.name + "1")
         );
 
         // Run RCL level up events if we've leveled up
-        checkRCL(info);
+        checkRCL(colony);
 
         // Planning stuff
         if (
-            !getBasePlan(info.room.name) ||
+            !getBasePlan(colony.room.name) ||
             (DEBUG.replanBaseOnReload && RELOAD)
         ) {
-            basePlanner.generateNewRoomPlan(info);
+            basePlanner.generateNewRoomPlan(colony);
         }
-        profiler.wrap("construction", () => handleSites(info));
+        profiler.wrap("construction", () => handleSites(colony));
         if (RELOAD) {
             cachePathMatrix(
-                generateDefaultPathMatrix(info.room.name),
+                generateDefaultPathMatrix(colony.room.name),
                 pathSets.default,
-                info.room.name
+                colony.room.name
             );
         }
         if (DEBUG.visualizeBasePlan) {
-            basePlanner.visualizePlan(info.room.name);
+            basePlanner.visualizePlan(colony.room.name);
         }
 
         // Track RCL progress
         if (DEBUG.trackRCLProgress) {
-            overlay.addHeading(info.room.name + "1", "RCL");
-            const averageRCL = trackStats.trackRCL(info.room.name);
-            overlay.addText(info.room.name + "1", {
+            overlay.addHeading(colony.room.name + "1", "RCL");
+            const averageRCL = trackStats.trackRCL(colony.room.name);
+            overlay.addText(colony.room.name + "1", {
                 "RCL Per Tick": averageRCL.toFixed(3),
             });
             const neededEnergyToNextRCL =
-                info.room.controller.progressTotal -
-                info.room.controller.progress;
+                colony.room.controller.progressTotal -
+                colony.room.controller.progress;
             const ticksUntilNextRCL = Math.floor(
                 neededEnergyToNextRCL / averageRCL
             );
-            overlay.addText(info.room.name + "1", {
+            overlay.addText(colony.room.name + "1", {
                 "Next RCL In": ticksUntilNextRCL,
             });
         }
 
         // Defense
-        profiler.wrap("towers", () => towerManager.run(info));
+        profiler.wrap("towers", () => towerManager.run(colony));
 
         // Hauling requests
         profiler.wrap("hauling", () =>
-            haulingRequester.generateBasicRequests(info)
+            haulingRequester.generateBasicRequests(colony)
         );
 
         // Handle economy (remotes and spawns)
-        profiler.wrap("economy", () => economyManager.run(info));
+        profiler.wrap("economy", () => economyManager.run(colony));
 
         if (DEBUG.drawPathMatrices || DEBUG.drawWorkingPositions) {
             const matrix = DEBUG.drawPathMatrices
-                ? getCachedPathMatrix(pathSets.default, info.room.name)
+                ? getCachedPathMatrix(pathSets.default, colony.room.name)
                 : new PathFinder.CostMatrix();
             const excludedValues = DEBUG.drawPathMatrices ? [] : [0];
             if (DEBUG.drawWorkingPositions) {
-                const workPositions = getWorkingPositions(info.room.name);
+                const workPositions = getWorkingPositions(colony.room.name);
                 for (const cached of workPositions) {
                     matrix.set(
                         cached.pos.x,
@@ -217,7 +217,11 @@ module.exports.loop = function () {
                     );
                 }
             }
-            overlay.visualizeCostMatrix(info.room.name, matrix, excludedValues);
+            overlay.visualizeCostMatrix(
+                colony.room.name,
+                matrix,
+                excludedValues
+            );
         }
     }
 
@@ -236,7 +240,7 @@ module.exports.loop = function () {
                 profiler.wrap(creep.memory.role, () =>
                     creepRoleMap[creep.memory.role].processCreep(
                         creep,
-                        roomInfos[creep.memory.home]
+                        colonies[creep.memory.home]
                     )
                 );
             } else {
@@ -247,13 +251,13 @@ module.exports.loop = function () {
         }
     }
     // We'll process all haulers after ordinary creeps, in case other creeps created orders this tick
-    for (const info of Object.values(roomInfos)) {
+    for (const colony of Object.values(colonies)) {
         // Cleanup orders for this tick before running haulers
-        info.finalizeRequests();
+        colony.finalizeRequests();
 
-        for (const hauler of info.haulers) {
+        for (const hauler of colony.haulers) {
             profiler.wrap(hauler.memory.role, () =>
-                creepRoleMap[hauler.memory.role].processCreep(hauler, info)
+                creepRoleMap[hauler.memory.role].processCreep(hauler, colony)
             );
         }
     }
@@ -278,7 +282,7 @@ module.exports.loop = function () {
             ((heapData.total_heap_size + heapData.externally_allocated_size) /
                 heapData.heap_size_limit) *
             100;
-        for (const roomName in roomInfos) {
+        for (const roomName in colonies) {
             if (DEBUG.trackCPUUsage) {
                 overlay.addHeading(roomName, "CPU Usage");
                 overlay.addText(roomName, {
@@ -297,7 +301,7 @@ module.exports.loop = function () {
 
     // Track creeps
     if (DEBUG.trackCreepCounts) {
-        for (const roomName in roomInfos) {
+        for (const roomName in colonies) {
             overlay.addHeading(roomName + "0", "Creeps");
             overlay.addText(roomName + "0", {
                 Count: Object.values(Memory.creeps).length,
@@ -308,7 +312,7 @@ module.exports.loop = function () {
     profiler.printout();
 
     // Finalize overlays
-    for (const roomName in roomInfos) {
+    for (const roomName in colonies) {
         overlay.finalizePanels(roomName);
     }
 

@@ -1,7 +1,7 @@
 const { onRCLUpgrade } = require("./event.colonyEvents");
 
-onRCLUpgrade.subscribe((roomInfo, newRCL) => {
-    const base = Memory.bases[roomInfo.room.name];
+onRCLUpgrade.subscribe((colony, newRCL) => {
+    const base = Memory.bases[colony.room.name];
     if (!base) {
         return;
     }

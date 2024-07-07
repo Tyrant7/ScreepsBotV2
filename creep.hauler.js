@@ -4,7 +4,7 @@ const estimateTravelTime = require("./util.estimateTravelTime");
 const { pathSets } = require("./constants");
 
 class HaulerManager extends CreepManager {
-    createTask(creep, roomInfo) {
+    createTask(creep, colony) {
         if (creep.memory.dropoff) {
             return this.createDropoffTask(creep, creep.memory.dropoff);
         } else if (creep.memory.pickup) {
@@ -15,28 +15,24 @@ class HaulerManager extends CreepManager {
         if (creep.store.getUsedCapacity()) {
             // For dropoff tasks, let's ensure that we're in the base before attempting
             // to grab a target to avoid many pathfinding calls
-            if (creep.room.name !== roomInfo.room.name) {
-                return this.createReturnTask(creep, roomInfo);
+            if (creep.room.name !== colony.room.name) {
+                return this.createReturnTask(creep, colony);
             }
 
-            return this.dropoffTaskLogistics(creep, roomInfo);
+            return this.dropoffTaskLogistics(creep, colony);
         }
-        return this.pickupTaskLogistics(creep, roomInfo);
+        return this.pickupTaskLogistics(creep, colony);
     }
 
-    createReturnTask(creep, roomInfo) {
+    createReturnTask(creep, colony) {
         const actionStack = [this.basicActions.moveToRoom];
-        return new Task(
-            { roomName: roomInfo.room.name },
-            "return",
-            actionStack
-        );
+        return new Task({ roomName: colony.room.name }, "return", actionStack);
     }
 
-    dropoffTaskLogistics(creep, roomInfo) {
+    dropoffTaskLogistics(creep, colony) {
         // Get an array of our valid dropoff points
         const resourceType = Object.keys(creep.store)[0];
-        const validDropoffs = roomInfo.getDropoffRequests(resourceType);
+        const validDropoffs = colony.getDropoffRequests(resourceType);
 
         // Create a goal for each dropoff point
         // Multiple goals will be created for points with multiple dropoff locations
@@ -123,11 +119,11 @@ class HaulerManager extends CreepManager {
                     );
 
                     // Give a new task recursively for the other hauler
-                    roomInfo.unassignDropoff(
+                    colony.unassignDropoff(
                         closestDropoff.requestID,
                         assignedHauler.id
                     );
-                    this.createTask(assignedHauler, roomInfo);
+                    this.createTask(assignedHauler, colony);
                     return this.createDropoffTask(creep, orderInfo);
                 }
             }
@@ -140,7 +136,7 @@ class HaulerManager extends CreepManager {
         this.alertIdleCreep(creep, "D");
 
         function acceptOrder(dropoff, pos, path) {
-            roomInfo.acceptDropoffRequest(dropoff.requestID, creep.id);
+            colony.acceptDropoffRequest(dropoff.requestID, creep.id);
             creep.injectPath(path, pos);
 
             // Let's construct the object we want to store in memory
@@ -194,9 +190,9 @@ class HaulerManager extends CreepManager {
         return new Task(reserved, "dropoff", actionStack);
     }
 
-    pickupTaskLogistics(creep, roomInfo) {
+    pickupTaskLogistics(creep, colony) {
         // Get an array of our valid pickup points
-        const validPickups = roomInfo.getPickupRequests(creep);
+        const validPickups = colony.getPickupRequests(creep);
 
         // Same idea as dropoff points, except each pickup only has only location
         // and it's built-in to the object already
@@ -256,11 +252,11 @@ class HaulerManager extends CreepManager {
                     // Give a new task recursively for the other hauler, and remove it from
                     // the current request so that no other haulers try to steal this task again from
                     // this same hauler on the same tick that we did
-                    roomInfo.unassignPickup(
+                    colony.unassignPickup(
                         closestPickup.requestID,
                         assignedHauler.id
                     );
-                    this.createTask(assignedHauler, roomInfo);
+                    this.createTask(assignedHauler, colony);
                     return this.createPickupTask(creep, orderInfo);
                 }
             }
@@ -273,7 +269,7 @@ class HaulerManager extends CreepManager {
         this.alertIdleCreep(creep, "P");
 
         function acceptOrder(pickup, path) {
-            roomInfo.acceptPickupRequest(pickup.requestID, creep.id);
+            colony.acceptPickupRequest(pickup.requestID, creep.id);
             creep.injectPath(path, pickup.pos);
 
             // Let's construct the object we want to store in memory

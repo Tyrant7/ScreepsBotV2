@@ -10,9 +10,9 @@ const PLANNING_RESERVER_SPOT = 13;
 class RemotePlanner {
     /**
      * Plans remotes for a room. Returns early if not enough rooms have been scouted.
-     * @param {RoomInfo} roomInfo The associated room info object.
+     * @param {Colony} colony The associated colony object.
      */
-    planRemotes(roomInfo) {
+    planRemotes(colony) {
         /*
             Let's record each source as its own remote
             Each remote (source) should record a few things:
@@ -36,7 +36,7 @@ class RemotePlanner {
 
         // First, let's get all of our possible remote rooms
         const potentialRemoteRooms = this.getPotentialRemoteRooms(
-            roomInfo.room.name
+            colony.room.name
         );
 
         // Next, let's make a remote object for each source in these rooms
@@ -63,11 +63,11 @@ class RemotePlanner {
         // to encourage remotes to combine roads where they can
         // The very first road position can be used as the container position
         const remoteMatrices = this.initializeRemoteMatrices(
-            roomInfo,
+            colony,
             potentialRemoteRooms
         );
         for (const remote of remotes) {
-            const startPoint = roomInfo.core;
+            const startPoint = colony.core;
             const roads = this.planRoads(
                 remote.source.pos,
                 startPoint,
@@ -191,7 +191,7 @@ class RemotePlanner {
         for (const remote of remotes) {
             // Each source's cost will be the spawn cost to spawn one miner, plus as many haulers as is needed in CARRY parts
             const upkeep = this.estimateCreepUpkeep(
-                roomInfo.room.energyCapacityAvailable,
+                colony.room.energyCapacityAvailable,
                 remote.neededCarry
             );
             remote.cost = upkeep.spawnTime;
@@ -296,23 +296,23 @@ class RemotePlanner {
 
     /**
      * Initializes empty cost matrices for each remote room, and fills in some structures details for the main room.
-     * @param {RoomInfo} roomInfo Info for the main room.
+     * @param {Colony} colony Info for the main room.
      * @param {string[]} remoteRooms Names of all of the rooms to create a CostMatrix for.
      * @returns {PathFinder.CostMatrix[]} An array of cost matrices.
      */
-    initializeRemoteMatrices(roomInfo, remoteRooms) {
+    initializeRemoteMatrices(colony, remoteRooms) {
         const matrices = {};
 
         // To start, we can initialize the matrix for our main room with our existing structures
-        matrices[roomInfo.room.name] = new PathFinder.CostMatrix();
-        roomInfo.allStructures.forEach((s) => {
+        matrices[colony.room.name] = new PathFinder.CostMatrix();
+        colony.allStructures.forEach((s) => {
             const value =
                 s.structureType === STRUCTURE_ROAD
                     ? PLANNING_ROAD
                     : s.structureType !== STRUCTURE_RAMPART
                     ? MAX_VALUE
                     : 0;
-            matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, value);
+            matrices[colony.room.name].set(s.pos.x, s.pos.y, value);
         });
 
         for (const remoteRoom of remoteRooms) {

@@ -4,7 +4,7 @@ const Task = require("./data.task");
 const { markWorkingPosition } = require("./extension.betterPathing");
 
 class MineralMinerManager extends CreepManager {
-    createTask(creep, roomInfo) {
+    createTask(creep, colony) {
         const actionStack = [];
         actionStack.push(function (creep, mineralSite) {
             // Move to mining site
@@ -39,7 +39,7 @@ class MineralMinerManager extends CreepManager {
         }
 
         // Memorize this site
-        const site = roomInfo.getMineralSites()[0];
+        const site = colony.getMineralSites()[0];
         creep.memory.miningSite = site;
         return new Task(site, "mine", actionStack);
     }
