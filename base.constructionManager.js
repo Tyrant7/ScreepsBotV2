@@ -58,7 +58,18 @@ const handleSites = (roomInfo) => {
         updateCache(roomInfo, rcl);
     }
 
-    if (!cachedMissingStructures.length) {
+    // Only allow sites in rooms we can see and aren't reserved by another player
+    const validStructures = cachedMissingStructures.filter((s) => {
+        const room = Game.rooms[s.pos.roomName];
+        if (!room) return false;
+        return (
+            !room.controller ||
+            (room.controller.owner && room.controller.owner.username === ME) ||
+            (room.controller.reservation &&
+                room.controller.reservation.username === ME)
+        );
+    });
+    if (!validStructures.length) {
         return;
     }
 
@@ -66,62 +77,48 @@ const handleSites = (roomInfo) => {
     // Utility will be scored based on some constants
     profiler.startSample("best structure");
     const bestStructure =
-        cachedMissingStructures.length > 1
-            ? cachedMissingStructures
-                  // Only allow sites in rooms we can see and aren't reserved by another player
-                  .filter((s) => {
-                      const room = Game.rooms[s.pos.roomName];
-                      if (!room) return false;
-                      return (
-                          !room.controller ||
-                          (room.controller.owner &&
-                              room.controller.owner.username === ME) ||
-                          (room.controller.reservation &&
-                              room.controller.reservation.username === ME)
-                      );
-                  })
-                  .reduce((best, curr) => {
-                      if (best.score === undefined) {
-                          best = {
-                              score: scoreUtility(roomInfo, best),
-                              structure: best,
-                          };
+        validStructures.length > 1
+            ? validStructures.reduce((best, curr) => {
+                  if (best.score === undefined) {
+                      best = {
+                          score: scoreUtility(roomInfo, best),
+                          structure: best,
+                      };
+                  }
+
+                  const currScore = scoreUtility(roomInfo, curr);
+
+                  // If the two candidates have the same score, we'll rank them by distance instead
+                  if (currScore === best.score) {
+                      const buildTargets =
+                          Memory.bases[roomInfo.room.name].buildTargets;
+                      if (buildTargets && buildTargets.length) {
+                          const next = buildTargets[buildTargets.length - 1];
+                          const nextPos = new RoomPosition(
+                              next.pos.x,
+                              next.pos.y,
+                              next.pos.roomName
+                          );
+                          const bestDist = estimateTravelTime(
+                              best.structure.pos,
+                              nextPos
+                          );
+                          const currDist = estimateTravelTime(
+                              curr.pos,
+                              nextPos
+                          );
+                          return currDist < bestDist
+                              ? { score: currScore, structure: curr }
+                              : best;
                       }
+                  }
 
-                      const currScore = scoreUtility(roomInfo, curr);
-
-                      // If the two candidates have the same score, we'll rank them by distance instead
-                      if (currScore === best.score) {
-                          const buildTargets =
-                              Memory.bases[roomInfo.room.name].buildTargets;
-                          if (buildTargets && buildTargets.length) {
-                              const next =
-                                  buildTargets[buildTargets.length - 1];
-                              const nextPos = new RoomPosition(
-                                  next.pos.x,
-                                  next.pos.y,
-                                  next.pos.roomName
-                              );
-                              const bestDist = estimateTravelTime(
-                                  best.structure.pos,
-                                  nextPos
-                              );
-                              const currDist = estimateTravelTime(
-                                  curr.pos,
-                                  nextPos
-                              );
-                              return currDist < bestDist
-                                  ? { score: currScore, structure: curr }
-                                  : best;
-                          }
-                      }
-
-                      // Otherwise there's a clear winner in utility
-                      return currScore > best.score
-                          ? { score: currScore, structure: curr }
-                          : best;
-                  }).structure
-            : cachedMissingStructures[0];
+                  // Otherwise there's a clear winner in utility
+                  return currScore > best.score
+                      ? { score: currScore, structure: curr }
+                      : best;
+              }).structure
+            : validStructures[0];
 
     const result = new RoomPosition(
         bestStructure.pos.x,
