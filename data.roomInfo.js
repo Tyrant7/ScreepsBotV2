@@ -64,11 +64,13 @@ class RoomInfo {
 
         this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES);
         this.remotePlans = remoteUtility.getRemotePlans(this.room.name);
-        for (const plan of this.remotePlans) {
-            if (!Game.rooms[plan.room]) continue;
-            this.constructionSites = this.constructionSites.concat(
-                Game.rooms[plan.room].find(FIND_CONSTRUCTION_SITES)
-            );
+        if (this.remotePlans) {
+            for (const plan of this.remotePlans) {
+                if (!Game.rooms[plan.room]) continue;
+                this.constructionSites = this.constructionSites.concat(
+                    Game.rooms[plan.room].find(FIND_CONSTRUCTION_SITES)
+                );
+            }
         }
 
         // Used for distance calculations of hauler orders
