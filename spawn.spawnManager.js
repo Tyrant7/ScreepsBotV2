@@ -50,7 +50,10 @@ const demandHandlers = {
         set(diff);
     },
     [roles.miner]: (colony, set, nudge, bump) => {
-        if (!colony.miners.length || !colony.haulers.length) {
+        if (
+            !colony.miners.length ||
+            (!colony.haulers.length && !colony.starterHaulers.length)
+        ) {
             return set(DEFAULT_DEMANDS[roles.miner]);
         }
         // If we have an open site, nudge miners
