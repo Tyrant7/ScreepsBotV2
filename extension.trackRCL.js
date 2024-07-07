@@ -5,5 +5,8 @@ onRCLUpgrade.subscribe((roomInfo, newRCL) => {
     if (!base) {
         return;
     }
+    if (!base.rclTimes) {
+        base.rclTimes = {};
+    }
     base.rclTimes[newRCL] = Game.time;
 });

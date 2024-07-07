@@ -10,7 +10,7 @@ const checkRCL = (roomInfo) => {
     if (!base) {
         return;
     }
-    const lastRCL = base.rcl;
+    const lastRCL = base.rcl || 0;
     const currentRCL = roomInfo.room.controller.level;
     if (currentRCL > lastRCL) {
         base.rcl = currentRCL;
