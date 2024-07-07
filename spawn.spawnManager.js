@@ -9,7 +9,6 @@ const {
     bumpRoleDemand,
 } = require("./spawn.demandHandler");
 const haulerUtility = require("./util.haulerUtility");
-const remoteUtility = require("./remote.remoteUtility");
 const { getCost } = require("./spawn.spawnUtility");
 
 const creepMaker = require("./spawn.creepMaker");
@@ -215,9 +214,16 @@ const getDemands = (colony, remote) => {
     const neededWork = MINER_WORK / unreservedRatio;
     const neededMiners = Math.ceil(neededWork / workPerMiner);
 
+    const newUpgrader = creepMaker.makeUpgrader(
+        colony.room.energyCapacityAvailable
+    );
+    const workPerUpgrader = newUpgrader.body.filter((p) => p === WORK).length;
+    const neededUpgraderWork = remote.score / UPGRADE_CONTROLLER_POWER;
+    const neededUpgraders = Math.floor(neededUpgraderWork / workPerUpgrader);
+
     // Let's also determine if this remote is the only one in its room
     if (!colony.remotePlans) {
-        return { neededHaulers, neededMiners, alone: true };
+        return { neededHaulers, neededMiners, neededUpgraders, alone: true };
     }
     const sharingRoom = colony.remotePlans.find(
         (r) =>
@@ -226,12 +232,21 @@ const getDemands = (colony, remote) => {
             r.active &&
             r.room === remote.room
     );
-    return { neededHaulers, neededMiners, alone: !sharingRoom };
+    return {
+        neededHaulers,
+        neededMiners,
+        neededUpgraders,
+        alone: !sharingRoom,
+    };
 };
 onRemoteAdd.subscribe((colony, remote) => {
-    const { neededHaulers, neededMiners, alone } = getDemands(colony, remote);
+    const { neededHaulers, neededMiners, neededUpgraders, alone } = getDemands(
+        colony,
+        remote
+    );
     bumpRoleDemand(colony.room.name, roles.hauler, neededHaulers, true);
     bumpRoleDemand(colony.room.name, roles.miner, neededMiners, true);
+    bumpRoleDemand(colony.room.name, roles.upgrader, neededUpgraders, true);
 
     // If this is the only active remote in this room, let's add a reserver
     if (alone) {
@@ -239,9 +254,13 @@ onRemoteAdd.subscribe((colony, remote) => {
     }
 });
 onRemoteDrop.subscribe((colony, remote) => {
-    const { neededHaulers, neededMiners, alone } = getDemands(colony, remote);
+    const { neededHaulers, neededMiners, neededUpgraders, alone } = getDemands(
+        colony,
+        remote
+    );
     bumpRoleDemand(colony.room.name, roles.hauler, -neededHaulers, true);
     bumpRoleDemand(colony.room.name, roles.miner, -neededMiners, true);
+    bumpRoleDemand(colony.room.name, roles.upgrader, -neededUpgraders, true);
 
     // If this was the only active remote in this room, let's remove a reserver
     if (alone) {
