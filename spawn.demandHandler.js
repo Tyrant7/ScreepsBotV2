@@ -2,7 +2,7 @@ const { roles } = require("./constants");
 
 const DEFAULT_DEMANDS = {
     [roles.hauler]: 0.7,
-    [roles.miner]: 0.5,
+    [roles.miner]: 0.65,
     [roles.upgrader]: 0.4,
 };
 
