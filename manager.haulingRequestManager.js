@@ -70,12 +70,11 @@ class HaulingRequestManager {
 
         // Here we'll add all containers as pickup requests, and track remote rooms
         profiler.startSample("remotes");
-        const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
-        if (remotes) {
+        if (roomInfo.remotePlans) {
             const importantRooms = new Set();
             importantRooms.add(roomInfo.room.name);
 
-            for (const remote of remotes) {
+            for (const remote of roomInfo.remotePlans) {
                 if (!Game.rooms[remote.room]) {
                     continue;
                 }

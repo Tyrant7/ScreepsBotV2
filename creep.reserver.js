@@ -12,14 +12,13 @@ class ReserverManager extends CreepManager {
     createTask(creep, roomInfo) {
         // Assign this reserver to the highest priority remote currently without a reserver
         if (!creep.memory.targetRoom) {
-            const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
-            if (!remotes) {
+            if (!roomInfo.remotePlans) {
                 return null;
             }
 
             // Find the first remote that doesn't have a reserver assigned to it
             // Find the highest priority remote that doesn't have a reserver assigned to it
-            const activeRemotes = remotes.filter((r) => {
+            const activeRemotes = roomInfo.remotePlans.filter((r) => {
                 const active = r.active;
                 const reserved =
                     this.activeTasks.length &&

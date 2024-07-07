@@ -61,7 +61,7 @@ class RemoteManager {
         const remoteRooms = remotePlanner.getPotentialRemoteRooms(
             roomInfo.room.name
         );
-        const existingPlans = utility.getRemotePlans(roomInfo.room.name);
+        const existingPlans = roomInfo.remotePlans;
         let shouldReplan =
             !existingPlans || Game.time % REPLAN_REMOTE_INTERVAL === 0;
         if (!shouldReplan) {
@@ -100,6 +100,7 @@ class RemoteManager {
             }
 
             utility.setRemotePlans(roomInfo.room.name, finalPlans);
+            roomInfo.remotePlans = finalPlans;
         }
 
         if (RELOAD) {
@@ -119,8 +120,7 @@ class RemoteManager {
                     unwalkableMatrix.set(x, y, OUTSIDE_PATH_COST);
                 }
             }
-            const plans = utility.getRemotePlans(roomInfo.room.name);
-            for (const plan of plans) {
+            for (const plan of roomInfo.remotePlans) {
                 for (const road of plan.roads) {
                     // Skip generating a matrix for our base since
                     // we want to be able to path freely through our base's room
@@ -148,7 +148,7 @@ class RemoteManager {
             }
         }
 
-        return utility.getRemotePlans(roomInfo.room.name);
+        return roomInfo.remotePlans;
     }
 
     planRemotes(roomInfo) {

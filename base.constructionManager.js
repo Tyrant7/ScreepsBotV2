@@ -60,14 +60,18 @@ const handleSites = (roomInfo) => {
 
     // Only allow sites in rooms we can see and aren't reserved by another player
     const validStructures = cachedMissingStructures.filter((s) => {
+        // Any rooms owned or reserved by somebody that isn't me won't allow construction
         const room = Game.rooms[s.pos.roomName];
         if (!room) return false;
-        return (
-            !room.controller ||
-            (room.controller.owner && room.controller.owner.username === ME) ||
-            (room.controller.reservation &&
-                room.controller.reservation.username === ME)
-        );
+        if (!room.controller) return true;
+        if (room.controller.owner && room.controller.owner.username !== ME)
+            return false;
+        if (
+            room.controller.reservation &&
+            room.controller.reservation.username !== ME
+        )
+            return false;
+        return true;
     });
     if (!validStructures.length) {
         return;
@@ -229,8 +233,7 @@ const updateCache = (roomInfo, rcl) => {
     if (rcl < REMOTE_ROAD_RCL && rcl < REMOTE_CONTAINER_RCL) {
         return;
     }
-    const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
-    for (const remote of remotes) {
+    for (const remote of roomInfo.remotePlans) {
         if (!remote.active) {
             continue;
         }

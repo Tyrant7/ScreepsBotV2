@@ -92,6 +92,7 @@ class BuilderManager extends CreepManager {
     createIdleTask() {
         return new Task(Game.time, "idle", [
             function (creep, tick) {
+                creep.say("Zzz", true);
                 return Game.time > tick;
             },
         ]);

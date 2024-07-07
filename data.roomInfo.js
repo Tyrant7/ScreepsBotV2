@@ -61,7 +61,15 @@ class RoomInfo {
         profiler.startSample("finds");
         this.allStructures = this.room.find(FIND_STRUCTURES);
         this.structures = _.groupBy(this.allStructures, "structureType");
+
         this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES);
+        this.remotePlans = remoteUtility.getRemotePlans(this.room.name);
+        for (const plan of this.remotePlans) {
+            if (!Game.rooms[plan.room]) continue;
+            this.constructionSites = this.constructionSites.concat(
+                Game.rooms[plan.room].find(FIND_CONSTRUCTION_SITES)
+            );
+        }
 
         // Used for distance calculations of hauler orders
         this.core = this.structures[STRUCTURE_SPAWN][0].pos;
@@ -138,8 +146,7 @@ class RoomInfo {
         }
 
         const structures = [...this.allStructures];
-        const remotePlans = remoteUtility.getRemotePlans(this.room.name);
-        for (const remote of remotePlans) {
+        for (const remote of this.remotePlans) {
             if (!remote.active) {
                 continue;
             }
@@ -192,9 +199,8 @@ class RoomInfo {
         }
 
         // Get the mining sites for remote rooms
-        const remotePlans = remoteUtility.getRemotePlans(this.room.name);
-        if (remotePlans) {
-            for (const remote of remotePlans) {
+        if (this.remotePlans) {
+            for (const remote of this.remotePlans) {
                 if (!remote.active) {
                     continue;
                 }

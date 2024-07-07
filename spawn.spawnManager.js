@@ -218,11 +218,10 @@ const getDemands = (roomInfo, remote) => {
     const neededMiners = Math.ceil(neededWork / workPerMiner);
 
     // Let's also determine if this remote is the only one in its room
-    const plans = remoteUtility.getRemotePlans(roomInfo.room.name);
-    if (!plans) {
+    if (!roomInfo.remotePlans) {
         return { neededHaulers, neededMiners, alone: true };
     }
-    const sharingRoom = plans.find(
+    const sharingRoom = roomInfo.remotePlans.find(
         (r) =>
             // Let's make sure we don't check ourselves
             r.source.id !== remote.source.id &&

@@ -54,10 +54,9 @@ class EconomyManager {
         // Based on our new estimates, we should be able to add/drop remotes according
         // to what we can or can no longer support
         const maxSpawnUsage = roomInfo.structures[STRUCTURE_SPAWN].length;
-        const remotes = remoteUtility.getRemotePlans(roomInfo.room.name);
         if (base.spawnUsage > maxSpawnUsage - DROP_THRESHOLD) {
             // Drop a remote each tick until our spawn usage is under the threshold
-            const activeRemotes = remotes.filter((r) => r.active);
+            const activeRemotes = roomInfo.remotePlans.filter((r) => r.active);
             if (activeRemotes.length) {
                 // We don't want to drop a remote that another one depends on, so let's filter for that
                 const nonDependants = [];
@@ -101,7 +100,7 @@ class EconomyManager {
             // Add a remote if we can fit any
             const inactiveRemotes = [];
             const activeRemotes = [];
-            for (const remote of remotes) {
+            for (const remote of roomInfo.remotePlans) {
                 if (remote.active) {
                     activeRemotes.push(remote);
                     continue;
@@ -146,7 +145,7 @@ class EconomyManager {
 
         // Display our active remotes
         profiler.startSample("remote overlay");
-        this.drawOverlay(roomInfo, remotes, base.spawnUsage);
+        this.drawOverlay(roomInfo, base.spawnUsage);
         remoteManager.drawOverlay(roomInfo);
         profiler.endSample("remote overlay");
     }
@@ -195,9 +194,8 @@ class EconomyManager {
     /**
      * Adds some info about the active remotes to the overlay, if enabled.
      * @param {RoomInfo} roomInfo The room to draw overlay for.
-     * @param {{}[]} remotes Array of remotes planned by that room.
      */
-    drawOverlay(roomInfo, remotes, spawnEstimate) {
+    drawOverlay(roomInfo, spawnEstimate) {
         if (!DEBUG.drawOverlay) {
             return;
         }
@@ -214,7 +212,7 @@ class EconomyManager {
         }
         if (DEBUG.trackActiveRemotes) {
             const remoteDisplay = {};
-            for (const remote of remotes) {
+            for (const remote of roomInfo.remotePlans) {
                 if (remote.active) {
                     const key = remote.source.id.substring(0, 6);
                     remoteDisplay[key] =
