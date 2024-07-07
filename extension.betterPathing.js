@@ -46,7 +46,9 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
 
     function verifyPath(creep) {
         // Don't need to move
-        if (creep.pos.getRangeTo(target) <= options.range) {
+        const p = creep.pos;
+        const onRoomEdge = p.x <= 0 || p.x >= 49 || p.y <= 0 || p.y >= 49;
+        if (creep.pos.getRangeTo(target) <= options.range && !onRoomEdge) {
             return [];
         }
 
