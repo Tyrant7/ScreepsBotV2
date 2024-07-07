@@ -125,7 +125,9 @@ const demandHandlers = {
         // Priority #1: are upgraders full?
         const upgraders = roomInfo.upgraders;
         const fullUpgraders = upgraders.filter(
-            (upgrader) => upgrader.store[RESOURCE_ENERGY]
+            (upgrader) =>
+                upgrader.pos.getRangeTo(roomInfo.room.controller.pos) <= 3 &&
+                upgrader.store[RESOURCE_ENERGY]
         );
         const unfilledUpgraders = upgraders.length - fullUpgraders.length;
         if (unfilledUpgraders > LOWER_UPGRADER_THRESHOLD) {
