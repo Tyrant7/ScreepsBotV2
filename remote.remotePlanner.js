@@ -1,9 +1,10 @@
+const { MAX_VALUE } = require("./base.planningConstants");
 const { makeMiner, makeHauler, makeReserver } = require("./spawn.creepMaker");
 const { getCost, getSpawnTime } = require("./spawn.spawnUtility");
 
 const PLANNING_PLAINS = 5;
 const PLANNING_SWAMP = 8;
-const PLANNING_ROAD = 1;
+const PLANNING_ROAD = 3;
 
 class RemotePlanner {
     /**
@@ -303,8 +304,14 @@ class RemotePlanner {
 
         // To start, we can initialize the matrix for our main room with our existing structures
         matrices[roomInfo.room.name] = new PathFinder.CostMatrix();
-        (roomInfo.structures[STRUCTURE_ROAD] || []).forEach((s) => {
-            matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, PLANNING_ROAD);
+        roomInfo.allStructures.forEach((s) => {
+            const value =
+                s.structureType === STRUCTURE_ROAD
+                    ? PLANNING_ROAD
+                    : s.structureType !== STRUCTURE_RAMPART
+                    ? MAX_VALUE
+                    : 0;
+            matrices[roomInfo.room.name].set(s.pos.x, s.pos.y, value);
         });
 
         for (const remoteRoom of remoteRooms) {

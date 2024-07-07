@@ -22,7 +22,7 @@ global.DEBUG = {
     alertOnIdle: false,
 
     drawOverlay: true,
-    drawRemoteOwnership: false,
+    drawRemoteOwnership: true,
     drawContainerOverlay: false,
 
     drawTrafficArrows: false,
@@ -37,7 +37,7 @@ global.DEBUG = {
 
     logRemotePlanning: true,
     logRemoteDropping: true,
-    replanRemotesOnReload: false,
+    replanRemotesOnReload: true,
 
     runProfiler: false,
     profileHeapUsage: true,
