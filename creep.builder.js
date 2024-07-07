@@ -107,12 +107,17 @@ class BuilderManager extends CreepManager {
                     return true;
                 }
 
-                if (creep.pos.getRangeTo(target) > 3) {
+                const range = creep.pos.getRangeTo(target);
+                const p = creep.pos;
+                const onRoomEdge =
+                    p.x <= 0 || p.x >= 49 || p.y <= 0 || p.y >= 49;
+                if (range > 3 || onRoomEdge) {
                     creep.betterMoveTo(target, {
                         range: 2,
                         pathSet: pathSets.default,
                     });
-                } else {
+                }
+                if (range <= 3) {
                     creep.build(target);
                     if (
                         creep.store[RESOURCE_ENERGY] <=
@@ -148,18 +153,29 @@ class BuilderManager extends CreepManager {
                 if (!target || target.hits / target.hitsMax >= threshold) {
                     return true;
                 }
-                if (creep.repair(target) === ERR_NOT_IN_RANGE) {
+
+                const range = creep.pos.getRangeTo(target);
+                const p = creep.pos;
+                const onRoomEdge =
+                    p.x <= 0 || p.x >= 49 || p.y <= 0 || p.y >= 49;
+                if (range > 3 || onRoomEdge) {
                     creep.betterMoveTo(target, {
                         range: 2,
                         pathSet: pathSets.default,
                     });
-                } else {
-                    // We'll always have a dropoff request open for haulers
-                    colony.createDropoffRequest(
-                        creep.store.getCapacity(),
-                        RESOURCE_ENERGY,
-                        [creep.id]
-                    );
+                }
+                if (range <= 3) {
+                    creep.repair(target);
+                    if (
+                        creep.store[RESOURCE_ENERGY] <=
+                        useRate * REQUEST_ADVANCE_TICKS
+                    ) {
+                        colony.createDropoffRequest(
+                            creep.store.getCapacity(),
+                            RESOURCE_ENERGY,
+                            [creep.id]
+                        );
+                    }
                 }
             },
         ];
