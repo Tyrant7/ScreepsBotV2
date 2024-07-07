@@ -322,12 +322,12 @@ const spawnsByRole = {
     },
     [roles.upgrader]: (colony) =>
         creepMaker.makeUpgrader(colony.room.energyCapacityAvailable),
+    [roles.reserver]: (colony) => creepMaker.makeReserver(),
     [roles.scout]: (colony) => creepMaker.makeScout(),
     [roles.builder]: (colony) =>
         creepMaker.makeBuilder(colony.room.energyCapacityAvailable),
     [roles.repairer]: (colony) =>
         creepMaker.makeRepairer(colony.room.energyCapacityAvailable),
-    [roles.reserver]: (colony) => creepMaker.makeReserver(),
     [roles.mineralMiner]: (colony) =>
         creepMaker.makeMineralMiner(colony.room.energyCapacityAvailable),
 };
