@@ -150,8 +150,8 @@ const handleSites = (colony) => {
 
         // Let's also update our cost matrix for creeps using our better pathing system
         const roomMatrix =
-            getCachedPathMatrix(pathSets.default, colony.room.name) ||
-            generateDefaultPathMatrix(colony.room.name);
+            getCachedPathMatrix(pathSets.default, bestStructure.pos.roomName) ||
+            generateDefaultPathMatrix(bestStructure.pos.roomName);
 
         if (bestStructure.type === STRUCTURE_ROAD) {
             roomMatrix.set(
@@ -170,7 +170,11 @@ const handleSites = (colony) => {
         }
 
         // Now cache it
-        cachePathMatrix(roomMatrix, pathSets.default, colony.room.name);
+        cachePathMatrix(
+            roomMatrix,
+            pathSets.default,
+            bestStructure.pos.roomName
+        );
     } else {
         console.log(
             "result from placing construction site resulted in issue with code " +
