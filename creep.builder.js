@@ -28,14 +28,19 @@ class BuilderManager extends CreepManager {
                         repairTarget.pos.x,
                         repairTarget.pos.y
                     )
-                    .filter(
+                    .find(
                         (s) => s.structureType === repairTarget.structureType
                     );
                 if (
                     constructed &&
                     constructed.hits / constructed.hitsMax < threshold
                 ) {
-                    return this.createRepairTask(constructed.id, threshold);
+                    return this.createRepairTask(
+                        colony,
+                        creep,
+                        constructed.id,
+                        threshold
+                    );
                 }
             }
         }
@@ -146,9 +151,9 @@ class BuilderManager extends CreepManager {
         );
     }
 
-    createRepairTask(targetID, threshold) {
+    createRepairTask(colony, creep, targetID, threshold) {
         const actionStack = [
-            function (creep, { targetID, threshold }) {
+            function (creep, { targetID, threshold, useRate }) {
                 const target = Game.getObjectById(targetID);
                 if (!target || target.hits / target.hitsMax >= threshold) {
                     return true;
@@ -179,7 +184,12 @@ class BuilderManager extends CreepManager {
                 }
             },
         ];
-        return new Task({ targetID, threshold }, "repair", actionStack);
+        const useRate = creep.body.filter((p) => p.type === WORK).length;
+        return new Task(
+            { targetID, threshold, useRate },
+            "repair",
+            actionStack
+        );
     }
 }
 
