@@ -48,7 +48,7 @@ const meetsMinimumSpawnRequirements = (colony) => {
  */
 const demandHandlers = {
     [roles.defender]: (colony, set, nudge, bump) => {
-        if (meetsMinimumSpawnRequirements(colony)) {
+        if (!meetsMinimumSpawnRequirements(colony)) {
             return set(0);
         }
         const enemies = colony.getEnemies();
@@ -56,7 +56,7 @@ const demandHandlers = {
         set(diff);
     },
     [roles.miner]: (colony, set, nudge, bump) => {
-        if (meetsMinimumSpawnRequirements(colony)) {
+        if (!meetsMinimumSpawnRequirements(colony)) {
             return set(DEFAULT_DEMANDS[roles.miner]);
         }
         // If we have an open site, nudge miners
@@ -72,7 +72,7 @@ const demandHandlers = {
         return set(workingMinerCount - 0.5);
     },
     [roles.hauler]: (colony, set, nudge, bump) => {
-        if (meetsMinimumSpawnRequirements(colony)) {
+        if (!meetsMinimumSpawnRequirements(colony)) {
             return set(DEFAULT_DEMANDS[roles.hauler]);
         }
 
@@ -118,7 +118,7 @@ const demandHandlers = {
         return nudge(haulerDemand < target ? 1 : -1);
     },
     [roles.upgrader]: (colony, set, nudge, bump) => {
-        if (meetsMinimumSpawnRequirements(colony)) {
+        if (!meetsMinimumSpawnRequirements(colony)) {
             return set(DEFAULT_DEMANDS[roles.upgrader]);
         }
 
