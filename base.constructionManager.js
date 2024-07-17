@@ -94,8 +94,7 @@ const handleSites = (colony) => {
 
                   // If the two candidates have the same score, we'll rank them by distance instead
                   if (currScore === best.score) {
-                      const buildTargets =
-                          Memory.bases[colony.room.name].buildTargets;
+                      const buildTargets = colony.memory.buildTargets;
                       if (buildTargets && buildTargets.length) {
                           const next = buildTargets[buildTargets.length - 1];
                           const nextPos = new RoomPosition(
@@ -138,12 +137,12 @@ const handleSites = (colony) => {
         );
 
         // Let's also set it as our current build target for the room
-        if (!Memory.bases[colony.room.name].buildTargets) {
-            Memory.bases[colony.room.name].buildTargets = [];
+        if (!colony.memory.buildTargets) {
+            colony.memory.buildTargets = [];
         }
         // We should mark down the tick the site will be placed so we don't mistakenly remove it this tick
         // thinking it's already been constructed
-        Memory.bases[colony.room.name].buildTargets.push({
+        colony.memory.buildTargets.push({
             pos: bestStructure.pos,
             tick: Game.time + 1,
         });

@@ -6,14 +6,10 @@ const { onRCLUpgrade } = require("./event.colonyEvents");
  * @param {Colony} colony The colony to run the event for.
  */
 const checkRCL = (colony) => {
-    const base = Memory.bases[colony.room.name];
-    if (!base) {
-        return;
-    }
-    const lastRCL = base.rcl || 0;
+    const lastRCL = colony.memory.rcl || 0;
     const currentRCL = colony.room.controller.level;
     if (currentRCL > lastRCL) {
-        base.rcl = currentRCL;
+        colony.memory.rcl = currentRCL;
         onRCLUpgrade.invoke(colony, currentRCL);
     }
 };

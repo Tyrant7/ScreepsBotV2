@@ -1,35 +1,29 @@
 module.exports = {
-    getRemotePlans: function (baseName) {
-        if (!Memory.bases[baseName]) {
-            Memory.bases[baseName] = {};
+    getRemotePlans: function (colonyName) {
+        if (!Memory.colonies[colonyName]) {
+            Memory.colonies[colonyName] = {};
         }
-        return Memory.bases[baseName].remotes;
+        return Memory.colonies[colonyName].remotes;
     },
 
-    setRemotePlans: function (baseName, plansObject) {
-        if (!Memory.bases[baseName]) {
-            Memory.bases[baseName] = {};
+    setRemotePlans: function (colonyName, plansObject) {
+        if (!Memory.colonies[colonyName]) {
+            Memory.colonies[colonyName] = {};
         }
-        Memory.bases[baseName].remotes = plansObject;
-    },
-
-    clearRemotePlans: function () {
-        for (const base in Memory.bases) {
-            delete Memory.bases[base].remotes;
-        }
+        Memory.colonies[colonyName].remotes = plansObject;
     },
 
     /**
      * Returns true or false depending on whether or not a structure of this
      * type has been planned at this position by this home room
-     * @param {string} baseName The name of the home room.
+     * @param {string} colonyName The name of the colony room.
      * @param {RoomPosition} pos The position of the planned structure.
      * @param {string} type One of the STRUCTURE_* constants.
      * @returns {boolean} True or false.
      */
-    isStructurePlanned: function (baseName, pos, type) {
+    isStructurePlanned: function (colonyName, pos, type) {
         // Make sure we have plans and it's an actual remote
-        const plans = this.getRemotePlans(baseName);
+        const plans = this.getRemotePlans(colonyName);
         if (!plans) {
             return false;
         }

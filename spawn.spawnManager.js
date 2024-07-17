@@ -79,10 +79,7 @@ const demandHandlers = {
             (hauler) => !hauler.memory.dropoff && !hauler.memory.pickup
         ).length;
         const workingHaulers = colony.haulers.length - idleHaulers;
-        const haulerDemand = getRoleDemand(
-            colony.room.name,
-            roles.hauler
-        ).value;
+        const haulerDemand = getRoleDemand(colony, roles.hauler).value;
         if (
             idleHaulers >= LOWER_HAULER_THRESHOLD &&
             haulerDemand >= workingHaulers
@@ -154,10 +151,7 @@ const demandHandlers = {
         }
 
         // If there's no problems at all, let's nudge towards our current count
-        const upgraderDemand = getRoleDemand(
-            colony.room.name,
-            roles.upgrader
-        ).value;
+        const upgraderDemand = getRoleDemand(colony, roles.upgrader).value;
         const target = colony.upgraders.length - 0.5;
         return nudge(upgraderDemand < target ? 1 : -1);
     },
@@ -235,22 +229,22 @@ const getDemands = (colony, remote) => {
 };
 onRemoteAdd.subscribe((colony, remote) => {
     const { neededHaulers, neededMiners, alone } = getDemands(colony, remote);
-    bumpRoleDemand(colony.room.name, roles.hauler, neededHaulers, true);
-    bumpRoleDemand(colony.room.name, roles.miner, neededMiners, true);
+    bumpRoleDemand(colony, roles.hauler, neededHaulers, true);
+    bumpRoleDemand(colony, roles.miner, neededMiners, true);
 
     // If this is the only active remote in this room, let's add a reserver
     if (alone) {
-        bumpRoleDemand(colony.room.name, roles.reserver, 1, true);
+        bumpRoleDemand(colony, roles.reserver, 1, true);
     }
 });
 onRemoteDrop.subscribe((colony, remote) => {
     const { neededHaulers, neededMiners, alone } = getDemands(colony, remote);
-    bumpRoleDemand(colony.room.name, roles.hauler, -neededHaulers, true);
-    bumpRoleDemand(colony.room.name, roles.miner, -neededMiners, true);
+    bumpRoleDemand(colony, roles.hauler, -neededHaulers, true);
+    bumpRoleDemand(colony, roles.miner, -neededMiners, true);
 
     // If this was the only active remote in this room, let's remove a reserver
     if (alone) {
-        bumpRoleDemand(colony.room.name, roles.reserver, -1, true);
+        bumpRoleDemand(colony, roles.reserver, -1, true);
     }
 });
 
@@ -271,11 +265,7 @@ onRCLUpgrade.subscribe((colony, newRCL) => {
     const usagePerUpgrader = workPerUpgrader * UPGRADE_CONTROLLER_POWER;
 
     const upgradersEquivalentToNewBuilders = builderUsage / usagePerUpgrader;
-    bumpRoleDemand(
-        colony.room.name,
-        roles.upgrader,
-        -upgradersEquivalentToNewBuilders
-    );
+    bumpRoleDemand(colony, roles.upgrader, -upgradersEquivalentToNewBuilders);
 });
 
 /**
@@ -339,7 +329,7 @@ const getMinEnergy = (colony) =>
 class SpawnManager {
     run(colony) {
         // Ensure demands exist
-        ensureDefaults(colony.room.name);
+        ensureDefaults(colony);
 
         // Nudge the spawn demands in whichever direction they need to go in
         // Calculated by the handlers
@@ -349,9 +339,9 @@ class SpawnManager {
             profiler.wrap(role, () =>
                 handler(
                     colony,
-                    (amount) => setRoleDemand(colony.room.name, role, amount),
-                    (amount) => nudgeRoleDemand(colony.room.name, role, amount),
-                    (amount) => bumpRoleDemand(colony.room.name, role, amount)
+                    (amount) => setRoleDemand(colony, role, amount),
+                    (amount) => nudgeRoleDemand(colony, role, amount),
+                    (amount) => bumpRoleDemand(colony, role, amount)
                 )
             );
         }
@@ -375,7 +365,7 @@ class SpawnManager {
         const getNextSpawn = () => {
             // Let's look for our highest priority role that needs a creep
             for (const role in spawnsByRole) {
-                const demand = getRoleDemand(colony.room.name, role).value;
+                const demand = getRoleDemand(colony, role).value;
 
                 // Here we have to look for the key rather than use the value of the role,
                 // since that's what's used in the Colony object
@@ -450,7 +440,7 @@ class SpawnManager {
     drawOverlay(colony) {
         overlay.addHeading(colony.room.name + "0", "Spawn Demands");
         for (const role in roles) {
-            const demand = getRoleDemand(colony.room.name, role).value;
+            const demand = getRoleDemand(colony, role).value;
             if (!demand) {
                 continue;
             }

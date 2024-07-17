@@ -11,8 +11,8 @@ if (!Memory.creeps) {
 if (!Memory.rooms) {
     Memory.rooms = {};
 }
-if (!Memory.bases) {
-    Memory.bases = {};
+if (!Memory.colonies) {
+    Memory.colonies = {};
 }
 
 // Globals
@@ -131,9 +131,6 @@ module.exports.loop = function () {
     for (const room in Game.rooms) {
         if (!Game.rooms[room].controller || !Game.rooms[room].controller.my) {
             continue;
-        }
-        if (!Memory.bases[room]) {
-            Memory.bases[room] = {};
         }
         if (!colonies[room]) {
             colonies[room] = new Colony(Game.rooms[room]);

@@ -45,23 +45,22 @@ class BuilderManager extends CreepManager {
             }
         }
 
-        const base = Memory.bases[colony.room.name];
-        if (!base) {
-            return this.createIdleTask();
-        }
-
         // Look for the first unbuilt target, removing all built target from the queue
         let targetSite;
         while (!targetSite) {
             // Ensure we still have targets
-            const buildTarget = base.buildTargets.shift();
+            const targets = colony.memory.buildTargets;
+            if (!targets) {
+                return this.createIdleTask();
+            }
+            const buildTarget = targets.shift();
             if (!buildTarget) {
                 return this.createIdleTask();
             }
 
             // If this site hasn't been placed yet, we'll wait until next tick to look for it
             if (buildTarget.tick > Game.time) {
-                base.buildTargets.unshift(buildTarget);
+                colony.memory.buildTargets.unshift(buildTarget);
                 return this.createIdleTask();
             }
 
@@ -69,7 +68,7 @@ class BuilderManager extends CreepManager {
             const targetRoom = Game.rooms[buildTarget.pos.roomName];
             if (!targetRoom) {
                 // This is a valid target, push it back into the queue
-                base.buildTargets.unshift(buildTarget);
+                colony.memory.buildTargets.unshift(buildTarget);
                 return new Task(
                     {
                         roomName: buildTarget.pos.roomName,
@@ -87,7 +86,7 @@ class BuilderManager extends CreepManager {
 
             // Valid target, keep it in the queue
             if (targetSite) {
-                base.buildTargets.unshift(buildTarget);
+                colony.memory.buildTargets.unshift(buildTarget);
                 break;
             }
         }

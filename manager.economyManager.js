@@ -28,12 +28,6 @@ class EconomyManager {
         // Determining when to add/drop remotes and which remotes to sustain
         //
 
-        // Validate our base
-        const base = Memory.bases[colony.room.name];
-        if (!base) {
-            return;
-        }
-
         const lastSpawnUsage = profiler.wrap("spawn manager", () =>
             spawnManager.run(colony)
         );
@@ -48,13 +42,13 @@ class EconomyManager {
         // This should hone in on our actual max spawn capacity over a maximum of REACTION_SPEED ticks
         profiler.startSample("remotes");
         const nudge = 1 / REACTION_SPEED;
-        base.spawnUsage =
-            nudge * lastSpawnUsage + (1 - nudge) * base.spawnUsage;
+        colony.memory.spawnUsage =
+            nudge * lastSpawnUsage + (1 - nudge) * colony.memory.spawnUsage;
 
         // Based on our new estimates, we should be able to add/drop remotes according
         // to what we can or can no longer support
         const maxSpawnUsage = colony.structures[STRUCTURE_SPAWN].length;
-        if (base.spawnUsage > maxSpawnUsage - DROP_THRESHOLD) {
+        if (colony.memory.spawnUsage > maxSpawnUsage - DROP_THRESHOLD) {
             // Drop a remote each tick until our spawn usage is under the threshold
             const activeRemotes = colony.remotePlans.filter((r) => r.active);
             if (activeRemotes.length) {
@@ -80,7 +74,7 @@ class EconomyManager {
 
                 // Let's be sure to update our estimate so don't drop more than necessary
                 worst.active = false;
-                base.spawnUsage -= worst.cost;
+                colony.memory.spawnUsage -= worst.cost;
 
                 // Let depending modules know that we've dropped a remote
                 onRemoteDrop.invoke(colony, worst);
@@ -96,7 +90,7 @@ class EconomyManager {
                     );
                 }
             }
-        } else if (base.spawnUsage < maxSpawnUsage - ADD_THRESHOLD) {
+        } else if (colony.memory.spawnUsage < maxSpawnUsage - ADD_THRESHOLD) {
             // Add a remote if we can fit any
             const inactiveRemotes = [];
             const activeRemotes = [];
@@ -117,13 +111,13 @@ class EconomyManager {
 
                 // Validate adding this remote
                 if (
-                    base.spawnUsage + nextRemote.cost <=
+                    colony.memory.spawnUsage + nextRemote.cost <=
                     maxSpawnUsage - ADD_THRESHOLD
                 ) {
                     nextRemote.active = true;
 
                     // Update our estimate so we don't add more than necessary
-                    base.spawnUsage += nextRemote.cost;
+                    colony.memory.spawnUsage += nextRemote.cost;
 
                     // Let depending modules know that we've added a remote
                     onRemoteAdd.invoke(colony, nextRemote);
@@ -145,7 +139,7 @@ class EconomyManager {
 
         // Display our active remotes
         profiler.startSample("remote overlay");
-        this.drawOverlay(colony, base.spawnUsage);
+        this.drawOverlay(colony, colony.memory.spawnUsage);
         remoteManager.drawOverlay(colony);
         profiler.endSample("remote overlay");
     }

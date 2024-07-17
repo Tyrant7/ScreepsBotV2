@@ -13,6 +13,9 @@ class Colony {
      */
     constructor(room) {
         this.room = room;
+        if (!Memory.colonies[this.room.name]) {
+            Memory.colonies[this.room.name] = {};
+        }
         this.sources = this.room.find(FIND_SOURCES);
         this.mineral = this.room.find(FIND_MINERALS)[0];
 
@@ -27,6 +30,7 @@ class Colony {
         // Reinitialize stale objects
         profiler.startSample("cache");
         this.room = Game.rooms[this.room.name];
+        this.memory = Memory.colonies[this.room.name];
         this.sources = this.sources.map((s) => Game.getObjectById(s.id));
         this.mineral = Game.getObjectById(this.mineral.id);
         profiler.endSample("cache");
@@ -99,14 +103,9 @@ class Colony {
         }
         this.enemies = [];
 
-        const base = Memory.bases[this.room.name];
-        if (!base) {
-            return this.enemies;
-        }
-
         // Get all rooms of our active remotes
         const remoteRooms = new Set();
-        for (const remote of base.remotes) {
+        for (const remote of this.memory.remotes) {
             if (remote.active) {
                 remoteRooms.add(remote.room);
             }

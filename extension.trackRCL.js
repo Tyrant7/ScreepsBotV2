@@ -1,12 +1,8 @@
 const { onRCLUpgrade } = require("./event.colonyEvents");
 
 onRCLUpgrade.subscribe((colony, newRCL) => {
-    const base = Memory.bases[colony.room.name];
-    if (!base) {
-        return;
+    if (!colony.memory.rclTimes) {
+        colony.memory.rclTimes = {};
     }
-    if (!base.rclTimes) {
-        base.rclTimes = {};
-    }
-    base.rclTimes[newRCL] = Game.time;
+    colony.memory.rclTimes[newRCL] = Game.time;
 });

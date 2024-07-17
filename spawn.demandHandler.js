@@ -15,42 +15,38 @@ const MIN_MAX_DEMAND = {
 
 const NUDGE_RATE = 250;
 
-const ensureDefaults = (roomName) => {
+const ensureDefaults = (colony) => {
     for (const role in roles) {
-        if (getRoleDemand(roomName, role) !== undefined) {
+        if (getRoleDemand(colony, role) !== undefined) {
             continue;
         }
         const value = DEFAULT_DEMANDS[role] || 0;
-        setRoleDemand(roomName, role, value);
+        setRoleDemand(colony, role, value);
     }
 };
 
-const setRoleDemand = (roomName, role, value, freeze = 0) => {
-    const base = Memory.bases[roomName];
-    if (!base) {
-        return;
-    }
-    if (!base.spawnDemand) {
-        base.spawnDemand = {};
+const setRoleDemand = (colony, role, value, freeze = 0) => {
+    if (!colony.memory.spawnDemand) {
+        colony.memory.spawnDemand = {};
     }
     const constraints = MIN_MAX_DEMAND[role] || {};
     value = Math.max(value, constraints.min || 0);
     value = Math.min(value, constraints.max || Infinity);
-    base.spawnDemand[role] = { freeze, value };
+    colony.memory.spawnDemand[role] = { freeze, value };
 };
 
-const getRoleDemand = (roomName, role) => {
+const getRoleDemand = (colony, role) => {
     try {
-        return Memory.bases[roomName].spawnDemand[role];
+        return colony.memory.spawnDemand[role];
     } catch (e) {
         return undefined;
     }
 };
 
-const bumpRoleDemand = (roomName, role, amount, urgent = false) => {
-    const demand = getRoleDemand(roomName, role);
+const bumpRoleDemand = (colony, role, amount, urgent = false) => {
+    const demand = getRoleDemand(colony, role);
     if (!demand) {
-        setRoleDemand(roomName, role, amount);
+        setRoleDemand(colony, role, amount);
         return;
     }
     if (demand.freeze > 0 && !urgent) {
@@ -58,19 +54,19 @@ const bumpRoleDemand = (roomName, role, amount, urgent = false) => {
         return;
     }
     const oldValue = demand.value || 0;
-    setRoleDemand(roomName, role, oldValue + amount, NUDGE_RATE);
+    setRoleDemand(colony, role, oldValue + amount, NUDGE_RATE);
 };
 
-const nudgeRoleDemand = (roomName, role, amount, urgent = false) => {
+const nudgeRoleDemand = (colony, role, amount) => {
     amount /= NUDGE_RATE;
 
-    const demand = getRoleDemand(roomName, role);
+    const demand = getRoleDemand(colony, role);
     if (!demand) {
-        setRoleDemand(roomName, role, amount);
+        setRoleDemand(colony, role, amount);
         return;
     }
     const oldValue = (demand && demand.value) || 0;
-    setRoleDemand(roomName, role, oldValue + amount, demand.freeze - 1);
+    setRoleDemand(colony, role, oldValue + amount, demand.freeze - 1);
 };
 
 module.exports = {
