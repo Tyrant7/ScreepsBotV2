@@ -4,6 +4,7 @@ const {
     searchForUnexploredRoomsNearby,
     recordScoutingData,
 } = require("./scouting.scoutingUtility");
+const appraiseRoom = require("expansion.appraiseRoom");
 
 class ScoutManager extends CreepManager {
     createTask(creep, colony) {
@@ -34,7 +35,9 @@ class ScoutManager extends CreepManager {
             }
 
             if (leavingOrEntering) {
-                recordScoutingData(creep.room);
+                const scoutingData = recordScoutingData(creep.room);
+                scoutingData.score = appraiseRoom(scoutingData);
+                setScoutingData(scoutingData);
             }
         });
 

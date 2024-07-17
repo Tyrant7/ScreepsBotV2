@@ -59,9 +59,7 @@ class RemoteManager {
     validatePlans(colony) {
         // If we've recently discovered new rooms, let's replan our remotes
         profiler.startSample("validate rooms");
-        const remoteRooms = remotePlanner.getPotentialRemoteRooms(
-            colony.room.name
-        );
+        const remoteRooms = utility.getPotentialRemoteRooms(colony.room.name);
         const existingPlans = colony.remotePlans;
         let shouldReplan =
             !existingPlans || Game.time % REPLAN_REMOTE_INTERVAL === 0;

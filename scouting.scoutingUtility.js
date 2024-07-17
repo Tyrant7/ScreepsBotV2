@@ -71,8 +71,7 @@ const recordScoutingData = (room) => {
             });
         }
     }
-
-    setScoutingData(room.name, roomData);
+    return roomData;
 };
 
 const getScoutingData = (roomName) => {

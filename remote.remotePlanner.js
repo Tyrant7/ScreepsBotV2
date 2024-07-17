@@ -1,4 +1,5 @@
 const { MAX_VALUE } = require("./base.planningConstants");
+const { getPotentialRemoteRooms } = require("./remote.remoteUtility");
 const { getScoutingData } = require("./scouting.scoutingUtility");
 const { makeMiner, makeHauler, makeReserver } = require("./spawn.creepMaker");
 const { getCost, getSpawnTime } = require("./spawn.spawnUtility");
@@ -36,9 +37,7 @@ class RemotePlanner {
         */
 
         // First, let's get all of our possible remote rooms
-        const potentialRemoteRooms = this.getPotentialRemoteRooms(
-            colony.room.name
-        );
+        const potentialRemoteRooms = getPotentialRemoteRooms(colony.room.name);
 
         // Next, let's make a remote object for each source in these rooms
         const remotes = [];
@@ -238,61 +237,6 @@ class RemotePlanner {
         // we could not have chosen that technically cheaper (remember that it only costs 5 tiles of road, instead of 15)
         // remote first, since the 15 tile remote it depended on was not activated yet
         return finalRemotes;
-    }
-
-    /**
-     * Gets all possible remote rooms in Manhattan distance of 2.
-     * @param {string} baseName Name of the room to get remotes for.
-     * @returns {string[]} An array of room names.
-     */
-    getPotentialRemoteRooms(baseName) {
-        // Let's make a set containing all rooms in Manhattan distance of 2
-        const nearbyRooms = [];
-        for (const neighbour of Object.values(
-            Game.map.describeExits(baseName)
-        )) {
-            if (this.isValidRemote(neighbour)) {
-                nearbyRooms.push(neighbour);
-            }
-            for (const neighbourOfNeighbours of Object.values(
-                Game.map.describeExits(neighbour)
-            )) {
-                if (
-                    neighbourOfNeighbours !== baseName &&
-                    !nearbyRooms.includes(neighbourOfNeighbours) &&
-                    this.isValidRemote(neighbourOfNeighbours)
-                ) {
-                    nearbyRooms.push(neighbourOfNeighbours);
-                }
-            }
-        }
-        return nearbyRooms;
-    }
-
-    /**
-     * Determines if this room is a valid remote.
-     * @param {string} roomName The name of the room to check.
-     * @returns True or false depending on the presence of sources, invaders, players, and other factors.
-     */
-    isValidRemote(roomName) {
-        const remoteInfo = getScoutingData(roomName);
-        if (!remoteInfo || !remoteInfo.lastVisit) {
-            return false;
-        }
-
-        // No sources
-        if (!remoteInfo.sources || !remoteInfo.sources.length) {
-            return false;
-        }
-
-        // Source keepers
-        if (
-            (remoteInfo.sourceKeepers && remoteInfo.sourceKeepers.length) ||
-            (remoteInfo.keeperLairs && remoteInfo.keeperLairs.length)
-        ) {
-            return false;
-        }
-        return true;
     }
 
     /**
