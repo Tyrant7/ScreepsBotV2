@@ -30,6 +30,13 @@ const REPAIR_THRESHOLDS = {
 };
 */
 
+const meetsMinimumSpawnRequirements = (colony) => {
+    return (
+        colony.miners.length &&
+        (colony.haulers.length || colony.starterHaulers.length)
+    );
+};
+
 /**
  * Demand handlers handle nudging the demand slightly towards
  * the ideal value of roles that fluctuate need a lot.
@@ -41,7 +48,7 @@ const REPAIR_THRESHOLDS = {
  */
 const demandHandlers = {
     [roles.defender]: (colony, set, nudge, bump) => {
-        if (!colony.miners.length || !colony.haulers.length) {
+        if (meetsMinimumSpawnRequirements(colony)) {
             return set(0);
         }
         const enemies = colony.getEnemies();
@@ -49,10 +56,7 @@ const demandHandlers = {
         set(diff);
     },
     [roles.miner]: (colony, set, nudge, bump) => {
-        if (
-            !colony.miners.length ||
-            (!colony.haulers.length && !colony.starterHaulers.length)
-        ) {
+        if (meetsMinimumSpawnRequirements(colony)) {
             return set(DEFAULT_DEMANDS[roles.miner]);
         }
         // If we have an open site, nudge miners
@@ -68,10 +72,7 @@ const demandHandlers = {
         return set(workingMinerCount - 0.5);
     },
     [roles.hauler]: (colony, set, nudge, bump) => {
-        if (
-            !colony.miners.length ||
-            (!colony.haulers.length && !colony.starterHaulers.length)
-        ) {
+        if (meetsMinimumSpawnRequirements(colony)) {
             return set(DEFAULT_DEMANDS[roles.hauler]);
         }
 
@@ -117,7 +118,7 @@ const demandHandlers = {
         return nudge(haulerDemand < target ? 1 : -1);
     },
     [roles.upgrader]: (colony, set, nudge, bump) => {
-        if (!colony.miners.length || !colony.haulers.length) {
+        if (meetsMinimumSpawnRequirements(colony)) {
             return set(DEFAULT_DEMANDS[roles.upgrader]);
         }
 
