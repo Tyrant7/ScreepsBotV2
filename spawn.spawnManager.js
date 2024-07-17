@@ -68,7 +68,10 @@ const demandHandlers = {
         return set(workingMinerCount - 0.5);
     },
     [roles.hauler]: (colony, set, nudge, bump) => {
-        if (!colony.miners.length || !colony.haulers.length) {
+        if (
+            !colony.miners.length ||
+            (!colony.haulers.length && !colony.starterHaulers.length)
+        ) {
             return set(DEFAULT_DEMANDS[roles.hauler]);
         }
 

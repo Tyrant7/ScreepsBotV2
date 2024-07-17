@@ -1,1 +1,3 @@
-const appraiseRoom = (scoutingData) => {};
+const appraiseRoom = (scoutingData) => {
+    
+};
