@@ -8,8 +8,8 @@ Tyrant Bot V2
 if (!Memory.creeps) {
     Memory.creeps = {};
 }
-if (!Memory.rooms) {
-    Memory.rooms = {};
+if (!Memory.scoutData) {
+    Memory.scoutData = {};
 }
 if (!Memory.colonies) {
     Memory.colonies = {};
