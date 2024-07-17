@@ -15,7 +15,6 @@ const overlay = require("./debug.overlay");
 const profiler = require("./debug.profiler");
 
 const RAISE_HAULER_THRESHOLD = 2;
-const RAISE_HAULER_RATIO = 800;
 const LOWER_HAULER_THRESHOLD = 2;
 
 const RAISE_UPGRADER_THRESHOLD = 1;
@@ -198,6 +197,8 @@ const getDemands = (colony, remote) => {
 
     // Quickly roughly calculate how many haulers and miners we'll need
     // to support this remote
+    // Note that the above calculates a ratio for unreserved rooms in the case
+    // we cannot yet reserve our remotes
     const newHauler = creepMaker.makeHauler(
         colony.room.energyCapacityAvailable
     );
