@@ -1,4 +1,5 @@
 const { MAX_VALUE } = require("./base.planningConstants");
+const { getScoutingData } = require("./scouting.scoutingUtility");
 const { makeMiner, makeHauler, makeReserver } = require("./spawn.creepMaker");
 const { getCost, getSpawnTime } = require("./spawn.spawnUtility");
 
@@ -42,7 +43,7 @@ class RemotePlanner {
         // Next, let's make a remote object for each source in these rooms
         const remotes = [];
         for (const remoteRoom of potentialRemoteRooms) {
-            for (const source of Memory.rooms[remoteRoom].sources) {
+            for (const source of getScoutingData(remoteRoom).sources) {
                 remotes.push({
                     room: remoteRoom,
                     source: {
@@ -274,7 +275,7 @@ class RemotePlanner {
      * @returns True or false depending on the presence of sources, invaders, players, and other factors.
      */
     isValidRemote(roomName) {
-        const remoteInfo = Memory.rooms[roomName];
+        const remoteInfo = getScoutingData(roomName);
         if (!remoteInfo || !remoteInfo.lastVisit) {
             return false;
         }
@@ -320,7 +321,7 @@ class RemotePlanner {
 
             // We'll discourage pathing directly next to the controller
             // since reservers will be working there
-            const room = Memory.rooms[remoteRoom];
+            const room = getScoutingData(remoteRoom);
             if (!room.controller) continue;
             const contP = room.controller.pos;
             const terrain = Game.map.getRoomTerrain(remoteRoom);

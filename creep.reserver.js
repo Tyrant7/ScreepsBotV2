@@ -1,6 +1,6 @@
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
-const remoteUtility = require("./remote.remoteUtility");
+const { getScoutingData } = require("./scouting.scoutingUtility");
 
 class ReserverManager extends CreepManager {
     /**
@@ -25,9 +25,9 @@ class ReserverManager extends CreepManager {
                     Object.values(this.activeTasks).find(
                         (task) =>
                             task.data.roomName === r.room ||
-                            (Memory.rooms[r.room].controller &&
+                            (getScoutingData(r.room.name).controller &&
                                 task.data.controllerID ===
-                                    Memory.rooms[r.room].controller.id)
+                                    getScoutingData(r.room.name).controller.id)
                     );
                 return active && !reserved;
             });

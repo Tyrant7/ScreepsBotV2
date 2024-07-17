@@ -7,6 +7,7 @@ const { cachePathMatrix } = require("./extension.betterPathing");
 
 const overlay = require("./debug.overlay");
 const profiler = require("./debug.profiler");
+const { getScoutingData } = require("./scouting.scoutingUtility");
 
 /**
  * This will be the cost to path outside of our planned roads.
@@ -67,7 +68,7 @@ class RemoteManager {
         if (!shouldReplan) {
             for (const room of remoteRooms) {
                 // If we're lacking scouting data, we'll skip this room
-                if (!Memory.rooms[room]) {
+                if (!getScoutingData(room)) {
                     continue;
                 }
                 // If we already have a plan for this room, we can skip it as well
