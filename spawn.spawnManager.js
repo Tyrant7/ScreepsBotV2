@@ -402,9 +402,14 @@ class SpawnManager {
 
             // Save the room responsible for this creep and start spawning
             next.memory.home = colony.room.name;
-            spawn.spawnCreep(next.body, next.name, {
+            const result = spawn.spawnCreep(next.body, next.name, {
                 memory: next.memory,
             });
+
+            // Didn't spawn successfully
+            if (result !== OK) {
+                inactiveSpawns.push(spawn);
+            }
         }
         profiler.endSample("spawning");
 
