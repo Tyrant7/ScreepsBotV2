@@ -60,10 +60,15 @@ module.exports = {
     /**
      * Gets all valid remote rooms in Manhattan distance of 2.
      * @param {string} baseName Name of the room to get remotes for.
+     * @param {boolean?} filterChoices Should the search filter for valid rooms or just include all of them?
      * @returns {string[]} An array of room names.
      */
-    getPotentialRemoteRooms: function (baseName) {
+    getPotentialRemoteRooms: function (baseName, filterChoices = true) {
         const isValidRemote = (roomName) => {
+            if (!filterChoices) {
+                return true;
+            }
+
             const remoteInfo = getScoutingData(roomName);
             if (!remoteInfo || !remoteInfo.lastVisit) {
                 return false;
