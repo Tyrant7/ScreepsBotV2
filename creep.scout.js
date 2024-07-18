@@ -30,7 +30,7 @@ class ScoutManager extends CreepManager {
                 return true;
             } else {
                 data.maxRooms = 32;
-                data.maxOps = 9000;
+                data.maxOps = 16384;
                 data.moveToRoom(creep, data);
                 creep.say("🔭", true);
             }
