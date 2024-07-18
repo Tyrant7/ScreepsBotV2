@@ -21,7 +21,7 @@ const searchForUnexploredRoomsNearby = (startRoomName, maxDepth) => {
     return null;
 };
 
-const recordScoutingData = (room) => {
+const packageScoutingData = (room) => {
     const recordPosAndID = (structure) => {
         return {
             pos: {
@@ -84,7 +84,7 @@ const setScoutingData = (roomName, newData) => {
 
 module.exports = {
     searchForUnexploredRoomsNearby,
-    recordScoutingData,
+    packageScoutingData,
     getScoutingData,
     setScoutingData,
 };

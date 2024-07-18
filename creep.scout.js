@@ -2,7 +2,8 @@ const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
 const {
     searchForUnexploredRoomsNearby,
-    recordScoutingData,
+    packageScoutingData,
+    setScoutingData,
 } = require("./scouting.scoutingUtility");
 const appraiseRoom = require("expansion.appraiseRoom");
 
@@ -35,8 +36,11 @@ class ScoutManager extends CreepManager {
             }
 
             if (leavingOrEntering) {
-                const scoutingData = recordScoutingData(creep.room);
-                scoutingData.score = appraiseRoom(scoutingData);
+                const scoutingData = packageScoutingData(creep.room);
+                scoutingData.score = appraiseRoom(
+                    scoutingData,
+                    creep.room.name
+                );
                 setScoutingData(scoutingData);
             }
         });
