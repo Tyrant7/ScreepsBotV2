@@ -77,11 +77,14 @@ const appraisalLayers = [
                 const diffX = Math.abs(colonyPos.xx - roomWorldPos.xx);
                 const diffY = Math.abs(colonyPos.yy - roomWorldPos.yy);
                 const linearDist = Math.min(diffX, diffY);
-                if (linearDist < MIN_DIST || linearDist > MAX_DIST) {
+                if (linearDist < MIN_DIST) {
                     // Shouldn't take this room
                     return -Infinity;
                 }
-                sumDist += linearDist;
+                // We'll apply a small penalty for going further away than our max
+                const weightedDist =
+                    linearDist > MAX_DIST ? MAX_DIST - linearDist : linearDist;
+                sumDist += weightedDist;
             }
 
             // Otherwise, a sum of distances is a good way to encourage spreading rooms out
