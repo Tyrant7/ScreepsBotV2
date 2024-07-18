@@ -2,7 +2,7 @@ const RemotePlanner = require("./remote.remotePlanner");
 const remotePlanner = new RemotePlanner();
 
 const utility = require("./remote.remoteUtility");
-const { pathSets, REPLAN_REMOTE_INTERVAL } = require("./constants");
+const { pathSets, REPLAN_REMOTE_INTERVAL, ROOM_SIZE } = require("./constants");
 const { cachePathMatrix } = require("./extension.betterPathing");
 
 const overlay = require("./debug.overlay");
@@ -109,8 +109,8 @@ class RemoteManager {
             // Since roads have been filtered out of room edges and we're using those to draw our paths,
             // we can't mark them as unwalkable
             const unwalkableMatrix = new PathFinder.CostMatrix();
-            for (let x = 0; x < 50; x++) {
-                for (let y = 0; y < 50; y++) {
+            for (let x = 0; x < ROOM_SIZE; x++) {
+                for (let y = 0; y < ROOM_SIZE; y++) {
                     if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
                         continue;
                     }

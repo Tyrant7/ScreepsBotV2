@@ -60,6 +60,8 @@ const REMOTE_ROAD_RCL = 3;
  */
 const REMOTE_CONTAINER_RCL = 4;
 
+const ROOM_SIZE = 50;
+
 module.exports = {
     roles,
     pathSets,
@@ -71,4 +73,5 @@ module.exports = {
     REPLAN_REMOTE_INTERVAL,
     REMOTE_ROAD_RCL,
     REMOTE_CONTAINER_RCL,
+    ROOM_SIZE,
 };

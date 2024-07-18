@@ -10,6 +10,7 @@ const {
     MAX_STRUCTURES,
     HEADER_SIZE,
 } = require("./base.planningConstants");
+const { ROOM_SIZE } = require("./constants");
 
 const MAX_STAMP_ATTEMPTS = 20;
 const RAMPART_GAP = 3;
@@ -254,7 +255,7 @@ class PlanBuilder {
                 plainCost: 2,
                 swampCost: 2,
                 maxRooms: 1,
-                maxOps: 2500,
+                maxOps: ROOM_SIZE * ROOM_SIZE,
                 roomCallback: function (roomName) {
                     return pathfindMatrix;
                 },
@@ -482,7 +483,7 @@ class PlanBuilder {
 
             const result = PathFinder.search(pathPoint, goals, {
                 maxRooms: 1,
-                maxOps: 2500,
+                maxOps: ROOM_SIZE * ROOM_SIZE,
                 roomCallback: function (roomName) {
                     return roadMatrix;
                 },
@@ -1047,8 +1048,8 @@ class PlanBuilder {
                         exteriorRamparts,
                         this.tm
                     );
-                    for (let x = 0; x < 50; x++) {
-                        for (let y = 0; y < 50; y++) {
+                    for (let x = 0; x < ROOM_SIZE; x++) {
+                        for (let y = 0; y < ROOM_SIZE; y++) {
                             if (
                                 this.roomPlan.get(x, y) === 0 ||
                                 this.ramparts.get(x, y) ||
@@ -1108,8 +1109,8 @@ class PlanBuilder {
                         roadPositions,
                         new PathFinder.CostMatrix()
                     );
-                    for (let x = 0; x < 50; x++) {
-                        for (let y = 0; y < 50; y++) {
+                    for (let x = 0; x < ROOM_SIZE; x++) {
+                        for (let y = 0; y < ROOM_SIZE; y++) {
                             if (
                                 accessibleStructures.includes(
                                     this.roomPlan.get(x, y)

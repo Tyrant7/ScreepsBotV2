@@ -63,6 +63,8 @@
  * each round of bfs. See the comments in the code for details.
  */
 
+const { ROOM_SIZE } = require("./constants");
+
 /**
  * @typedef Point
  * @property {number} x
@@ -190,8 +192,8 @@ function minCutToExit(sources, costMap) {
     // location, while 8 means the edge goes from s-node to d-node or vice versa
     const capacityMap = new Int32Array(1 << 17);
     capacityMap.fill(0);
-    for (let y = 0; y < 50; ++y) {
-        for (let x = 0; x < 50; ++x) {
+    for (let y = 0; y < ROOM_SIZE; ++y) {
+        for (let x = 0; x < ROOM_SIZE; ++x) {
             if (costMap.get(x, y) == 255) {
                 continue;
             }

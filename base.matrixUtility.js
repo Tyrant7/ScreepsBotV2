@@ -1,4 +1,5 @@
 const { MAX_VALUE } = require("./base.planningConstants");
+const { ROOM_SIZE } = require("./constants");
 
 module.exports = {
     /**
@@ -133,14 +134,14 @@ module.exports = {
 
                     // We're already marked this tile to be scored, or it's unwalkable and we should skip it
                     if (
-                        scoredPositions[newX * 50 + newY] ||
+                        scoredPositions[newX * ROOM_SIZE + newY] ||
                         matrix.get(newX, newY) === MAX_VALUE
                     ) {
                         continue;
                     }
 
                     // Mark this next tile as scored
-                    scoredPositions[newX * 50 + newY] = true;
+                    scoredPositions[newX * ROOM_SIZE + newY] = true;
                     nextQueue.push({ x: newX, y: newY });
                 }
             }
@@ -266,8 +267,8 @@ module.exports = {
      * @param {(x: number, y: number) => void} callbackFn
      */
     iterateMatrix: function (callbackFn) {
-        for (let x = 0; x < 50; x++) {
-            for (let y = 0; y < 50; y++) {
+        for (let x = 0; x < ROOM_SIZE; x++) {
+            for (let y = 0; y < ROOM_SIZE; y++) {
                 callbackFn(x, y);
             }
         }

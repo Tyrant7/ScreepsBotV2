@@ -1,7 +1,7 @@
 const remoteUtility = require("./remote.remoteUtility");
 const estimateTravelTime = require("./util.estimateTravelTime");
 const { getPlanData, keys } = require("./base.planningUtility");
-const { roles } = require("./constants");
+const { roles, ROOM_SIZE } = require("./constants");
 const { MINER_WORK, REMOTE_MINER_WORK } = require("./spawn.spawnConstants");
 const profiler = require("./debug.profiler");
 const { RESERVER_COST } = require("./spawn.creepMaker");
@@ -321,7 +321,7 @@ class Colony {
     // #region Hauling
 
     hashPickupRequest(pos, resourceType) {
-        return `${pos.x + pos.y * 50 + pos.roomName},${resourceType}`;
+        return `${pos.x + pos.y * ROOM_SIZE + pos.roomName},${resourceType}`;
     }
 
     hashDropoffRequest(dropoffIDs, amount, resourceType) {

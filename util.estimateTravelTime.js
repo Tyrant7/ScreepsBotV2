@@ -1,3 +1,5 @@
+const { ROOM_SIZE } = require("./constants");
+
 // Range can't easily be calculated between rooms, unfortunately, so we'll just estimate
 module.exports = function estimateTravelTime(pos1, pos2) {
     // Don't need to estimate
@@ -7,10 +9,14 @@ module.exports = function estimateTravelTime(pos1, pos2) {
     const pos1RoomPos = roomNameToXY(pos1.roomName);
     const pos2RoomPos = roomNameToXY(pos2.roomName);
     const diffX = Math.abs(
-        pos1RoomPos[0] * 50 + pos1.x - (pos2RoomPos[0] * 50 + pos2.x)
+        pos1RoomPos[0] * ROOM_SIZE +
+            pos1.x -
+            (pos2RoomPos[0] * ROOM_SIZE + pos2.x)
     );
     const diffY = Math.abs(
-        pos1RoomPos[1] * 50 + pos1.y - (pos2RoomPos[1] * 50 + pos2.y)
+        pos1RoomPos[1] * ROOM_SIZE +
+            pos1.y -
+            (pos2RoomPos[1] * ROOM_SIZE + pos2.y)
     );
     return Math.max(diffX, diffY);
 };

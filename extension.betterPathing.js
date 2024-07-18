@@ -2,6 +2,7 @@ const {
     ROAD_PATHING_COST,
     INTERRUPT_PATHING_COST,
     directionDelta,
+    ROOM_SIZE,
 } = require("./constants");
 
 //#region Pathing
@@ -231,8 +232,8 @@ const utility = {
         const direction = serializedPath[0];
         const delta = directionDelta[direction];
         const nextPos = {
-            x: (lastPos.x + delta.x) % 50,
-            y: (lastPos.y + delta.y) % 50,
+            x: (lastPos.x + delta.x) % ROOM_SIZE,
+            y: (lastPos.y + delta.y) % ROOM_SIZE,
         };
         const nextX = nextPos.x < 10 ? "0" + nextPos.x : nextPos.x.toString();
         const nextY = nextPos.y < 10 ? "0" + nextPos.y : nextPos.y.toString();

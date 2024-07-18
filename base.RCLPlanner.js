@@ -7,6 +7,7 @@ const {
     MAX_STRUCTURES,
     MAX_RCL,
 } = require("./base.planningConstants");
+const { ROOM_SIZE } = require("./constants");
 
 const SOURCE_CONTAINER_RCL = 2;
 const UPGRADER_CONTAINER_RCL = 3;
@@ -282,7 +283,7 @@ class RCLPlanner {
                         goal,
                         {
                             maxRooms: 1,
-                            maxOps: 2500,
+                            maxOps: ROOM_SIZE * ROOM_SIZE,
                             roomCallback: function (roomName) {
                                 return roadMatrix;
                             },

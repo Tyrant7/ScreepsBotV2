@@ -251,14 +251,14 @@ const visualizeCostMatrix = (
         return;
     }
     let highestValue = 0;
-    for (let x = 0; x < 50; x++) {
-        for (let y = 0; y < 50; y++) {
+    for (let x = 0; x < ROOM_SIZE; x++) {
+        for (let y = 0; y < ROOM_SIZE; y++) {
             highestValue = Math.max(matrix.get(x, y), highestValue);
         }
     }
     const visual = new RoomVisual(roomName);
-    for (let x = 0; x < 50; x++) {
-        for (let y = 0; y < 50; y++) {
+    for (let x = 0; x < ROOM_SIZE; x++) {
+        for (let y = 0; y < ROOM_SIZE; y++) {
             const value = matrix.get(x, y);
             if (excludedValues.includes(value)) {
                 continue;
@@ -284,8 +284,8 @@ const visualizeBasePlan = (roomName, planMatrix, rampartMatrix, mapping) => {
         return;
     }
     const visual = new RoomVisual(roomName);
-    for (let x = 0; x < 50; x++) {
-        for (let y = 0; y < 50; y++) {
+    for (let x = 0; x < ROOM_SIZE; x++) {
+        for (let y = 0; y < ROOM_SIZE; y++) {
             const value = planMatrix.get(x, y);
             if (rampartMatrix.get(x, y)) {
                 visual.structure(x, y, STRUCTURE_RAMPART);
@@ -302,7 +302,7 @@ const visualizeBasePlan = (roomName, planMatrix, rampartMatrix, mapping) => {
 
 //#region Arrows
 
-const { directionDelta } = require("./constants");
+const { directionDelta, ROOM_SIZE } = require("./constants");
 
 const drawTrafficArrow = (pos, direction, style) => {
     if (!DEBUG.drawOverlay) {

@@ -4,6 +4,7 @@ const {
     MAX_VALUE,
     HEADER_SIZE,
 } = require("./base.planningConstants");
+const { ROOM_SIZE } = require("./constants");
 
 const numberToChar = {
     [structureToNumber[STRUCTURE_SPAWN]]: "a",
@@ -81,8 +82,8 @@ const deserializeBasePlan = (serializedPlans, rcl) => {
             }
             position += parseInt(skip) || 0;
 
-            const x = position / 50;
-            const y = position % 50;
+            const x = position / ROOM_SIZE;
+            const y = position % ROOM_SIZE;
             const trueChar = char.toLowerCase();
             const hasRampart = trueChar !== char;
             if (hasRampart) {
@@ -188,8 +189,8 @@ const runTests = (rclStructures, rclRamparts) => {
 };
 
 const verifyIndenticality = (beforePlan, afterPlan) => {
-    for (let x = 0; x < 50; x++) {
-        for (let y = 0; y < 50; y++) {
+    for (let x = 0; x < ROOM_SIZE; x++) {
+        for (let y = 0; y < ROOM_SIZE; y++) {
             const before = beforePlan.get(x, y);
             const after = afterPlan.get(x, y);
             if (before !== after) {

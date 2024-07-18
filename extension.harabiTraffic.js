@@ -2,7 +2,7 @@
  * A modified version of Harabi's traffic manager script.
  */
 
-const { directionDelta } = require("./constants");
+const { directionDelta, ROOM_SIZE } = require("./constants");
 const { drawTrafficArrow } = require("./debug.overlay");
 
 Creep.prototype.registerMove = function (target) {
@@ -213,12 +213,12 @@ function assignCreepToCoordinate(creep, coord) {
 }
 
 function packCoordinates(coord) {
-    return 50 * coord.y + coord.x;
+    return ROOM_SIZE * coord.y + coord.x;
 }
 
 function unpackCoordinates(packedCoord) {
-    const x = packedCoord % 50;
-    const y = (packedCoord - x) / 50;
+    const x = packedCoord % ROOM_SIZE;
+    const y = (packedCoord - x) / ROOM_SIZE;
     return { x, y };
 }
 
