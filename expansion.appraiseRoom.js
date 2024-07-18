@@ -39,20 +39,24 @@ const appraisalLayers = [
                     paths.push(result.path.length);
                 }
             }
-            paths.sort();
+            paths.sort((a, b) => b - a);
             const MAX_REMOTE_DIST = ROOM_SIZE * 2;
 
-            // Now we have all of our distances sorted
+            // Now we have all of our distances sorted by closest first
             // we'll consider each source as worth more than the previous
             // since we're far more likely to sustain closer sources for remotes
             let score = 0;
             for (let i = paths.length; i > 0; i--) {
-                const dist = Math.sqrt(MAX_REMOTE_DIST - paths[i - 1]);
-                score += i * dist;
+                // Distance with exponential falloff
+                const dist = Math.sqrt(
+                    MAX_REMOTE_DIST -
+                        Math.min(paths[i - 1], MAX_REMOTE_DIST - 1)
+                );
 
-                console.log(i * dist);
+                // 0.5 - 1 range of weight depending on ranking of source
+                const weight = (i / paths.length) * 0.5 + 0.5;
+                score += weight * dist;
             }
-            console.log(score);
             return score;
         },
     },
