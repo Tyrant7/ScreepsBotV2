@@ -76,7 +76,10 @@ const appraisalLayers = [
                 const colonyPos = roomNameToXY(key);
                 const diffX = Math.abs(colonyPos.xx - roomWorldPos.xx);
                 const diffY = Math.abs(colonyPos.yy - roomWorldPos.yy);
-                const linearDist = Math.min(diffX, diffY);
+                const linearDist = Math.max(diffX, diffY);
+
+                console.log(linearDist);
+
                 if (linearDist < MIN_DIST) {
                     // Shouldn't take this room
                     return -Infinity;
@@ -100,6 +103,14 @@ const appraiseRoom = (scoutingData, roomName) => {
         return 0;
     }
 
+    if (
+        scoutingData.controller.owner &&
+        scoutingData.controller.owner.username === ME
+    ) {
+        console.log("already owned this room");
+        return 0;
+    }
+
     // Let's ensure that all possible remotes have been scouted
     const allRemotes = getPotentialRemoteRooms(roomName, (roomName) => true);
     const scoutedRemotes = getPotentialRemoteRooms(roomName, (roomName) =>
@@ -120,7 +131,7 @@ const appraiseRoom = (scoutingData, roomName) => {
         const layerScore = layerRawScore * layer.WEIGHT;
         score += layerScore;
 
-        console.log(layer.DEBUG_NAME);
+        console.log("-- Running layer: " + layer.DEBUG_NAME);
         console.log("Raw score: " + layerRawScore);
         console.log("Weighted score: " + layerScore);
     }
