@@ -1,4 +1,5 @@
 const { ROOM_SIZE } = require("./constants");
+const { roomNameToXY } = require("./scouting.scoutingUtility");
 
 // Range can't easily be calculated between rooms, unfortunately, so we'll just estimate
 module.exports = function estimateTravelTime(pos1, pos2) {
@@ -9,35 +10,14 @@ module.exports = function estimateTravelTime(pos1, pos2) {
     const pos1RoomPos = roomNameToXY(pos1.roomName);
     const pos2RoomPos = roomNameToXY(pos2.roomName);
     const diffX = Math.abs(
-        pos1RoomPos[0] * ROOM_SIZE +
+        pos1RoomPos.xx * ROOM_SIZE +
             pos1.x -
-            (pos2RoomPos[0] * ROOM_SIZE + pos2.x)
+            (pos2RoomPos.xx * ROOM_SIZE + pos2.x)
     );
     const diffY = Math.abs(
-        pos1RoomPos[1] * ROOM_SIZE +
+        pos1RoomPos.yy * ROOM_SIZE +
             pos1.y -
-            (pos2RoomPos[1] * ROOM_SIZE + pos2.y)
+            (pos2RoomPos.yy * ROOM_SIZE + pos2.y)
     );
     return Math.max(diffX, diffY);
 };
-
-// Function to convert room name to coords taken from Screeps Engine
-function roomNameToXY(name) {
-    let xx = parseInt(name.substr(1), 10);
-    let verticalPos = 2;
-    if (xx >= 100) {
-        verticalPos = 4;
-    } else if (xx >= 10) {
-        verticalPos = 3;
-    }
-    let yy = parseInt(name.substr(verticalPos + 1), 10);
-    let horizontalDir = name.charAt(0);
-    let verticalDir = name.charAt(verticalPos);
-    if (horizontalDir === "W" || horizontalDir === "w") {
-        xx = -xx - 1;
-    }
-    if (verticalDir === "N" || verticalDir === "n") {
-        yy = -yy - 1;
-    }
-    return [xx, yy];
-}
