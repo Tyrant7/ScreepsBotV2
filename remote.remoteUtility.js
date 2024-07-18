@@ -60,41 +60,16 @@ module.exports = {
     /**
      * Gets all valid remote rooms in Manhattan distance of 2.
      * @param {string} baseName Name of the room to get remotes for.
-     * @param {boolean?} filterChoices Should the search filter for valid rooms or just include all of them?
+     * @param {(string) => boolean} validator How should remote rooms be qualified?
      * @returns {string[]} An array of room names.
      */
-    getPotentialRemoteRooms: function (baseName, filterChoices = true) {
-        const isValidRemote = (roomName) => {
-            if (!filterChoices) {
-                return true;
-            }
-
-            const remoteInfo = getScoutingData(roomName);
-            if (!remoteInfo || !remoteInfo.lastVisit) {
-                return false;
-            }
-
-            // No sources
-            if (!remoteInfo.sources || !remoteInfo.sources.length) {
-                return false;
-            }
-
-            // Source keepers
-            if (
-                (remoteInfo.sourceKeepers && remoteInfo.sourceKeepers.length) ||
-                (remoteInfo.keeperLairs && remoteInfo.keeperLairs.length)
-            ) {
-                return false;
-            }
-            return true;
-        };
-
+    getPotentialRemoteRooms: function (baseName, validator) {
         // Let's make a set containing all rooms in Manhattan distance of 2
         const nearbyRooms = [];
         for (const neighbour of Object.values(
             Game.map.describeExits(baseName)
         )) {
-            if (isValidRemote(neighbour)) {
+            if (validator(neighbour)) {
                 nearbyRooms.push(neighbour);
             }
             for (const neighbourOfNeighbours of Object.values(
@@ -103,12 +78,33 @@ module.exports = {
                 if (
                     neighbourOfNeighbours !== baseName &&
                     !nearbyRooms.includes(neighbourOfNeighbours) &&
-                    isValidRemote(neighbourOfNeighbours)
+                    validator(neighbourOfNeighbours)
                 ) {
                     nearbyRooms.push(neighbourOfNeighbours);
                 }
             }
         }
         return nearbyRooms;
+    },
+
+    isValidRemoteRoom: function (roomName) {
+        const remoteInfo = getScoutingData(roomName);
+        if (!remoteInfo || !remoteInfo.lastVisit) {
+            return false;
+        }
+
+        // No sources
+        if (!remoteInfo.sources || !remoteInfo.sources.length) {
+            return false;
+        }
+
+        // Source keepers
+        if (
+            (remoteInfo.sourceKeepers && remoteInfo.sourceKeepers.length) ||
+            (remoteInfo.keeperLairs && remoteInfo.keeperLairs.length)
+        ) {
+            return false;
+        }
+        return true;
     },
 };

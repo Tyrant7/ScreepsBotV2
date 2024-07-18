@@ -41,7 +41,7 @@ class ScoutManager extends CreepManager {
                     scoutingData,
                     creep.room.name
                 );
-                setScoutingData(scoutingData);
+                setScoutingData(creep.room.name, scoutingData);
             }
         });
 

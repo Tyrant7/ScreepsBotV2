@@ -1,4 +1,5 @@
 const { getPotentialRemoteRooms } = require("./remote.remoteUtility");
+const { getScoutingData } = require("./scouting.scoutingUtility");
 
 // Remotes are taken from a manhatten distance of 2 rooms,
 // so any given source cannot be further than 2 * ROOM_WIDTH + ROOM_WIDTH / 2
@@ -22,9 +23,27 @@ const appraiseRoom = (scoutingData, roomName) => {
         return 0;
     }
 
-    const remotes = getPotentialRemoteRooms(roomName, false);
-    console.log(remotes.length);
-    for (const remote of remotes) {
+    const allRemotes = getPotentialRemoteRooms(roomName, (roomName) => true);
+    const scoutedRemotes = getPotentialRemoteRooms(roomName, (roomName) =>
+        getScoutingData(roomName)
+    );
+    if (allRemotes.length !== scoutedRemotes.length) {
+        console.log("not all remotes scouted!");
+
+        console.log("all remotes");
+        for (const remote of allRemotes) {
+            console.log(remote);
+        }
+
+        console.log("scouted remotes");
+        for (const remote of scoutedRemotes) {
+            console.log(remote);
+        }
+
+        return 0;
+    }
+
+    for (const remote of scoutedRemotes) {
         console.log(remote);
     }
 

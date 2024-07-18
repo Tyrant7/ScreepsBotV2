@@ -1,5 +1,8 @@
 const { MAX_VALUE } = require("./base.planningConstants");
-const { getPotentialRemoteRooms } = require("./remote.remoteUtility");
+const {
+    getPotentialRemoteRooms,
+    isValidRemoteRoom,
+} = require("./remote.remoteUtility");
 const { getScoutingData } = require("./scouting.scoutingUtility");
 const { makeMiner, makeHauler, makeReserver } = require("./spawn.creepMaker");
 const { getCost, getSpawnTime } = require("./spawn.spawnUtility");
@@ -37,7 +40,10 @@ class RemotePlanner {
         */
 
         // First, let's get all of our possible remote rooms
-        const potentialRemoteRooms = getPotentialRemoteRooms(colony.room.name);
+        const potentialRemoteRooms = getPotentialRemoteRooms(
+            colony.room.name,
+            isValidRemoteRoom
+        );
 
         // Next, let's make a remote object for each source in these rooms
         const remotes = [];
