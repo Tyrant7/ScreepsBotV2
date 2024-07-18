@@ -9,12 +9,14 @@ const { getScoutingData, roomNameToXY } = require("./scouting.scoutingUtility");
  * Each layer will return a score, which will be weighted according to the constants
  * associted with each layer.
  */
-const appraisalLayers = {
-    sourceCount: {
+const appraisalLayers = [
+    {
+        DEBUG_NAME: "sourceCount",
         WEIGHT: 100,
         go: (data, roomName, remotes) => data.sources.length,
     },
-    remoteDistances: {
+    {
+        DEBUG_NAME: "remoteDistances",
         WEIGHT: 1,
         go: (data, roomName, remotes) => {
             // Let's draw some distances to all remote sources and sort by distance
@@ -54,7 +56,35 @@ const appraisalLayers = {
             return score;
         },
     },
-};
+    {
+        DEBUG_NAME: "baseDistance",
+        WEIGHT: 3,
+        go: (data, roomName, remotes) => {
+            // Remoting distance -> don't want to end up sharing remotes
+            const MIN_DIST = 4;
+
+            // Arbitrary for now
+            const MAX_DIST = 8;
+
+            const roomWorldPos = roomNameToXY(roomName);
+            let sumDist = 0;
+            for (const key in Memory.colonies) {
+                const colonyPos = roomNameToXY(key);
+                const diffX = Math.abs(colonyPos.xx - roomWorldPos.xx);
+                const diffY = Math.abs(colonyPos.yy - roomWorldPos.yy);
+                const linearDist = Math.min(diffX, diffY);
+                if (linearDist < MIN_DIST || linearDist > MAX_DIST) {
+                    // Shouldn't take this room
+                    return -Infinity;
+                }
+                sumDist += linearDist;
+            }
+
+            // Otherwise, a sum of distances is a good way to encourage spreading rooms out
+            return sumDist;
+        },
+    },
+];
 
 const appraiseRoom = (scoutingData, roomName) => {
     console.log("appraising: " + roomName);
@@ -78,11 +108,17 @@ const appraiseRoom = (scoutingData, roomName) => {
     }
 
     let score = 0;
-    for (const layer of Object.values(appraisalLayers)) {
-        score +=
-            layer.go(scoutingData, roomName, scoutedRemotes) * layer.WEIGHT;
+    for (const layer of appraisalLayers) {
+        const layerRawScore = layer.go(scoutingData, roomName, scoutedRemotes);
+        const layerScore = layerRawScore * layer.WEIGHT;
+        score += layerScore;
+
+        console.log(layer.DEBUG_NAME);
+        console.log("Raw score: " + layerRawScore);
+        console.log("Weighted score: " + layerScore);
     }
 
+    console.log("Total score: ");
     console.log(score);
     return score;
 };
