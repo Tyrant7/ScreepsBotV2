@@ -5,8 +5,11 @@ const defaultText = {
     fontSize: "8",
 };
 
-const addText = (roomName, text) => {
-    Game.map.visual.text(text, new RoomPosition(0, 5, roomName), defaultText);
+const addText = (roomName, text, colour = "#FFFFFF") => {
+    Game.map.visual.text(text, new RoomPosition(0, 5, roomName), {
+        ...defaultText,
+        color: colour,
+    });
 };
 
 module.exports = {
