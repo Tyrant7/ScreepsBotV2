@@ -17,7 +17,7 @@ const appraisalLayers = [
     },
     {
         DEBUG_NAME: "remoteDistances",
-        WEIGHT: 1,
+        WEIGHT: 1.5,
         go: (data, roomName, remotes) => {
             // Let's draw some distances to all remote sources and sort by distance
             const paths = [];
@@ -77,7 +77,7 @@ const appraisalLayers = [
                 const colonyPos = roomNameToXY(key);
                 const diffX = Math.abs(colonyPos.xx - roomWorldPos.xx);
                 const diffY = Math.abs(colonyPos.yy - roomWorldPos.yy);
-                const linearDist = Math.max(diffX, diffY);
+                const linearDist = diffX + diffY;
 
                 console.log(linearDist);
 
