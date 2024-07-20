@@ -37,7 +37,7 @@ class ScoutManager extends CreepManager {
 
             if (leavingOrEntering) {
                 const scoutingData = packageScoutingData(creep.room);
-                scoutingData.score = appraiseRoom(
+                scoutingData.expansionScore = appraiseRoom(
                     scoutingData,
                     creep.room.name
                 );
