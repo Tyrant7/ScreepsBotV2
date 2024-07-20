@@ -94,6 +94,35 @@ const appraisalLayers = [
             return sumDist;
         },
     },
+    {
+        DEBUG_NAME: "mineral",
+        WEIGHT: 50,
+        go: (data, roomName, remotes) => {
+            // First, we'll count up all of our minerals that we have already
+            const mineralCounts = {};
+            for (const colony in Memory.colonies) {
+                const colonyData = getScoutingData(colony);
+                if (!colonyData) continue;
+                if (!colonyData.minerals) continue;
+                for (const mineral of colonyData.minerals) {
+                    mineralCounts[mineral.type] =
+                        (mineralCounts[mineral.type] || 0) + 1;
+                }
+            }
+
+            // If this room has the mineral we have the least of
+            // (checking against either none or matching the lowest value)
+            // then we'll give it a bonus, otherwise no bonus is warranted,
+            // since we don't particularly need this mineral
+            return data.minerals.find(
+                (m) =>
+                    !mineralCounts[m] ||
+                    mineralCounts[m] === _.min(Object.values(mineralCounts))
+            )
+                ? 1
+                : 0;
+        },
+    },
 ];
 
 const appraiseRoom = (scoutingData, roomName) => {
@@ -107,14 +136,14 @@ const appraiseRoom = (scoutingData, roomName) => {
         scoutingData.controller.owner &&
         scoutingData.controller.owner.username === ME
     ) {
-        console.log("already owned this room");
+        console.log("already own this room");
         return 0;
     }
 
     // Let's ensure that all possible remotes have been scouted
-    const allRemotes = getPotentialRemoteRooms(roomName, (roomName) => true);
-    const scoutedRemotes = getPotentialRemoteRooms(roomName, (roomName) =>
-        getScoutingData(roomName)
+    const allRemotes = getPotentialRemoteRooms(roomName, (rn) => true);
+    const scoutedRemotes = getPotentialRemoteRooms(roomName, (rn) =>
+        getScoutingData(rn)
     );
     if (allRemotes.length !== scoutedRemotes.length) {
         console.log("not all remotes scouted!");
@@ -127,11 +156,12 @@ const appraiseRoom = (scoutingData, roomName) => {
 
     let score = 0;
     for (const layer of appraisalLayers) {
+        console.log("-- Running layer: " + layer.DEBUG_NAME + " --");
+
         const layerRawScore = layer.go(scoutingData, roomName, scoutedRemotes);
         const layerScore = layerRawScore * layer.WEIGHT;
         score += layerScore;
 
-        console.log("-- Running layer: " + layer.DEBUG_NAME);
         console.log("Raw score: " + layerRawScore);
         console.log("Weighted score: " + layerScore);
     }
@@ -140,5 +170,8 @@ const appraiseRoom = (scoutingData, roomName) => {
     console.log(score);
     return score;
 };
+
+global.COMMAND_APPRAISE_ROOM = () =>
+    appraiseRoom(getScoutingData("W2N2"), "W2N2");
 
 module.exports = appraiseRoom;
