@@ -12,10 +12,11 @@ class ScoutManager extends CreepManager {
         // Let's generate a new 'explore' task for the closest room within an arbitrary range to the creep's current room
         const targetName =
             searchForUnexploredRoomsNearby(creep.room.name, 3) ||
-            // If we've explored all directions, just go somewhere random
-            // TODO //
-            // Make this better
-            Object.values(Game.map.describeExits(creep.room.name))[0];
+            // If we've explored all directions of our current room, go off our base room
+            searchForUnexploredRoomsNearby(colony.room.name, 3) ||
+            // If all fails, let's go somewhere random
+            _.sample(Object.values(Game.map.describeExits(creep.room.name)));
+
         const actionStack = [];
         actionStack.push(function (creep, data) {
             // We should only update data when leaving or entering a room to be efficient with CPU
