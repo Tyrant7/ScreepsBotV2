@@ -122,6 +122,7 @@ const haulingRequester = new HaulingRequester();
 const overlay = require("./debug.overlay");
 const trackStats = require("./debug.trackStats");
 const profiler = require("./debug.profiler");
+const { runExpansion } = require("./expansion.expansionManager");
 
 module.exports.loop = function () {
     // Passive pixel generation
@@ -130,6 +131,12 @@ module.exports.loop = function () {
         if (Game.cpu.bucket >= 10000) {
             Game.cpu.generatePixel();
         }
+    }
+
+    // Global expansion-related things should come first so colonies know how to react
+    runExpansion();
+    if (DEBUG.showAppraisalScores) {
+        showAppraisalScores();
     }
 
     // Initialize our colonies
@@ -309,11 +316,6 @@ module.exports.loop = function () {
                 Count: Object.values(Memory.creeps).length,
             });
         }
-    }
-
-    // Map visuals
-    if (DEBUG.showAppraisalScores) {
-        showAppraisalScores();
     }
 
     profiler.printout();
