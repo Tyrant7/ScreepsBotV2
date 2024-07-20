@@ -35,8 +35,8 @@ global.DEBUG = {
     trackActiveRemotes: true,
     trackSpawnUsage: true,
 
-    logRemotePlanning: true,
-    logRemoteDropping: true,
+    logRemotePlanning: false,
+    logRemoteDropping: false,
     replanRemotesOnReload: false,
 
     runProfiler: false,
