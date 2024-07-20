@@ -9,6 +9,9 @@ const roles = {
     reserver: "reserver",
     defender: "defender",
     mineralMiner: "mineral_miner",
+
+    claimer: "claimer",
+    colonyStarter: "colony_starter",
 };
 
 const pathSets = {

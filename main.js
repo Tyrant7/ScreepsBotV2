@@ -14,6 +14,9 @@ if (!Memory.scoutData) {
 if (!Memory.colonies) {
     Memory.colonies = {};
 }
+if (!Memory.colonizationTargets) {
+    Memory.colonizationTargets = [];
+}
 
 // Globals
 global.ME = "Tyrant7";
@@ -49,6 +52,7 @@ global.DEBUG = {
     cpuPrintoutFigures: 4,
 
     showAppraisalScores: true,
+    logColonization: true,
 };
 global.RELOAD = true;
 
