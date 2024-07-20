@@ -68,7 +68,8 @@ const appraisalLayers = [
             const MIN_DIST = 4;
 
             // Arbitrary for now
-            const MAX_DIST = 8;
+            const BEST_DIST = 8;
+            const MAX_DIST = CREEP_CLAIM_LIFE_TIME / ROOM_SIZE;
 
             const roomWorldPos = roomNameToXY(roomName);
             let sumDist = 0;
@@ -80,13 +81,17 @@ const appraisalLayers = [
 
                 console.log(linearDist);
 
-                if (linearDist < MIN_DIST) {
-                    // Shouldn't take this room
+                if (linearDist < MIN_DIST || linearDist > MAX_DIST) {
+                    // Shouldn't take this room,
+                    // either too close and will cause interference with existing rooms
+                    // or too far and won't be able to reach it
                     return -Infinity;
                 }
                 // We'll apply a small penalty for going further away than our max
                 const weightedDist =
-                    linearDist > MAX_DIST ? MAX_DIST - linearDist : linearDist;
+                    linearDist > BEST_DIST
+                        ? BEST_DIST - linearDist
+                        : linearDist;
                 sumDist += weightedDist;
             }
 
