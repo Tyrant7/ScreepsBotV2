@@ -1,6 +1,10 @@
 const { addText } = require("./debug.mapOverlay");
 
 const showAppraisalScores = () => {
+    // No scouting data
+    if (!Object.values(Memory.scoutData).length) return;
+
+    // Find our highest score to mark it green later
     const highestScore = Object.values(Memory.scoutData).reduce(
         (highest, curr) =>
             curr.expansionScore > highest.expansionScore ? curr : highest

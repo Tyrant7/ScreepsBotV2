@@ -3,8 +3,11 @@ const { roles } = require("./constants");
 const runExpansion = () => {
     if (!hasFreeGCL()) return;
 
-    // Let's find our best choice
+    // Validate that we actually have any data
     const d = Memory.scoutData;
+    if (!Object.keys(d).length) return;
+
+    // Let's find our best choice
     const best = Object.keys(d).reduce((best, curr) =>
         d[curr].expansionScore > d[best].expansionScore ? curr : best
     );
