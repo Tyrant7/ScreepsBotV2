@@ -13,7 +13,7 @@ const appraisalLayers = [
     {
         DEBUG_NAME: "sourceCount",
         WEIGHT: 100,
-        go: (data, roomName, remotes) => data.sources.length,
+        go: (data, roomName, remotes) => data.sources.length - 1,
     },
     {
         DEBUG_NAME: "remoteDistances",
