@@ -133,6 +133,11 @@ class BuilderManager extends CreepManager {
                             [creep.id]
                         );
                     }
+
+                    // Site was placed on top of us, let's move away in a random direction quickly
+                    if (range === 0) {
+                        creep.registerMove(Math.floor(Math.random() * 8) + 1);
+                    }
                 }
             },
         ];
