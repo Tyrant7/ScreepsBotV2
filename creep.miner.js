@@ -30,7 +30,7 @@ class MinerManager extends CreepManager {
 
             // If site position is occupied, let's look for another, unoccupied spot near the source
             let movePos = sitePos;
-            if (isBlocked(sitePos)) {
+            if (Game.rooms[sitePos.roomName] && isBlocked(sitePos)) {
                 const findPosAdjacent = (pos) => {
                     const terrain = creep.room.getTerrain();
                     for (let x = pos.x - 1; x <= pos.x + 1; x++) {
