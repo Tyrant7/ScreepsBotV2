@@ -47,6 +47,8 @@ global.DEBUG = {
     validateBasePlans: true,
     testBasePlanSerialization: true,
     cpuPrintoutFigures: 4,
+
+    showAppraisalScores: true,
 };
 global.RELOAD = true;
 
@@ -105,6 +107,9 @@ const BasePlanner = require("./base.basePlanner");
 const basePlanner = new BasePlanner();
 const { getPlan: getBasePlan } = require("./base.planningUtility");
 const { handleSites } = require("./base.constructionManager");
+
+// Auto expansion
+const { showAppraisalScores } = require("./debug.showAppraisalScores");
 
 // Defense
 const towerManager = new TowerManager();
@@ -304,6 +309,11 @@ module.exports.loop = function () {
                 Count: Object.values(Memory.creeps).length,
             });
         }
+    }
+
+    // Map visuals
+    if (DEBUG.showAppraisalScores) {
+        showAppraisalScores();
     }
 
     profiler.printout();
