@@ -78,7 +78,9 @@ class Colony {
         }
 
         // Used for distance calculations of hauler orders
-        this.core = this.structures[STRUCTURE_SPAWN][0].pos;
+        this.core = this.structures[STRUCTURE_STORAGE]
+            ? this.structures[STRUCTURE_STORAGE].pos
+            : this.structures[STRUCTURE_SPAWN][0].pos;
 
         // Clear tick caches
         this.cachedMiningSpots = null;
