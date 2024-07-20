@@ -18,14 +18,20 @@ class HaulerManager extends CreepManager {
             if (creep.room.name !== colony.room.name) {
                 return this.createReturnTask(creep, colony);
             }
-
             return this.dropoffTaskLogistics(creep, colony);
         }
         return this.pickupTaskLogistics(creep, colony);
     }
 
     createReturnTask(creep, colony) {
-        const actionStack = [this.basicActions.moveToRoom];
+        const actionStack = [
+            this.basicActions.moveToRoom,
+            function (creep, data) {
+                delete creep.memory.returning;
+                return true;
+            },
+        ];
+        creep.memory.returning = true;
         return new Task({ roomName: colony.room.name }, "return", actionStack);
     }
 

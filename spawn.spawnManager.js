@@ -77,9 +77,12 @@ const demandHandlers = {
         }
 
         // Reduce proportional to the number of idle haulers
-        // Idle meaning empty and not picking up
+        // Idle meaning empty and not picking up or returning from a trip
         const idleHaulers = colony.haulers.filter(
-            (hauler) => !hauler.memory.dropoff && !hauler.memory.pickup
+            (hauler) =>
+                !hauler.memory.dropoff &&
+                !hauler.memory.pickup &&
+                !hauler.memory.returning
         ).length;
         const workingHaulers = colony.haulers.length - idleHaulers;
         const haulerDemand = getRoleDemand(colony, roles.hauler).value;
