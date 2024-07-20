@@ -16,6 +16,7 @@ const runExpansion = () => {
     const entry = {
         roomName: best,
         created: Game.time,
+        attemptClaim: false,
         spawns: [roles.claimer, roles.colonyStarter, roles.hauler],
     };
     Memory.colonizationTargets.push(entry);

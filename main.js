@@ -87,6 +87,8 @@ const ReserverManager = require("./creep.reserver");
 const DefenderManager = require("./creep.defender");
 const MineralMinerManager = require("./creep.mineralMiner");
 
+const ClaimerManager = require("./creep.claimer");
+
 // Mapping
 const { roles, pathSets, INTERRUPT_PATHING_COST } = require("./constants");
 const creepRoleMap = {
@@ -100,6 +102,8 @@ const creepRoleMap = {
     [roles.reserver]: new ReserverManager(),
     [roles.defender]: new DefenderManager(),
     [roles.mineralMiner]: new MineralMinerManager(),
+
+    [roles.claimer]: new ClaimerManager(),
 };
 
 // Economy
