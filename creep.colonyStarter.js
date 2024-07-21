@@ -40,6 +40,9 @@ class ColonyStarterManager extends BuilderManager {
                     RESOURCE_ENERGY,
                     creep.id
                 );
+                if (colony.room.controller.level >= 2) {
+                    return true;
+                }
             },
         ];
         return new Task({}, "upgrade", actionStack);
