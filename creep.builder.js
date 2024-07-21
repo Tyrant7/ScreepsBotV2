@@ -134,9 +134,13 @@ class BuilderManager extends CreepManager {
                         );
                     }
 
-                    // Site was placed on top of us, let's move away in a random direction quickly
-                    if (range === 0) {
-                        creep.registerMove(Math.floor(Math.random() * 8) + 1);
+                    // Site was placed on top of us or another creep, let's move the blocker
+                    // away in a random direction quickly
+                    const blocker = target.pos
+                        .lookFor(LOOK_CREEPS)
+                        .find((c) => c.my);
+                    if (blocker) {
+                        blocker.registerMove(Math.floor(Math.random() * 8) + 1);
                     }
                 }
             },
