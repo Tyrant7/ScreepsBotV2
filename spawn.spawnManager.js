@@ -138,7 +138,10 @@ const demandHandlers = {
         }
 
         // Priority #2: do all haulers have dropoff points?
-        const fullHaulers = colony.haulers.filter((hauler) => {
+        const waitingHaulers = colony.haulers.filter((hauler) => {
+            if (hauler.memory.returning) {
+                return false;
+            }
             const full = hauler.store[RESOURCE_ENERGY];
             const storageDropoff =
                 colony.room.storage && colony.room.storage.id === dropoff;
@@ -152,8 +155,8 @@ const demandHandlers = {
                     (storageDropoff && storageAboveThreshold))
             );
         }).length;
-        if (fullHaulers > RAISE_UPGRADER_THRESHOLD) {
-            return nudge(fullHaulers);
+        if (waitingHaulers > RAISE_UPGRADER_THRESHOLD) {
+            return nudge(waitingHaulers);
         }
 
         // If there's no problems at all, let's nudge towards our current count
