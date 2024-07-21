@@ -1,4 +1,4 @@
-const { roles } = require("./constants");
+const { roles, ROOM_SIZE } = require("./constants");
 
 const runExpansion = () => {
     if (!hasFreeGCL()) return;
@@ -12,14 +12,25 @@ const runExpansion = () => {
         d[curr].expansionScore > d[best].expansionScore ? curr : best
     );
 
+    // For this choice, we'll also let all colonies within range of it
+    // know that they'll be supporting it
+    for (const colony in Memory.colonies) {
+        const route = Game.map.findRoute(colony, best);
+        const maxSupportDist = CREEP_CLAIM_LIFE_TIME / ROOM_SIZE;
+        if (route.length <= maxSupportDist) {
+            if (!Memory.colonies[colony].supporting) {
+                Memory.colonies[colony].supporting = [];
+            }
+            Memory.colonies[colony].supporting.push(best);
+        }
+    }
+
     // And create an entry for it in our global colonization spot
     const entry = {
-        roomName: best,
         created: Game.time,
-        attemptClaim: false,
-        spawns: [roles.claimer, roles.colonyStarter, roles.hauler],
+        spawns: [roles.claimer, roles.colonizerBuilder, roles.colonizerHauler],
     };
-    Memory.colonizationTargets.push(entry);
+    Memory.newColonies[best] = entry;
 
     if (DEBUG.logColonization) {
         console.log("Beginning colonization of room " + best);
@@ -27,7 +38,8 @@ const runExpansion = () => {
 };
 
 const hasFreeGCL = () =>
-    Object.keys(Memory.colonies).length + Memory.colonizationTargets.length <
+    Object.keys(Memory.colonies).length +
+        Object.keys(Memory.newColonies).length <
     Game.gcl.level;
 
 module.exports = {

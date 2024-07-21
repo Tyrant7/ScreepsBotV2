@@ -8,7 +8,7 @@ const {
     nudgeRoleDemand,
     bumpRoleDemand,
 } = require("./spawn.demandHandler");
-const { getCost } = require("./spawn.spawnUtility");
+const { getCost, filterSupportingForRole } = require("./spawn.spawnUtility");
 
 const creepMaker = require("./spawn.creepMaker");
 const overlay = require("./debug.overlay");
@@ -182,6 +182,15 @@ const demandHandlers = {
         const amount = colony.structures[STRUCTURE_EXTRACTOR] ? 1 : 0;
         set(amount);
     },
+    [roles.claimer]: (colony, set, nudge, bump) => {
+        set(filterSupportingForRole(colony, roles.claimer));
+    },
+    [roles.colonizerBuilder]: (colony, set, nudge, bump) => {
+        set(filterSupportingForRole(colony, roles.colonizerBuilder));
+    },
+    [roles.colonizerHauler]: (colony, set, nudge, bump) => {
+        set(filterSupportingForRole(colony, roles.colonizerHauler));
+    },
 };
 
 /**
@@ -320,6 +329,14 @@ const spawnsByRole = {
     [roles.upgrader]: (colony) =>
         creepMaker.makeUpgrader(colony.room.energyCapacityAvailable),
     [roles.reserver]: (colony) => creepMaker.makeReserver(),
+
+    // Expansion creeps, when we have a good eco
+    [roles.claimer]: (colony) => creepMaker.makeClaimer(),
+    [roles.colonizerBuilder]: (colony) =>
+        creepMaker.makeColonyStarter(colony.room.energyCapacityAvailable),
+    [roles.colonizerHauler]: (colony) =>
+        creepMaker.makeColonizerHauler(colony.room.energyCapacityAvailable),
+
     [roles.scout]: (colony) => creepMaker.makeScout(),
     [roles.builder]: (colony) =>
         creepMaker.makeBuilder(colony.room.energyCapacityAvailable),
@@ -413,8 +430,26 @@ class SpawnManager {
                 memory: next.memory,
             });
 
-            // Didn't spawn successfully
-            if (result !== OK) {
+            if (result === OK) {
+                // If the spawn succeeded, we'll check to see if any of the new colonies
+                // we're supporting needed that creep
+                if (
+                    colony.memory.supporting &&
+                    colony.memory.supporting.length
+                ) {
+                    // If there was a colony that needed that creep, we can remove that one from their queue
+                    const support = colony.memory.supporting.find((s) =>
+                        s.spawns.includes(next.memory.role)
+                    );
+                    if (support) {
+                        support.spawns.splice(
+                            support.spawns.indexOf(next.memory.role),
+                            1
+                        );
+                    }
+                }
+            } else {
+                // Didn't spawn successfully, don't count the spawn as active
                 inactiveSpawns.push(spawn);
             }
         }

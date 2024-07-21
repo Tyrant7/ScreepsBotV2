@@ -1,7 +1,7 @@
 const BuilderManager = require("./creep.builder");
 const Task = require("./data.task");
 
-class ColonyStarterManager extends BuilderManager {
+class ColonizerBuilderManager extends BuilderManager {
     createTask(creep, colony) {
         if (creep.memory.target === creep.room.name) {
             if (creep.room.controller.my) {
@@ -58,4 +58,4 @@ class ColonyStarterManager extends BuilderManager {
     }
 }
 
-module.exports = ColonyStarterManager;
+module.exports = ColonizerBuilderManager;

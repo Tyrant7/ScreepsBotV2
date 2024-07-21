@@ -190,13 +190,23 @@ const makeClaimer = () => {
     };
 };
 
-const makeColonyStarter = (energy) => {
+const makeColonizerBuilder = (energy) => {
     const builderBody = makeBuilder(energy).body;
     const level = builderBody.filter((p) => p === WORK).length;
     return {
         body: builderBody,
         name: "Starter " + Game.time + " [" + level + "]",
-        memory: { role: roles.colonyStarter },
+        memory: { role: roles.colonizerBuilder },
+    };
+};
+
+const makeColonizerHauler = (energy) => {
+    const haulerBody = makeHauler(energy, 1).body;
+    const level = haulerBody.filter((p) => p === MOVE);
+    return {
+        body: haulerBody,
+        name: "Colonizer Hauler " + Game.time + " [" + level + "]",
+        memory: { role: roles.colonizerHauler },
     };
 };
 
@@ -247,6 +257,7 @@ module.exports = {
     makeScout,
     makeMiniDefender,
     makeClaimer,
-    makeColonyStarter,
+    makeColonizerBuilder,
+    makeColonizerHauler,
     RESERVER_COST,
 };

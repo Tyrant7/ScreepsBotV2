@@ -14,8 +14,8 @@ if (!Memory.scoutData) {
 if (!Memory.colonies) {
     Memory.colonies = {};
 }
-if (!Memory.colonizationTargets) {
-    Memory.colonizationTargets = [];
+if (!Memory.newColonies) {
+    Memory.newColonies = {};
 }
 
 // Globals
@@ -88,6 +88,8 @@ const DefenderManager = require("./creep.defender");
 const MineralMinerManager = require("./creep.mineralMiner");
 
 const ClaimerManager = require("./creep.claimer");
+const ColonizerBuilderManager = require("./creep.colonizerBuilder");
+const ColonizerHaulerManager = require("./creep.colonizerHauler");
 
 // Mapping
 const { roles, pathSets, INTERRUPT_PATHING_COST } = require("./constants");
@@ -104,6 +106,8 @@ const creepRoleMap = {
     [roles.mineralMiner]: new MineralMinerManager(),
 
     [roles.claimer]: new ClaimerManager(),
+    [roles.colonizerBuilder]: new ColonizerBuilderManager(),
+    [roles.colonizerHauler]: new ColonizerHaulerManager(),
 };
 
 // Economy

@@ -15,6 +15,14 @@ class Colony {
         this.room = room;
         if (!Memory.colonies[this.room.name]) {
             Memory.colonies[this.room.name] = {};
+
+            // If this is an expansion, we'll remove it
+            if (
+                Memory.newColonies[this.room.name] &&
+                !Memory.newColonies[this.room.name].spawns.length
+            ) {
+                delete Memory.newColonies[this.room.name];
+            }
         }
         this.sources = this.room.find(FIND_SOURCES);
         this.mineral = this.room.find(FIND_MINERALS)[0];

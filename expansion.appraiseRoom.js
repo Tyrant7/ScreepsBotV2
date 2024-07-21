@@ -155,10 +155,6 @@ const appraiseRoom = (scoutingData, roomName) => {
         return 0;
     }
 
-    for (const remote of scoutedRemotes) {
-        console.log(remote);
-    }
-
     let score = 0;
     for (const layer of appraisalLayers) {
         console.log("-- Running layer: " + layer.DEBUG_NAME + " --");

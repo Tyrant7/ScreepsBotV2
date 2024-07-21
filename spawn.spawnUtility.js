@@ -5,8 +5,18 @@ const getPredictiveCreeps = (creeps) =>
         (c) => !c.ticksToLive || getSpawnTime(c.body) <= c.ticksToLive
     );
 
+const filterSupportingForRole = (colony, role) =>
+    colony.memory.supporting
+        ? colony.memory.supporting.reduce(
+              (total, curr) =>
+                  total + curr.spawns.filter((s) => s === role).length,
+              0
+          )
+        : 0;
+
 module.exports = {
     getCost,
     getSpawnTime,
     getPredictiveCreeps,
+    filterSupportingForRole,
 };

@@ -11,7 +11,8 @@ const roles = {
     mineralMiner: "mineral_miner",
 
     claimer: "claimer",
-    colonyStarter: "colony_starter",
+    colonizerBuilder: "c_builder",
+    colonizerHauler: "c_hauler",
 };
 
 const pathSets = {
