@@ -5,6 +5,7 @@ class ColonyStarterManager extends BuilderManager {
     createTask(creep, colony) {
         if (creep.memory.target === creep.room.name) {
             if (creep.room.controller.my) {
+                creep.memory.home = creep.room.name;
                 return this.developmentLogisics();
             }
             // We'll wait until our room has been claimed

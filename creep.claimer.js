@@ -6,6 +6,7 @@ class ClaimerManager extends CreepManager {
         if (creep.memory.target === creep.room.name) {
             if (creep.room.controller.my) {
                 // Purpose fulfilled
+                creep.memory.home = creep.room.name;
                 return;
             }
             return this.createClaimTask();
