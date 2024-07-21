@@ -29,12 +29,15 @@ const makeMiner = (energy) => {
     };
 };
 
-const makeHauler = (energy) => {
+const makeHauler = (energy, ratio = 2) => {
     const body = [];
     let lvl = 0;
     for (let i = 0; i < maxLevels.hauler; i++) {
         lvl = i + 1;
-        body.push(MOVE, CARRY, CARRY);
+        body.push(MOVE);
+        for (let j = 0; j < ratio; j++) {
+            body.push(CARRY);
+        }
         if (getCost(body) > energy || body.length > MAX_CREEP_SIZE) {
             lvl--;
             body.pop();
@@ -179,6 +182,24 @@ const makeScout = () => {
     };
 };
 
+const makeClaimer = () => {
+    return {
+        body: [MOVE, CLAIM],
+        name: "Claimer " + Game.time + " [1]",
+        memory: { role: roles.claimer },
+    };
+};
+
+const makeColonyStarter = (energy) => {
+    const builderBody = makeBuilder(energy).body;
+    const level = builderBody.filter((p) => p === WORK).length;
+    return {
+        body: builderBody,
+        name: "Starter " + Game.time + " [" + level + "]",
+        memory: { role: roles.colonyStarter },
+    };
+};
+
 //#endregion
 
 //#region Defense
@@ -225,5 +246,7 @@ module.exports = {
     makeMineralMiner,
     makeScout,
     makeMiniDefender,
+    makeClaimer,
+    makeColonyStarter,
     RESERVER_COST,
 };

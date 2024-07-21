@@ -4,12 +4,8 @@ const Task = require("./data.task");
 class ClaimerManager extends CreepManager {
     createTask(creep, colony) {
         if (creep.memory.target === creep.room.name) {
-            if (
-                creep.room.controller.owner &&
-                creep.room.controller.owner.username === ME
-            ) {
+            if (creep.room.controller.my) {
                 // Purpose fulfilled
-                creep.suicide();
                 return;
             }
             return this.createClaimTask();

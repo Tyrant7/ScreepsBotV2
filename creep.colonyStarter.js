@@ -1,13 +1,10 @@
-const CreepManager = require("./manager.creepManager");
+const BuilderManager = require("./creep.builder");
 const Task = require("./data.task");
 
-class ColonyStarterManager extends CreepManager {
+class ColonyStarterManager extends BuilderManager {
     createTask(creep, colony) {
         if (creep.memory.target === creep.room.name) {
-            if (
-                creep.room.controller.owner &&
-                creep.room.controller.owner.username === ME
-            ) {
+            if (creep.room.controller.my) {
                 return this.developmentLogisics();
             }
             // We'll wait until our room has been claimed
@@ -21,8 +18,11 @@ class ColonyStarterManager extends CreepManager {
             return this.createUpgradeTask(colony);
         }
 
-        if (!colony.structures[STRUCTURE_SPAWN]) {
-            // Build the spawn
+        const spawnSite = colony.constructionSites.find(
+            (s) => s.structureType === STRUCTURE_SPAWN
+        );
+        if (spawnSite) {
+            return super.createBuildTask(colony, creep, spawnSite);
         }
     }
 
@@ -43,8 +43,6 @@ class ColonyStarterManager extends CreepManager {
         ];
         return new Task({}, "upgrade", actionStack);
     }
-
-    createBuildTask(creep, colony) {}
 
     createMoveTask(creep) {
         const actionStack = [super.basicActions.moveToRoom];
