@@ -4,6 +4,7 @@ const {
     directionDelta,
     ROOM_SIZE,
 } = require("./constants");
+const utilEstimateTravelTime = require("./util.estimateTravelTime");
 
 //#region Pathing
 
@@ -129,8 +130,13 @@ Creep.prototype.betterFindClosestByPath = function (goals, options = {}) {
     const path = utility.getNewPath(this.pos, goals, options);
 
     // If we have no path, then use our own position
-    const lastPos = path.slice(-1)[0] || this.pos;
-    const closestGoal = lastPos.findInRange(goals, 1)[0];
+    const lastPos = path[path.length - 1] || this.pos;
+    const closestGoal = goals.find(
+        // Here we're using estimate travel time since if our goal is just
+        // on the otherwise of a border, we won't find a valid goal within range
+        (g) => utilEstimateTravelTime(lastPos, g.pos || g) <= options.range
+    );
+
     if (!closestGoal) {
         return;
     }
