@@ -133,7 +133,8 @@ Creep.prototype.betterFindClosestByPath = function (goals, options = {}) {
     const lastPos = path[path.length - 1] || this.pos;
     const closestGoal = goals.find(
         // Here we're using estimate travel time since if our goal is just
-        // on the otherwise of a border, we won't find a valid goal within range
+        // on the other side of a border, we won't find a valid goal within range
+        // despite the path ending inside the room we're currently in
         (g) => utilEstimateTravelTime(lastPos, g.pos || g) <= options.range
     );
 
