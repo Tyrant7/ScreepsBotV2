@@ -18,14 +18,12 @@ const addText = (roomName, text, colour = "#FFFFFF") => {
 const drawArrow = (
     toRoom,
     fromRoom,
-    colour = "#FFFFFF",
-    lineStyle = undefined
-) => {
-    const styling = {
+    styling = {
         width: 1,
-        color: colour,
-        lineStyle: lineStyle,
-    };
+        color: "#FFFFFF",
+    }
+) => {
+    const offshootStyling = { ...styling, lineStyle: undefined };
 
     // Main arrow body
     Game.map.visual.line(
@@ -36,11 +34,6 @@ const drawArrow = (
 
     const toRoomXY = roomNameToXY(toRoom);
     const fromRoomXY = roomNameToXY(fromRoom);
-    toRoomXY.xx *= ROOM_SIZE;
-    toRoomXY.yy *= ROOM_SIZE;
-    fromRoomXY.xx *= ROOM_SIZE;
-    fromRoomXY.yy *= ROOM_SIZE;
-
     const dx = toRoomXY.xx - fromRoomXY.xx;
     const dy = toRoomXY.yy - fromRoomXY.yy;
 
@@ -56,19 +49,16 @@ const drawArrow = (
     const x2 = 25 - offshootLength * Math.cos(theta + phi2);
     const y2 = 25 - offshootLength * Math.sin(theta + phi2);
 
-    console.log(x + ": " + y);
-    console.log(x2 + ": " + y2);
-
     // Offshoots
     Game.map.visual.line(
         new RoomPosition(25, 25, toRoom),
         new RoomPosition(x, y, toRoom),
-        styling
+        offshootStyling
     );
     Game.map.visual.line(
         new RoomPosition(25, 25, toRoom),
         new RoomPosition(x2, y2, toRoom),
-        styling
+        offshootStyling
     );
 };
 

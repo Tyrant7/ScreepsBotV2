@@ -21,7 +21,11 @@ const showAppraisalScores = () => {
 const showExpansionTargets = () => {
     for (const newColony in Memory.newColonies) {
         for (const colony of Memory.newColonies[newColony].supporters) {
-            drawArrow(colony, newColony, "6BEB2A", "dotted");
+            drawArrow(newColony, colony, {
+                color: "6BEB2A",
+                lineStyle: "dotted",
+                width: 1.5,
+            });
         }
     }
 };
