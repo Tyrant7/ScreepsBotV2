@@ -51,9 +51,10 @@ global.DEBUG = {
     testBasePlanSerialization: true,
     cpuPrintoutFigures: 4,
 
-    showAppraisalScores: true,
     logAppraisal: false,
     logColonization: true,
+    showAppraisalScores: true,
+    showExpansionTargets: true,
 };
 global.RELOAD = true;
 
@@ -122,7 +123,10 @@ const { getPlan: getBasePlan } = require("./base.planningUtility");
 const { handleSites } = require("./base.constructionManager");
 
 // Auto expansion
-const { showAppraisalScores } = require("./debug.showAppraisalScores");
+const {
+    showAppraisalScores,
+    showExpansionTargets,
+} = require("./debug.expansionDebugUtility");
 
 // Defense
 const towerManager = new TowerManager();
@@ -150,6 +154,9 @@ module.exports.loop = function () {
     runExpansion();
     if (DEBUG.showAppraisalScores) {
         showAppraisalScores();
+    }
+    if (DEBUG.showExpansionTargets) {
+        showExpansionTargets();
     }
 
     // Initialize our colonies

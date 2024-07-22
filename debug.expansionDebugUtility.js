@@ -1,4 +1,4 @@
-const { addText } = require("./debug.mapOverlay");
+const { addText, drawArrow } = require("./debug.mapOverlay");
 
 const showAppraisalScores = () => {
     // No scouting data
@@ -18,6 +18,15 @@ const showAppraisalScores = () => {
     }
 };
 
+const showExpansionTargets = () => {
+    for (const newColony in Memory.newColonies) {
+        for (const colony of Memory.newColonies[newColony].supporters) {
+            drawArrow(colony, newColony, "6BEB2A", "dotted");
+        }
+    }
+};
+
 module.exports = {
     showAppraisalScores,
+    showExpansionTargets,
 };
