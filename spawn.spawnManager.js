@@ -431,6 +431,19 @@ class SpawnManager {
                 break;
             }
 
+            // If we're supporting another colony, let's assign this creep to it
+            const supportingColony =
+                colony.memory.supporting && colony.memory.supporting.length
+                    ? colony.memory.supporting.find((s) =>
+                          Memory.newColonies[s].spawns.includes(
+                              next.memory.role
+                          )
+                      )
+                    : null;
+            if (supportingColony) {
+                next.memory.target = supportingColony;
+            }
+
             // Save the room responsible for this creep and start spawning
             next.memory.home = colony.room.name;
             const result = spawn.spawnCreep(next.body, next.name, {
@@ -438,22 +451,13 @@ class SpawnManager {
             });
 
             if (result === OK) {
-                // If the spawn succeeded, we'll check to see if any of the new colonies
-                // we're supporting needed that creep
-                if (
-                    colony.memory.supporting &&
-                    colony.memory.supporting.length
-                ) {
-                    // If there was a colony that needed that creep, we can remove that one from their queue
-                    const support = colony.memory.supporting.find((s) =>
-                        s.spawns.includes(next.memory.role)
+                // If there was a colony that we're supporting that needed that creep,
+                // we can remove that one from their queue
+                if (supportingColony) {
+                    Memory.newColonies[supportingColony].spawns.splice(
+                        support.spawns.indexOf(next.memory.role),
+                        1
                     );
-                    if (support) {
-                        support.spawns.splice(
-                            support.spawns.indexOf(next.memory.role),
-                            1
-                        );
-                    }
                 }
             } else {
                 // Didn't spawn successfully, don't count the spawn as active
