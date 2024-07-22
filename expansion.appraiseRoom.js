@@ -79,8 +79,6 @@ const appraisalLayers = [
                 const diffY = Math.abs(colonyPos.yy - roomWorldPos.yy);
                 const linearDist = diffX + diffY;
 
-                console.log(linearDist);
-
                 if (linearDist < MIN_DIST || linearDist > MAX_DIST) {
                     // Shouldn't take this room,
                     // either too close and will cause interference with existing rooms
