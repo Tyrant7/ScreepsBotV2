@@ -166,6 +166,9 @@ const demandHandlers = {
         return nudge(upgraderDemand < target ? 1 : -1);
     },
     [roles.scout]: (colony, set, nudge, bump) => {
+        if (!meetsMinimumSpawnRequirements(colony)) {
+            return set(0);
+        }
         set(1);
     },
     [roles.builder]: (colony, set, nudge, bump) => {
