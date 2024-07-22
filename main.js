@@ -52,6 +52,7 @@ global.DEBUG = {
     cpuPrintoutFigures: 4,
 
     showAppraisalScores: true,
+    logAppraisal: false,
     logColonization: true,
 };
 global.RELOAD = true;
@@ -146,10 +147,7 @@ module.exports.loop = function () {
     }
 
     // Global expansion-related things should come first so colonies know how to react
-    // TODO: Fix up expansion role code, including some features with setting targets
-    // Then debug this live
-    // ENDTODO
-    // runExpansion();
+    runExpansion();
     if (DEBUG.showAppraisalScores) {
         showAppraisalScores();
     }

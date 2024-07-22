@@ -131,9 +131,7 @@ const appraisalLayers = [
 ];
 
 const appraiseRoom = (scoutingData, roomName) => {
-    console.log("appraising: " + roomName);
     if (!scoutingData.controller) {
-        console.log("no controller");
         return 0;
     }
 
@@ -141,7 +139,6 @@ const appraiseRoom = (scoutingData, roomName) => {
         scoutingData.controller.owner &&
         scoutingData.controller.owner.username === ME
     ) {
-        console.log("already own this room");
         return 0;
     }
 
@@ -151,24 +148,33 @@ const appraiseRoom = (scoutingData, roomName) => {
         getScoutingData(rn)
     );
     if (allRemotes.length !== scoutedRemotes.length) {
-        console.log("not all remotes scouted!");
         return 0;
     }
 
+    const BAR = "-".repeat(8);
+    const logDebugMessage = (message, useBars = false) => {
+        if (!DEBUG.logAppraisal) return;
+        if (useBars) {
+            console.log(`${BAR} ${message} ${BAR}`);
+            return;
+        }
+        console.log(message);
+    };
+
+    logDebugMessage(`Appraising room ${roomName}`, true);
     let score = 0;
     for (const layer of appraisalLayers) {
-        console.log("-- Running layer: " + layer.DEBUG_NAME + " --");
+        logDebugMessage(`Running layer: ${layer.DEBUG_NAME}`);
 
         const layerRawScore = layer.go(scoutingData, roomName, scoutedRemotes);
         const layerScore = layerRawScore * layer.WEIGHT;
         score += layerScore;
 
-        console.log("Raw score: " + layerRawScore);
-        console.log("Weighted score: " + layerScore);
+        logDebugMessage(`Raw score: ${layerRawScore}`);
+        logDebugMessage(`Weighted score: ${layerScore}`);
     }
 
-    console.log("Total score: ");
-    console.log(score);
+    logDebugMessage(`Total score: ${score}`, true);
     return score;
 };
 
