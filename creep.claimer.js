@@ -17,10 +17,7 @@ class ClaimerManager extends CreepManager {
     createClaimTask() {
         const actionStack = [
             function (creep, data) {
-                if (
-                    creep.room.controller.owner &&
-                    creep.room.controller.owner.username === ME
-                ) {
+                if (creep.room.controller.my) {
                     return true;
                 }
 
@@ -35,25 +32,6 @@ class ClaimerManager extends CreepManager {
     }
 
     createMoveTask(creep) {
-        // If we already have a target let's go with that
-        let target = creep.memory.target;
-        if (!creep.memory.target) {
-            // Validate that we actually have any data
-            const d = Memory.scoutData;
-            if (!Object.keys(d).length) return;
-
-            // Let's find our best choice that we're not already attempting to claim
-            const best = Object.keys(d)
-                .filter((k) => !d[k].attemptClaim)
-                .reduce((best, curr) =>
-                    d[curr].expansionScore > d[best].expansionScore
-                        ? curr
-                        : best
-                );
-
-            if (!best) return;
-            target = best;
-        }
         const actionStack = [super.basicActions.moveToRoom];
         creep.memory.target = target;
         return new Task(
