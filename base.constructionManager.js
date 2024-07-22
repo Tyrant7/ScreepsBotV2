@@ -16,7 +16,6 @@ const {
 } = require("./constants");
 const profiler = require("./debug.profiler");
 const estimateTravelTime = require("./util.estimateTravelTime");
-const remoteUtility = require("./remote.remoteUtility");
 
 const UTILITY_CONSTANTS = {
     [STRUCTURE_SPAWN]: 100,

@@ -146,7 +146,10 @@ module.exports.loop = function () {
     }
 
     // Global expansion-related things should come first so colonies know how to react
-    runExpansion();
+    // TODO: Fix up expansion role code, including some features with setting targets
+    // Then debug this live
+    // ENDTODO
+    // runExpansion();
     if (DEBUG.showAppraisalScores) {
         showAppraisalScores();
     }

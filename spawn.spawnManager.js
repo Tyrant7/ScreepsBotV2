@@ -144,7 +144,8 @@ const demandHandlers = {
             }
             const full = hauler.store[RESOURCE_ENERGY];
             const storageDropoff =
-                colony.room.storage && colony.room.storage.id === dropoff;
+                colony.room.storage &&
+                colony.room.storage.id === hauler.memory.dropoff;
             const storageAboveThreshold =
                 colony.room.storage &&
                 colony.room.storage.store[RESOURCE_ENERGY] >

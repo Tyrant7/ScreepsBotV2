@@ -178,6 +178,8 @@ class BasePlanner {
             keys.sourceContainerPositions,
             planBuilder.sourceContainers
         );
+        colony.memory.core = planBuilder.corePos;
+
         this.printDebugMessage(
             `🟢 Completed plan serialization in ${(
                 Game.cpu.getUsed() - cpu
