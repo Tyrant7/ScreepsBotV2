@@ -140,6 +140,7 @@ const overlay = require("./debug.overlay");
 const trackStats = require("./debug.trackStats");
 const profiler = require("./debug.profiler");
 const { runExpansion } = require("./expansion.expansionManager");
+const { drawArrow } = require("./debug.mapOverlay");
 
 module.exports.loop = function () {
     // Passive pixel generation
