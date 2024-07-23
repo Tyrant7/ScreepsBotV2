@@ -126,7 +126,6 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
 Creep.prototype.betterFindClosestByPath = function (goals, options = {}) {
     // Find a path to the closest goal
     options = utility.ensureDefaultOptions(options);
-    options.warnOnIncompletePath = true;
     const path = utility.getNewPath(this.pos, goals, options);
 
     // If we have no path, then use our own position
@@ -318,7 +317,7 @@ const utility = {
             options.maxOps = 2000;
         }
         if (options.warnOnIncompletePath === undefined) {
-            options.warnOnIncompletePath = false;
+            options.warnOnIncompletePath = DEBUG.warnOnIncompletePath;
         }
         return options;
     },
