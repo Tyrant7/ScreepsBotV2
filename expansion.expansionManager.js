@@ -38,7 +38,7 @@ class ExpansionManager {
         const entry = {
             created: Game.time,
             supporters: supporters,
-            creepNames: [],
+            creepNamesAndRoles: [],
         };
         Memory.newColonies[best] = entry;
 
@@ -53,15 +53,16 @@ class ExpansionManager {
         Memory.newColonies = _.omit(
             Memory.newColonies,
             (expansion) =>
-                !Memory.colonies[expansion] ||
-                !Memory.colonies[expansion].structures[STRUCTURE_SPAWN]
+                Memory.colonies[expansion] &&
+                Memory.colonies[expansion].structures[STRUCTURE_SPAWN]
         );
 
         // Make sure our colonies are aware of their own creeps for spawn tracking
         for (const expansion in Memory.newColonies) {
-            Memory.newColonies[expansion].creepNames = Memory.newColonies[
-                expansion
-            ].creepNames.filter((c) => Game.creeps[c]);
+            Memory.newColonies[expansion].creepNamesAndRoles =
+                Memory.newColonies[expansion].creepNamesAndRoles.filter(
+                    (c) => Game.creeps[c.name]
+                );
         }
     }
 }

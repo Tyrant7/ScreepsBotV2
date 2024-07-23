@@ -223,8 +223,8 @@ const filterSupportingColoniesForRole = (colony, role) =>
     colony.memory.supporting.reduce(
         (total, curr) =>
             total +
-            curr.creepNames.filter(
-                (cn) => Game.creeps[cn].memory.role === role
+            Memory.newColonies[curr].creepNamesAndRoles.filter(
+                (c) => c.role === role
             ),
         0
     );
@@ -461,17 +461,18 @@ class SpawnManager {
             }
 
             // If we're supporting another colony, let's assign this creep to it
+            // Simply find the first colony missing one of these creeps
             const supportingColony =
                 colony.memory.supporting && colony.memory.supporting.length
-                    ? colony.memory.supporting.find((s) =>
-                          Memory.newColonies[s].spawns.includes(
-                              next.memory.role
-                          )
+                    ? colony.memory.supporting.find(
+                          (s) =>
+                              Memory.newColonies[s].creepNamesAndRoles.filter(
+                                  (c) => c.role === next.memory.role
+                              ).length === 0
                       )
                     : null;
             if (supportingColony) {
                 next.memory.expansionTarget = supportingColony;
-                Memory.newColonies[supportingColony].creepNames.push(next.name);
             }
 
             // Save the room responsible for this creep and start spawning
@@ -480,7 +481,13 @@ class SpawnManager {
                 memory: next.memory,
             });
 
-            if (result !== OK) {
+            // If we succesfully spawned, let's let all other colonies know that we've spawned this creep
+            if (result === OK) {
+                Memory.newColonies[supportingColony].creepNamesAndRoles.push({
+                    name: next.name,
+                    role: next.memory.role,
+                });
+            } else {
                 // Didn't spawn successfully, don't count the spawn as active
                 inactiveSpawns.push(spawn);
             }
