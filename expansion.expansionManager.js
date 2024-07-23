@@ -48,6 +48,15 @@ class ExpansionManager {
     }
 
     handleExpansions() {
+        // If any of our expansions now have a spawn, they're now full colonies
+        // No need for surrogate spawns anymore
+        Memory.newColonies = _.omit(
+            Memory.newColonies,
+            (expansion) =>
+                !Memory.colonies[expansion] ||
+                !Memory.colonies[expansion].structures[STRUCTURE_SPAWN]
+        );
+
         // We'll give every expansion a list of creeps that belong to it
         for (const expansion in Memory.newColonies) {
             Memory.newColonies[expansion].creepCounts = {};

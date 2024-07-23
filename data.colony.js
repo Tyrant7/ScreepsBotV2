@@ -44,14 +44,6 @@ class Colony {
             }
         }
 
-        // If this is an expansion itself, let's check to see if we're ready to become autonomous
-        if (
-            Memory.newColonies[this.room.name] &&
-            Memory.newColonies[this.room.name].structures[STRUCTURE_SPAWN]
-        ) {
-            delete Memory.newColonies[this.room.name];
-        }
-
         // Find all creeps that this room is responsible for, not just ones in it
         profiler.startSample("group creeps");
         this.creeps = Object.values(Game.creeps).filter(
