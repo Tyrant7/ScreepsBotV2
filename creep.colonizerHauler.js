@@ -16,7 +16,7 @@ class ColonizerHaulerManager extends HaulerManager {
     }
 
     createMoveTask(creep) {
-        const actionStack = [super.basicActions.moveToRoom];
+        const actionStack = [this.basicActions.moveToRoom];
         return new Task(
             { roomName: creep.memory.target, maxRooms: 64, maxOps: 64000 },
             "move",

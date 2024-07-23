@@ -8,7 +8,7 @@ const {
     nudgeRoleDemand,
     bumpRoleDemand,
 } = require("./spawn.demandHandler");
-const { getCost, filterSupportingForRole } = require("./spawn.spawnUtility");
+const { getCost } = require("./spawn.spawnUtility");
 
 const creepMaker = require("./spawn.creepMaker");
 const overlay = require("./debug.overlay");
@@ -200,6 +200,17 @@ const demandHandlers = {
     },
 };
 
+const filterSupportingForRole = (colony, role) =>
+    colony.memory.supporting
+        ? colony.memory.supporting.reduce(
+              (total, curr) =>
+                  total +
+                  Memory.newColonies[curr].spawns.filter((s) => s === role)
+                      .length,
+              0
+          )
+        : 0;
+
 /**
  * Here we can subscribe to any important colony events that might
  * impact our spawn demands, like the adding or dropping of remotes.
@@ -340,7 +351,7 @@ const spawnsByRole = {
     // Expansion creeps, when we have a good eco
     [roles.claimer]: (colony) => creepMaker.makeClaimer(),
     [roles.colonizerBuilder]: (colony) =>
-        creepMaker.makeColonyStarter(colony.room.energyCapacityAvailable),
+        creepMaker.makeColonizerBuilder(colony.room.energyCapacityAvailable),
     [roles.colonizerHauler]: (colony) =>
         creepMaker.makeColonizerHauler(colony.room.energyCapacityAvailable),
 
@@ -455,7 +466,9 @@ class SpawnManager {
                 // we can remove that one from their queue
                 if (supportingColony) {
                     Memory.newColonies[supportingColony].spawns.splice(
-                        support.spawns.indexOf(next.memory.role),
+                        Memory.newColonies[supportingColony].spawns.indexOf(
+                            next.memory.role
+                        ),
                         1
                     );
                 }

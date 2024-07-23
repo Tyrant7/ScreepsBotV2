@@ -32,10 +32,9 @@ class ClaimerManager extends CreepManager {
     }
 
     createMoveTask(creep) {
-        const actionStack = [super.basicActions.moveToRoom];
-        creep.memory.target = target;
+        const actionStack = [this.basicActions.moveToRoom];
         return new Task(
-            { roomName: target, maxRooms: 64, maxOps: 64000 },
+            { roomName: creep.memory.target, maxRooms: 64, maxOps: 64000 },
             "move",
             actionStack
         );
