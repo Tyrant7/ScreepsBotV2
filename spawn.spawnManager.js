@@ -221,7 +221,11 @@ const demandHandlers = {
 // This totals up the number of creeps of this role that are owned by each of our supporting rooms
 const filterSupportingColoniesForRole = (colony, role) =>
     colony.memory.supporting.reduce(
-        (total, curr) => total + curr.creepCounts[role],
+        (total, curr) =>
+            total +
+            curr.creepNames.filter(
+                (cn) => Game.creeps[cn].memory.role === role
+            ),
         0
     );
 
@@ -467,15 +471,7 @@ class SpawnManager {
                     : null;
             if (supportingColony) {
                 next.memory.expansionTarget = supportingColony;
-
-                // Increment the count for that role to ensure we don't accidentally spawn
-                // this creep from another room on this same tick
-                Memory.newColonies[supportingColony].creepCounts[
-                    next.memory.role
-                ] =
-                    (Memory.newColonies[supportingColony].creepCounts[
-                        next.memory.role
-                    ] || 0) + 1;
+                Memory.newColonies[supportingColony].creepNames.push(next.name);
             }
 
             // Save the room responsible for this creep and start spawning
