@@ -222,7 +222,10 @@ class CreepManager {
         }
 
         // Check if current action is completed, if so, we can advance to the next action
-        while (task.actionStack[task.actionStackPointer](creep, task.data)) {
+        while (
+            task.actionStack[task.actionStackPointer] &&
+            task.actionStack[task.actionStackPointer](creep, task.data)
+        ) {
             task.actionStackPointer++;
 
             // All actions were finished, so the task is complete
