@@ -3,7 +3,7 @@ const Task = require("./data.task");
 
 class ClaimerManager extends CreepManager {
     createTask(creep, colony) {
-        if (creep.memory.target === creep.room.name) {
+        if (creep.memory.expansionTarget === creep.room.name) {
             if (creep.room.controller.my) {
                 // Purpose fulfilled
                 creep.memory.home = creep.room.name;
@@ -34,7 +34,11 @@ class ClaimerManager extends CreepManager {
     createMoveTask(creep) {
         const actionStack = [this.basicActions.moveToRoom];
         return new Task(
-            { roomName: creep.memory.target, maxRooms: 64, maxOps: 64000 },
+            {
+                roomName: creep.memory.expansionTarget,
+                maxRooms: 64,
+                maxOps: 64000,
+            },
             "move",
             actionStack
         );

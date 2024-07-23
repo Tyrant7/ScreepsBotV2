@@ -128,6 +128,8 @@ const {
     showAppraisalScores,
     showExpansionTargets,
 } = require("./debug.expansionDebugUtility");
+const ExpansionManager = require("./expansion.expansionManager");
+const expansionManager = new ExpansionManager();
 
 // Defense
 const towerManager = new TowerManager();
@@ -140,7 +142,6 @@ const haulingRequester = new HaulingRequester();
 const overlay = require("./debug.overlay");
 const trackStats = require("./debug.trackStats");
 const profiler = require("./debug.profiler");
-const { runExpansion } = require("./expansion.expansionManager");
 
 module.exports.loop = function () {
     // Passive pixel generation
@@ -152,7 +153,7 @@ module.exports.loop = function () {
     }
 
     // Global expansion-related things should come first so colonies know how to react
-    runExpansion();
+    expansionManager.run();
     if (DEBUG.showAppraisalScores) {
         showAppraisalScores();
     }

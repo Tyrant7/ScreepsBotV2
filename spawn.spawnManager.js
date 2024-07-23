@@ -190,26 +190,40 @@ const demandHandlers = {
         set(amount);
     },
     [roles.claimer]: (colony, set, nudge, bump) => {
-        set(filterSupportingForRole(colony, roles.claimer));
+        if (!colony.memory.supporting) {
+            return set(0);
+        }
+        set(
+            colony.memory.supporting.length -
+                filterSupportingColoniesForRole(colony, roles.claimer)
+        );
     },
     [roles.colonizerBuilder]: (colony, set, nudge, bump) => {
-        set(filterSupportingForRole(colony, roles.colonizerBuilder));
+        if (!colony.memory.supporting) {
+            return set(0);
+        }
+        set(
+            colony.memory.supporting.length -
+                filterSupportingColoniesForRole(colony, roles.colonizerBuilder)
+        );
     },
     [roles.colonizerHauler]: (colony, set, nudge, bump) => {
-        set(filterSupportingForRole(colony, roles.colonizerHauler));
+        if (!colony.memory.supporting) {
+            return set(0);
+        }
+        set(
+            colony.memory.supporting.length -
+                filterSupportingColoniesForRole(colony, roles.colonizerHauler)
+        );
     },
 };
 
-const filterSupportingForRole = (colony, role) =>
-    colony.memory.supporting
-        ? colony.memory.supporting.reduce(
-              (total, curr) =>
-                  total +
-                  Memory.newColonies[curr].spawns.filter((s) => s === role)
-                      .length,
-              0
-          )
-        : 0;
+// This totals up the number of creeps of this role that are owned by each of our supporting rooms
+const filterSupportingColoniesForRole = (colony, role) =>
+    colony.memory.supporting.reduce(
+        (total, curr) => total + curr.creepCounts[role],
+        0
+    );
 
 /**
  * Here we can subscribe to any important colony events that might
@@ -452,7 +466,16 @@ class SpawnManager {
                       )
                     : null;
             if (supportingColony) {
-                next.memory.target = supportingColony;
+                next.memory.expansionTarget = supportingColony;
+
+                // Increment the count for that role to ensure we don't accidentally spawn
+                // this creep from another room on this same tick
+                Memory.newColonies[supportingColony].creepCounts[
+                    next.memory.role
+                ] =
+                    (Memory.newColonies[supportingColony].creepCounts[
+                        next.memory.role
+                    ] || 0) + 1;
             }
 
             // Save the room responsible for this creep and start spawning
@@ -461,18 +484,7 @@ class SpawnManager {
                 memory: next.memory,
             });
 
-            if (result === OK) {
-                // If there was a colony that we're supporting that needed that creep,
-                // we can remove that one from their queue
-                if (supportingColony) {
-                    Memory.newColonies[supportingColony].spawns.splice(
-                        Memory.newColonies[supportingColony].spawns.indexOf(
-                            next.memory.role
-                        ),
-                        1
-                    );
-                }
-            } else {
+            if (result !== OK) {
                 // Didn't spawn successfully, don't count the spawn as active
                 inactiveSpawns.push(spawn);
             }

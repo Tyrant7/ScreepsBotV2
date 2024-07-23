@@ -15,14 +15,6 @@ class Colony {
         this.room = room;
         if (!Memory.colonies[this.room.name]) {
             Memory.colonies[this.room.name] = {};
-
-            // If this is an expansion, we'll remove it
-            if (
-                Memory.newColonies[this.room.name] &&
-                !Memory.newColonies[this.room.name].spawns.length
-            ) {
-                delete Memory.newColonies[this.room.name];
-            }
         }
         this.sources = this.room.find(FIND_SOURCES);
         this.mineral = this.room.find(FIND_MINERALS)[0];
@@ -42,6 +34,23 @@ class Colony {
         this.sources = this.sources.map((s) => Game.getObjectById(s.id));
         this.mineral = Game.getObjectById(this.mineral.id);
         profiler.endSample("cache");
+
+        // If any of our supporting colonies have emerged as full colonies, let's remove them
+        for (const supporting of this.memory.supporting) {
+            if (!Memory.newColonies[supporting]) {
+                this.memory.supporting = this.memory.supporting.filter(
+                    (s) => s !== supporting
+                );
+            }
+        }
+
+        // If this is an expansion itself, let's check to see if we're ready to become autonomous
+        if (
+            Memory.newColonies[this.room.name] &&
+            Memory.newColonies[this.room.name].structures[STRUCTURE_SPAWN]
+        ) {
+            delete Memory.newColonies[this.room.name];
+        }
 
         // Find all creeps that this room is responsible for, not just ones in it
         profiler.startSample("group creeps");
