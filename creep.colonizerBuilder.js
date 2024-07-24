@@ -21,6 +21,18 @@ class ColonizerBuilderManager extends BuilderManager {
         );
         if (spawnSite) {
             if (creep.store[RESOURCE_ENERGY] === 0 || creep.memory.sourceID) {
+                if (!creep.memory.sourceID) {
+                    const resourcePile = colony.room
+                        .find(FIND_DROPPED_RESOURCES)
+                        .find(
+                            (r) =>
+                                r.resourceType === RESOURCE_ENERGY &&
+                                r.amount >= creep.store.getCapacity()
+                        );
+                    if (resourcePile) {
+                        return this.createPickupTask(creep, resourcePile);
+                    }
+                }
                 return this.createHarvestTask(creep, colony);
             }
             return super.createBuildTask(colony, creep, spawnSite, true);
@@ -30,6 +42,27 @@ class ColonizerBuilderManager extends BuilderManager {
             return this.createHarvestTask(creep, colony);
         }
         return this.createUpgradeTask(colony);
+    }
+
+    createPickupTask(creep, pickup) {
+        const actionStack = [
+            function (creep, { pickupID }) {
+                const target = Game.getObjectById(pickupID);
+                if (!target || creep.store.getFreeCapacity() === 0) {
+                    return true;
+                }
+                if (creep.pos.getRangeTo(target.pos) > 1) {
+                    creep.betterMoveTo(target, {
+                        range: 1,
+                        maxRooms: 1,
+                        pathSet: pathSets.default,
+                    });
+                    return false;
+                }
+                creep.pickup(pickup);
+            },
+        ];
+        return new Task({ pickupID: pickup.id }, "pickup", actionStack);
     }
 
     createHarvestTask(creep, colony) {
