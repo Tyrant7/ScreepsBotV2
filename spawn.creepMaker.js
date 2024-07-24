@@ -202,7 +202,7 @@ const makeColonizerBuilder = (energy) => {
 
 const makeColonizerHauler = (energy) => {
     const haulerBody = makeHauler(energy, 1).body;
-    const level = haulerBody.filter((p) => p === MOVE);
+    const level = haulerBody.filter((p) => p === MOVE).length;
     return {
         body: haulerBody,
         name: "C_Hauler " + Game.time + " [" + level + "]",

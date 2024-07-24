@@ -1,4 +1,4 @@
-const { roles } = require("./constants");
+const { roles, pathSets } = require("./constants");
 const HaulerManager = require("./creep.hauler");
 const Task = require("./data.task");
 
@@ -16,7 +16,27 @@ class ColonizerHaulerManager extends HaulerManager {
     }
 
     createMoveTask(creep) {
-        const actionStack = [this.basicActions.moveToRoom];
+        const actionStack = [
+            function (creep, data) {
+                // We'll fill ourselves up at the storage before going to our target room
+                if (creep.store[RESOURCE_ENERGY]) {
+                    return true;
+                }
+                if (creep.pos.getRangeTo(creep.room.storage) <= 1) {
+                    creep.withdraw(
+                        creep.room.storage,
+                        RESOURCE_ENERGY,
+                        creep.store.getFreeCapacity()
+                    );
+                    return false;
+                }
+                creep.betterMoveTo(creep.room.storage, {
+                    range: 1,
+                    pathSet: pathSets.default,
+                });
+            },
+            this.basicActions.moveToRoom,
+        ];
         return new Task(
             {
                 roomName: creep.memory.expansionTarget,

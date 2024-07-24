@@ -6,7 +6,7 @@ class ColonizerBuilderManager extends BuilderManager {
         if (creep.memory.expansionTarget === creep.room.name) {
             if (creep.room.controller.my) {
                 creep.memory.home = creep.room.name;
-                return this.developmentLogisics();
+                return this.developmentLogisics(creep, colony);
             }
             // We'll wait until our room has been claimed
             return;
@@ -15,16 +15,13 @@ class ColonizerBuilderManager extends BuilderManager {
     }
 
     developmentLogisics(creep, colony) {
-        if (colony.room.controller.level < 2 && !colony.room.safemode) {
-            return this.createUpgradeTask(colony);
-        }
-
         const spawnSite = colony.constructionSites.find(
             (s) => s.structureType === STRUCTURE_SPAWN
         );
         if (spawnSite) {
             return super.createBuildTask(colony, creep, spawnSite);
         }
+        return this.createUpgradeTask(colony);
     }
 
     createUpgradeTask(colony) {

@@ -348,6 +348,14 @@ const spawnsByRole = {
             );
         }
     },
+
+    // Expansion creeps, when we have a good eco
+    [roles.claimer]: (colony) => creepMaker.makeClaimer(),
+    [roles.colonizerBuilder]: (colony) =>
+        creepMaker.makeColonizerBuilder(colony.room.energyCapacityAvailable),
+    [roles.colonizerHauler]: (colony) =>
+        creepMaker.makeColonizerHauler(colony.room.energyCapacityAvailable),
+
     [roles.miner]: (colony) => creepMaker.makeMiner(getMinEnergy(colony)),
     [roles.hauler]: (colony) => {
         if (
@@ -364,13 +372,6 @@ const spawnsByRole = {
     [roles.upgrader]: (colony) =>
         creepMaker.makeUpgrader(colony.room.energyCapacityAvailable),
     [roles.reserver]: (colony) => creepMaker.makeReserver(),
-
-    // Expansion creeps, when we have a good eco
-    [roles.claimer]: (colony) => creepMaker.makeClaimer(),
-    [roles.colonizerBuilder]: (colony) =>
-        creepMaker.makeColonizerBuilder(colony.room.energyCapacityAvailable),
-    [roles.colonizerHauler]: (colony) =>
-        creepMaker.makeColonizerHauler(colony.room.energyCapacityAvailable),
 
     [roles.scout]: (colony) => creepMaker.makeScout(),
     [roles.builder]: (colony) =>
