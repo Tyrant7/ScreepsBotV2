@@ -200,6 +200,16 @@ const makeColonizerBuilder = (energy) => {
     };
 };
 
+const makeColonizerDefender = (energy) => {
+    const defenderBody = makeMiniDefender(Infinity, energy).body;
+    const level = defenderBody.filter((p) => p === HEAL).length;
+    return {
+        body: defenderBody,
+        name: "C_Defender " + Game.time + " [" + level + "]",
+        memory: { role: roles.colonizerDefender },
+    };
+};
+
 //#endregion
 
 //#region Defense
@@ -209,15 +219,8 @@ const makeMiniDefender = (desiredLevel, maxCost) => {
     let lvl = 0;
     for (let i = 0; i < desiredLevel; i++) {
         lvl = i + 1;
-        body.push(
-            MOVE,
-            RANGED_ATTACK,
-            RANGED_ATTACK,
-            MOVE,
-            RANGED_ATTACK,
-            HEAL
-        );
-        if (getCost(body) > maxCost) {
+        body.push(MOVE, RANGED_ATTACK, MOVE, MOVE, RANGED_ATTACK, HEAL);
+        if (getCost(body) > maxCost || body.length > MAX_CREEP_SIZE) {
             for (let i = 0; i < 6; i++) {
                 body.pop();
             }
@@ -248,5 +251,6 @@ module.exports = {
     makeMiniDefender,
     makeClaimer,
     makeColonizerBuilder,
+    makeColonizerDefender,
     RESERVER_COST,
 };

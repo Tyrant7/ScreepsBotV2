@@ -20,24 +20,10 @@ class DefenderManager extends CreepManager {
             }
             return null;
         }
+        return this.createKillTask(creep, enemies[0]);
+    }
 
-        // Find our strongest enemy
-        const strongestEnemy = enemies.reduce((strongest, curr) => {
-            const currFightParts = curr.body.filter(
-                (p) =>
-                    p.type === RANGED_ATTACK ||
-                    p.type === ATTACK ||
-                    p.type === HEAL
-            );
-            const strongestFightParts = strongest.body.filter(
-                (p) =>
-                    p.type === RANGED_ATTACK ||
-                    p.type === ATTACK ||
-                    p.type === HEAL
-            );
-            return currFightParts > strongestFightParts ? curr : strongest;
-        }, enemies[0]);
-
+    createKillTask(creep, target) {
         const actionStack = [];
         actionStack.push(function (creep, data) {
             // Our target died or fled
@@ -83,8 +69,8 @@ class DefenderManager extends CreepManager {
         });
 
         // Save where we last saw the enemy in case we lose sight of them
-        creep.memory.lastSeen = strongestEnemy.pos.room;
-        return new Task({ targetID: strongestEnemy.id }, "kill", actionStack);
+        creep.memory.lastSeen = target.pos.room;
+        return new Task({ targetID: target.id }, "kill", actionStack);
     }
 }
 
