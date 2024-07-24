@@ -6,11 +6,14 @@ class ColonizerDefenderManager extends DefenderManager {
         if (creep.memory.expansionTarget === creep.room.name) {
             if (creep.room.controller.my) {
                 creep.memory.home = creep.room.name;
-                const enemies = colony.getEnemies();
-                if (enemies.length) {
-                    return super.createKillTask(creep, enemies[0]);
-                }
             }
+
+            const firstEnemy = colony.room.find(FIND_CREEPS).find((c) => !c.my);
+            if (firstEnemy) {
+                console.log(firstEnemy);
+                return super.createKillTask(creep, firstEnemy);
+            }
+
             // We'll wait until our room has been claimed
             return;
         }

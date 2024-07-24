@@ -108,32 +108,32 @@ class Colony {
     }
 
     /**
-     * Finds enemies in remotes of this room and caches them.
+     * Finds enemies in this room's remotes.
      * @returns {Creep[]} A list of enemy creeps in this room's remotes.
      */
-    getEnemies() {
-        if (this.enemies) {
-            return this.enemies;
-        }
-        this.enemies = [];
+    getRemoteEnemies() {
+        const enemies = [];
 
         // Get all rooms of our active remotes
-        const remoteRooms = new Set();
-        for (const remote of this.memory.remotes) {
-            if (remote.active) {
-                remoteRooms.add(remote.room);
+        // and search them for enemies too
+        if (this.memory.remotes) {
+            const remoteRooms = new Set();
+            for (const remote of this.memory.remotes) {
+                if (remote.active) {
+                    remoteRooms.add(remote.room);
+                }
             }
-        }
 
-        for (const roomName of remoteRooms) {
-            const room = Game.rooms[roomName];
-            if (!room) {
-                continue;
+            for (const roomName of remoteRooms) {
+                const room = Game.rooms[roomName];
+                if (!room) {
+                    continue;
+                }
+                const enemies = room.find(FIND_HOSTILE_CREEPS);
+                enemies.push(...enemies);
             }
-            const enemies = room.find(FIND_HOSTILE_CREEPS);
-            this.enemies.push(...enemies);
         }
-        return this.enemies;
+        return enemies;
     }
 
     getUpgraderContainer() {

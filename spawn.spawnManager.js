@@ -51,7 +51,7 @@ const demandHandlers = {
         if (!meetsMinimumSpawnRequirements(colony)) {
             return set(0);
         }
-        const enemies = colony.getEnemies();
+        const enemies = colony.getRemoteEnemies();
         const diff = Math.max(enemies.length - colony.defenders.length, 0);
         set(diff);
     },
@@ -330,7 +330,7 @@ onRCLUpgrade.subscribe((colony, newRCL) => {
  */
 const spawnsByRole = {
     [roles.defender]: (colony) => {
-        const enemies = colony.getEnemies();
+        const enemies = colony.getRemoteEnemies();
         if (enemies.length) {
             // Find our strongest enemy
             const mostFightParts = enemies.reduce((strongest, curr) => {
