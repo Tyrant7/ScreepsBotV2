@@ -190,29 +190,22 @@ const demandHandlers = {
         set(amount);
     },
     [roles.claimer]: (colony, set, nudge, bump) => {
-        if (!colony.memory.supporting) {
-            return set(0);
-        }
         set(
-            colony.memory.supporting.length -
+            colony.memory.supporting.length * expansionDemands[roles.claimer] -
                 filterSupportingColoniesForRole(colony, roles.claimer)
         );
     },
     [roles.colonizerBuilder]: (colony, set, nudge, bump) => {
-        if (!colony.memory.supporting) {
-            return set(0);
-        }
         set(
-            colony.memory.supporting.length -
+            colony.memory.supporting.length *
+                expansionDemands[roles.colonizerBuilder] -
                 filterSupportingColoniesForRole(colony, roles.colonizerBuilder)
         );
     },
     [roles.colonizerHauler]: (colony, set, nudge, bump) => {
-        if (!colony.memory.supporting) {
-            return set(0);
-        }
         set(
-            colony.memory.supporting.length -
+            colony.memory.supporting.length *
+                expansionDemands[roles.colonizerHauler] -
                 filterSupportingColoniesForRole(colony, roles.colonizerHauler)
         );
     },
@@ -225,9 +218,15 @@ const filterSupportingColoniesForRole = (colony, role) =>
             total +
             Memory.newColonies[curr].creepNamesAndRoles.filter(
                 (c) => c.role === role
-            ),
+            ).length,
         0
     );
+
+const expansionDemands = {
+    [roles.claimer]: 1,
+    [roles.colonizerBuilder]: 1,
+    [roles.colonizerHauler]: 1,
+};
 
 /**
  * Here we can subscribe to any important colony events that might
@@ -466,9 +465,10 @@ class SpawnManager {
                 colony.memory.supporting && colony.memory.supporting.length
                     ? colony.memory.supporting.find(
                           (s) =>
+                              expansionDemands[next.memory.role] &&
                               Memory.newColonies[s].creepNamesAndRoles.filter(
                                   (c) => c.role === next.memory.role
-                              ).length === 0
+                              ).length < expansionDemands[next.memory.role]
                       )
                     : null;
             if (supportingColony) {

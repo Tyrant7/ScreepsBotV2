@@ -36,6 +36,9 @@ class Colony {
         profiler.endSample("cache");
 
         // If any of our supporting colonies have emerged as full colonies, let's remove them
+        if (!this.memory.supporting) {
+            this.memory.supporting = [];
+        }
         for (const supporting of this.memory.supporting) {
             if (!Memory.newColonies[supporting]) {
                 this.memory.supporting = this.memory.supporting.filter(
