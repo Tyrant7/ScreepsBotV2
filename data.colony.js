@@ -94,6 +94,15 @@ class Colony {
             ? this.room.getPositionAt(this.memory.core.x, this.memory.core.y)
             : this.room.getPositionAt(25, 25);
 
+        // If this colony has a spawn, let's make sure that it isn't a new colony anymore
+        // No need for surrogate spawns anymore
+        if (
+            Memory.newColonies[this.room.name] &&
+            this.structures[STRUCTURE_SPAWN]
+        ) {
+            delete Memory.newColonies[this.room.name];
+        }
+
         // Clear tick caches
         this.cachedMiningSpots = null;
         profiler.endSample("finds");
