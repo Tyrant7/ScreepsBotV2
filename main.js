@@ -174,6 +174,7 @@ module.exports.loop = function () {
         );
         const colony = colonies[room];
         if (!colony.structures[STRUCTURE_SPAWN]) {
+            profiler.wrap("construction", () => handleSites(colony));
             continue;
         }
 

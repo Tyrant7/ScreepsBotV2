@@ -25,6 +25,10 @@ class ColonizerBuilderManager extends BuilderManager {
             }
             return super.createBuildTask(colony, creep, spawnSite, true);
         }
+        // Our spawn isn't built yet, start harvesting while we wait for the site to get placed
+        if (!colony.structures[STRUCTURE_SPAWN]) {
+            return this.createHarvestTask(creep, colony);
+        }
         return this.createUpgradeTask(colony);
     }
 

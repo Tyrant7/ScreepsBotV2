@@ -14,13 +14,35 @@ class ColonizerDefenderManager extends DefenderManager {
                 return super.createKillTask(creep, firstEnemy);
             }
 
-            // We'll wait until our room has been claimed
-            return;
+            // Sit near our spawn where most of our creeps will be
+            const spawnSite = colony.constructionSites.find(
+                (s) => s.structureType === STRUCTURE_SPAWN
+            );
+            const idleTarget =
+                spawnSite ||
+                (colony.structures[STRUCTURE_SPAWN] || [])[0] ||
+                colony.room.controller;
+            return this.createIdleTask(idleTarget.pos);
         }
         return this.createMoveTask(creep);
     }
 
-    createDefendTask() {}
+    createIdleTask(idlePos) {
+        const actionStack = [
+            function (creep, idlePosition) {
+                const IDLE_RANGE = 3;
+                if (creep.pos.getRangeTo(idlePosition) > IDLE_RANGE) {
+                    creep.betterMoveTo(idlePosition, {
+                        maxRooms: 1,
+                        range: IDLE_RANGE,
+                    });
+                }
+                // If we see any creeps that aren't our, let's kill them
+                return creep.room.find(FIND_CREEPS).find((c) => !c.my);
+            },
+        ];
+        return new Task(idlePos, "idle", actionStack);
+    }
 
     createMoveTask(creep) {
         const actionStack = [this.basicActions.moveToRoom];
