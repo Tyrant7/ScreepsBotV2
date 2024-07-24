@@ -42,10 +42,6 @@ let cachedTick = -RESET_CACHE_INTERVAL;
 let cachedMissingStructures = [];
 
 const handleSites = (colony) => {
-    if (colony.constructionSites.length >= MAX_SITES) {
-        return;
-    }
-
     // Update our list of cached structures if it's been invalidated,
     // or every once and a while to account for structures potentially being destroyed and remotes changing
     const rcl = colony.room.controller.level;
@@ -55,6 +51,11 @@ const handleSites = (colony) => {
         cachedTick + RESET_CACHE_INTERVAL < Game.time
     ) {
         updateCache(colony, rcl);
+    }
+
+    // We only care about the rest when we can place a site
+    if (colony.constructionSites.length >= MAX_SITES) {
+        return;
     }
 
     // Only allow sites in rooms we can see and aren't reserved by another player
