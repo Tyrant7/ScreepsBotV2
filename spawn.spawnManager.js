@@ -205,13 +205,6 @@ const demandHandlers = {
                 filterSupportingColoniesForRole(colony, roles.colonizerBuilder)
         );
     },
-    [roles.colonizerHauler]: (colony, set, nudge, bump) => {
-        set(
-            colony.memory.supporting.length *
-                expansionDemands[roles.colonizerHauler] -
-                filterSupportingColoniesForRole(colony, roles.colonizerHauler)
-        );
-    },
 };
 
 // This totals up the number of creeps of this role that are owned by each of our supporting rooms
@@ -355,8 +348,6 @@ const spawnsByRole = {
     [roles.claimer]: (colony) => creepMaker.makeClaimer(),
     [roles.colonizerBuilder]: (colony) =>
         creepMaker.makeColonizerBuilder(colony.room.energyCapacityAvailable),
-    [roles.colonizerHauler]: (colony) =>
-        creepMaker.makeColonizerHauler(colony.room.energyCapacityAvailable),
 
     [roles.miner]: (colony) => creepMaker.makeMiner(getMinEnergy(colony)),
     [roles.hauler]: (colony) => {

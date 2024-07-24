@@ -12,7 +12,6 @@ const roles = {
 
     claimer: "claimer",
     colonizerBuilder: "c_builder",
-    colonizerHauler: "c_hauler",
 };
 
 const pathSets = {

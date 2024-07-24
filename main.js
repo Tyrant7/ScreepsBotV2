@@ -92,7 +92,6 @@ const MineralMinerManager = require("./creep.mineralMiner");
 
 const ClaimerManager = require("./creep.claimer");
 const ColonizerBuilderManager = require("./creep.colonizerBuilder");
-const ColonizerHaulerManager = require("./creep.colonizerHauler");
 
 // Mapping
 const { roles, pathSets, INTERRUPT_PATHING_COST } = require("./constants");
@@ -110,7 +109,6 @@ const creepRoleMap = {
 
     [roles.claimer]: new ClaimerManager(),
     [roles.colonizerBuilder]: new ColonizerBuilderManager(),
-    [roles.colonizerHauler]: new ColonizerHaulerManager(),
 };
 
 // Economy
