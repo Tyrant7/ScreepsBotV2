@@ -26,6 +26,9 @@ class ExpansionManager {
             const route = Game.map.findRoute(colony, best);
             const maxSupportDist = CREEP_CLAIM_LIFE_TIME / ROOM_SIZE;
             if (route.length <= maxSupportDist) {
+                if (!Memory.colonies[colony].supporting) {
+                    Memory.colonies[colony].supporting = [];
+                }
                 if (!Memory.colonies[colony].supporting.includes(best)) {
                     Memory.colonies[colony].supporting.push(best);
                 }
