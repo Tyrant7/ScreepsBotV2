@@ -20,7 +20,7 @@ class ColonizerDefenderManager extends DefenderManager {
             );
             const idleTarget =
                 spawnSite ||
-                (colony.structures[STRUCTURE_SPAWN] || [])[0] ||
+                (colony.structures[STRUCTURE_SPAWN] || [undefined])[0] ||
                 colony.room.controller;
             return this.createIdleTask(idleTarget.pos);
         }
