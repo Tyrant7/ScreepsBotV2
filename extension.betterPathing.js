@@ -126,10 +126,25 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
 Creep.prototype.betterFindClosestByPath = function (goals, options = {}) {
     // Find a path to the closest goal
     options = utility.ensureDefaultOptions(options);
-    const path = utility.getNewPath(this.pos, goals, options);
 
-    // If we have no path, then use our own position
-    const lastPos = path[path.length - 1] || this.pos;
+    // Translate goals to pathfinder format
+    const pathfinderGoals = goals.map((g) => {
+        return { pos: g.pos || g, range: options.range };
+    });
+    const path = utility.getNewPath(this.pos, pathfinderGoals, options);
+
+    // If we're already close enough to one of the goals, that's our goal
+    for (const goal of goals) {
+        if (
+            utilEstimateTravelTime(this.pos, goal.pos || goal) <= options.range
+        ) {
+            return {
+                goal: goal,
+                path: [],
+            };
+        }
+    }
+    const lastPos = path[path.length - 1];
     const closestGoal = goals.find(
         // Here we're using estimate travel time since if our goal is just
         // on the other side of a border, we won't find a valid goal within range
@@ -146,6 +161,12 @@ Creep.prototype.betterFindClosestByPath = function (goals, options = {}) {
         path: path,
     };
 };
+/**
+ * Injects a path directly into the creep memory. Can be used with paths retrieved via
+ * `betterFindClosestByPath`.
+ * @param {RoomPosition[]} path The path to inject.
+ * @param {RoomPosition} target The target the path is attempting to reach.
+ */
 Creep.prototype.injectPath = function (path, target) {
     this.memory._move = {
         dest: target,
