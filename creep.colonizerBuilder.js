@@ -1,3 +1,4 @@
+const { pathSets } = require("./constants");
 const BuilderManager = require("./creep.builder");
 const Task = require("./data.task");
 
@@ -19,9 +20,61 @@ class ColonizerBuilderManager extends BuilderManager {
             (s) => s.structureType === STRUCTURE_SPAWN
         );
         if (spawnSite) {
-            return super.createBuildTask(colony, creep, spawnSite);
+            if (creep.store[RESOURCE_ENERGY] === 0 || creep.memory.sourceID) {
+                return this.createHarvestTask(creep, colony);
+            }
+            return super.createBuildTask(colony, creep, spawnSite, true);
         }
         return this.createUpgradeTask(colony);
+    }
+
+    createHarvestTask(creep, colony) {
+        const actionStack = [
+            function (creep, { targetID }) {
+                if (creep.store.getFreeCapacity() === 0) {
+                    delete creep.memory.sourceID;
+                    return true;
+                }
+                const source = Game.getObjectById(targetID);
+                if (creep.pos.getRangeTo(source.pos) > 1) {
+                    creep.betterMoveTo(source, {
+                        range: 1,
+                        maxRooms: 1,
+                        pathSet: pathSets.default,
+                    });
+                    return false;
+                }
+                creep.harvest(source);
+            },
+        ];
+
+        // We can save a lot of CPU by computing this once and caching the result
+        if (!creep.memory.sourceID) {
+            // Filter all sources that aren't reserved yet
+            const unreservedSources = colony.sources.filter(
+                (s) =>
+                    !colony.colonizerBuilders.find(
+                        (b) => b.memory.sourceID === s.id
+                    )
+            );
+            // We'll wait until we have somewhere to mine
+            if (!unreservedSources.length) return;
+            const { goal: closestSource, path } = creep.betterFindClosestByPath(
+                unreservedSources,
+                {
+                    range: 1,
+                    maxRooms: 1,
+                    pathSet: pathSets.default,
+                }
+            );
+            creep.injectPath(closestSource.pos, path);
+            creep.memory.sourceID = closestSource.id;
+        }
+        return new Task(
+            { targetID: creep.memory.sourceID },
+            "harvest",
+            actionStack
+        );
     }
 
     createUpgradeTask(colony) {

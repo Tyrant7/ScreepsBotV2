@@ -102,9 +102,13 @@ class BuilderManager extends CreepManager {
         ]);
     }
 
-    createBuildTask(colony, creep, targetSite) {
+    createBuildTask(colony, creep, targetSite, endTaskIfOutOfEnergy = false) {
         const actionStack = [
             function (creep, { targetID, pos, structureType, useRate }) {
+                if (!creep.store[RESOURCE_ENERGY] && endTaskIfOutOfEnergy) {
+                    return true;
+                }
+
                 const target = Game.getObjectById(targetID);
                 if (!target) {
                     creep.memory.lastBuilt = { pos, structureType };

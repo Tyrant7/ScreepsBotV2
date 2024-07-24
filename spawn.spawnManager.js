@@ -190,8 +190,11 @@ const demandHandlers = {
         set(amount);
     },
     [roles.claimer]: (colony, set, nudge, bump) => {
+        const coloniesThatNeedClaimers = colony.memory.supporting.filter(
+            (s) => !Memory.colonies[s]
+        );
         set(
-            colony.memory.supporting.length * expansionDemands[roles.claimer] -
+            coloniesThatNeedClaimers.length * expansionDemands[roles.claimer] -
                 filterSupportingColoniesForRole(colony, roles.claimer)
         );
     },
@@ -224,8 +227,7 @@ const filterSupportingColoniesForRole = (colony, role) =>
 
 const expansionDemands = {
     [roles.claimer]: 1,
-    [roles.colonizerBuilder]: 1,
-    [roles.colonizerHauler]: 1,
+    [roles.colonizerBuilder]: 2,
 };
 
 /**
