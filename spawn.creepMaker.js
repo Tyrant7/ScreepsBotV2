@@ -40,9 +40,9 @@ const makeHauler = (energy, ratio = 2) => {
         }
         if (getCost(body) > energy || body.length > MAX_CREEP_SIZE) {
             lvl--;
-            body.pop();
-            body.pop();
-            body.pop();
+            for (let j = 0; j < ratio + 1; j++) {
+                body.pop();
+            }
             break;
         }
     }
