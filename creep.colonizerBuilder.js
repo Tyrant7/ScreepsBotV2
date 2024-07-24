@@ -1,4 +1,4 @@
-const { pathSets } = require("./constants");
+const { pathSets, roles } = require("./constants");
 const BuilderManager = require("./creep.builder");
 const Task = require("./data.task");
 
@@ -37,11 +37,29 @@ class ColonizerBuilderManager extends BuilderManager {
             }
             return super.createBuildTask(colony, creep, spawnSite, true);
         }
-        // Our spawn isn't built yet, start harvesting while we wait for the site to get placed
+        // Our spawn isn't built yet and there's no site for it,
+        // start harvesting while we wait for the site to get placed
         if (!colony.structures[STRUCTURE_SPAWN]) {
             return this.createHarvestTask(creep, colony);
         }
-        return this.createUpgradeTask(colony);
+
+        // Our spawn is built, let's fill it up if it needs it
+        const spawn = colony.structures[STRUCTURE_SPAWN][0];
+        if (spawn.store.getFreeCapacity()) {
+            if (creep.store[RESOURCE_ENERGY]) {
+                return this.createFillTask(spawn);
+            }
+            return this.createHarvestTask(creep, colony);
+        }
+
+        // Finally, our colony has started to work
+        // Let's turn one into an upgrader and the rest into builders
+        if (!colony.upgraders.length) {
+            creep.memory.role = roles.upgrader;
+            return null;
+        }
+        creep.memory.role = roles.builder;
+        return null;
     }
 
     createPickupTask(creep, pickup) {
@@ -114,25 +132,29 @@ class ColonizerBuilderManager extends BuilderManager {
         );
     }
 
-    createUpgradeTask(colony) {
+    createFillTask(spawn) {
         const actionStack = [
-            function (creep, data) {
-                if (creep.pos.getRangeTo(creep.room.controller.pos) > 3) {
-                    creep.betterMoveTo(creep.room.controller, { range: 3 });
-                    return false;
-                }
-                creep.upgradeController(creep.room.controller);
-                colony.createDropoffRequest(
-                    Infinity,
-                    RESOURCE_ENERGY,
-                    creep.id
-                );
-                if (colony.room.controller.level >= 2) {
+            function (creep, { spawnID }) {
+                const spawn = Game.getObjectById(spawnID);
+                if (
+                    !spawn ||
+                    spawn.store.getFreeCapacity() === 0 ||
+                    creep.store[RESOURCE_ENERGY] === 0
+                ) {
                     return true;
                 }
+                if (creep.pos.getRangeTo(spawn) > 1) {
+                    creep.betterMoveTo(spawn, {
+                        range: 1,
+                        maxRooms: 1,
+                        pathSet: pathSets.default,
+                    });
+                    return false;
+                }
+                creep.transfer(spawn, RESOURCE_ENERGY);
             },
         ];
-        return new Task({}, "upgrade", actionStack);
+        return new Task({ spawnID: spawn.id }, "fill", actionStack);
     }
 
     createMoveTask(creep) {
