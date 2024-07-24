@@ -496,6 +496,11 @@ class SpawnManager {
                 // Didn't spawn successfully, don't count the spawn as active
                 inactiveSpawns.push(spawn);
             }
+
+            // Let's wait until we have enough energy
+            if (result === ERR_NOT_ENOUGH_ENERGY) {
+                break;
+            }
         }
         profiler.endSample("spawning");
 
