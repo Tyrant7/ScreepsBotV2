@@ -109,7 +109,7 @@ class Colony {
 
     /**
      * Finds enemies in this room's remotes.
-     * @returns {Creep[]} A list of enemy creeps in this room's remotes.
+     * @returns {Creep[]} An array of enemy creeps in this room's remotes.
      */
     getRemoteEnemies() {
         const enemies = [];
