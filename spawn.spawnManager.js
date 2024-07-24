@@ -530,12 +530,12 @@ class SpawnManager {
 
     drawOverlay(colony) {
         overlay.addHeading(colony.room.name + "0", "Spawn Demands");
-        for (const role in roles) {
-            const demand = getRoleDemand(colony, role).value;
-            if (!demand) {
-                continue;
-            }
-            overlay.addColumns(colony.room.name + "0", role, demand.toFixed(4));
+        for (const role of Object.values(roles)) {
+            const demand = getRoleDemand(colony, role);
+            if (!demand) continue;
+            const value = demand.value;
+            if (!value) continue;
+            overlay.addColumns(colony.room.name + "0", role, value.toFixed(4));
         }
     }
 }

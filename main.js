@@ -173,6 +173,9 @@ module.exports.loop = function () {
             colonies[room].initializeTickInfo()
         );
         const colony = colonies[room];
+        if (!colony.structures[STRUCTURE_SPAWN]) {
+            continue;
+        }
 
         // Initialize our panels for this room
         profiler.wrap("setup overlay", () =>

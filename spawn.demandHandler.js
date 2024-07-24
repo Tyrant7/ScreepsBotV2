@@ -32,6 +32,7 @@ const setRoleDemand = (colony, role, value, freeze = 0) => {
     const constraints = MIN_MAX_DEMAND[role] || {};
     value = Math.max(value, constraints.min || 0);
     value = Math.min(value, constraints.max || Infinity);
+    freeze = Math.max(freeze, 0);
     colony.memory.spawnDemand[role] = { freeze, value };
 };
 

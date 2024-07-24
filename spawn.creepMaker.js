@@ -195,7 +195,7 @@ const makeColonizerBuilder = (energy) => {
     const level = builderBody.filter((p) => p === WORK).length;
     return {
         body: builderBody,
-        name: "Starter " + Game.time + " [" + level + "]",
+        name: "C_Builder " + Game.time + " [" + level + "]",
         memory: { role: roles.colonizerBuilder },
     };
 };
@@ -205,7 +205,7 @@ const makeColonizerHauler = (energy) => {
     const level = haulerBody.filter((p) => p === MOVE);
     return {
         body: haulerBody,
-        name: "Colonizer Hauler " + Game.time + " [" + level + "]",
+        name: "C_Hauler " + Game.time + " [" + level + "]",
         memory: { role: roles.colonizerHauler },
     };
 };

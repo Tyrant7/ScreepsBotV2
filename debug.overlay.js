@@ -174,7 +174,7 @@ const addColumns = (panelName, leftElement, rightElement) => {
     panels[panelName].add({
         content:
             leftElement +
-            " ".repeat(columnSpacing - leftElement.length) +
+            " ".repeat(columnSpacing - Math.min(leftElement.length, 14)) +
             rightElement,
         style: defaultText,
         spacing: defaultSpacing,
