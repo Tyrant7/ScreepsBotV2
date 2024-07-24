@@ -483,10 +483,14 @@ class SpawnManager {
 
             // If we succesfully spawned, let's let all other colonies know that we've spawned this creep
             if (result === OK) {
-                Memory.newColonies[supportingColony].creepNamesAndRoles.push({
-                    name: next.name,
-                    role: next.memory.role,
-                });
+                if (supportingColony) {
+                    Memory.newColonies[
+                        supportingColony
+                    ].creepNamesAndRoles.push({
+                        name: next.name,
+                        role: next.memory.role,
+                    });
+                }
             } else {
                 // Didn't spawn successfully, don't count the spawn as active
                 inactiveSpawns.push(spawn);
