@@ -41,6 +41,8 @@ class Panel {
             return;
         }
 
+        console.log("drawing panel " + key + " in room " + roomName);
+
         const height =
             this.elements.reduce((total, curr) => total + curr.spacing, 0) +
             this.my * 2 -

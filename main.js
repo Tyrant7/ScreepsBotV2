@@ -182,8 +182,8 @@ module.exports.loop = function () {
         profiler.wrap("setup overlay", () =>
             overlay
                 .createPanel(colony.room.name, "tl")
-                .addChild(colony.room.name + "0")
-                .addChild(colony.room.name + "1")
+                .addChild(colony.room.name + "_a")
+                .addChild(colony.room.name + "_b")
         );
 
         // Run RCL level up events if we've leveled up
@@ -210,9 +210,9 @@ module.exports.loop = function () {
 
         // Track RCL progress
         if (DEBUG.trackRCLProgress) {
-            overlay.addHeading(colony.room.name + "1", "RCL");
+            overlay.addHeading(colony.room.name + "_b", "RCL");
             const averageRCL = trackStats.trackRCL(colony.room.name);
-            overlay.addText(colony.room.name + "1", {
+            overlay.addText(colony.room.name + "_b", {
                 "RCL Per Tick": averageRCL.toFixed(3),
             });
             const neededEnergyToNextRCL =
@@ -221,7 +221,7 @@ module.exports.loop = function () {
             const ticksUntilNextRCL = Math.floor(
                 neededEnergyToNextRCL / averageRCL
             );
-            overlay.addText(colony.room.name + "1", {
+            overlay.addText(colony.room.name + "_b", {
                 "Next RCL In": ticksUntilNextRCL,
             });
         }
@@ -337,8 +337,8 @@ module.exports.loop = function () {
     // Track creeps
     if (DEBUG.trackCreepCounts) {
         for (const roomName in colonies) {
-            overlay.addHeading(roomName + "0", "Creeps");
-            overlay.addText(roomName + "0", {
+            overlay.addHeading(roomName + "_a", "Creeps");
+            overlay.addText(roomName + "_a", {
                 Count: Object.values(Memory.creeps).length,
             });
         }
