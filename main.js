@@ -181,7 +181,7 @@ module.exports.loop = function () {
         // Initialize our panels for this room
         profiler.wrap("setup overlay", () =>
             overlay
-                .createPanel(colony.room.name, "tl")
+                .createPanel(colony.room.name, colony.room.name, "tl")
                 .addChild(colony.room.name + "_a")
                 .addChild(colony.room.name + "_b")
         );
@@ -347,9 +347,7 @@ module.exports.loop = function () {
     profiler.printout();
 
     // Finalize overlays
-    for (const roomName in colonies) {
-        overlay.finalizePanels(roomName);
-    }
+    overlay.finalizePanels();
 
     // If we reloaded
     global.RELOAD = false;

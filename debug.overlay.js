@@ -22,8 +22,9 @@ const panels = {};
 const drawnPanels = {};
 
 class Panel {
-    constructor(style, anchor, parent) {
+    constructor(style, roomName, anchor, parent) {
         this.style = style;
+        this.roomName = roomName;
         this.anchor = anchor;
         this.parent = parent;
         this.elements = [];
@@ -36,12 +37,10 @@ class Panel {
         this.elements.push(...elements);
     }
 
-    draw(roomName, key) {
+    draw(key) {
         if (!this.elements.length) {
             return;
         }
-
-        console.log("drawing panel " + key + " in room " + roomName);
 
         const height =
             this.elements.reduce((total, curr) => total + curr.spacing, 0) +
@@ -83,7 +82,7 @@ class Panel {
             ? 49.5 - height - this.style.strokeWidth / 2
             : -0.5 + this.style.strokeWidth / 2;
 
-        const visual = new RoomVisual(roomName).rect(
+        const visual = new RoomVisual(this.roomName).rect(
             x,
             y,
             width,
@@ -113,16 +112,17 @@ class Panel {
 /**
  * Creates a panel which can be drawn to.
  * @param {string} name The name of the panel to reference when drawing later.
+ * @param {string} roomName The name of the room to draw this panel in when drawing panels.
  * @param {"tr" | "tl" | "br" | "bl"} anchor The side of the screen to anchor the panel.
  * @param {string?} parent The name of the parent panel. When given, this panel will
  * be drawn relative to its parent.
  * @returns {{ addChild: (childName: string) => ...}}
  * An object with a method to add children to the created panel.
  */
-const createPanel = (name, anchor, parent) => {
-    panels[name] = new Panel(panelStyle, anchor, parent);
+const createPanel = (name, roomName, anchor, parent) => {
+    panels[name] = new Panel(panelStyle, roomName, anchor, parent);
     return {
-        addChild: (childName) => createPanel(childName, anchor, name),
+        addChild: (childName) => createPanel(childName, roomName, anchor, name),
     };
 };
 
@@ -184,15 +184,14 @@ const addColumns = (panelName, leftElement, rightElement) => {
 };
 
 /**
- * Draws all panels on the specified room.
- * @param {string} roomName The name of the room to draw panels in.
+ * Draws all panels.
  */
-const finalizePanels = (roomName) => {
+const finalizePanels = () => {
     if (!DEBUG.drawOverlay) {
         return;
     }
     for (const key in panels) {
-        panels[key].draw(roomName, key);
+        panels[key].draw(key);
     }
 };
 
