@@ -44,6 +44,11 @@ class ExpansionManager {
         };
         Memory.newColonies[best] = entry;
 
+        // After this, we'll clear all expansion scores since they're now out of date
+        for (const room in Memory.scoutData) {
+            delete Memory.scoutData[room].expansionScore;
+        }
+
         if (DEBUG.logColonization) {
             console.log("Beginning colonization of room " + best);
         }
