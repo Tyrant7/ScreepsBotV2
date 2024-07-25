@@ -12,6 +12,8 @@ const PLANNING_SWAMP = 8;
 const PLANNING_ROAD = 3;
 const PLANNING_RESERVER_SPOT = 13;
 
+const PLANNING_DIST_FROM_CORE = 2;
+
 class RemotePlanner {
     /**
      * Plans remotes for a room. Returns early if not enough rooms have been scouted.
@@ -301,7 +303,7 @@ class RemotePlanner {
     planRoads(from, to, costMatrices) {
         return PathFinder.search(
             from,
-            { pos: to, range: 1 },
+            { pos: to, range: PLANNING_DIST_FROM_CORE },
             {
                 plainCost: PLANNING_PLAINS,
                 swampCost: PLANNING_SWAMP,
