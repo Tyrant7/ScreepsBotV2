@@ -138,8 +138,8 @@ class Colony {
                 if (!room) {
                     continue;
                 }
-                const enemies = room.find(FIND_HOSTILE_CREEPS);
-                enemies.push(...enemies);
+                const roomEnemies = room.find(FIND_HOSTILE_CREEPS);
+                enemies.push(...roomEnemies);
             }
         }
         return enemies;
