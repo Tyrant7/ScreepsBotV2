@@ -1,5 +1,5 @@
 const BAR_LENGTH = 110;
-const MAX_MESSAGE_LENGTH = 50;
+const MAX_MESSAGE_LENGTH = 55;
 const DECIMAL_PLACES = 5;
 
 /**
@@ -258,7 +258,7 @@ const printout = (interval = PRINTOUT_INTERVAL) => {
                 ? record.label.split(".").slice(-1)[0]
                 : record.label;
         let message = `[${prefix}] ${guidelines}${label}`;
-        if (message > MAX_MESSAGE_LENGTH) {
+        if (message.length > MAX_MESSAGE_LENGTH) {
             message = message.substring(0, MAX_MESSAGE_LENGTH);
         }
 
