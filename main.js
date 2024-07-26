@@ -55,9 +55,9 @@ global.DEBUG = {
     cpuPrintoutFigures: 4,
 
     logAppraisal: false,
-    logColonization: true,
-    showAppraisalScores: true,
-    showExpansionTargets: true,
+    logColonization: false,
+    showAppraisalScores: false,
+    showExpansionTargets: false,
 };
 global.RELOAD = true;
 
@@ -372,8 +372,7 @@ const mainLoop = () => {
 
     // If we're running the profiler, let's track our memory deserialization separately
     // by forcing it to deserializng before we run any meaningful code and tracking the cost here
-    if (DEBUG.runProfiler)
-        profiler.wrap("deserialize memory", () => Memory.colonies);
+    if (DEBUG.runProfiler) profiler.wrap("deserialize memory", () => Memory);
 
     // Global expansion-related things should come first so colonies know how to react
     profiler.wrap("expansion", runExpansion);
