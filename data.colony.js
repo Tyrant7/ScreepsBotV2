@@ -78,24 +78,51 @@ class Colony {
         this.allStructures = this.room.find(FIND_STRUCTURES);
         this.structures = _.groupBy(this.allStructures, "structureType");
 
-        this.enemies = this.room.find(FIND_HOSTILE_CREEPS);
         this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES);
+        this.miningSites = getPlanData(
+            this.room.name,
+            keys.sourceContainerPositions
+        ).map((container) => {
+            return {
+                pos: new RoomPosition(container.x, container.y, this.room.name),
+                sourceID: container.sourceID,
+                isReserved: true,
+            };
+        });
+
+        this.enemies = this.room.find(FIND_HOSTILE_CREEPS);
+        this.remoteEnemies = [];
+
         this.remotePlans = remoteUtility.getRemotePlans(this.room.name);
         if (this.remotePlans) {
             // Get all rooms of our active remotes for construction site and enemy searching
-            this.remoteEnemies = [];
             const remoteRooms = new Set();
             for (const remote of this.memory.remotes) {
-                if (remote.active) {
-                    remoteRooms.add(remote.room);
-                }
+                if (!remote.active) continue;
+                remoteRooms.add(remote.room);
+
+                // Mining sites
+                this.miningSites.push({
+                    pos: new RoomPosition(
+                        remote.container.x,
+                        remote.container.y,
+                        remote.container.roomName
+                    ),
+                    sourceID: remote.source.id,
+                    isReserved:
+                        this.room.energyCapacityAvailable >= RESERVER_COST,
+                });
             }
             for (const roomName of remoteRooms) {
                 const room = Game.rooms[roomName];
                 if (!room) continue;
+
+                // Enemies
                 this.remoteEnemies = this.remoteEnemies.concat(
                     room.find(FIND_HOSTILE_CREEPS)
                 );
+
+                // Construction sites
                 this.constructionSites = this.constructionSites.concat(
                     room.find(FIND_CONSTRUCTION_SITES)
                 );
@@ -119,7 +146,7 @@ class Colony {
         }
 
         // Clear tick caches
-        this.cachedMiningSpots = null;
+        this.wantedStructures = null;
 
         profiler.endSample("other init");
     }
@@ -184,56 +211,6 @@ class Colony {
     // #region Mining
 
     /**
-     * Gets an array of all mining sites for this room.
-     * @returns An array of objects, each containing some data about the mining site:
-     * - The position of the mining site (place to stand).
-     * - The ID of the source to mine.
-     */
-    getMiningSites() {
-        if (this.cachedMiningSpots) {
-            return this.cachedMiningSpots;
-        }
-
-        const miningSpots = [];
-
-        // Get the mining sites for this room
-        const sourceContainers = getPlanData(
-            this.room.name,
-            keys.sourceContainerPositions
-        );
-        for (const container of sourceContainers) {
-            miningSpots.push({
-                pos: new RoomPosition(container.x, container.y, this.room.name),
-                sourceID: container.sourceID,
-                isReserved: true,
-            });
-        }
-
-        // Get the mining sites for remote rooms
-        if (this.remotePlans) {
-            for (const remote of this.remotePlans) {
-                if (!remote.active) {
-                    continue;
-                }
-                miningSpots.push({
-                    pos: new RoomPosition(
-                        remote.container.x,
-                        remote.container.y,
-                        remote.container.roomName
-                    ),
-                    sourceID: remote.source.id,
-                    isReserved:
-                        this.room.energyCapacityAvailable >= RESERVER_COST,
-                });
-            }
-        }
-
-        // Cache in case of multiple requests this tick
-        this.cachedMiningSpots = miningSpots;
-        return miningSpots;
-    }
-
-    /**
      * Gets the first unreserved mining site, sorting by estimated distance.
      * @param {RoomPosition?} pos The position to order the sites by distance to.
      * @returns An object containing some data about the mining site:
@@ -241,61 +218,57 @@ class Colony {
      * - The ID of the source to mine.
      */
     getFirstOpenMiningSite(pos = null) {
-        const validSites = this.getMiningSites()
-            .sort((a, b) => {
-                return pos
-                    ? estimateTravelTime(pos, a.pos) -
-                          estimateTravelTime(pos, b.pos)
-                    : 0;
-            })
-            .filter((site) => {
-                // We're going to look for sites where the number of allocated miners is
-                // less than the amount of open spaces
-                const allocatedMiners = this.miners.filter(
-                    (m) =>
-                        m.memory.miningSite &&
-                        m.memory.miningSite.sourceID === site.sourceID
-                );
-                const source = Game.getObjectById(site.sourceID);
-                if (!source) {
-                    // No view of source -> no miner there yet, so
-                    // this must be a valid site since all sites can hold at least one miner
-                    return true;
-                }
-                const sourcePos = source.pos;
-                const roomTerrain = Game.map.getRoomTerrain(site.pos.roomName);
-                let openSpaces = 0;
-                for (let x = sourcePos.x - 1; x <= sourcePos.x + 1; x++) {
-                    for (let y = sourcePos.y - 1; y <= sourcePos.y + 1; y++) {
-                        if (x < 1 || x > 48 || y < 1 || y > 48) {
-                            continue;
-                        }
-                        if (roomTerrain.get(x, y) === TERRAIN_MASK_WALL) {
-                            continue;
-                        }
-                        openSpaces++;
+        let validSites = this.miningSites;
+        if (pos) {
+            validSites.sort(
+                (a, b) =>
+                    estimateTravelTime(pos, a.pos) -
+                    estimateTravelTime(pos, b.pos)
+            );
+        }
+        return validSites.find((site) => {
+            const source = Game.getObjectById(site.sourceID);
+
+            // No view of source -> no miner there yet, so
+            // this must be a valid site since all sites can hold at least one miner
+            if (!source) return true;
+
+            // We're going to look for sites where the number of allocated miners is
+            // less than the amount of open spaces
+            const allocatedMiners = this.miners.filter(
+                (m) =>
+                    m.memory.miningSite &&
+                    m.memory.miningSite.sourceID === site.sourceID
+            );
+
+            // First condition:
+            // The total number of WORK parts is less than that needed to fully mine a source
+            const totalWork = allocatedMiners.reduce(
+                (total, curr) =>
+                    total + curr.body.filter((p) => p.type === WORK).length,
+                0
+            );
+            const neededWork = site.isReserved ? MINER_WORK : REMOTE_MINER_WORK;
+            if (totalWork >= neededWork) return false;
+
+            // Second condition:
+            // Fewer miners assigned than the number of open spaces next to this source
+            const sourcePos = source.pos;
+            const roomTerrain = Game.map.getRoomTerrain(site.pos.roomName);
+            let openSpaces = 0;
+            for (let x = sourcePos.x - 1; x <= sourcePos.x + 1; x++) {
+                for (let y = sourcePos.y - 1; y <= sourcePos.y + 1; y++) {
+                    if (x < 1 || x > 48 || y < 1 || y > 48) {
+                        continue;
                     }
+                    if (roomTerrain.get(x, y) === TERRAIN_MASK_WALL) {
+                        continue;
+                    }
+                    openSpaces++;
                 }
-                if (allocatedMiners.length >= openSpaces) {
-                    return false;
-                }
-
-                // And where the total number of WORK parts is less than that needed to fully mine a source
-                const totalWork = allocatedMiners.reduce((total, curr) => {
-                    return (
-                        total + curr.body.filter((p) => p.type === WORK).length
-                    );
-                }, 0);
-
-                const neededWork = site.isReserved
-                    ? MINER_WORK
-                    : REMOTE_MINER_WORK;
-                if (totalWork >= neededWork) {
-                    return false;
-                }
-                return true;
-            });
-        return validSites[0];
+            }
+            return allocatedMiners.length < openSpaces;
+        });
     }
 
     /**
