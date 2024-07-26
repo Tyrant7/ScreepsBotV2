@@ -310,10 +310,10 @@ const runCreeps = () => {
 
 const runTraffic = () => {
     // After all creeps have been processed, let's sort out the traffic
-    const emptyMatrix = new PathFinder.CostMatrix();
     for (const room of Object.values(Game.rooms)) {
         const costs =
-            getCachedPathMatrix(pathSets.default, room.name) || emptyMatrix;
+            getCachedPathMatrix(pathSets.default, room.name) ||
+            new PathFinder.CostMatrix();
         profiler.wrap(room.name, () => harabiTrafficManager.run(room, costs));
     }
 };
