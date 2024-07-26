@@ -192,46 +192,32 @@ const demandHandlers = {
         set(amount);
     },
     [roles.claimer]: (colony, set, nudge, bump) => {
-        const coloniesThatNeedClaimers = colony.memory.supporting.filter(
-            (s) => !Memory.colonies[s]
-        );
-        set(
-            coloniesThatNeedClaimers.length * expansionDemands[roles.claimer] -
-                filterSupportingColoniesForRole(colony, roles.claimer)
-        );
+        set(calculateSupportingColonySpawnDemand(colony, roles.claimer));
     },
     [roles.colonizerBuilder]: (colony, set, nudge, bump) => {
         set(
-            colony.memory.supporting.length *
-                expansionDemands[roles.colonizerBuilder] -
-                filterSupportingColoniesForRole(colony, roles.colonizerBuilder)
+            calculateSupportingColonySpawnDemand(colony, roles.colonizerBuilder)
         );
     },
     [roles.colonizerDefender]: (colony, set, nudge, bump) => {
         set(
-            colony.memory.supporting.length *
-                expansionDemands[roles.colonizerDefender] -
-                filterSupportingColoniesForRole(colony, roles.colonizerDefender)
+            calculateSupportingColonySpawnDemand(
+                colony,
+                roles.colonizerDefender
+            )
         );
     },
 };
 
-// This totals up the number of creeps of this role that are owned by each of our supporting rooms
-const filterSupportingColoniesForRole = (colony, role) =>
-    colony.memory.supporting.reduce(
-        (total, curr) =>
-            total +
-            Memory.newColonies[curr].creepNamesAndRoles.filter(
-                (c) => c.role === role
-            ).length,
-        0
-    );
-
-const expansionDemands = {
-    [roles.claimer]: 1,
-    [roles.colonizerBuilder]: 2,
-    [roles.colonizerDefender]: 1,
-};
+const calculateSupportingColonySpawnDemand = (colony, role) =>
+    colony.memory.supporting.reduce((total, curr) => {
+        const newCol = Memory.newColonies[curr];
+        const wanting = newCol.spawnDemands[role];
+        const existing = newCol.creepNamesAndRoles.filter(
+            (c) => c.role === role
+        );
+        return total + Math.max(wanting - existing, 0);
+    }, 0);
 
 /**
  * Here we can subscribe to any important colony events that might

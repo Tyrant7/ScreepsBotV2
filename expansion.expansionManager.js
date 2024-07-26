@@ -40,6 +40,11 @@ class ExpansionManager {
         const entry = {
             created: Game.time,
             supporters: supporters,
+            spawnDemands: {
+                [roles.claimer]: 1,
+                [roles.colonizerBuilder]: 2,
+                [roles.colonizerDefender]: 1,
+            },
             creepNamesAndRoles: [],
         };
         Memory.newColonies[best] = entry;
@@ -57,10 +62,16 @@ class ExpansionManager {
     handleExpansions() {
         // Make sure our colonies are aware of their own creeps for spawn tracking
         for (const expansion in Memory.newColonies) {
+            // Filter out the creeps that we think we own to only include creeps that are still alive
             Memory.newColonies[expansion].creepNamesAndRoles =
                 Memory.newColonies[expansion].creepNamesAndRoles.filter(
                     (c) => Game.creeps[c.name]
                 );
+
+            // If we've claimed this room, we can remove the claimer from its spawn demand
+            if (Memory.colonies[expansion]) {
+                Memory.newColonies[expansion].spawnDemands[roles.claimer] = 0;
+            }
         }
     }
 }
