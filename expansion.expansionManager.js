@@ -1,9 +1,10 @@
 const { roles, ROOM_SIZE } = require("./constants");
+const { wrap } = require("./debug.profiler");
 
 class ExpansionManager {
     run() {
-        this.expandIfPossible();
-        this.handleExpansions();
+        wrap("expand", this.expandIfPossible);
+        wrap("handle", this.handleExpansions);
     }
 
     expandIfPossible() {
