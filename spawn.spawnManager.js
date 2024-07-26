@@ -51,8 +51,10 @@ const demandHandlers = {
         if (!meetsMinimumSpawnRequirements(colony)) {
             return set(0);
         }
-        const enemies = colony.getRemoteEnemies();
-        const diff = Math.max(enemies.length - colony.defenders.length, 0);
+        const diff = Math.max(
+            colony.remoteEnemies.length - colony.defenders.length,
+            0
+        );
         set(diff);
     },
     [roles.miner]: (colony, set, nudge, bump) => {
@@ -330,18 +332,20 @@ onRCLUpgrade.subscribe((colony, newRCL) => {
  */
 const spawnsByRole = {
     [roles.defender]: (colony) => {
-        const enemies = colony.getRemoteEnemies();
-        if (enemies.length) {
+        if (colony.remoteEnemies.length) {
             // Find our strongest enemy
-            const mostFightParts = enemies.reduce((strongest, curr) => {
-                const fightParts = curr.body.filter(
-                    (p) =>
-                        p.type === RANGED_ATTACK ||
-                        p.type === ATTACK ||
-                        p.type === HEAL
-                ).length;
-                return fightParts > strongest ? fightParts : strongest;
-            }, 0);
+            const mostFightParts = colony.remoteEnemies.reduce(
+                (strongest, curr) => {
+                    const fightParts = curr.body.filter(
+                        (p) =>
+                            p.type === RANGED_ATTACK ||
+                            p.type === ATTACK ||
+                            p.type === HEAL
+                    ).length;
+                    return fightParts > strongest ? fightParts : strongest;
+                },
+                0
+            );
 
             // Make an appropriately sized defender
             // i.e. one level larger in size

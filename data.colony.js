@@ -78,16 +78,31 @@ class Colony {
         this.allStructures = this.room.find(FIND_STRUCTURES);
         this.structures = _.groupBy(this.allStructures, "structureType");
 
+        this.enemies = this.room.find(FIND_HOSTILE_CREEPS);
         this.constructionSites = this.room.find(FIND_MY_CONSTRUCTION_SITES);
         this.remotePlans = remoteUtility.getRemotePlans(this.room.name);
         if (this.remotePlans) {
-            for (const plan of this.remotePlans) {
-                if (!Game.rooms[plan.room]) continue;
+            // Get all rooms of our active remotes for construction site and enemy searching
+            this.remoteEnemies = [];
+            const remoteRooms = new Set();
+            for (const remote of this.memory.remotes) {
+                if (remote.active) {
+                    remoteRooms.add(remote.room);
+                }
+            }
+            for (const roomName of remoteRooms) {
+                const room = Game.rooms[roomName];
+                if (!room) continue;
+                this.remoteEnemies = this.remoteEnemies.concat(
+                    room.find(FIND_HOSTILE_CREEPS)
+                );
                 this.constructionSites = this.constructionSites.concat(
-                    Game.rooms[plan.room].find(FIND_CONSTRUCTION_SITES)
+                    room.find(FIND_CONSTRUCTION_SITES)
                 );
             }
         }
+        profiler.endSample("finds");
+        profiler.startSample("other init");
 
         // Used for distance calculations of hauler orders
         this.core = this.memory.core
@@ -105,7 +120,8 @@ class Colony {
 
         // Clear tick caches
         this.cachedMiningSpots = null;
-        profiler.endSample("finds");
+
+        profiler.endSample("other init");
     }
 
     getMaxIncome() {
@@ -114,35 +130,6 @@ class Colony {
                 total + source.energyCapacity / ENERGY_REGEN_TIME,
             0
         );
-    }
-
-    /**
-     * Finds enemies in this room's remotes.
-     * @returns {Creep[]} An array of enemy creeps in this room's remotes.
-     */
-    getRemoteEnemies() {
-        const enemies = [];
-
-        // Get all rooms of our active remotes
-        // and search them for enemies too
-        if (this.memory.remotes) {
-            const remoteRooms = new Set();
-            for (const remote of this.memory.remotes) {
-                if (remote.active) {
-                    remoteRooms.add(remote.room);
-                }
-            }
-
-            for (const roomName of remoteRooms) {
-                const room = Game.rooms[roomName];
-                if (!room) {
-                    continue;
-                }
-                const roomEnemies = room.find(FIND_HOSTILE_CREEPS);
-                enemies.push(...roomEnemies);
-            }
-        }
-        return enemies;
     }
 
     getUpgraderContainer() {

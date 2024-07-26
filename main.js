@@ -76,7 +76,7 @@ const colonies = {};
 
 // Managers
 const EconomyManager = require("./manager.economyManager");
-const TowerManager = require("./manager.towerManager");
+const DefenseManager = require("./manager.defenseManager");
 
 // Creeps
 const HaulerManager = require("./creep.hauler");
@@ -132,7 +132,7 @@ const ExpansionManager = require("./expansion.expansionManager");
 const expansionManager = new ExpansionManager();
 
 // Defense
-const towerManager = new TowerManager();
+const defenseManager = new DefenseManager();
 
 // Hauling
 const HaulingRequester = require("./manager.haulingRequestManager");
@@ -227,7 +227,7 @@ module.exports.loop = function () {
         }
 
         // Defense
-        profiler.wrap("towers", () => towerManager.run(colony));
+        profiler.wrap("defense", () => defenseManager.run(colony));
 
         // Hauling requests
         profiler.wrap("hauling", () =>
