@@ -24,6 +24,8 @@ global.DEBUG = {
     logTasks: true,
     alertOnIdle: false,
 
+    generatePixels: false,
+
     drawOverlay: true,
     drawRemoteOwnership: false,
     drawContainerOverlay: false,
@@ -143,16 +145,17 @@ const overlay = require("./debug.overlay");
 const trackStats = require("./debug.trackStats");
 const profiler = require("./debug.profiler");
 
-module.exports.loop = function () {
-    // Passive pixel generation
-    // Disabled on most servers
+const generatePixels = () => {
+    // Since this mechanic is disabled on all servers except MMO,
+    // we'll want to check if it's possible first
     if (Game.cpu.generatePixel) {
         if (Game.cpu.bucket >= 10000) {
             Game.cpu.generatePixel();
         }
     }
+};
 
-    // Global expansion-related things should come first so colonies know how to react
+const runExpansion = () => {
     expansionManager.run();
     if (DEBUG.showAppraisalScores) {
         showAppraisalScores();
@@ -160,7 +163,9 @@ module.exports.loop = function () {
     if (DEBUG.showExpansionTargets) {
         showExpansionTargets();
     }
+};
 
+const runColonies = () => {
     // Initialize our colonies
     for (const room in Game.rooms) {
         if (!Game.rooms[room].controller || !Game.rooms[room].controller.my) {
@@ -259,30 +264,35 @@ module.exports.loop = function () {
             );
         }
     }
+};
 
-    // Run creeps
-    profiler.startSample("creeps");
+const runCreeps = () => {
     for (const name in Memory.creeps) {
         const creep = Game.creeps[name];
-        if (creep) {
-            // Skip haulers until the end
-            if (creep.memory.role === roles.hauler) {
-                continue;
+        const role = Memory.creeps[name].role;
+        if (!creep) {
+            if (creepRoleMap[role]) {
+                creepRoleMap[role].freeCreep(name);
             }
+            delete Memory.creeps[name];
+            continue;
+        }
 
-            // Map the creep's role to its appropriate manager and run behaviour
-            if (creepRoleMap[creep.memory.role]) {
-                profiler.wrap(creep.memory.role, () =>
-                    creepRoleMap[creep.memory.role].processCreep(
-                        creep,
-                        colonies[creep.memory.home]
-                    )
-                );
-            } else {
-                creep.say("Missing");
-            }
+        // Skip haulers until the end
+        if (creep.memory.role === roles.hauler) {
+            continue;
+        }
+
+        // Map the creep's role to its appropriate manager and run behaviour
+        if (creepRoleMap[creep.memory.role]) {
+            profiler.wrap(creep.memory.role, () =>
+                creepRoleMap[creep.memory.role].processCreep(
+                    creep,
+                    colonies[creep.memory.home]
+                )
+            );
         } else {
-            creepDeath(name);
+            creep.say("Missing");
         }
     }
     // We'll process all haulers after ordinary creeps, in case other creeps created orders this tick
@@ -296,72 +306,86 @@ module.exports.loop = function () {
             );
         }
     }
-    profiler.endSample("creeps");
+};
 
+const runTraffic = () => {
     // After all creeps have been processed, let's sort out the traffic
-    profiler.startSample("traffic");
+    const emptyMatrix = new PathFinder.CostMatrix();
     for (const room of Object.values(Game.rooms)) {
         const costs =
-            getCachedPathMatrix(pathSets.default, room.name) ||
-            new PathFinder.CostMatrix();
+            getCachedPathMatrix(pathSets.default, room.name) || emptyMatrix;
         profiler.wrap(room.name, () => harabiTrafficManager.run(room, costs));
     }
-    profiler.endSample("traffic");
+};
 
-    // Track CPU usage
-    // (don't track reload because it leads to innacurate averages which take a long time to equalize)
-    if (!RELOAD) {
-        const rollingAverage = trackStats.trackCPU();
-        const heapData = Game.cpu.getHeapStatistics();
-        const heapUsage =
-            ((heapData.total_heap_size + heapData.externally_allocated_size) /
-                heapData.heap_size_limit) *
-            100;
-        for (const roomName in colonies) {
-            if (DEBUG.trackCPUUsage) {
-                overlay.addHeading(roomName, "CPU Usage");
-                overlay.addText(roomName, {
-                    "Average CPU": rollingAverage.toFixed(3),
-                    "Last CPU": Game.cpu.getUsed().toFixed(3),
-                });
-            }
-            if (DEBUG.profileHeapUsage) {
-                overlay.addHeading(roomName, "Heap Usage");
-                overlay.addText(roomName, {
-                    "Last Heap": heapUsage.toFixed(2) + "%",
-                });
-            }
-        }
+//#region Stats
+
+const stats_trackCPU = () => {
+    const rollingAverage = trackStats.trackCPU();
+    for (const roomName in colonies) {
+        overlay.addHeading(roomName, "CPU Usage");
+        overlay.addText(roomName, {
+            "Average CPU": rollingAverage.toFixed(3),
+            "Last CPU": Game.cpu.getUsed().toFixed(3),
+        });
+    }
+};
+
+const stats_trackHeap = () => {
+    const heapData = Game.cpu.getHeapStatistics();
+    const heapUsage =
+        ((heapData.total_heap_size + heapData.externally_allocated_size) /
+            heapData.heap_size_limit) *
+        100;
+    for (const roomName in colonies) {
+        overlay.addHeading(roomName, "Heap Usage");
+        overlay.addText(roomName, {
+            "Last Heap": heapUsage.toFixed(2) + "%",
+        });
+    }
+};
+
+const stats_trackCreeps = () => {
+    for (const roomName in colonies) {
+        overlay.addHeading(roomName + "_a", "Creeps");
+        overlay.addText(roomName + "_a", {
+            Count: Object.values(Memory.creeps).length,
+        });
+    }
+};
+
+// #endregion Stats
+
+const mainLoop = () => {
+    // Passive pixel generation
+    if (DEBUG.generatePixels) {
+        generatePixels();
     }
 
-    // Track creeps
-    if (DEBUG.trackCreepCounts) {
-        for (const roomName in colonies) {
-            overlay.addHeading(roomName + "_a", "Creeps");
-            overlay.addText(roomName + "_a", {
-                Count: Object.values(Memory.creeps).length,
-            });
-        }
+    // Global expansion-related things should come first so colonies know how to react
+    profiler.wrap("expansion", runExpansion);
+
+    // Colonies will then run any logic required for creep actions like creating hauler orders
+    profiler.wrap("colonies", runColonies);
+
+    // Then creeps will take action based on each colony's activity
+    profiler.wrap("creeps", runCreeps);
+
+    // Finally, we'll want to sort out traffic for all of our creeps
+    profiler.wrap("traffic", runTraffic);
+
+    // Diagnostics things (skip during reload to prevent innacurrate results)
+    if (!RELOAD) {
+        if (DEBUG.trackCPUUsage) stats_trackCPU();
+        if (DEBUG.profileHeapUsage) stats_trackHeap();
+        if (DEBUG.trackCreepCounts) stats_trackCreeps();
     }
 
     profiler.printout();
-
-    // Finalize overlays
     overlay.finalizePanels();
 
     // If we reloaded
     global.RELOAD = false;
 };
 
-/**
- * Processes the death of a creep to run any cleanup code.
- * @param {string} name The name of the deceased creep.
- */
-function creepDeath(name) {
-    const role = Memory.creeps[name].role;
-    if (creepRoleMap[role]) {
-        creepRoleMap[role].freeCreep(name);
-    }
-
-    delete Memory.creeps[name];
-}
+module.exports.loop = mainLoop;
