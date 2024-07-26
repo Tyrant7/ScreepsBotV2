@@ -13,7 +13,7 @@ const panelStyle = {
     strokeWidth: 0.35,
 };
 
-const columnSpacing = 14;
+const columnSize = 20;
 
 const defaultSpacing = 0.9;
 const headerSpacing = 1.3;
@@ -176,7 +176,14 @@ const addColumns = (panelName, leftElement, rightElement) => {
     panels[panelName].add({
         content:
             leftElement +
-            " ".repeat(Math.max(columnSpacing - leftElement.length, 0)) +
+            " ".repeat(
+                Math.max(
+                    columnSize -
+                        leftElement.toString().length -
+                        rightElement.toString().length,
+                    0
+                )
+            ) +
             rightElement,
         style: defaultText,
         spacing: defaultSpacing,
