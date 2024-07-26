@@ -370,6 +370,11 @@ const mainLoop = () => {
         generatePixels();
     }
 
+    // If we're running the profiler, let's track our memory deserialization separately
+    // by forcing it to deserializng before we run any meaningful code and tracking the cost here
+    if (DEBUG.runProfiler)
+        profiler.wrap("deserialize memory", () => Memory.colonies);
+
     // Global expansion-related things should come first so colonies know how to react
     profiler.wrap("expansion", runExpansion);
 
