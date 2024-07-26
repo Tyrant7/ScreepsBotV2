@@ -37,18 +37,21 @@ const MAX_SITES = 2;
 
 const RESET_CACHE_INTERVAL = 50;
 
-let cachedRCL = -1;
-let cachedTick = -RESET_CACHE_INTERVAL;
-let cachedMissingStructures = [];
+// We need a cache for each room
+// Each cache will hold some information for expiry
+// Cached RCL
+// Cached Tick
+// The array of missing structures when cache was created
+const caches = {};
 
 const handleSites = (colony) => {
     // Update our list of cached structures if it's been invalidated,
     // or every once and a while to account for structures potentially being destroyed and remotes changing
     const rcl = colony.room.controller.level;
     if (
-        !cachedMissingStructures ||
-        cachedRCL !== rcl ||
-        cachedTick + RESET_CACHE_INTERVAL < Game.time
+        !caches[colony.room.name] ||
+        caches[colony.room.name].rcl !== rcl ||
+        caches[colony.room.name].tick + RESET_CACHE_INTERVAL < Game.time
     ) {
         updateCache(colony, rcl);
     }
@@ -57,9 +60,10 @@ const handleSites = (colony) => {
     if (colony.constructionSites.length >= MAX_SITES) {
         return;
     }
+    const cache = caches[colony.room.name];
 
     // Only allow sites in rooms we can see and aren't reserved by another player
-    const validStructures = cachedMissingStructures.filter((s) => {
+    const validStructures = cache.missingStructures.filter((s) => {
         // Any rooms owned or reserved by somebody that isn't me won't allow construction
         const room = Game.rooms[s.pos.roomName];
         if (!room) return false;
@@ -132,7 +136,7 @@ const handleSites = (colony) => {
     profiler.startSample("update costmatrix");
     if (result === OK) {
         // If it went through, let's remove it from the structures we want
-        cachedMissingStructures = cachedMissingStructures.filter(
+        cache.missingStructures = cache.missingStructures.filter(
             (s) => s !== bestStructure
         );
 
@@ -189,8 +193,6 @@ const updateCache = (colony, rcl) => {
         return;
     }
 
-    cachedRCL = rcl;
-    cachedTick = Game.time;
     const { structures, ramparts } = profiler.wrap("deserialize", () =>
         deserializeBasePlan(plans, rcl)
     );
@@ -216,7 +218,7 @@ const updateCache = (colony, rcl) => {
 
     // Find the ones we haven't already
     profiler.startSample("filter list");
-    cachedMissingStructures = wantedStructures.filter(
+    let missingStructures = wantedStructures.filter(
         (s) =>
             !colony.room
                 .lookForAt(LOOK_STRUCTURES, s.pos.x, s.pos.y)
@@ -232,10 +234,12 @@ const updateCache = (colony, rcl) => {
     profiler.endSample("filter list");
     profiler.endSample("structure list");
 
-    // Don't forget remotes!
     if (rcl < REMOTE_ROAD_RCL && rcl < REMOTE_CONTAINER_RCL) {
+        createCache(colony, rcl, missingStructures);
         return;
     }
+
+    // Don't forget remotes, if we have them
     for (const remote of colony.remotePlans) {
         if (!remote.active) {
             continue;
@@ -280,10 +284,19 @@ const updateCache = (colony, rcl) => {
         });
 
         // Finally let's add this to our list of needed structures
-        cachedMissingStructures = cachedMissingStructures.concat(
-            missingRemoteStructures
-        );
+        missingStructures = missingStructures.concat(missingRemoteStructures);
     }
+
+    // Cache this so our work is meaningful
+    createCache(colony, rcl, missingStructures);
+};
+
+const createCache = (colony, rcl, missingStructures) => {
+    caches[colony.room.name] = {
+        tick: Game.time,
+        rcl,
+        missingStructures,
+    };
 };
 
 const scoreUtility = (colony, structure, buildTargets) => {
