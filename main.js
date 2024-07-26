@@ -190,6 +190,7 @@ const runColonies = () => {
                 .addChild(colony.room.name + "_a")
                 .addChild(colony.room.name + "_b")
         );
+        overlay.addHeading(colony.room.name, colony.room.name);
 
         // Run RCL level up events if we've leveled up
         checkRCL(colony);
@@ -348,9 +349,16 @@ const stats_trackHeap = () => {
 const stats_trackCreeps = () => {
     for (const roomName in colonies) {
         overlay.addHeading(roomName + "_a", "Creeps");
-        overlay.addText(roomName + "_a", {
-            Count: Object.values(Memory.creeps).length,
-        });
+
+        // Unfortunate O(n^2) computation here
+        for (const rn in colonies) {
+            overlay.addColumns(roomName + "_a", rn, colonies[rn].creeps.length);
+        }
+        overlay.addColumns(
+            roomName + "_a",
+            "Total",
+            Object.values(Game.creeps).length
+        );
     }
 };
 
