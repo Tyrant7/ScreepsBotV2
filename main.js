@@ -175,10 +175,19 @@ const runColonies = () => {
         if (!colonies[room]) {
             colonies[room] = new Colony(Game.rooms[room]);
         }
-        profiler.wrap("initialize colony", () =>
-            colonies[room].initializeTickInfo()
-        );
+
         const colony = colonies[room];
+
+        // We won't be able to proceed without a base plan
+        if (!getBasePlan(colony.room.name)) {
+            basePlanner.generateNewRoomPlan(colony);
+            continue;
+        }
+
+        // Initialize now that we know we're able to
+        profiler.wrap("initialize colony", () => colony.initializeTickInfo());
+
+        // We'll also want a spawn before we can do anything if this is a new colony
         if (!colony.structures[STRUCTURE_SPAWN]) {
             profiler.wrap("construction", () => handleSites(colony));
             continue;
@@ -197,10 +206,7 @@ const runColonies = () => {
         checkRCL(colony);
 
         // Planning stuff
-        if (
-            !getBasePlan(colony.room.name) ||
-            (DEBUG.replanBaseOnReload && RELOAD)
-        ) {
+        if (DEBUG.replanBaseOnReload && RELOAD) {
             basePlanner.generateNewRoomPlan(colony);
         }
         profiler.wrap("construction", () => handleSites(colony));
