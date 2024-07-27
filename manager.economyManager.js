@@ -9,7 +9,6 @@ const { makeReserver } = require("./spawn.creepMaker");
 
 const { onRemoteAdd, onRemoteDrop } = require("./event.colonyEvents");
 
-const remoteUtility = require("./remote.remoteUtility");
 const overlay = require("./debug.overlay");
 const profiler = require("./debug.profiler");
 

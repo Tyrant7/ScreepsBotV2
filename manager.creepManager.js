@@ -178,6 +178,7 @@ class CreepManager {
                     range: 23,
                     maxRooms: data.maxRooms,
                     maxOps: data.maxOps,
+                    pathSet: data.pathSet,
                 });
                 return false;
             },

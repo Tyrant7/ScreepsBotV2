@@ -1,5 +1,5 @@
 const { ROOM_SIZE } = require("./constants");
-const { roomNameToXY } = require("./scouting.scoutingUtility");
+const { roomNameToXY } = require("./util.roomNameToXY");
 
 // Range can't easily be calculated between rooms, unfortunately, so we'll just estimate
 module.exports = function estimateTravelTime(pos1, pos2) {

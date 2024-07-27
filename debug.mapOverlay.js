@@ -1,5 +1,5 @@
 const { ROOM_SIZE } = require("./constants");
-const { roomNameToXY } = require("./scouting.scoutingUtility");
+const { roomNameToXY } = require("./util.roomNameToXY");
 
 const defaultText = {
     color: "#FFFFFF",

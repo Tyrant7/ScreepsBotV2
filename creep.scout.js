@@ -6,6 +6,7 @@ const {
     setScoutingData,
 } = require("./scouting.scoutingUtility");
 const appraiseRoom = require("expansion.appraiseRoom");
+const { pathSets } = require("./constants");
 
 class ScoutManager extends CreepManager {
     createTask(creep, colony) {
@@ -32,6 +33,7 @@ class ScoutManager extends CreepManager {
             } else {
                 data.maxRooms = 32;
                 data.maxOps = 16384;
+                data.pathSet = pathSets.travel;
                 data.moveToRoom(creep, data);
                 creep.say("🔭", true);
             }

@@ -1,3 +1,6 @@
+const { SK_PATHING_COST, pathSets } = require("./constants");
+const { cachePathMatrix } = require("./extension.betterPathing");
+
 /**
  * Performs a breadth-first search of neighbouring rooms until an unexplored room has been found.
  * @param {string} startRoomName The name of the room to start in.
@@ -71,6 +74,34 @@ const packageScoutingData = (room) => {
             });
         }
     }
+
+    // If this room is an SK room, we'll update our "travel" pathset to avoid the keeper patrol points
+    if (roomData.keeperLairs.length) {
+        const newMatrix = new PathFinder.CostMatrix();
+        const positions = roomData.sources
+            .concat(roomData.minerals)
+            .map((s) => s.pos);
+        for (const pos of positions) {
+            for (let x = pos.x - 3; x <= pos.x + 3; x++) {
+                for (let y = pos.y - 3; y <= pos.y + 3; y++) {
+                    if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
+                        continue;
+                    }
+                    console.log(
+                        "will avoid position " +
+                            x +
+                            ", " +
+                            y +
+                            " in room " +
+                            room.name
+                    );
+                    newMatrix.set(x, y, SK_PATHING_COST);
+                }
+            }
+        }
+        cachePathMatrix(newMatrix, pathSets.travel, room.name);
+    }
+
     return roomData;
 };
 
@@ -82,31 +113,9 @@ const setScoutingData = (roomName, newData) => {
     Memory.scoutData[roomName] = newData;
 };
 
-// Function to convert room name to coords taken from Screeps Engine
-const roomNameToXY = (name) => {
-    let xx = parseInt(name.substr(1), 10);
-    let verticalPos = 2;
-    if (xx >= 100) {
-        verticalPos = 4;
-    } else if (xx >= 10) {
-        verticalPos = 3;
-    }
-    let yy = parseInt(name.substr(verticalPos + 1), 10);
-    let horizontalDir = name.charAt(0);
-    let verticalDir = name.charAt(verticalPos);
-    if (horizontalDir === "W" || horizontalDir === "w") {
-        xx = -xx - 1;
-    }
-    if (verticalDir === "N" || verticalDir === "n") {
-        yy = -yy - 1;
-    }
-    return { xx, yy };
-};
-
 module.exports = {
     searchForUnexploredRoomsNearby,
     packageScoutingData,
     getScoutingData,
     setScoutingData,
-    roomNameToXY,
 };

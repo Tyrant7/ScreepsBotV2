@@ -1,6 +1,7 @@
 const { ROOM_SIZE } = require("./constants");
 const { getPotentialRemoteRooms } = require("./remote.remoteUtility");
-const { getScoutingData, roomNameToXY } = require("./scouting.scoutingUtility");
+const { getScoutingData } = require("./scouting.scoutingUtility");
+const { roomNameToXY } = require("./util.roomNameToXY");
 
 /**
  * When appraising rooms, we'll consider a variety of things.

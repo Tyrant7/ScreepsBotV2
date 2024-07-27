@@ -164,6 +164,7 @@ class ColonizerBuilderManager extends BuilderManager {
                 roomName: creep.memory.expansionTarget,
                 maxRooms: 64,
                 maxOps: 64000,
+                pathSet: pathSets.travel,
             },
             "move",
             actionStack

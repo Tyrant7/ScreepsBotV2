@@ -1,3 +1,4 @@
+const { pathSets } = require("./constants");
 const DefenderManager = require("./creep.defender");
 const Task = require("./data.task");
 
@@ -10,7 +11,6 @@ class ColonizerDefenderManager extends DefenderManager {
 
             const firstEnemy = colony.room.find(FIND_CREEPS).find((c) => !c.my);
             if (firstEnemy) {
-                console.log(firstEnemy);
                 return super.createKillTask(creep, firstEnemy);
             }
 
@@ -35,6 +35,7 @@ class ColonizerDefenderManager extends DefenderManager {
                     creep.betterMoveTo(idlePosition, {
                         maxRooms: 1,
                         range: IDLE_RANGE,
+                        pathSet: pathSets.travel,
                     });
                 }
                 // If we see any creeps that aren't our, let's kill them
@@ -51,6 +52,7 @@ class ColonizerDefenderManager extends DefenderManager {
                 roomName: creep.memory.expansionTarget,
                 maxRooms: 64,
                 maxOps: 64000,
+                pathSet: pathSets.travel,
             },
             "move",
             actionStack

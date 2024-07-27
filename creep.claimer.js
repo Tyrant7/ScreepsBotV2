@@ -1,5 +1,6 @@
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
+const { pathSets } = require("./constants");
 
 class ClaimerManager extends CreepManager {
     createTask(creep, colony) {
@@ -38,6 +39,7 @@ class ClaimerManager extends CreepManager {
                 roomName: creep.memory.expansionTarget,
                 maxRooms: 64,
                 maxOps: 64000,
+                pathSet: pathSets.travel,
             },
             "move",
             actionStack
