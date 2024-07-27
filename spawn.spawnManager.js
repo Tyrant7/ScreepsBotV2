@@ -114,7 +114,11 @@ const demandHandlers = {
                 upgrader.store[RESOURCE_ENERGY]
         );
         const unfilledUpgraders = upgraders.length - fullUpgraders.length;
-        if (unfilledUpgraders > LOWER_UPGRADER_THRESHOLD) {
+        const upgraderDemand = getRoleDemand(colony, roles.upgrader).value;
+        if (
+            unfilledUpgraders > LOWER_UPGRADER_THRESHOLD &&
+            upgraderDemand >= fullUpgraders.length
+        ) {
             return nudge(-unfilledUpgraders);
         }
 
@@ -142,7 +146,6 @@ const demandHandlers = {
         }
 
         // If there's no problems at all, let's nudge towards our current count
-        const upgraderDemand = getRoleDemand(colony, roles.upgrader).value;
         const target = colony.upgraders.length - 0.5;
         return nudge(upgraderDemand < target ? 1 : -1);
     },
@@ -441,8 +444,6 @@ class SpawnManager {
                 inactiveSpawns.push(spawn);
                 break;
             }
-
-            console.log(JSON.stringify(next));
 
             // If we're supporting another colony, let's assign this creep to it
             // Simply find the first colony missing one of these creeps
