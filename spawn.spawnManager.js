@@ -30,13 +30,6 @@ const REPAIR_THRESHOLDS = {
 };
 */
 
-const meetsMinimumSpawnRequirements = (colony) => {
-    return (
-        colony.miners.length &&
-        (colony.haulers.length || colony.starterHaulers.length)
-    );
-};
-
 /**
  * Demand handlers handle nudging the demand slightly towards
  * the ideal value of roles that fluctuate need a lot.
@@ -367,6 +360,13 @@ class SpawnManager {
     run(colony) {
         // Ensure demands exist
         ensureDefaults(colony);
+
+        const meetsMinimumSpawnRequirements = (colony) => {
+            return (
+                colony.miners.length &&
+                (colony.haulers.length || colony.starterHaulers.length)
+            );
+        };
 
         // Nudge the spawn demands in whichever direction they need to go in
         // Calculated by the handlers
