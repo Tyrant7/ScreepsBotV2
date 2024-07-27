@@ -1,4 +1,9 @@
-const { roles, storageThresholds } = require("./constants");
+const {
+    roles,
+    storageThresholds,
+    REMOTE_ROAD_RCL,
+    REMOTE_CONTAINER_RCL,
+} = require("./constants");
 const {
     DEFAULT_DEMANDS,
     MIN_MAX_DEMAND,
@@ -218,14 +223,12 @@ const getDemands = (colony, remote) => {
     // to support this remote
     // Note that the above calculates a ratio for unreserved rooms in the case
     // we cannot yet reserve our remotes
-    const newHauler = creepMaker.makeHauler(
-        colony.room.energyCapacityAvailable
-    );
+    const newHauler = spawnsByRole[roles.hauler](colony);
     const carryPerHauler = newHauler.body.filter((p) => p === CARRY).length;
     const neededCarry = remote.neededCarry / unreservedRatio;
     const neededHaulers = Math.floor(neededCarry / carryPerHauler);
 
-    const newMiner = creepMaker.makeMiner(colony.room.energyCapacityAvailable);
+    const newMiner = spawnsByRole[roles.miner](colony);
     const workPerMiner = newMiner.body.filter((p) => p === WORK).length;
     const neededWork = MINER_WORK / unreservedRatio;
     const neededMiners = Math.ceil(neededWork / workPerMiner);
@@ -326,7 +329,12 @@ const spawnsByRole = {
     [roles.colonizerBuilder]: (colony) =>
         creepMaker.makeColonizerBuilder(colony.room.energyCapacityAvailable),
 
-    [roles.miner]: (colony) => creepMaker.makeMiner(getMinEnergy(colony)),
+    // Eco creeps
+    [roles.miner]: (colony) =>
+        creepMaker.makeMiner(
+            getMinEnergy(colony),
+            colony.memory.constructionLevel >= REMOTE_CONTAINER_RCL
+        ),
     [roles.hauler]: (colony) => {
         if (
             colony.haulers.length === 0 &&
@@ -337,12 +345,14 @@ const spawnsByRole = {
             // that will become a scout in the future
             return creepMaker.makeStarterHauler();
         }
-        return creepMaker.makeHauler(getMinEnergy(colony));
+        return creepMaker.makeHauler(
+            getMinEnergy(colony),
+            colony.memory.constructionLevel >= REMOTE_ROAD_RCL ? 2 : 1
+        );
     },
     [roles.upgrader]: (colony) =>
         creepMaker.makeUpgrader(colony.room.energyCapacityAvailable),
     [roles.reserver]: (colony) => creepMaker.makeReserver(),
-
     [roles.scout]: (colony) => creepMaker.makeScout(),
     [roles.builder]: (colony) =>
         creepMaker.makeBuilder(colony.room.energyCapacityAvailable),

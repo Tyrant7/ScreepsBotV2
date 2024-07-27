@@ -78,6 +78,9 @@ const handleSites = (colony) => {
         return true;
     });
     if (!validStructures.length) {
+        // Let's track when we've completed construction for this RCL
+        // for some important things like hauler and miner part ratios
+        colony.memory.constructionLevel = rcl;
         return;
     }
 

@@ -4,7 +4,7 @@ const { roles, maxLevels } = require("./constants");
 
 //#region Energy Production
 
-const makeMiner = (energy) => {
+const makeMiner = (energy, carryPart = true) => {
     const body = [];
     let lvl = 0;
     for (let i = 0; i < MINER_WORK / 2; i++) {
@@ -18,9 +18,11 @@ const makeMiner = (energy) => {
             break;
         }
     }
-    body.push(CARRY);
-    if (getCost(body) > energy) {
-        body.pop();
+    if (carryPart) {
+        body.push(CARRY);
+        if (getCost(body) > energy) {
+            body.pop();
+        }
     }
     return {
         body: body,
