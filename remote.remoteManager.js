@@ -108,30 +108,39 @@ class RemoteManager {
         if (RELOAD) {
             // Let's regenerate our costmatrices for remote creeps using the better pathing system
             const matricesByRoom = {};
-
-            // Since roads have been filtered out of room edges and we're using those to draw our paths,
-            // we can't mark them as unwalkable
-            const unwalkableMatrix = new PathFinder.CostMatrix();
-            for (let x = 0; x < ROOM_SIZE; x++) {
-                for (let y = 0; y < ROOM_SIZE; y++) {
-                    if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
-                        continue;
-                    }
-                    // We'll heavily discourage searching outside of the planned path, but not forbid it
-                    // to still allow us to pickup dropped energy outside of our path set
-                    unwalkableMatrix.set(x, y, OUTSIDE_PATH_COST);
-                }
-            }
             for (const plan of colony.remotePlans) {
+                if (!matricesByRoom[plan.room]) {
+                    matricesByRoom[plan.room] = new PathFinder.CostMatrix();
+
+                    // Since roads have been filtered out of room edges and we're using those to draw our paths,
+                    // we can't mark edges as unwalkable
+                    const terrain = Game.map.getRoomTerrain(plan.room);
+                    for (let x = 0; x < ROOM_SIZE; x++) {
+                        for (let y = 0; y < ROOM_SIZE; y++) {
+                            if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
+                                continue;
+                            }
+                            // We also shouldn't change terrain weights, either, to avoid walking into walls
+                            if (terrain.get(x, y) === TERRAIN_MASK_WALL) {
+                                continue;
+                            }
+
+                            // We'll heavily discourage searching outside of the planned path, but not forbid it
+                            // to still allow us to pickup dropped energy outside of our path set
+                            matricesByRoom[plan.room].set(
+                                x,
+                                y,
+                                OUTSIDE_PATH_COST
+                            );
+                        }
+                    }
+                }
+
                 for (const road of plan.roads) {
                     // Skip generating a matrix for our base since
                     // we want to be able to path freely through our base's room
                     if (road.roomName === colony.room.name) {
                         continue;
-                    }
-                    if (!matricesByRoom[road.roomName]) {
-                        matricesByRoom[road.roomName] =
-                            unwalkableMatrix.clone();
                     }
                     matricesByRoom[road.roomName].set(road.x, road.y, 1);
                 }
