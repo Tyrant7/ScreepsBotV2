@@ -76,30 +76,15 @@ const packageScoutingData = (room) => {
     }
 
     // If this room is an SK room, we'll update our "travel" pathset to avoid the keeper patrol points
+    // We'll also mark down the pointer so we know where they are next time
     if (roomData.keeperLairs.length) {
-        const newMatrix = new PathFinder.CostMatrix();
-        const positions = roomData.sources
-            .concat(roomData.minerals)
-            .map((s) => s.pos);
-        for (const pos of positions) {
-            for (let x = pos.x - 3; x <= pos.x + 3; x++) {
-                for (let y = pos.y - 3; y <= pos.y + 3; y++) {
-                    if (x <= 0 || x >= 49 || y <= 0 || y >= 49) {
-                        continue;
-                    }
-                    console.log(
-                        "will avoid position " +
-                            x +
-                            ", " +
-                            y +
-                            " in room " +
-                            room.name
-                    );
-                    newMatrix.set(x, y, SK_PATHING_COST);
-                }
-            }
-        }
-        cachePathMatrix(newMatrix, pathSets.travel, room.name);
+        roomData.keeperPositions = room
+            .find(FIND_HOSTILE_CREEPS)
+            .filter((c) => c.owner.username === "Source Keeper")
+            .map((c) => c.pos);
+
+        const matrix = createSKMatrix(roomData.keeperPositions);
+        cachePathMatrix(matrix, pathSets.travel, room.name);
     }
 
     return roomData;
@@ -113,9 +98,37 @@ const setScoutingData = (roomName, newData) => {
     Memory.scoutData[roomName] = newData;
 };
 
+const createSKMatrix = (avoidPositions) => {
+    const newMatrix = new PathFinder.CostMatrix();
+    for (const pos of avoidPositions) {
+        for (let x = pos.x - 3; x <= pos.x + 3; x++) {
+            for (let y = pos.y - 3; y <= pos.y + 3; y++) {
+                if (x < 0 || x > 49 || y < 0 || y > 49) {
+                    continue;
+                }
+                newMatrix.set(x, y, SK_PATHING_COST);
+            }
+        }
+    }
+    return newMatrix;
+};
+
+const restoreSKMatrices = () => {
+    for (const room in Memory.scoutData) {
+        if (Memory.scoutData[room].keeperPositions) {
+            cachePathMatrix(
+                createSKMatrix(Memory.scoutData[room].keeperPositions),
+                pathSets.travel,
+                room
+            );
+        }
+    }
+};
+
 module.exports = {
     searchForUnexploredRoomsNearby,
     packageScoutingData,
     getScoutingData,
     setScoutingData,
+    restoreSKMatrices,
 };

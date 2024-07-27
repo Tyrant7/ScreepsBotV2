@@ -136,6 +136,7 @@ const expansionManager = new ExpansionManager();
 
 // Defense
 const defenseManager = new DefenseManager();
+const { restoreSKMatrices } = require("./scouting.scoutingUtility");
 
 // Hauling
 const HaulingRequester = require("./manager.haulingRequestManager");
@@ -216,6 +217,7 @@ const runColonies = () => {
                 pathSets.default,
                 colony.room.name
             );
+            restoreSKMatrices();
         }
         if (DEBUG.visualizeBasePlan) {
             basePlanner.visualizePlan(colony.room.name);
