@@ -53,12 +53,10 @@ const demandHandlers = {
             return nudge(2);
         }
         // Otherwise, let's keep our miner count at the number of working miners
-        const unassignedMiners = colony.miners.filter(
-            (miner) => !miner.memory.miningSite
+        const assignedMiners = colony.miners.filter(
+            (miner) => miner.memory.miningSite
         );
-        const workingMinerCount =
-            colony.miners.length - unassignedMiners.length;
-        return set(workingMinerCount - 0.5);
+        return set(assignedMiners.length + 0.5);
     },
     [roles.hauler]: (colony, set, nudge, bump) => {
         // Reduce proportional to the number of idle haulers
