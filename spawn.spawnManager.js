@@ -48,9 +48,6 @@ const meetsMinimumSpawnRequirements = (colony) => {
  */
 const demandHandlers = {
     [roles.defender]: (colony, set, nudge, bump) => {
-        if (!meetsMinimumSpawnRequirements(colony)) {
-            return set(0);
-        }
         const diff = Math.max(
             colony.remoteEnemies.length - colony.defenders.length,
             0
@@ -58,9 +55,6 @@ const demandHandlers = {
         set(diff);
     },
     [roles.miner]: (colony, set, nudge, bump) => {
-        if (!meetsMinimumSpawnRequirements(colony)) {
-            return set(DEFAULT_DEMANDS[roles.miner]);
-        }
         // If we have an open site, nudge miners
         if (colony.getFirstOpenMiningSite()) {
             return nudge(2);
@@ -74,10 +68,6 @@ const demandHandlers = {
         return set(workingMinerCount - 0.5);
     },
     [roles.hauler]: (colony, set, nudge, bump) => {
-        if (!meetsMinimumSpawnRequirements(colony)) {
-            return set(DEFAULT_DEMANDS[roles.hauler]);
-        }
-
         // Reduce proportional to the number of idle haulers
         // Idle meaning empty and not picking up or returning from a trip
         const idleHaulers = colony.haulers.filter(
@@ -123,10 +113,6 @@ const demandHandlers = {
         return nudge(haulerDemand < target ? 1 : -1);
     },
     [roles.upgrader]: (colony, set, nudge, bump) => {
-        if (!meetsMinimumSpawnRequirements(colony)) {
-            return set(DEFAULT_DEMANDS[roles.upgrader]);
-        }
-
         // Priority #1: are upgraders full?
         const upgraders = colony.upgraders;
         const fullUpgraders = upgraders.filter(
@@ -168,9 +154,6 @@ const demandHandlers = {
         return nudge(upgraderDemand < target ? 1 : -1);
     },
     [roles.scout]: (colony, set, nudge, bump) => {
-        if (!meetsMinimumSpawnRequirements(colony)) {
-            return set(0);
-        }
         set(1);
     },
     [roles.builder]: (colony, set, nudge, bump) => {
@@ -389,6 +372,11 @@ class SpawnManager {
         // Calculated by the handlers
         profiler.startSample("demand");
         for (const role in demandHandlers) {
+            if (!meetsMinimumSpawnRequirements(colony)) {
+                setRoleDemand(colony, role, DEFAULT_DEMANDS[role] || 0);
+                continue;
+            }
+
             const handler = demandHandlers[role];
             profiler.wrap(role, () =>
                 handler(
@@ -492,9 +480,6 @@ class SpawnManager {
                         role: next.memory.role,
                     });
                 }
-            } else {
-                // Didn't spawn successfully, don't count the spawn as active
-                inactiveSpawns.push(spawn);
             }
 
             // Let's wait until we have enough energy
