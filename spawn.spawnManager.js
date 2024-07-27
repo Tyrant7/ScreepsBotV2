@@ -421,7 +421,8 @@ class SpawnManager {
                     const newCreep = spawnsByRole[role](colony);
                     if (
                         getCost(newCreep.body) >
-                        colony.room.energyCapacityAvailable
+                            colony.room.energyCapacityAvailable ||
+                        !newCreep.body.length
                     ) {
                         continue;
                     }
@@ -440,6 +441,8 @@ class SpawnManager {
                 inactiveSpawns.push(spawn);
                 break;
             }
+
+            console.log(JSON.stringify(next));
 
             // If we're supporting another colony, let's assign this creep to it
             // Simply find the first colony missing one of these creeps
