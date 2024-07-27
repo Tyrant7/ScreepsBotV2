@@ -71,6 +71,7 @@ const {
 require("./extension.betterRoomVisual");
 const harabiTrafficManager = require("./extension.harabiTraffic");
 require("./extension.trackRCL");
+const { doMemhack } = require("./extension.memHack");
 
 // Data
 const Colony = require("./data.colony");
@@ -365,6 +366,9 @@ const stats_trackCreeps = () => {
 // #endregion Stats
 
 const mainLoop = () => {
+    // Memhack can save us a ton of CPU on memory serialization costs
+    doMemhack();
+
     // Passive pixel generation
     if (DEBUG.generatePixels) {
         generatePixels();
