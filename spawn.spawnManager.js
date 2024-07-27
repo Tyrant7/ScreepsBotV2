@@ -459,10 +459,17 @@ class SpawnManager {
                 colony.memory.supporting && colony.memory.supporting.length
                     ? colony.memory.supporting.find(
                           (s) =>
-                              expansionDemands[next.memory.role] &&
-                              Memory.newColonies[s].creepNamesAndRoles.filter(
-                                  (c) => c.role === next.memory.role
-                              ).length < expansionDemands[next.memory.role]
+                              Memory.newColonies[s].spawnDemands[
+                                  next.memory.role
+                              ] &&
+                              Memory.newColonies[s].spawnDemands[
+                                  next.memory.role
+                              ] >
+                                  Memory.newColonies[
+                                      s
+                                  ].creepNamesAndRoles.filter(
+                                      (c) => c.role === next.memory.role
+                                  ).length
                       )
                     : null;
             if (supportingColony) {
