@@ -96,7 +96,7 @@ const demandHandlers = {
             RAISE_HAULER_THRESHOLD
         );
         if (untendedPickups.length >= threshold) {
-            return bump(1);
+            return nudge(untendedPickups.length - threshold + 1);
         }
 
         // If there's no problems at all, let's nudge towards our current count
