@@ -9,10 +9,13 @@ class ColonizerDefenderManager extends DefenderManager {
                 creep.memory.home = creep.room.name;
             }
 
-            const firstEnemy = colony.room.find(FIND_CREEPS).find((c) => !c.my);
+            const firstEnemy = creep.room.find(FIND_CREEPS).find((c) => !c.my);
             if (firstEnemy) {
                 return super.createKillTask(creep, firstEnemy);
             }
+
+            // Don't patrol until we're owned by this colony
+            if (!creep.room.controller.my) return;
 
             // Sit near our spawn where most of our creeps will be
             const spawnSite = colony.constructionSites.find(

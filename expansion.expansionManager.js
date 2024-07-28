@@ -70,9 +70,10 @@ class ExpansionManager {
                 );
 
             // If we've claimed this room, we can remove the claimer from its spawn demand
-            if (Memory.colonies[expansion]) {
-                Memory.newColonies[expansion].spawnDemands[roles.claimer] = 0;
-            }
+            Memory.newColonies[expansion].spawnDemands[roles.claimer] =
+                Game.rooms[expansion] && Game.rooms[expansion].controller.my
+                    ? 0
+                    : 1;
         }
     }
 }
