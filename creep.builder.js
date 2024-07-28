@@ -127,15 +127,40 @@ class BuilderManager extends CreepManager {
                 }
                 if (range <= 3) {
                     creep.build(target);
-                    if (
-                        creep.store[RESOURCE_ENERGY] <=
-                        useRate * REQUEST_ADVANCE_TICKS
-                    ) {
-                        colony.createDropoffRequest(
-                            creep.store.getCapacity(),
-                            RESOURCE_ENERGY,
-                            [creep.id]
-                        );
+
+                    // Only create dropoff requests while in our homeroom
+                    if (creep.room.name === colony.room.name) {
+                        if (
+                            creep.store[RESOURCE_ENERGY] <=
+                            useRate * REQUEST_ADVANCE_TICKS
+                        ) {
+                            colony.createDropoffRequest(
+                                creep.store.getCapacity(),
+                                RESOURCE_ENERGY,
+                                [creep.id]
+                            );
+                        }
+                    } else {
+                        // If we're in a remote, we'll just pull energy off of haulers traveling by
+                        const nearbyHauler = creep.room
+                            .lookAtArea(
+                                LOOK_CREEPS,
+                                creep.pos.x - 1,
+                                creep.pos.x - 1,
+                                creep.pos.y + 1,
+                                creep.pos.y + 1,
+                                true
+                            )
+                            .find(
+                                (c) =>
+                                    c.my &&
+                                    c.memory.role === roles.hauler &&
+                                    c.store[RESOURCE_ENERGY]
+                            );
+                        // If there is one nearby, let's fill up
+                        if (nearbyHauler) {
+                            nearbyHauler.transfer(creep, RESOURCE_ENERGY);
+                        }
                     }
 
                     // Site was placed on top of us or another creep, let's move the blocker

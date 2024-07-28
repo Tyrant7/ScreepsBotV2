@@ -16,6 +16,7 @@ const {
 } = require("./constants");
 const profiler = require("./debug.profiler");
 const estimateTravelTime = require("./util.estimateTravelTime");
+const { onRemoteDrop } = require("./event.colonyEvents");
 
 const UTILITY_CONSTANTS = {
     [STRUCTURE_SPAWN]: 100,
@@ -43,6 +44,47 @@ const RESET_CACHE_INTERVAL = 50;
 // Cached Tick
 // The array of missing structures when cache was created
 const caches = {};
+
+// When we drop a remote, let's reset our cache and filter out build targets that might be part of that remote
+// while making sure ot destroy sites associated with that target.
+onRemoteDrop.subscribe((colony, remote) => {
+    updateCache(colony, colony.room.controller.level);
+
+    // Filter build targets that belong to this remote
+    colony.memory.buildTargets = colony.memory.buildTargets.filter((b) => {
+        const site = Game.rooms[b.pos.roomName].lookFor(
+            LOOK_CONSTRUCTION_SITES
+        )[0];
+        if (!site) return false;
+        if (
+            site.structureType === STRUCTURE_CONTAINER &&
+            site.pos.x === remote.container.x &&
+            site.pos.y === remote.container.y &&
+            site.pos.roomName === remote.container.roomName
+        ) {
+            site.remove();
+            return false;
+        }
+
+        // Roads are tougher, since we'll have to verify that this road
+        // didn't belong to another one of our remotes
+        for (const remote of colony.remotePlans) {
+            if (!remote.active) continue;
+            if (
+                remote.roads.find(
+                    (r) =>
+                        r.x === site.pos.x &&
+                        r.y === site.pos.y &&
+                        r.roomName === site.pos.roomName
+                )
+            ) {
+                return true;
+            }
+        }
+        site.remove();
+        return false;
+    });
+});
 
 const handleSites = (colony) => {
     // Update our list of cached structures if it's been invalidated,
