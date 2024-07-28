@@ -46,7 +46,7 @@ const RESET_CACHE_INTERVAL = 50;
 const caches = {};
 
 // When we drop a remote, let's reset our cache and filter out build targets that might be part of that remote
-// while making sure ot destroy sites associated with that target.
+// while making sure to destroy sites associated with that target.
 onRemoteDrop.subscribe((colony, remote) => {
     updateCache(colony, colony.room.controller.level);
 
