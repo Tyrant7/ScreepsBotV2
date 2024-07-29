@@ -61,7 +61,7 @@ const demandHandlers = {
         const assignedMiners = colony.miners.filter(
             (miner) => miner.memory.miningSite
         );
-        return set(assignedMiners.length + 0.5);
+        return set(assignedMiners.length - 0.5);
     },
     [roles.hauler]: (colony, set, nudge, bump) => {
         // Reduce proportional to the number of idle haulers
