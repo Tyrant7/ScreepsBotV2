@@ -19,6 +19,9 @@ class ColonizerBuilderManager extends BuilderManager {
         const spawnSite = colony.constructionSites.find(
             (s) => s.structureType === STRUCTURE_SPAWN
         );
+
+        console.log("0");
+
         if (spawnSite) {
             if (creep.store[RESOURCE_ENERGY] === 0 || creep.memory.sourceID) {
                 if (!creep.memory.sourceID) {
@@ -33,15 +36,25 @@ class ColonizerBuilderManager extends BuilderManager {
                         return this.createPickupTask(creep, resourcePile);
                     }
                 }
+
+                console.log("1");
+
                 return this.createHarvestTask(creep, colony);
             }
+
+            console.log("2");
+
             return super.createBuildTask(colony, creep, spawnSite, true);
         }
         // Our spawn isn't built yet and there's no site for it,
         // start harvesting while we wait for the site to get placed
         if (!colony.structures[STRUCTURE_SPAWN]) {
+            console.log("3");
+
             return this.createHarvestTask(creep, colony);
         }
+
+        console.log("4");
 
         // Our spawn is built, let's fill it up if it needs it
         const spawn = colony.structures[STRUCTURE_SPAWN][0];
@@ -55,9 +68,16 @@ class ColonizerBuilderManager extends BuilderManager {
         // Finally, our colony has started to work
         // Let's turn one into an upgrader and the rest into builders
         if (!colony.upgraders.length) {
+            console.log("5");
+
             creep.memory.role = roles.upgrader;
             return null;
         }
+
+        console.log("6");
+
+        // TODO: Figure out why our colonizer became a builder too early
+
         creep.memory.role = roles.builder;
         return null;
     }
