@@ -12,7 +12,7 @@ const { onRemoteAdd, onRemoteDrop } = require("./event.colonyEvents");
 const overlay = require("./debug.overlay");
 const profiler = require("./debug.profiler");
 
-const REACTION_SPEED = CREEP_LIFE_TIME / 2;
+const REACTION_SPEED = 250;
 const DROP_THRESHOLD = 0.06;
 const ADD_THRESHOLD = 0.085;
 
