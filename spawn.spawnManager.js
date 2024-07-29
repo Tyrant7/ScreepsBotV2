@@ -92,6 +92,12 @@ const demandHandlers = {
             .filter(
                 (r) => r.assignedHaulers.length * currentHaulerSize < r.amount
             );
+        // Don't increase our demand if we have haulers waiting on orders
+        const waitingHaulers = colony.haulers.filter(
+            (hauler) =>
+                hauler.store.getUsedCapacity() > 0 &&
+                !(hauler.memory.dropoff || hauler.memory.returning)
+        ).length;
 
         // Initially we won't be able to raise our count
         // because only 1 request will be able to exist
@@ -99,7 +105,7 @@ const demandHandlers = {
             colony.miners.length,
             RAISE_HAULER_THRESHOLD
         );
-        if (untendedPickups.length >= threshold) {
+        if (untendedPickups.length >= threshold && !waitingHaulers.length) {
             return nudge(untendedPickups.length - threshold + 1);
         }
 
