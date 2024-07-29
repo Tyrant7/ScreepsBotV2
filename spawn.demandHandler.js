@@ -9,7 +9,7 @@ const DEFAULT_DEMANDS = {
 const MIN_MAX_DEMAND = {
     [roles.miner]: { min: 0.5 },
     [roles.hauler]: { min: 0.5 },
-    [roles.upgrader]: { min: 0.4 },
+    [roles.upgrader]: { min: 0.4, max: 12 },
     [roles.builder]: { max: 2.5 },
 };
 
