@@ -91,6 +91,7 @@ const RepairerManager = require("./creep.repairer");
 const BuilderManager = require("./creep.builder");
 const ReserverManager = require("./creep.reserver");
 const DefenderManager = require("./creep.defender");
+const CleanerManager = require("./creep.cleaner");
 const MineralMinerManager = require("./creep.mineralMiner");
 
 const ClaimerManager = require("./creep.claimer");
@@ -109,6 +110,7 @@ const creepRoleMap = {
     [roles.builder]: new BuilderManager(),
     [roles.reserver]: new ReserverManager(),
     [roles.defender]: new DefenderManager(),
+    [roles.cleaner]: new CleanerManager(),
     [roles.mineralMiner]: new MineralMinerManager(),
 
     [roles.claimer]: new ClaimerManager(),

@@ -154,7 +154,7 @@ const makeMineralMiner = (energy) => {
     let lvl = 0;
     while (lvl < maxLevels.mineralMiner) {
         lvl++;
-        body.push(...[MOVE, WORK, WORK, WORK, WORK]);
+        body.push(MOVE, WORK, WORK, WORK, WORK);
         if (getCost(body) > energy || body.length > MAX_CREEP_SIZE) {
             lvl--;
             body.pop();
@@ -236,6 +236,26 @@ const makeMiniDefender = (desiredLevel, maxCost) => {
     };
 };
 
+const makeCleaner = (energy) => {
+    const body = [];
+    let lvl = 0;
+    while (lvl < maxLevels.cleaner) {
+        lvl++;
+        body.push(MOVE, ATTACK);
+        if (getCost(body) > energy || body.length > MAX_CREEP_SIZE) {
+            lvl--;
+            body.pop();
+            body.pop();
+            break;
+        }
+    }
+    return {
+        body: body,
+        name: "Cleaner " + Game.time + " [" + lvl + "]",
+        memory: { role: roles.cleaner },
+    };
+};
+
 //#endregion
 
 const RESERVER_COST = getCost(makeReserver().body);
@@ -251,6 +271,7 @@ module.exports = {
     makeMineralMiner,
     makeScout,
     makeMiniDefender,
+    makeCleaner,
     makeClaimer,
     makeColonizerBuilder,
     makeColonizerDefender,

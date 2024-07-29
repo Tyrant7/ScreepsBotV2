@@ -8,6 +8,7 @@ const roles = {
     scout: "scout",
     reserver: "reserver",
     defender: "defender",
+    cleaner: "cleaner",
     mineralMiner: "mineral_miner",
 
     claimer: "claimer",
@@ -26,6 +27,7 @@ const maxLevels = {
     repairer: 4,
     builder: 6,
     mineralMiner: 8,
+    cleaner: 10,
 };
 
 const storageThresholds = {

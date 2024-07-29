@@ -89,6 +89,7 @@ class Colony {
 
         this.enemies = this.room.find(FIND_HOSTILE_CREEPS);
         this.remoteEnemies = [];
+        this.invaderCores = [];
 
         this.remotePlans = remoteUtility.getRemotePlans(this.room.name);
         if (this.remotePlans) {
@@ -122,6 +123,12 @@ class Colony {
                 // Construction sites
                 this.constructionSites = this.constructionSites.concat(
                     room.find(FIND_CONSTRUCTION_SITES)
+                );
+
+                this.invaderCores = this.invaderCores.concat(
+                    room
+                        .find(FIND_HOSTILE_STRUCTURES)
+                        .find((s) => s.structureType === STRUCTURE_INVADER_CORE)
                 );
             }
         }
