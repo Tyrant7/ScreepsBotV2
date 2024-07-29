@@ -206,6 +206,7 @@ class HaulerManager extends CreepManager {
                 // Transfer if within range
                 if (creep.pos.getRangeTo(target) <= 1) {
                     creep.transfer(target, dropoff.resourceType);
+                    delete creep.memory.dropoff;
                 }
                 // Otherwise, move
                 else {
