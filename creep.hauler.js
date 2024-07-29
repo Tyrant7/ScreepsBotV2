@@ -168,6 +168,9 @@ class HaulerManager extends CreepManager {
         function acceptOrder(dropoff, pos, path) {
             creep.injectPath(path, pos);
 
+            // Mark the order so other haulers searching for orders this tick don't also accept it
+            colony.acceptDropoffRequest(dropoff.requestID, creep.id);
+
             // Let's construct the object we want to store in memory
             // We only care about the dropoff ID we selected, plus the type and amount
             // And a key for us to relink this hauler to this request in case of a global reset
@@ -307,6 +310,9 @@ class HaulerManager extends CreepManager {
 
         function acceptOrder(pickup, path) {
             creep.injectPath(path, pickup.pos);
+
+            // Mark the order so other haulers searching for orders this tick don't also accept it
+            colony.acceptPickupRequest(pickup.requestID, creep.id);
 
             // Let's construct the object we want to store in memory
             // We only care about the pickup point, type, and amount

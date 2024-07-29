@@ -436,11 +436,6 @@ class Colony {
     getPickupRequests(creep) {
         const requests = Object.values(this._pickupRequests);
         requests.forEach((pickup) => {
-            // Filter out any assigned haulers that are no longer alive
-            pickup.assignedHaulers = pickup.assignedHaulers.filter((h) =>
-                Game.getObjectById(h)
-            );
-
             // Let's also figure out if this pickup point has enough haulers assigned to fill its request or not
             const total = pickup.assignedHaulers.reduce((total, currID) => {
                 return (
@@ -481,11 +476,6 @@ class Colony {
 
         // Add a few properties to each pickup request
         validDropoffs.forEach((dropoff) => {
-            // Filter out any assigned haulers that are no longer alive
-            dropoff.assignedHaulers = dropoff.assignedHaulers.filter((hauler) =>
-                Game.getObjectById(hauler)
-            );
-
             // Let's also figure out if this pickup point has enough haulers assigned to fill its request or not
             const total = dropoff.assignedHaulers.reduce((total, currID) => {
                 return (
