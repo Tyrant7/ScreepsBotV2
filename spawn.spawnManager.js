@@ -162,7 +162,7 @@ const demandHandlers = {
         return set(0);
     },
     [roles.repairer]: (colony, set, nudge, bump) => {
-        // TODO //
+        set(colony.remotesNeedingRepair.length ? 1 : 0);
     },
     [roles.mineralMiner]: (colony, set, nudge, bump) => {
         const amount = colony.structures[STRUCTURE_EXTRACTOR] ? 1 : 0;
@@ -349,6 +349,8 @@ const spawnsByRole = {
             colony.memory.constructionLevel >= REMOTE_ROAD_RCL ? 2 : 1
         );
     },
+    [roles.repairer]: (colony) =>
+        creepMaker.makeRepairer(colony.room.energyCapacityAvailable),
 
     // Expansion creeps, when we have a good eco
     /*
@@ -367,8 +369,6 @@ const spawnsByRole = {
     [roles.scout]: (colony) => creepMaker.makeScout(),
     [roles.builder]: (colony) =>
         creepMaker.makeBuilder(colony.room.energyCapacityAvailable),
-    [roles.repairer]: (colony) =>
-        creepMaker.makeRepairer(colony.room.energyCapacityAvailable),
     [roles.mineralMiner]: (colony) =>
         creepMaker.makeMineralMiner(colony.room.energyCapacityAvailable),
 };

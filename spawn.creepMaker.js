@@ -133,8 +133,9 @@ const makeRepairer = (energy) => {
     let lvl = 0;
     for (let i = 0; i < maxLevels.repairer; i++) {
         lvl = i + 1;
-        body.push(MOVE, CARRY, CARRY, WORK);
+        body.push(MOVE, CARRY, CARRY, CARRY, WORK);
         if (getCost(body) > energy) {
+            body.pop();
             body.pop();
             body.pop();
             body.pop();

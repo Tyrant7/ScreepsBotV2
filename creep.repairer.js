@@ -67,7 +67,7 @@ class RepairerManager extends CreepManager {
                 const road = creep.pos
                     .lookFor(LOOK_STRUCTURES)
                     .find((s) => s.structureType === STRUCTURE_ROAD);
-                if (road) {
+                if (road && road.hits < road.hitsMax) {
                     creep.repair(road);
                 }
                 if (creep.pos.getRangeTo(endPosition) <= 1) {
@@ -111,7 +111,11 @@ class RepairerManager extends CreepManager {
 
                 // We don't want to move if we don't have any energy to ensure
                 // that we don't skip any roads
-                if (creep.store[RESOURCE_ENERGY]) {
+                // We'll also verify that the road is close to fully repaired
+                if (
+                    creep.store[RESOURCE_ENERGY] &&
+                    road.hitsMax - road.hits <= useRate * REPAIR_POWER
+                ) {
                     creep.betterMoveTo(endPosition, {
                         pathSet: pathSets.default,
                     });
