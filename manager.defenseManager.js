@@ -20,6 +20,7 @@ class DefenseManager {
             }
             return;
         }
+        if (!towers) return;
 
         // Let's heal any low health creeps while we're safe
         const lowCreep = colony.room
