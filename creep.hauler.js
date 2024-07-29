@@ -51,10 +51,12 @@ class HaulerManager extends CreepManager {
                 const closestDropID =
                     dropoff.dropoffIDs.length > 1
                         ? dropoff.dropoffIDs.reduce((closest, curr) => {
-                              return creep.pos.getRangeTo(
+                              return estimateTravelTime(
+                                  creep.pos,
                                   Game.getObjectById(curr).pos
                               ) <
-                                  creep.pos.getRangeTo(
+                                  estimateTravelTime(
+                                      creep.pos,
                                       Game.getObjectById(closest).pos
                                   )
                                   ? curr
@@ -131,14 +133,6 @@ class HaulerManager extends CreepManager {
                     );
                     delete assignedHauler.memory.dropoff;
 
-                    console.log(
-                        creep.name +
-                            " stealing order " +
-                            closestDropoff.requestID +
-                            " from " +
-                            assignedHauler.name
-                    );
-
                     // We need to create the task first to store the dropoff in our memory to ensure the other
                     // hauler doesn't unknowingly steal it back
                     const task = this.createDropoffTask(creep, orderInfo);
@@ -190,9 +184,6 @@ class HaulerManager extends CreepManager {
                 }
 
                 // Transfer if within range
-                // TODO //
-                // Try using 2 here instead of 1, since we'll move and pickup
-                // also remove the else below to allow this to happen
                 if (creep.pos.getRangeTo(target) <= 1) {
                     creep.transfer(target, dropoff.resourceType);
                 }
@@ -353,9 +344,6 @@ class HaulerManager extends CreepManager {
                 }
 
                 // Pickup!
-                // TODO //
-                // Try using 2 here instead of 1, since we'll move and pickup
-                // also remove the else below to allow this to happen
                 if (creep.pos.getRangeTo(targetPos) <= 1) {
                     // Pickup dropped resources first
                     const dropped = pickupsAtLocation.find(

@@ -335,10 +335,7 @@ class Colony {
             return;
         }
 
-        // We'll find all of our haulers associated with this request from previous ticks
-        const assignedHaulers = this.haulers.filter(
-            (h) => h.memory.pickup && h.memory.pickup.hash === hash
-        );
+        // We'll assign haulers once orders are finalized
         this._pickupRequests[hash] = {
             requestID: hash,
             tick: Game.time,
@@ -347,7 +344,7 @@ class Colony {
             fillrate,
             isSource,
             pos,
-            assignedHaulers,
+            assignedHaulers: [],
         };
     }
 
@@ -364,17 +361,14 @@ class Colony {
         }
         const hash = this.hashDropoffRequest(dropoffIDs, resourceType);
 
-        // Retain knowledge of assigned haulers between ticks
-        const assignedHaulers = this.haulers.filter(
-            (h) => h.memory.dropoff && h.memory.dropoff.hash === hash
-        );
+        // We'll assign haulers once orders are finalized
         this._dropoffRequests[hash] = {
             requestID: hash,
             tick: Game.time,
             amount,
             resourceType,
             dropoffIDs,
-            assignedHaulers,
+            assignedHaulers: [],
         };
     }
 
@@ -384,16 +378,41 @@ class Colony {
      * carrying over request data from the previous tick.
      */
     finalizeRequests() {
+        // Let's figure out which haulers are assigned to which requests
+        const pickups = {};
+        const dropoffs = {};
+        for (const hauler of this.haulers) {
+            if (hauler.memory.pickup) {
+                pickups[hauler.memory.pickup.hash] = (
+                    pickups[hauler.memory.pickup.hash] || []
+                ).concat(hauler.id);
+                continue;
+            }
+            if (hauler.memory.dropoff) {
+                dropoffs[hauler.memory.dropoff.hash] = (
+                    dropoffs[hauler.memory.dropoff.hash] || []
+                ).concat(hauler.id);
+            }
+        }
+
         // Let's filter out any outdated requests here
         for (const hash in this._pickupRequests) {
             if (this._pickupRequests[hash].tick !== Game.time) {
                 delete this._pickupRequests[hash];
+                continue;
             }
+
+            // And assign haulers here
+            this._pickupRequests[hash].assignedHaulers = pickups[hash] || [];
         }
         for (const hash in this._dropoffRequests) {
             if (this._dropoffRequests[hash].tick !== Game.time) {
                 delete this._dropoffRequests[hash];
+                continue;
             }
+
+            // And assign haulers here
+            this._dropoffRequests[hash].assignedHaulers = dropoffs[hash] || [];
         }
     }
 
@@ -464,7 +483,11 @@ class Colony {
         });
 
         // If we don't have any requests, let's add the storage
-        if (!validDropoffs.length && this.room.storage) {
+        if (
+            !validDropoffs.length &&
+            this.room.storage &&
+            this.room.storage.store.getFreeCapacity()
+        ) {
             // It won't matter how much, what type, or who's assigned
             // We will accept all haulers
             return [
