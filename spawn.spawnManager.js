@@ -492,6 +492,9 @@ class SpawnManager {
                         role: next.memory.role,
                     });
                 }
+            } else {
+                // Don't count the spawn as active if it's not actually spawning anything
+                inactiveSpawns.push(spawn);
             }
 
             // Let's wait until we have enough energy
