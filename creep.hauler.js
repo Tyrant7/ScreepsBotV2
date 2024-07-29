@@ -25,14 +25,31 @@ class HaulerManager extends CreepManager {
 
     createReturnTask(creep, colony) {
         const actionStack = [
-            this.basicActions.moveToRoom,
+            function (creep, data) {
+                if (data.moveToRoom(creep, data)) {
+                    return true;
+                }
+
+                // If our energy was stolen, let's research orders
+                if (!creep.store.getUsedCapacity()) {
+                    return true;
+                }
+            },
             function (creep, data) {
                 delete creep.memory.returning;
                 return true;
             },
         ];
         creep.memory.returning = true;
-        return new Task({ roomName: colony.room.name }, "return", actionStack);
+        return new Task(
+            {
+                moveToRoom: this.basicActions.moveToRoom,
+                roomName: colony.room.name,
+                pathSet: pathSets.default,
+            },
+            "return",
+            actionStack
+        );
     }
 
     dropoffTaskLogistics(creep, colony) {
