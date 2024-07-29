@@ -105,7 +105,7 @@ const demandHandlers = {
             colony.miners.length,
             RAISE_HAULER_THRESHOLD
         );
-        if (untendedPickups.length >= threshold && !waitingHaulers.length) {
+        if (untendedPickups.length >= threshold && !waitingHaulers) {
             return nudge(untendedPickups.length - threshold + 1);
         }
 
