@@ -6,6 +6,8 @@ const { MINER_WORK, REMOTE_MINER_WORK } = require("./spawn.spawnConstants");
 const profiler = require("./debug.profiler");
 const { RESERVER_COST } = require("./spawn.creepMaker");
 const { MINIMUM_PICKUP_AMOUNT } = require("./constants");
+const { repairThresholds } = require("./constants");
+const { onRemoteDrop } = require("./event.colonyEvents");
 
 class Colony {
     /**
@@ -19,6 +21,8 @@ class Colony {
         }
         this.sources = this.room.find(FIND_SOURCES);
         this.mineral = this.room.find(FIND_MINERALS)[0];
+
+        this.remotesNeedingRepair = [];
     }
 
     /**
@@ -92,6 +96,11 @@ class Colony {
         this.remoteEnemies = [];
         this.invaderCores = [];
 
+        const isRoadDecayTick = Game.time % ROAD_DECAY_TIME === 0 && RELOAD;
+        if (isRoadDecayTick) {
+            this.remotesNeedingRepair = [];
+        }
+
         this.remotePlans = remoteUtility.getRemotePlans(this.room.name);
         if (this.remotePlans) {
             // Get all rooms of our active remotes for construction site and enemy searching
@@ -111,6 +120,30 @@ class Colony {
                     isReserved:
                         this.room.energyCapacityAvailable >= RESERVER_COST,
                 });
+
+                // Every so often, let's scan the roads of each remote to make
+                // sure that none of them have decayed too low
+                if (isRoadDecayTick) {
+                    for (const road of remote.roads) {
+                        const room = Game.rooms[road.roomName];
+                        if (!room) continue;
+                        const roadStructure = room
+                            .lookForAt(LOOK_STRUCTURES, road.x, road.y)
+                            .find((s) => s.structureType === STRUCTURE_ROAD);
+                        if (
+                            roadStructure.hits / roadStructure.hitsMax <
+                            repairThresholds[STRUCTURE_ROAD]
+                        ) {
+                            remotesNeedingRepair.push({
+                                endPos: remote.container,
+                                sourceID: remote.source.id,
+                                hits:
+                                    roadStructure.hits / roadStructure.hitsMax,
+                            });
+                            break;
+                        }
+                    }
+                }
             }
             for (const roomName of remoteRooms) {
                 const room = Game.rooms[roomName];
@@ -161,14 +194,6 @@ class Colony {
         profiler.endSample("other init");
     }
 
-    getMaxIncome() {
-        return this.sources.reduce(
-            (total, source) =>
-                total + source.energyCapacity / ENERGY_REGEN_TIME,
-            0
-        );
-    }
-
     getUpgraderContainer() {
         const containerPos = getPlanData(
             this.room.name,
@@ -181,42 +206,6 @@ class Colony {
             .lookForAt(LOOK_STRUCTURES, containerPos.x, containerPos.y)
             .find((s) => s.structureType === STRUCTURE_CONTAINER);
     }
-
-    // #region Maintenance
-
-    /**
-     * Finds all structures wanted by this room, including remotes.
-     * @returns An array of all planned structures currently visible and wanted by this room.
-     */
-    getWantedStructures() {
-        if (this.wantedStructures) {
-            return this.wantedStructures;
-        }
-
-        const structures = [...this.allStructures];
-        for (const remote of this.remotePlans) {
-            if (!remote.active) {
-                continue;
-            }
-            if (Game.rooms[remote.room]) {
-                structures.push(
-                    ...Game.rooms[remote.room].find(FIND_STRUCTURES, {
-                        filter: (s) =>
-                            remoteUtility.isStructurePlanned(
-                                this.room.name,
-                                s.pos,
-                                s.structureType
-                            ),
-                    })
-                );
-            }
-        }
-
-        this.wantedStructures = structures;
-        return structures;
-    }
-
-    // #endregion
 
     // #region Mining
 

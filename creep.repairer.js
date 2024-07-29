@@ -1,6 +1,12 @@
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
 const { pathSets } = require("./constants");
+const { onRemoteDrop } = require("./event.colonyEvents");
+
+/**
+ * For the same system as builders.
+ */
+const REQUEST_ADVANCE_TICKS = 10;
 
 class RepairerManager extends CreepManager {
     /**
@@ -10,107 +16,131 @@ class RepairerManager extends CreepManager {
      * @returns The best fitting task object for this creep.
      */
     createTask(creep, colony) {
-        if (!creep.store[RESOURCE_ENERGY]) {
-            return new Task({}, "harvest", [this.basicActions.seekEnergy]);
+        if (creep.memory.target) {
+            this.createRepairTask(creep, colony, creep.memory.target);
         }
 
-        // On the first task, we'll search for the lowest health structure we currently have
-        if (!creep.memory.firstPass) {
-            const lowest = colony
-                .getWantedStructures()
-                .reduce((lowest, curr) => {
-                    if (!curr.hits) {
-                        return lowest;
-                    }
-                    const lowestHP =
-                        lowest.hits /
-                        (lowest.hitsMax *
-                            (repairThresholds[lowest.structureType] || 1));
-                    const currHP =
-                        curr.hits /
-                        (curr.hitsMax *
-                            (repairThresholds[curr.structureType] || 1));
-                    return currHP < lowestHP ? curr : lowest;
-                });
-            creep.memory.firstPass = true;
-            return this.createRepairTask(lowest);
-        }
+        // We'll want to make sure the remote is still active by the time we get around to it
+        colony.remotesNeedingRepairs = colony.remotesNeedingRepairs.filter(
+            (r) => r.active
+        );
 
-        // After the first pass, we'll search for the lowest structure in our current room
-        const neededRepairs = creep.room.find(FIND_STRUCTURES).filter((s) => {
-            // Don't bother will ramparts or walls since it will suck up so much energy to repair them
-            if (
-                (s.structureType === STRUCTURE_WALL ||
-                    s.structureType === STRUCTURE_RAMPART) &&
-                s.hits / s.hitsMax >= repairThresholds[s.structureType]
-            ) {
-                return false;
-            }
-            return s.hits < s.hitsMax;
-        });
-        if (neededRepairs.length) {
-            const mapped = neededRepairs.map((s) => {
-                // Simply sort by distance times the fraction of health the structure current has -> closer = lower score = better
-                const score =
-                    creep.pos.getRangeTo(s.pos) *
-                    Math.pow(
-                        s.hits /
-                            (s.hitsMax *
-                                (repairThresholds[s.structureType] || 1)),
-                        3
-                    );
-                return { structure: s, score: score };
-            });
-            const bestFit = mapped.reduce(
-                (best, curr) => (curr.score < best.score ? curr : best),
-                mapped[0]
-            ).structure;
-            return this.createRepairTask(bestFit);
-        } else {
-            // If none need repairing, let's search through all of our structures again
-            creep.memory.firstPass = false;
+        // Find the lowest health remote that isn't already being repaired
+        const mostUrgent = colony.remotesNeedingRepairs
+            .filter(
+                (r) =>
+                    !colony.repairers.find(
+                        (rep) => rep.memory.target.sourceID === r.source.id
+                    )
+            )
+            .reduce(
+                (best, curr) => (curr.hits < best.hits ? curr : best),
+                undefined
+            );
+        if (!mostUrgent) {
+            creep.say("All done!");
+            return;
         }
+        return this.createRepairTask(creep, colony, mostUrgent);
     }
 
-    createRepairTask(target) {
+    createRepairTask(creep, colony, target) {
         const actionStack = [
+            // First let's get energy from the storage
             function (creep, data) {
-                const target =
-                    creep.pos.roomName === data.pos.roomName
-                        ? Game.getObjectById(data.targetID)
-                        : data.pos;
-                if (!target) {
+                if (!colony.room.storage) return true;
+                if (creep.pos.getRangeTo(colony.room.storage) <= 1) {
+                    creep.withdraw(colony.room.storage, RESOURCE_ENERGY);
+                    return true;
+                }
+                creep.betterMoveTo(colony.room.storage, {
+                    pathSet: pathSets.default,
+                });
+            },
+            // Then traverse our entire path and repair roads
+            function (creep, { endPosition, useRate }) {
+                // If our target is changed elsewhere, drop the task
+                if (!creep.memory.target) {
                     return true;
                 }
 
-                if (creep.pos.getRangeTo(target) <= 3) {
-                    creep.repair(target);
+                const road = creep.pos
+                    .lookFor(LOOK_STRUCTURES)
+                    .find((s) => s.structureType === STRUCTURE_ROAD);
+                if (road) {
+                    creep.repair(road);
+                }
+                if (creep.pos.getRangeTo(endPosition) <= 1) {
+                    return true;
+                }
+
+                // Request energy
+                if (creep.room.name === colony.room.name) {
+                    if (
+                        creep.store[RESOURCE_ENERGY] <=
+                        useRate * REQUEST_ADVANCE_TICKS
+                    ) {
+                        colony.createDropoffRequest(
+                            creep.store.getCapacity(),
+                            RESOURCE_ENERGY,
+                            [creep.id]
+                        );
+                    }
                 } else {
-                    creep.betterMoveTo(target, {
-                        range: 3,
+                    // We'll pull energy off of haulers traveling by for our energy source in remotes
+                    const nearbyHauler = creep.room
+                        .lookForAtArea(
+                            LOOK_CREEPS,
+                            creep.pos.x - 1,
+                            creep.pos.x - 1,
+                            creep.pos.y + 1,
+                            creep.pos.y + 1,
+                            true
+                        )
+                        .find(
+                            (c) =>
+                                c.creep.my &&
+                                c.creep.memory.role === roles.hauler &&
+                                c.creep.store[RESOURCE_ENERGY]
+                        );
+                    // If there is one nearby, let's fill up
+                    if (nearbyHauler) {
+                        nearbyHauler.transfer(creep, RESOURCE_ENERGY);
+                    }
+                }
+
+                // We don't want to move if we don't have any energy to ensure
+                // that we don't skip any roads
+                if (creep.store[RESOURCE_ENERGY]) {
+                    creep.betterMoveTo(endPosition, {
                         pathSet: pathSets.default,
                     });
                 }
-                return (
-                    creep.store[RESOURCE_ENERGY] === 0 ||
-                    target.hits === target.hitsMax
-                );
             },
         ];
+        creep.memory.target = target;
         return new Task(
-            { targetID: target.id, pos: target.pos },
+            {
+                endPosition: new RoomPosition(
+                    target.endPos.x,
+                    target.endPos.y,
+                    target.endPos.roomName
+                ),
+                useRate: creep.body.filter((p) => p.type === WORK).length,
+            },
             "repair",
             actionStack
         );
     }
 }
 
-// Repair up to these values for these structures
-const repairThresholds = {
-    [STRUCTURE_WALL]: 0.002,
-    [STRUCTURE_RAMPART]: 0.005,
-    [STRUCTURE_CONTAINER]: 0.9,
-    [STRUCTURE_ROAD]: 0.8,
-};
+// Free any repairers repairing remotes that we drop
+onRemoteDrop.subscribe((colony, remote) => {
+    for (const repairer of colony.repairers) {
+        if (repairer.memory.target.sourceID === remote.source.id) {
+            delete repairer.memory.target;
+        }
+    }
+});
 
 module.exports = RepairerManager;

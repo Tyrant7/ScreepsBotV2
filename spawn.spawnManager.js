@@ -24,16 +24,6 @@ const LOWER_HAULER_THRESHOLD = 2;
 
 const LOWER_UPGRADER_THRESHOLD = 2;
 
-/*
-// Don't be too concerned unless these structures get extra low since they decay naturally
-const REPAIR_THRESHOLDS = {
-    [STRUCTURE_WALL]: 0.002,
-    [STRUCTURE_RAMPART]: 0.005,
-    [STRUCTURE_CONTAINER]: 0.5,
-    [STRUCTURE_ROAD]: 0.5,
-};
-*/
-
 //#region Demand
 
 /**

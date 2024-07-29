@@ -38,6 +38,11 @@ const storageThresholds = {
     8: 25000,
 };
 
+const repairThresholds = {
+    [STRUCTURE_ROAD]: { min: 0.2 },
+    [STRUCTURE_RAMPART]: { min: 0.01, max: 0.1 },
+};
+
 const directionDelta = {
     [TOP]: { x: 0, y: -1 },
     [TOP_RIGHT]: { x: 1, y: -1 },
@@ -87,6 +92,7 @@ module.exports = {
     ROAD_PATHING_COST,
     INTERRUPT_PATHING_COST,
     storageThresholds,
+    repairThresholds,
     directionDelta,
     REPLAN_REMOTE_INTERVAL,
     REMOTE_ROAD_RCL,

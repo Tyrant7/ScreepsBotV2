@@ -143,7 +143,7 @@ class BuilderManager extends CreepManager {
                     } else {
                         // If we're in a remote, we'll just pull energy off of haulers traveling by
                         const nearbyHauler = creep.room
-                            .lookAtArea(
+                            .lookForAtArea(
                                 LOOK_CREEPS,
                                 creep.pos.x - 1,
                                 creep.pos.x - 1,
@@ -153,9 +153,9 @@ class BuilderManager extends CreepManager {
                             )
                             .find(
                                 (c) =>
-                                    c.my &&
-                                    c.memory.role === roles.hauler &&
-                                    c.store[RESOURCE_ENERGY]
+                                    c.creep.my &&
+                                    c.creep.memory.role === roles.hauler &&
+                                    c.creep.store[RESOURCE_ENERGY]
                             );
                         // If there is one nearby, let's fill up
                         if (nearbyHauler) {
