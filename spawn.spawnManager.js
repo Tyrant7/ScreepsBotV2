@@ -101,7 +101,7 @@ const demandHandlers = {
 
         // If there's no problems at all, let's nudge towards our current count
         const target = colony.haulers.length - 0.5;
-        return nudge(haulerDemand < target ? 1 : -1);
+        return nudge(haulerDemand < target ? 2 : -2);
     },
     [roles.upgrader]: (colony, set, nudge, bump) => {
         // Priority #1: are upgraders full?
@@ -145,7 +145,7 @@ const demandHandlers = {
 
         // If there's no problems at all, let's nudge towards our current count
         const target = colony.upgraders.length - 0.5;
-        return nudge(upgraderDemand < target ? 1 : -1);
+        return nudge(upgraderDemand < target ? 2 : -2);
     },
     [roles.scout]: (colony, set, nudge, bump) => {
         set(1);
