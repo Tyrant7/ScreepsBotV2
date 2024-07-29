@@ -5,19 +5,28 @@ class DefenseManager {
      */
     run(colony) {
         const enemies = colony.enemies;
-        if (!enemies.length) return;
-
         const towers = colony.structures[STRUCTURE_TOWER];
-        if (!towers) {
+        if (enemies.length) {
             // We have enemies in our room, but no tower
             // Let's try to safemode
-            colony.room.controller.activateSafeMode();
+            if (!towers) {
+                colony.room.controller.activateSafeMode();
+                return;
+            }
+
+            // Otherwise, let's shoot at the first enemy
+            for (const tower of towers) {
+                tower.attack(enemies[0]);
+            }
             return;
         }
 
-        // Otherwise, let's shoot at the first enemy
+        // Let's heal any low health creeps while we're safe
+        const lowCreep = colony.room
+            .find(FIND_MY_CREEPS)
+            .find((c) => c.hits < c.hitsMax);
         for (const tower of towers) {
-            tower.attack(enemies[0]);
+            tower.heal(lowCreep);
         }
     }
 }
