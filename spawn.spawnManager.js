@@ -22,7 +22,6 @@ const profiler = require("./debug.profiler");
 const RAISE_HAULER_THRESHOLD = 2;
 const LOWER_HAULER_THRESHOLD = 2;
 
-const RAISE_UPGRADER_THRESHOLD = 1;
 const LOWER_UPGRADER_THRESHOLD = 2;
 
 /*
@@ -34,6 +33,8 @@ const REPAIR_THRESHOLDS = {
     [STRUCTURE_ROAD]: 0.5,
 };
 */
+
+//#region Demand
 
 /**
  * Demand handlers handle nudging the demand slightly towards
@@ -144,7 +145,7 @@ const demandHandlers = {
                     (storageDropoff && storageAboveThreshold))
             );
         }).length;
-        if (waitingHaulers > RAISE_UPGRADER_THRESHOLD) {
+        if (waitingHaulers) {
             return nudge(waitingHaulers);
         }
 
@@ -189,6 +190,9 @@ const demandHandlers = {
             )
         );
     },
+    [roles.cleaner]: (colony, set, nudge, bump) => {
+        set(colony.invaderCores.length);
+    },
 };
 
 const calculateSupportingColonySpawnDemand = (colony, role) =>
@@ -200,6 +204,10 @@ const calculateSupportingColonySpawnDemand = (colony, role) =>
         );
         return total + Math.max(wanting - existing, 0);
     }, 0);
+
+//#endregion
+
+//#region Events
 
 /**
  * Here we can subscribe to any important colony events that might
@@ -291,6 +299,10 @@ onRCLUpgrade.subscribe((colony, newRCL) => {
     bumpRoleDemand(colony, roles.upgrader, -upgradersEquivalentToNewBuilders);
 });
 
+//#endregion
+
+//#region Spawn Compositions
+
 /**
  * Define how our roles should be spawned.
  * Ordered by spawn priority.
@@ -345,14 +357,18 @@ const spawnsByRole = {
     },
 
     // Expansion creeps, when we have a good eco
+    /*
     [roles.claimer]: (colony) => creepMaker.makeClaimer(),
     [roles.colonizerDefender]: (colony) =>
         creepMaker.makeColonizerDefender(colony.room.energyCapacityAvailable),
     [roles.colonizerBuilder]: (colony) =>
         creepMaker.makeColonizerBuilder(colony.room.energyCapacityAvailable),
+*/
 
     [roles.upgrader]: (colony) =>
         creepMaker.makeUpgrader(colony.room.energyCapacityAvailable),
+    [roles.cleaner]: (colony) =>
+        creepMaker.makeCleaner(colony.room.energyCapacityAvailable),
     [roles.reserver]: (colony) => creepMaker.makeReserver(),
     [roles.scout]: (colony) => creepMaker.makeScout(),
     [roles.builder]: (colony) =>
@@ -367,6 +383,8 @@ const getMinEnergy = (colony) =>
     colony.miners.length && colony.haulers.length
         ? colony.room.energyCapacityAvailable
         : SPAWN_ENERGY_START;
+
+//#endregion
 
 class SpawnManager {
     run(colony) {
