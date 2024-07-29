@@ -1,7 +1,7 @@
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
 const estimateTravelTime = require("./util.estimateTravelTime");
-const { pathSets } = require("./constants");
+const { pathSets, MINIMUM_PICKUP_AMOUNT } = require("./constants");
 
 class HaulerManager extends CreepManager {
     createTask(creep, colony) {
@@ -352,7 +352,7 @@ class HaulerManager extends CreepManager {
                             look[look.type].store[pickup.resourceType]) ||
                         // Filter out amounts less than some small margin to ensure that creeps don't attempt to pickup the same energy
                         (look.type === LOOK_RESOURCES &&
-                            look.resource.amount > 50)
+                            look.resource.amount >= MINIMUM_PICKUP_AMOUNT)
                     );
                 });
 

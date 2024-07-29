@@ -74,6 +74,12 @@ const ROOM_SIZE = 50;
  */
 const SK_PATHING_COST = 100;
 
+/**
+ * For picking up resources with haulers, we'll want to generally avoid picking up too small
+ * amounts which wastes intents. 
+ */
+const MINIMUM_PICKUP_AMOUNT = 50;
+
 module.exports = {
     roles,
     pathSets,
@@ -87,4 +93,5 @@ module.exports = {
     REMOTE_CONTAINER_RCL,
     ROOM_SIZE,
     SK_PATHING_COST,
+    MINIMUM_PICKUP_AMOUNT,
 };

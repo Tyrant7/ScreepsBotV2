@@ -5,6 +5,7 @@ const { roles, ROOM_SIZE } = require("./constants");
 const { MINER_WORK, REMOTE_MINER_WORK } = require("./spawn.spawnConstants");
 const profiler = require("./debug.profiler");
 const { RESERVER_COST } = require("./spawn.creepMaker");
+const { MINIMUM_PICKUP_AMOUNT } = require("./constants");
 
 class Colony {
     /**
@@ -450,6 +451,9 @@ class Colony {
         });
 
         return requests.filter((pickup) => {
+            if (pickup.amount < MINIMUM_PICKUP_AMOUNT) {
+                return false;
+            }
             return (
                 !pickup.isSource ||
                 // Using our core as our distance since we don't want further haulers accepting the orders
