@@ -55,7 +55,9 @@ onRemoteDrop.subscribe((colony, remote) => {
         const room = Game.rooms[b.pos.roomName];
         if (!room) return false;
 
-        const site = room.lookFor(LOOK_CONSTRUCTION_SITES)[0];
+        const site = room
+            .getPositionAt(b.pos.x, b.pos.y)
+            .lookFor(LOOK_CONSTRUCTION_SITES)[0];
         if (!site) return false;
         if (
             site.structureType === STRUCTURE_CONTAINER &&
