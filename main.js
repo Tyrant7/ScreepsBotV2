@@ -22,7 +22,7 @@ if (!Memory.newColonies) {
 global.ME = "Tyrant7";
 global.DEBUG = {
     logTasks: true,
-    alertOnIdle: true,
+    alertOnIdle: false,
 
     generatePixels: false,
 
