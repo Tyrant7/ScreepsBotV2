@@ -24,20 +24,25 @@ class CleanerManager extends CreepManager {
         ];
 
         // Search for the first invader core that isn't taken yet
-        const targetCore =
-            creep.memory.target ||
-            colony.invaderCores.find(
+        let targetID = creep.memory.target;
+        if (!targetID) {
+            const unclaimedCore = colony.invaderCores.find(
                 (core) =>
                     !colony.cleaners.find(
                         (cleaner) => cleaner.memory.target === core.id
                     )
-            ).id;
+            );
+            if (!unclaimedCore) {
+                return;
+            }
+            targetID = unclaimedCore.id;
+        }
         // Idle if we can't find a core to kill
-        if (!targetCore) {
+        if (!targetID) {
             return;
         }
-        creep.memory.target = targetCore;
-        return new Task(targetCore, "clean", actionStack);
+        creep.memory.target = targetID;
+        return new Task(targetID, "clean", actionStack);
     }
 }
 

@@ -125,11 +125,14 @@ class Colony {
                     room.find(FIND_CONSTRUCTION_SITES)
                 );
 
-                this.invaderCores = this.invaderCores.concat(
-                    room
-                        .find(FIND_HOSTILE_STRUCTURES)
-                        .find((s) => s.structureType === STRUCTURE_INVADER_CORE)
-                );
+                const invaderCoreInThisRoom = room
+                    .find(FIND_HOSTILE_STRUCTURES)
+                    .find((s) => s.structureType === STRUCTURE_INVADER_CORE);
+                if (invaderCoreInThisRoom) {
+                    this.invaderCores = this.invaderCores.concat(
+                        invaderCoreInThisRoom
+                    );
+                }
             }
         }
         profiler.endSample("finds");
