@@ -1,6 +1,7 @@
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
 const { getScoutingData } = require("./scouting.scoutingUtility");
+const { pathSets } = require("./constants");
 
 class ReserverManager extends CreepManager {
     /**
@@ -10,66 +11,62 @@ class ReserverManager extends CreepManager {
      * @returns The best fitting task for this creep.
      */
     createTask(creep, colony) {
-        // Assign this reserver to the highest priority remote currently without a reserver
-        if (!creep.memory.targetRoom) {
-            if (!colony.remotePlans) {
-                return null;
-            }
-
-            // Find the first remote that doesn't have a reserver assigned to it
-            // Find the highest priority remote that doesn't have a reserver assigned to it
-            const activeRemotes = colony.remotePlans.filter((r) => {
-                const active = r.active;
-                const reserved =
-                    this.activeTasks.length &&
-                    Object.values(this.activeTasks).find(
-                        (task) =>
-                            task.data.roomName === r.room ||
-                            (getScoutingData(r.room.name).controller &&
-                                task.data.controllerID ===
-                                    getScoutingData(r.room.name).controller.id)
-                    );
-                return active && !reserved;
-            });
-            if (activeRemotes.length) {
-                const targetRemote = activeRemotes.reduce((best, curr) => {
-                    return curr.score / curr.cost > best.score / best.cost
-                        ? curr
-                        : best;
-                });
-                creep.memory.targetRoom = targetRemote.room;
-            }
-
-            // If we still don't have a target room, just wait until a reserver dies
-            if (!creep.memory.targetRoom) {
-                return null;
-            }
-        }
-
-        // If we're in the room, let's perpetually reserve until we die
-        if (creep.room.name === creep.memory.targetRoom) {
-            const controller = creep.room.controller;
-            const actionStack = [];
-            actionStack.push(function (creep, data) {
-                const controller = Game.getObjectById(data.controllerID);
-                if (creep.reserveController(controller) === ERR_NOT_IN_RANGE) {
-                    creep.betterMoveTo(controller);
+        const actionStack = [
+            function (creep, targetID) {
+                const controller = Game.getObjectById(targetID);
+                if (creep.pos.getRangeTo(controller) <= 1) {
+                    if (
+                        controller.reservation &&
+                        controller.reservation.username !== ME
+                    ) {
+                        creep.attackController(controller);
+                        return false;
+                    }
+                    creep.reserveController(controller);
+                    return false;
                 }
-            });
-            return new Task(
-                { controllerID: controller.id },
-                "reserve",
-                actionStack
-            );
-        }
+                creep.betterMoveTo(controller, { pathSet: pathSets.travel });
+            },
+        ];
 
-        // If we're not in the room yet, let's get over there
-        const actionStack = [this.basicActions.moveToRoom];
-        return new Task(
-            { roomName: creep.memory.targetRoom },
-            "move",
-            actionStack
-        );
+        // Search for the first invader core that isn't taken yet
+        let target = creep.memory.target;
+        if (!target) {
+            let firstUnreservedControllerID;
+            let controllerRoom;
+            for (const plan of colony.remotePlans) {
+                if (!plan.active) continue;
+                const roomData = getScoutingData(plan.room);
+                if (!roomData) continue;
+                if (!roomData.controller) continue;
+                if (
+                    colony.reservers.find(
+                        (r) =>
+                            r.memory.target &&
+                            r.memory.target.id === roomData.controller.id
+                    )
+                )
+                    continue;
+                firstUnreservedControllerID = roomData.controller.id;
+                controllerRoom = plan.room;
+                break;
+            }
+            if (!firstUnreservedControllerID) {
+                creep.say("No Cont");
+                return;
+            }
+            target = {
+                id: firstUnreservedControllerID,
+                roomName: controllerRoom,
+            };
+        }
+        creep.memory.target = target;
+
+        // Move to room if not there yet to not risk having no vision
+        if (creep.room.name !== target.roomName) {
+            return new Task(target, "move", [this.basicActions.moveToRoom]);
+        }
+        return new Task(target.id, "reserve", actionStack);
     }
 }
 

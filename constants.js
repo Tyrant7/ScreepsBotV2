@@ -76,7 +76,7 @@ const SK_PATHING_COST = 100;
 
 /**
  * For picking up resources with haulers, we'll want to generally avoid picking up too small
- * amounts which wastes intents. 
+ * amounts which wastes intents.
  */
 const MINIMUM_PICKUP_AMOUNT = 50;
 

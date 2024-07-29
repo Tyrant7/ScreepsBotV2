@@ -2,6 +2,10 @@ const { pathSets } = require("./constants");
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
 
+/**
+ * Cleaners are responsible for removing invader cores that might
+ * be hanging out in our remotes.
+ */
 class CleanerManager extends CreepManager {
     createTask(creep, colony) {
         const actionStack = [
@@ -36,10 +40,6 @@ class CleanerManager extends CreepManager {
                 return;
             }
             targetID = unclaimedCore.id;
-        }
-        // Idle if we can't find a core to kill
-        if (!targetID) {
-            return;
         }
         creep.memory.target = targetID;
         return new Task(targetID, "clean", actionStack);
