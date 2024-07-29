@@ -6,9 +6,9 @@ const { pathSets } = require("./constants");
 class HaulerManager extends CreepManager {
     createTask(creep, colony) {
         if (creep.memory.dropoff) {
-            return this.createDropoffTask(colony, creep, creep.memory.dropoff);
+            return this.createDropoffTask(creep, creep.memory.dropoff);
         } else if (creep.memory.pickup) {
-            return this.createPickupTask(colony, creep, creep.memory.pickup);
+            return this.createPickupTask(creep, creep.memory.pickup);
         }
 
         // Return an appropriate task for the creep
@@ -109,12 +109,7 @@ class HaulerManager extends CreepManager {
                     closestGoalAndPath.goal,
                     closestGoalAndPath.path
                 );
-
-                console.log(
-                    creep.name + " accepting order " + closestDropoff.requestID
-                );
-
-                return this.createDropoffTask(colony, creep, orderInfo);
+                return this.createDropoffTask(creep, orderInfo);
             }
 
             for (const assignedID of closestDropoff.assignedHaulers) {
@@ -146,11 +141,7 @@ class HaulerManager extends CreepManager {
 
                     // We need to create the task first to store the dropoff in our memory to ensure the other
                     // hauler doesn't unknowingly steal it back
-                    const task = this.createDropoffTask(
-                        colony,
-                        creep,
-                        orderInfo
-                    );
+                    const task = this.createDropoffTask(creep, orderInfo);
                     this.createTask(assignedHauler, colony);
                     return task;
                 }
@@ -180,7 +171,7 @@ class HaulerManager extends CreepManager {
         }
     }
 
-    createDropoffTask(colony, creep, reserved) {
+    createDropoffTask(creep, reserved) {
         const actionStack = [
             function (creep, dropoff) {
                 // Our task was stolen, and replacement failed
@@ -199,6 +190,9 @@ class HaulerManager extends CreepManager {
                 }
 
                 // Transfer if within range
+                // TODO //
+                // Try using 2 here instead of 1, since we'll move and pickup
+                // also remove the else below to allow this to happen
                 if (creep.pos.getRangeTo(target) <= 1) {
                     creep.transfer(target, dropoff.resourceType);
                 }
@@ -217,7 +211,6 @@ class HaulerManager extends CreepManager {
         ];
 
         creep.memory.dropoff = reserved;
-        colony.acceptDropoffRequest(reserved.hash, creep.id);
         return new Task(reserved, "dropoff", actionStack);
     }
 
@@ -266,7 +259,7 @@ class HaulerManager extends CreepManager {
                     closestPickup,
                     closestPickupAndPath.path
                 );
-                return this.createPickupTask(colony, creep, orderInfo);
+                return this.createPickupTask(creep, orderInfo);
             }
 
             for (const assignedID of closestPickup.assignedHaulers) {
@@ -291,11 +284,7 @@ class HaulerManager extends CreepManager {
 
                     // We need to create the task first to store the dropoff in our memory to ensure the other
                     // hauler doesn't unknowingly steal it back
-                    const task = this.createPickupTask(
-                        colony,
-                        creep,
-                        orderInfo
-                    );
+                    const task = this.createPickupTask(creep, orderInfo);
                     this.createTask(assignedHauler, colony);
                     return task;
                 }
@@ -322,7 +311,7 @@ class HaulerManager extends CreepManager {
         }
     }
 
-    createPickupTask(colony, creep, reserved) {
+    createPickupTask(creep, reserved) {
         const actionStack = [
             function (creep, pickup) {
                 // Our task was stolen, and replacement failed
@@ -364,6 +353,9 @@ class HaulerManager extends CreepManager {
                 }
 
                 // Pickup!
+                // TODO //
+                // Try using 2 here instead of 1, since we'll move and pickup
+                // also remove the else below to allow this to happen
                 if (creep.pos.getRangeTo(targetPos) <= 1) {
                     // Pickup dropped resources first
                     const dropped = pickupsAtLocation.find(
@@ -402,7 +394,6 @@ class HaulerManager extends CreepManager {
         ];
 
         creep.memory.pickup = reserved;
-        colony.acceptPickupRequest(reserved.hash, creep.id);
         return new Task(reserved, "pickup", actionStack);
     }
 }

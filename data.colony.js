@@ -18,9 +18,6 @@ class Colony {
         }
         this.sources = this.room.find(FIND_SOURCES);
         this.mineral = this.room.find(FIND_MINERALS)[0];
-
-        this._pickupRequests = {};
-        this._dropoffRequests = {};
     }
 
     /**
@@ -147,6 +144,8 @@ class Colony {
 
         // Clear tick caches
         this.wantedStructures = null;
+        this._pickupRequests = {};
+        this._dropoffRequests = {};
 
         profiler.endSample("other init");
     }
@@ -336,10 +335,10 @@ class Colony {
             return;
         }
 
-        // Retain knowledge of assigned haulers between ticks
-        const assignedHaulers = this._pickupRequests[hash]
-            ? this._pickupRequests[hash].assignedHaulers
-            : [];
+        // We'll find all of our haulers associated with this request from previous ticks
+        const assignedHaulers = this.haulers.filter(
+            (h) => h.memory.pickup && h.memory.pickup.hash === hash
+        );
         this._pickupRequests[hash] = {
             requestID: hash,
             tick: Game.time,
@@ -366,9 +365,9 @@ class Colony {
         const hash = this.hashDropoffRequest(dropoffIDs, resourceType);
 
         // Retain knowledge of assigned haulers between ticks
-        const assignedHaulers = this._dropoffRequests[hash]
-            ? this._dropoffRequests[hash].assignedHaulers
-            : [];
+        const assignedHaulers = this.haulers.filter(
+            (h) => h.memory.dropoff && h.memory.dropoff.hash === hash
+        );
         this._dropoffRequests[hash] = {
             requestID: hash,
             tick: Game.time,
@@ -526,11 +525,9 @@ class Colony {
     unassignDropoff(requestID, haulerID) {
         const request = this._dropoffRequests[requestID];
         if (request) {
-            console.log("before: " + JSON.stringify(request.assignedHaulers));
             request.assignedHaulers = request.assignedHaulers.filter(
                 (id) => id !== haulerID
             );
-            console.log("after: " + JSON.stringify(request.assignedHaulers));
         }
     }
 
