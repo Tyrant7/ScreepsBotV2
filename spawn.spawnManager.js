@@ -322,13 +322,6 @@ const spawnsByRole = {
         }
     },
 
-    // Expansion creeps, when we have a good eco
-    [roles.claimer]: (colony) => creepMaker.makeClaimer(),
-    [roles.colonizerDefender]: (colony) =>
-        creepMaker.makeColonizerDefender(colony.room.energyCapacityAvailable),
-    [roles.colonizerBuilder]: (colony) =>
-        creepMaker.makeColonizerBuilder(colony.room.energyCapacityAvailable),
-
     // Eco creeps
     [roles.miner]: (colony) =>
         creepMaker.makeMiner(
@@ -350,6 +343,14 @@ const spawnsByRole = {
             colony.memory.constructionLevel >= REMOTE_ROAD_RCL ? 2 : 1
         );
     },
+
+    // Expansion creeps, when we have a good eco
+    [roles.claimer]: (colony) => creepMaker.makeClaimer(),
+    [roles.colonizerDefender]: (colony) =>
+        creepMaker.makeColonizerDefender(colony.room.energyCapacityAvailable),
+    [roles.colonizerBuilder]: (colony) =>
+        creepMaker.makeColonizerBuilder(colony.room.energyCapacityAvailable),
+
     [roles.upgrader]: (colony) =>
         creepMaker.makeUpgrader(colony.room.energyCapacityAvailable),
     [roles.reserver]: (colony) => creepMaker.makeReserver(),
