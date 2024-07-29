@@ -307,8 +307,8 @@ class Colony {
         return `${pos.x + pos.y * ROOM_SIZE + pos.roomName},${resourceType}`;
     }
 
-    hashDropoffRequest(dropoffIDs, amount, resourceType) {
-        return `${dropoffIDs.toString()}+${amount}${resourceType}`;
+    hashDropoffRequest(dropoffIDs, resourceType) {
+        return `${dropoffIDs.toString()}+${resourceType}`;
     }
 
     /**
@@ -363,7 +363,7 @@ class Colony {
         if (amount === 0) {
             return;
         }
-        const hash = this.hashDropoffRequest(dropoffIDs, amount, resourceType);
+        const hash = this.hashDropoffRequest(dropoffIDs, resourceType);
 
         // Retain knowledge of assigned haulers between ticks
         const assignedHaulers = this._dropoffRequests[hash]
@@ -516,7 +516,6 @@ class Colony {
                 (id) => id !== haulerID
             );
         }
-        delete Game.getObjectById(haulerID).memory.pickup;
     }
 
     /**
@@ -527,11 +526,12 @@ class Colony {
     unassignDropoff(requestID, haulerID) {
         const request = this._dropoffRequests[requestID];
         if (request) {
+            console.log("before: " + JSON.stringify(request.assignedHaulers));
             request.assignedHaulers = request.assignedHaulers.filter(
                 (id) => id !== haulerID
             );
+            console.log("after: " + JSON.stringify(request.assignedHaulers));
         }
-        delete Game.getObjectById(haulerID).memory.dropoff;
     }
 
     // #endregion

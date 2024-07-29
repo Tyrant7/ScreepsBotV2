@@ -6,9 +6,9 @@ const { pathSets } = require("./constants");
 class HaulerManager extends CreepManager {
     createTask(creep, colony) {
         if (creep.memory.dropoff) {
-            return this.createDropoffTask(creep, creep.memory.dropoff);
+            return this.createDropoffTask(colony, creep, creep.memory.dropoff);
         } else if (creep.memory.pickup) {
-            return this.createPickupTask(creep, creep.memory.pickup);
+            return this.createPickupTask(colony, creep, creep.memory.pickup);
         }
 
         // Return an appropriate task for the creep
@@ -109,7 +109,12 @@ class HaulerManager extends CreepManager {
                     closestGoalAndPath.goal,
                     closestGoalAndPath.path
                 );
-                return this.createDropoffTask(creep, orderInfo);
+
+                console.log(
+                    creep.name + " accepting order " + closestDropoff.requestID
+                );
+
+                return this.createDropoffTask(colony, creep, orderInfo);
             }
 
             for (const assignedID of closestDropoff.assignedHaulers) {
@@ -129,8 +134,25 @@ class HaulerManager extends CreepManager {
                         closestDropoff.requestID,
                         assignedHauler.id
                     );
+                    delete assignedHauler.memory.dropoff;
+
+                    console.log(
+                        creep.name +
+                            " stealing order " +
+                            closestDropoff.requestID +
+                            " from " +
+                            assignedHauler.name
+                    );
+
+                    // We need to create the task first to store the dropoff in our memory to ensure the other
+                    // hauler doesn't unknowingly steal it back
+                    const task = this.createDropoffTask(
+                        colony,
+                        creep,
+                        orderInfo
+                    );
                     this.createTask(assignedHauler, colony);
-                    return this.createDropoffTask(creep, orderInfo);
+                    return task;
                 }
             }
 
@@ -142,22 +164,23 @@ class HaulerManager extends CreepManager {
         this.alertIdleCreep(creep, "D");
 
         function acceptOrder(dropoff, pos, path) {
-            colony.acceptDropoffRequest(dropoff.requestID, creep.id);
             creep.injectPath(path, pos);
 
             // Let's construct the object we want to store in memory
             // We only care about the dropoff ID we selected, plus the type and amount
+            // And a key for us to relink this hauler to this request in case of a global reset
             return {
                 amount: dropoff.amount,
                 resourceType: dropoff.resourceType,
                 id: dropoff.dropoffIDs.find((id) =>
                     Game.getObjectById(id).pos.isEqualTo(pos)
                 ),
+                hash: dropoff.requestID,
             };
         }
     }
 
-    createDropoffTask(creep, reserved) {
+    createDropoffTask(colony, creep, reserved) {
         const actionStack = [
             function (creep, dropoff) {
                 // Our task was stolen, and replacement failed
@@ -169,18 +192,15 @@ class HaulerManager extends CreepManager {
                 const target = Game.getObjectById(dropoff.id);
                 if (
                     !target ||
-                    !target.store.getFreeCapacity(dropoff.resourceType)
+                    !target.store.getFreeCapacity(dropoff.resourceType) ||
+                    !creep.store[dropoff.resourceType]
                 ) {
-                    delete creep.memory.dropoff;
                     return true;
                 }
 
                 // Transfer if within range
                 if (creep.pos.getRangeTo(target) <= 1) {
-                    if (creep.transfer(target, dropoff.resourceType) === OK) {
-                        // Complete the task next tick
-                        delete creep.memory.dropoff;
-                    }
+                    creep.transfer(target, dropoff.resourceType);
                 }
                 // Otherwise, move
                 else {
@@ -190,9 +210,14 @@ class HaulerManager extends CreepManager {
                 }
                 return false;
             },
+            function (creep, dropoff) {
+                delete creep.memory.dropoff;
+                return true;
+            },
         ];
 
         creep.memory.dropoff = reserved;
+        colony.acceptDropoffRequest(reserved.hash, creep.id);
         return new Task(reserved, "dropoff", actionStack);
     }
 
@@ -241,7 +266,7 @@ class HaulerManager extends CreepManager {
                     closestPickup,
                     closestPickupAndPath.path
                 );
-                return this.createPickupTask(creep, orderInfo);
+                return this.createPickupTask(colony, creep, orderInfo);
             }
 
             for (const assignedID of closestPickup.assignedHaulers) {
@@ -262,8 +287,17 @@ class HaulerManager extends CreepManager {
                         closestPickup.requestID,
                         assignedHauler.id
                     );
+                    delete assignedHauler.memory.pickup;
+
+                    // We need to create the task first to store the dropoff in our memory to ensure the other
+                    // hauler doesn't unknowingly steal it back
+                    const task = this.createPickupTask(
+                        colony,
+                        creep,
+                        orderInfo
+                    );
                     this.createTask(assignedHauler, colony);
-                    return this.createPickupTask(creep, orderInfo);
+                    return task;
                 }
             }
 
@@ -275,7 +309,6 @@ class HaulerManager extends CreepManager {
         this.alertIdleCreep(creep, "P");
 
         function acceptOrder(pickup, path) {
-            colony.acceptPickupRequest(pickup.requestID, creep.id);
             creep.injectPath(path, pickup.pos);
 
             // Let's construct the object we want to store in memory
@@ -284,11 +317,12 @@ class HaulerManager extends CreepManager {
                 amount: pickup.amount,
                 resourceType: pickup.resourceType,
                 pos: pickup.pos,
+                hash: pickup.requestID,
             };
         }
     }
 
-    createPickupTask(creep, reserved) {
+    createPickupTask(colony, creep, reserved) {
         const actionStack = [
             function (creep, pickup) {
                 // Our task was stolen, and replacement failed
@@ -299,14 +333,12 @@ class HaulerManager extends CreepManager {
 
                 // Can't pickup anything else -> find a dropoff location
                 if (!creep.store.getFreeCapacity()) {
-                    delete creep.memory.pickup;
                     return true;
                 }
 
                 // We won't be able to access our pickup point
                 // Let's cancel the request for now
                 if (!Game.rooms[pickup.pos.roomName]) {
-                    delete creep.memory.pickup;
                     return true;
                 }
 
@@ -328,7 +360,6 @@ class HaulerManager extends CreepManager {
                 });
 
                 if (!pickupsAtLocation.length) {
-                    delete creep.memory.pickup;
                     return true;
                 }
 
@@ -356,7 +387,6 @@ class HaulerManager extends CreepManager {
                     }
 
                     // Nothing left to pickup
-                    delete creep.memory.pickup;
                     return true;
                 } else {
                     creep.betterMoveTo(targetPos, {
@@ -365,9 +395,14 @@ class HaulerManager extends CreepManager {
                 }
                 return false;
             },
+            function (creep, pickup) {
+                delete creep.memory.pickup;
+                return true;
+            },
         ];
 
         creep.memory.pickup = reserved;
+        colony.acceptPickupRequest(reserved.hash, creep.id);
         return new Task(reserved, "pickup", actionStack);
     }
 }

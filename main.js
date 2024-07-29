@@ -305,10 +305,29 @@ const runCreeps = () => {
             creep.say("Missing");
         }
     }
+
     // We'll process all haulers after ordinary creeps, in case other creeps created orders this tick
     for (const colony of Object.values(colonies)) {
         // Cleanup orders for this tick before running haulers
         colony.finalizeRequests();
+
+        if (colony.room.name === "W7N3") {
+            console.log(
+                JSON.stringify(
+                    colony.getDropoffRequests(RESOURCE_ENERGY).map((r) => {
+                        return {
+                            id: r.requestID,
+                            pos: Game.getObjectById(r.dropoffIDs[0]).pos,
+                            t: r.tick,
+                            haulers: r.assignedHaulers.map(
+                                (h) => Game.getObjectById(h).pos
+                            ),
+                            enough: r.hasEnough,
+                        };
+                    })
+                )
+            );
+        }
 
         for (const hauler of colony.haulers) {
             profiler.wrap(hauler.memory.role, () =>
