@@ -96,9 +96,11 @@ class SpawnGroup {
     /**
      * Iterates over the spawn profiles in order of priority to find the next one in need of spawning.
      * @param {Colony} colony The colony to determine the next spawn for.
+     * @param {{ [role: string]: number }} spawnsThisTick An object with the number spawns already scheduled this tick
+     * for this colony. Undefined if none.
      * @return {SpawnRequest} A newly created `SpawnRequest object with the necessary spawning info.
      */
-    getNextSpawn(colony) {
+    getNextSpawn(colony, spawnsThisTick) {
         for (const role in this.profiles) {
             // Here we have to look for the key rather than use the value of the role,
             // since that's what's used in the Colony object
@@ -106,9 +108,10 @@ class SpawnGroup {
                 (r) => roles[r] === role
             );
 
-            const demand = getRoleDemand(colony, role);
+            const demand = getRoleDemand(colony, role).value;
             const current = colony[matchingRole + "s"].length;
-            if (demand > current) {
+            const scheduled = spawnsThisTick[role] || 0;
+            if (demand > current + scheduled) {
                 const profile = this.profiles[role];
                 const newCreep = profile.make(colony);
 
@@ -169,6 +172,7 @@ const defense = new SpawnGroup(
         },
     },
     (colony) => {
+        // TODO
         return 0;
     }
 );
@@ -206,6 +210,7 @@ const production = new SpawnGroup(
         },
     },
     (colony) => {
+        // TODO
         return 0;
     }
 );
@@ -284,6 +289,7 @@ const transport = new SpawnGroup(
         },
     },
     (colony) => {
+        // TODO
         return 0;
     }
 );
@@ -418,6 +424,7 @@ const usage = new SpawnGroup(
         },
     },
     (colony) => {
+        // TODO
         return 0;
     }
 );
