@@ -1,5 +1,5 @@
 const RemoteManager = require("./remote.remoteManager");
-const SpawnManager = require("./spawn.spawnManager-old");
+const SpawnManager = require("./spawn.spawnManager");
 
 const remoteManager = new RemoteManager();
 const spawnManager = new SpawnManager();
