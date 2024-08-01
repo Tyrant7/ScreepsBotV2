@@ -1,36 +1,19 @@
-/**
- * @typedef {Object} SpawnGroup A spawn group is responsible for spawning creeps that complete a
- * specific goal for our colony, like harvesting energy, transport, or spending.
- * @property {() => number} getPriority Function to determine priority of this group.
- * @property {{[key: string]: SpawnProfile}} profiles An object mapping roles to the spawn profiles. The profiles
- * will be in order of priority.
- */
-
-/**
- * @typedef {Object} SpawnProfile A spawn profile is an object that contains all necessary information
- * about spawning a particular type of creep.
- * @property {(colony, set, nudge, bump) => void} handleDemand Handles determining spawn demand for this creep in
- * the given colony. Demand can be modified instantaneously through a `set` command, spiked in a particular direction
- * using a `bump` command, or gradually slid in a direction with a `nudge` command.
- * @property {(colony) => } make Handles creation of the spawn request for this type of creep.
-
-/**
- * @typedef SpawnRequest An object with a creep body, name, and initial memory for the newly planned creep.
- * @property {BodyPartConstant[]} body The body parts for the new creep.
- * @property {string} name The name of the new creep.
- * @property {{ role: string }} memory An object with any data needed to initialize the creep. Strongly recommend
- * to include the creep's role.
- */
-
 const {
     roles,
     storageThresholds,
     REMOTE_ROAD_RCL,
     REMOTE_CONTAINER_RCL,
 } = require("./constants");
-const { MIN_MAX_DEMAND, getRoleDemand } = require("./spawn.demandHandler");
+const {
+    MIN_MAX_DEMAND,
+    getRoleDemand,
+    setRoleDemand,
+    nudgeRoleDemand,
+    bumpRoleDemand,
+} = require("./spawn.demandHandler");
 
 const creepMaker = require("./spawn.creepMaker");
+const Colony = require("./data.colony");
 
 const RAISE_HAULER_THRESHOLD = 2;
 const LOWER_HAULER_THRESHOLD = 2;
@@ -56,11 +39,99 @@ const calculateMinEnergy = (colony) =>
 
 //#endregion
 
+//#region Types
+
+/**
+ * @typedef SpawnRequest An object with a creep body, name, and initial memory for the newly planned creep.
+ * @property {BodyPartConstant[]} body The body parts for the new creep.
+ * @property {string} name The name of the new creep.
+ * @property {{ role: string }} memory An object with any data needed to initialize the creep. Strongly recommend
+ * to include the creep's role.
+ */
+
+/**
+ * @typedef {Object} SpawnProfile
+ * @property {(colony: Colony,
+ *  set: (amount: number) => void,
+ *  nudge: (amount: number) => void,
+ *  bump: (amount: number) => void) => void
+ * } handleDemand Handles determining spawn demand for this creep in
+ * the given colony. Demand can be modified instantaneously through a `set` command, spiked in a particular direction
+ * using a `bump` command, or gradually slid in a direction with a `nudge` command.
+ * @property {(colony: Colony) => SpawnRequest} make Handles creation of the spawn request for this type of creep.
+ */
+
+/**
+ * A spawn group is responsible for spawning creeps that complete a
+ * specific goal for our colony, like harvesting energy, transport, or spending.
+ */
+class SpawnGroup {
+    /**
+     * Initializes this group with the given spawn profiles.
+     * @param {{[key: string]: SpawnProfile}} profiles An object mapping roles to the spawn profiles in order of their priority.
+     * @param {(colony: Colony) => number} getPriority Function to determine priority of this group for the given colony.
+     * will be in order of priority.
+     */
+    constructor(profiles, getPriority) {
+        this.profiles = profiles;
+        this.getPriority = getPriority;
+    }
+
+    /**
+     * Runs through all spawn profiles and calls their `handleDemand` method.
+     * @param {Colony} colony The colony to update demands for.
+     */
+    updateDemands(colony) {
+        for (const role in this.profiles) {
+            const profile = this.profiles[role];
+            profile.handleDemand(
+                colony,
+                (amount) => setRoleDemand(colony, role, amount),
+                (amount) => nudgeRoleDemand(colony, role, amount),
+                (amount) => bumpRoleDemand(colony, role, amount)
+            );
+        }
+    }
+
+    /**
+     * Iterates over the spawn profiles in order of priority to find the next one in need of spawning.
+     * @param {Colony} colony The colony to determine the next spawn for.
+     * @return {SpawnRequest} A newly created `SpawnRequest object with the necessary spawning info.
+     */
+    getNextSpawn(colony) {
+        for (const role in this.profiles) {
+            // Here we have to look for the key rather than use the value of the role,
+            // since that's what's used in the Colony object
+            const matchingRole = Object.keys(roles).find(
+                (r) => roles[r] === role
+            );
+
+            const demand = getRoleDemand(colony, role);
+            const current = colony[matchingRole + "s"].length;
+            if (demand > current) {
+                const profile = this.profiles[role];
+                const newCreep = profile.make(colony);
+
+                // If we can't afford the new creep, let's ignore it
+                if (
+                    getCost(newCreep.body) >
+                        colony.room.energyCapacityAvailable ||
+                    !newCreep.body.length
+                ) {
+                    continue;
+                }
+                return newCreep;
+            }
+        }
+    }
+}
+
+//#endregion
+
 //#region Groups
 
-const defense = {
-    getPriority: () => {},
-    profiles: {
+const defense = new SpawnGroup(
+    {
         [roles.defender]: {
             handleDemand: (colony, set, nudge, bump) => {
                 const diff = Math.max(
@@ -97,11 +168,13 @@ const defense = {
             },
         },
     },
-};
+    (colony) => {
+        return 0;
+    }
+);
 
-const production = {
-    getPriority: () => {},
-    profiles: {
+const production = new SpawnGroup(
+    {
         [roles.miner]: {
             handleDemand: (colony, set, nudge, bump) => {
                 // If we have an open site, nudge miners
@@ -120,6 +193,10 @@ const production = {
                     colony.memory.constructionLevel >= REMOTE_CONTAINER_RCL
                 ),
         },
+        [roles.reserver]: {
+            handleDemand: () => {},
+            make: (colony) => creepMaker.makeReserver(),
+        },
         [roles.cleaner]: {
             handleDemand: (colony, set, nudge, bump) => {
                 set(colony.invaderCores.length);
@@ -127,16 +204,14 @@ const production = {
             make: (colony) =>
                 creepMaker.makeCleaner(colony.room.energyCapacityAvailable),
         },
-        [roles.reserver]: {
-            handleDemand: () => {},
-            make: (colony) => creepMaker.makeReserver(),
-        },
     },
-};
+    (colony) => {
+        return 0;
+    }
+);
 
-const transport = {
-    getPriority: () => {},
-    profiles: {
+const transport = new SpawnGroup(
+    {
         [roles.hauler]: {
             handleDemand: (colony, set, nudge, bump) => {
                 // Reduce proportional to the number of idle haulers
@@ -208,11 +283,13 @@ const transport = {
             },
         },
     },
-};
+    (colony) => {
+        return 0;
+    }
+);
 
-const usage = {
-    getPriority: () => {},
-    profiles: {
+const usage = new SpawnGroup(
+    {
         [roles.repairer]: {
             handleDemand: (colony, set, nudge, bump) => {
                 set(colony.remotesNeedingRepair.length ? 1 : 0);
@@ -340,7 +417,10 @@ const usage = {
                 creepMaker.makeUpgrader(colony.room.energyCapacityAvailable),
         },
     },
-};
+    (colony) => {
+        return 0;
+    }
+);
 
 //#endregion
 
