@@ -1,9 +1,11 @@
 const { roles } = require("./constants");
 const {
     ensureDefaults,
+    getRoleDemand,
     setRoleDemand,
     DEFAULT_DEMANDS,
 } = require("./spawn.demandHandler");
+const overlay = require("./debug.overlay");
 
 const spawnGroups = require("./spawn.spawnGroups");
 require("./spawn.spawnEvents");
