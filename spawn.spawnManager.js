@@ -6,6 +6,7 @@ const {
 } = require("./spawn.demandHandler");
 
 const spawnGroups = require("./spawn.spawnGroups");
+require("./spawn.spawnEvents");
 
 class SpawnManager {
     run(colony) {
@@ -147,3 +148,5 @@ class SpawnManager {
         }
     }
 }
+
+module.exports = SpawnManager;
