@@ -1,6 +1,6 @@
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
-const { pathSets } = require("./constants");
+const { roles, pathSets } = require("./constants");
 
 /**
  * The number of ticks a builder will request energy before it's finished using its current store.
@@ -159,7 +159,7 @@ class BuilderManager extends CreepManager {
                             );
                         // If there is one nearby, let's fill up
                         if (nearbyHauler) {
-                            nearbyHauler.transfer(creep, RESOURCE_ENERGY);
+                            nearbyHauler.creep.transfer(creep, RESOURCE_ENERGY);
                         }
                     }
 

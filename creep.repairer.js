@@ -1,6 +1,6 @@
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
-const { pathSets } = require("./constants");
+const { roles, pathSets } = require("./constants");
 const { onRemoteDrop } = require("./event.colonyEvents");
 
 /**
@@ -105,7 +105,7 @@ class RepairerManager extends CreepManager {
                         );
                     // If there is one nearby, let's fill up
                     if (nearbyHauler) {
-                        nearbyHauler.transfer(creep, RESOURCE_ENERGY);
+                        nearbyHauler.creep.transfer(creep, RESOURCE_ENERGY);
                     }
                 }
 
