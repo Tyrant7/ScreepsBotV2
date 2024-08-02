@@ -234,6 +234,21 @@ const getSortedGroups = (colony) => {
         return [defense, production, usage, transport];
     }
 
+    // If we have haulers waiting for dropoffs, let's spawn spenders
+    const waitingHaulers = colony.haulers.filter(
+        (hauler) =>
+            hauler.store.getUsedCapacity() > 0 &&
+            (!(hauler.memory.dropoff || hauler.memory.returning) ||
+                (colony.room.storage &&
+                    colony.room.storage.store[RESOURCE_ENERGY] >
+                        storageThresholds[colony.room.controller.level] &&
+                    hauler.memory.dropoff &&
+                    hauler.memory.dropoff.id === colony.room.storage.id))
+    );
+    if (waitingHaulers.length) {
+        return [defense, usage, production, transport];
+    }
+
     // If we have lots of untended pickups, let's spawn transporters
     // Note that we're doing this after checking for users to avoid
     // spawning haulers forever if we have no users
@@ -249,21 +264,6 @@ const getSortedGroups = (colony) => {
         .filter((r) => !r.hasEnough);
     if (untendedPickups.length > MAX_UNTENDED_PICKUPS) {
         return [defense, transport, usage, production];
-    }
-
-    // If we have haulers waiting for dropoffs, let's spawn spenders
-    const waitingHaulers = colony.haulers.filter(
-        (hauler) =>
-            hauler.store.getUsedCapacity() > 0 &&
-            (!(hauler.memory.dropoff || hauler.memory.returning) ||
-                (colony.room.storage &&
-                    colony.room.storage.store[RESOURCE_ENERGY] >
-                        storageThresholds[colony.room.controller.level] &&
-                    hauler.memory.dropoff &&
-                    hauler.memory.dropoff.id === colony.room.storage.id))
-    );
-    if (waitingHaulers.length) {
-        return [defense, usage, production, transport];
     }
 
     // If our upgraders aren't full, let's avoid spawning spenders
