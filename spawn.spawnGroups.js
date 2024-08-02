@@ -210,7 +210,7 @@ const usage = new SpawnGroup("usage", {
         const emptyUpgraders = colony.upgraders.filter(
             (upgrader) => !upgrader.store[RESOURCE_ENERGY]
         );
-        if (emptyUpgraders) return;
+        if (emptyUpgraders.length) return;
         return creepMaker.makeUpgrader(colony.room.energyCapacityAvailable);
     },
 });
