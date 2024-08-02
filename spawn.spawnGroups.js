@@ -225,7 +225,18 @@ const getSortedGroups = (colony) => {
         return [transport];
     }
 
+    // If we have idle haulers, let's spawn producers
+    const idleHaulers = colony.haulers.filter(
+        (hauler) =>
+            hauler.store.getUsedCapacity() === 0 && !hauler.memory.pickup
+    );
+    if (idleHaulers.length) {
+        return [defense, production, usage, transport];
+    }
+
     // If we have lots of untended pickups, let's spawn transporters
+    // Note that we're doing this after checking for users to avoid
+    // spawning haulers forever if we have no users
     const MAX_UNTENDED_PICKUPS = 2;
     const averageHaulerSize =
         creepMaker
@@ -238,15 +249,6 @@ const getSortedGroups = (colony) => {
         .filter((r) => !r.hasEnough);
     if (untendedPickups.length > MAX_UNTENDED_PICKUPS) {
         return [defense, transport, usage, production];
-    }
-
-    // If we have idle haulers, let's spawn producers
-    const idleHaulers = colony.haulers.filter(
-        (hauler) =>
-            hauler.store.getUsedCapacity() === 0 && !hauler.memory.pickup
-    );
-    if (idleHaulers.length) {
-        return [defense, production, usage, transport];
     }
 
     // If we have haulers waiting for dropoffs, let's spawn spenders
