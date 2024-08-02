@@ -221,7 +221,7 @@ const getSortedGroups = (colony) => {
     if (!colony.miners.length) {
         return [production];
     }
-    if (!colony.haulers.length || colony.starterHaulers.length) {
+    if (!colony.haulers.length && !colony.starterHaulers.length) {
         return [transport];
     }
 
