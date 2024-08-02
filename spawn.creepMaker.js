@@ -58,7 +58,7 @@ const makeHauler = (energy, ratio = 2) => {
 const makeStarterHauler = () => {
     return {
         body: [MOVE, CARRY],
-        name: "Baby Hauler " + Game.time + " [" + 1 + "]",
+        name: "Baby_Hauler " + Game.time + " [" + 1 + "]",
         memory: { role: roles.starterHauler },
     };
 };
