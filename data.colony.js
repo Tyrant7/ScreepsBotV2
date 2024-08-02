@@ -7,7 +7,6 @@ const profiler = require("./debug.profiler");
 const { RESERVER_COST } = require("./spawn.creepMaker");
 const { MINIMUM_PICKUP_AMOUNT } = require("./constants");
 const { repairThresholds } = require("./constants");
-const { onRemoteDrop } = require("./event.colonyEvents");
 
 class Colony {
     /**
@@ -102,6 +101,7 @@ class Colony {
         }
 
         this.remotePlans = remoteUtility.getRemotePlans(this.room.name);
+        this.remoteRooms = [];
         if (this.remotePlans) {
             // Get all rooms of our active remotes for construction site and enemy searching
             const remoteRooms = new Set();
@@ -145,6 +145,7 @@ class Colony {
                     }
                 }
             }
+            this.remoteRooms = [...remoteRooms];
             for (const roomName of remoteRooms) {
                 const room = Game.rooms[roomName];
                 if (!room) continue;

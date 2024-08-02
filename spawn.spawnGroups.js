@@ -104,262 +104,129 @@ class SpawnGroup {
 //#region Groups
 
 const defense = new SpawnGroup({
-    [roles.defender]: {
-        handleDemand: (colony, set, nudge, bump) => {
-            const diff = Math.max(
-                colony.remoteEnemies.length - colony.defenders.length,
-                0
-            );
-            set(diff);
-        },
-        make: (colony) => {
-            if (colony.remoteEnemies.length) {
-                // Find our strongest enemy
-                const mostFightParts = colony.remoteEnemies.reduce(
-                    (strongest, curr) => {
-                        const fightParts = curr.body.filter(
-                            (p) =>
-                                p.type === RANGED_ATTACK ||
-                                p.type === ATTACK ||
-                                p.type === HEAL
-                        ).length;
-                        return fightParts > strongest ? fightParts : strongest;
-                    },
-                    0
-                );
+    [roles.defender]: (colony) => {
+        if (colony.remoteEnemies.length <= colony.defenders.length) return;
 
-                // Make an appropriately sized defender
-                // i.e. one level larger in size
-                return creepMaker.makeMiniDefender(
-                    Math.ceil(mostFightParts / 4) + 1,
-                    colony.room.energyCapacityAvailable
-                );
-            }
-        },
+        // Find our strongest enemy
+        const mostFightParts = colony.remoteEnemies.reduce(
+            (strongest, curr) => {
+                const fightParts = curr.body.filter(
+                    (p) =>
+                        p.type === RANGED_ATTACK ||
+                        p.type === ATTACK ||
+                        p.type === HEAL
+                ).length;
+                return fightParts > strongest ? fightParts : strongest;
+            },
+            0
+        );
+
+        // Make an appropriately sized defender
+        // i.e. one level larger in size
+        return creepMaker.makeMiniDefender(
+            Math.ceil(mostFightParts / 4) + 1,
+            colony.room.energyCapacityAvailable
+        );
     },
 });
 
 const production = new SpawnGroup({
-    [roles.miner]: {
-        handleDemand: (colony, set, nudge, bump) => {
-            // If we have an open site, nudge miners
-            if (colony.getFirstOpenMiningSite()) {
-                return nudge(2);
-            }
-            // Otherwise, let's keep our miner count at the number of working miners
-            const assignedMiners = colony.miners.filter(
-                (miner) => miner.memory.miningSite
-            );
-            return set(assignedMiners.length - 0.5);
-        },
-        make: (colony) =>
-            creepMaker.makeMiner(
-                calculateMinEnergy(colony),
-                colony.memory.constructionLevel >= REMOTE_CONTAINER_RCL
-            ),
+    [roles.miner]: (colony) => {
+        if (!colony.getFirstOpenMiningSite()) return;
+        return creepMaker.makeMiner(
+            calculateMinEnergy(colony),
+            colony.memory.constructionLevel >= REMOTE_CONTAINER_RCL
+        );
     },
-    [roles.reserver]: {
-        handleDemand: () => {},
-        make: (colony) => creepMaker.makeReserver(),
+    [roles.reserver]: (colony) => {
+        if (colony.reservers.length >= colony.remoteRooms.length) return;
+        return creepMaker.makeReserver();
     },
-    [roles.cleaner]: {
-        handleDemand: (colony, set, nudge, bump) => {
-            set(colony.invaderCores.length);
-        },
-        make: (colony) =>
-            creepMaker.makeCleaner(colony.room.energyCapacityAvailable),
+    [roles.cleaner]: (colony) => {
+        if (colony.invaderCores.length <= colony.cleaners.length) return;
+        return creepMaker.makeCleaner(colony.room.energyCapacityAvailable);
     },
 });
 
 const transport = new SpawnGroup({
-    [roles.hauler]: {
-        handleDemand: (colony, set, nudge, bump) => {
-            // Reduce proportional to the number of idle haulers
-            // Idle meaning empty and not picking up
-            const idleHaulers = colony.haulers.filter(
-                (hauler) =>
-                    hauler.store.getUsedCapacity() === 0 &&
-                    !hauler.memory.pickup
-            ).length;
-            const workingHaulers = colony.haulers.length - idleHaulers;
-            const haulerDemand = getRoleDemand(colony, roles.hauler).value;
-            if (
-                idleHaulers >= LOWER_HAULER_THRESHOLD &&
-                haulerDemand >= workingHaulers
-            ) {
-                return nudge(-idleHaulers);
-            }
-
-            // We'll consider haulers of the current spawn size
-            const currentHaulerSize =
-                creepMaker
-                    .makeHauler(colony.room.energyCapacityAvailable)
-                    .body.filter((p) => p === CARRY).length * CARRY_CAPACITY;
-            const untendedPickups = colony
-                .getPickupRequests({
-                    store: { getCapacity: () => currentHaulerSize },
-                })
-                .filter(
-                    (r) =>
-                        r.assignedHaulers.length * currentHaulerSize < r.amount
-                );
-            // Don't increase our demand if we have haulers waiting on orders
-            const waitingHaulers = colony.haulers.filter(
-                (hauler) =>
-                    hauler.store.getUsedCapacity() > 0 &&
-                    !(hauler.memory.dropoff || hauler.memory.returning)
-            ).length;
-
-            // Initially we won't be able to raise our count
-            // because only 1 request will be able to exist
-            const threshold = Math.min(
-                colony.miners.length,
-                RAISE_HAULER_THRESHOLD
-            );
-            if (untendedPickups.length >= threshold && !waitingHaulers) {
-                return nudge(untendedPickups.length - threshold + 1);
-            }
-
-            // If there's no problems at all, let's nudge towards our current count
-            const target = colony.haulers.length - 0.5;
-            return nudge(haulerDemand < target ? 2 : -2);
-        },
-        make: (colony) => {
-            if (
-                colony.haulers.length === 0 &&
-                colony.starterHaulers.length === 0 &&
-                colony.room.controller.level === 1
-            ) {
-                // If we're just starting out, we'll make a special small hauler
-                // that will become a scout in the future
-                return creepMaker.makeStarterHauler();
-            }
-            return creepMaker.makeHauler(
-                calculateMinEnergy(colony),
-                colony.memory.constructionLevel >= REMOTE_ROAD_RCL ? 2 : 1
-            );
-        },
+    [roles.hauler]: (colony) => {
+        if (
+            colony.haulers.length === 0 &&
+            colony.starterHaulers.length === 0 &&
+            colony.room.controller.level === 1
+        ) {
+            // If we're just starting out, we'll make a special small hauler
+            // that will become a scout in the future
+            return creepMaker.makeStarterHauler();
+        }
+        return creepMaker.makeHauler(
+            calculateMinEnergy(colony),
+            colony.memory.constructionLevel >= REMOTE_ROAD_RCL ? 2 : 1
+        );
     },
 });
 
 const usage = new SpawnGroup({
-    [roles.repairer]: {
-        handleDemand: (colony, set, nudge, bump) => {
-            set(colony.remotesNeedingRepair.length ? 1 : 0);
-        },
-        make: (colony) =>
-            creepMaker.makeRepairer(colony.room.energyCapacityAvailable),
+    [roles.repairer]: (colony) => {
+        if (!colony.remotesNeedingRepair.length || colony.repairers.length)
+            return;
+        return creepMaker.makeRepairer(colony.room.energyCapacityAvailable);
     },
-    [roles.scout]: {
-        handleDemand: (colony, set, nudge, bump) => {
-            set(1);
-        },
-        make: (colony) => creepMaker.makeScout(),
+    [roles.scout]: (colony) => {
+        if (colony.scouts.length) return;
+        return creepMaker.makeScout();
     },
-    [roles.builder]: {
-        handleDemand: (colony, set, nudge, bump) => {
-            if (colony.miners.length >= colony.sources.length) {
-                if (colony.constructionSites.length > 1) {
-                    return set(MIN_MAX_DEMAND[roles.builder].max);
-                }
-                if (colony.constructionSites.length === 1) {
-                    return set(0.5);
-                }
-            }
-            return set(0);
-        },
-        make: (colony) =>
-            creepMaker.makeBuilder(colony.room.energyCapacityAvailable),
+    [roles.builder]: (colony) => {
+        if (
+            !colony.constructionSites.length ||
+            colony.builders.length >= MIN_MAX_DEMAND[roles.builder].max
+        )
+            return;
+        return creepMaker.makeBuilder(colony.room.energyCapacityAvailable);
     },
-    [roles.claimer]: {
-        handleDemand: (colony, set, nudge, bump) => {
-            set(calculateSupportingColonySpawnDemand(colony, roles.claimer));
-        },
-        make: (colony) => creepMaker.makeClaimer(),
+    [roles.claimer]: (colony) => {
+        if (
+            colony.claimers.length >=
+            calculateSupportingColonySpawnDemand(colony, roles.claimer)
+        )
+            return;
+        return creepMaker.makeClaimer();
     },
-    [roles.colonizerBuilder]: {
-        handleDemand: (colony, set, nudge, bump) => {
-            set(
-                calculateSupportingColonySpawnDemand(
-                    colony,
-                    roles.colonizerBuilder
-                )
-            );
-        },
-        make: (colony) =>
-            creepMaker.makeColonizerBuilder(
-                colony.room.energyCapacityAvailable
-            ),
+    [roles.colonizerBuilder]: (colony) => {
+        if (
+            colony.colonizerBuilders.length >=
+            calculateSupportingColonySpawnDemand(colony, roles.colonizerBuilder)
+        )
+            return;
+        return creepMaker.makeColonizerBuilder(
+            colony.room.energyCapacityAvailable
+        );
     },
-    [roles.colonizerDefender]: {
-        handleDemand: (colony, set, nudge, bump) => {
-            set(
-                calculateSupportingColonySpawnDemand(
-                    colony,
-                    roles.colonizerDefender
-                )
-            );
-        },
-        make: (colony) =>
-            creepMaker.makeColonizerDefender(
-                colony.room.energyCapacityAvailable
-            ),
+    [roles.colonizerDefender]: (colony) => {
+        if (
+            colony.colonizerDefenders.length >=
+            calculateSupportingColonySpawnDemand(
+                colony,
+                roles.colonizerDefender
+            )
+        )
+            return;
+        return creepMaker.makeColonizerDefender(
+            colony.room.energyCapacityAvailable
+        );
     },
-    [roles.mineralMiner]: {
-        handleDemand: (colony, set, nudge, bump) => {
-            const amount = colony.structures[STRUCTURE_EXTRACTOR] ? 1 : 0;
-            set(amount);
-        },
-        make: (colony) =>
-            creepMaker.makeMineralMiner(colony.room.energyCapacityAvailable),
+    [roles.mineralMiner]: (colony) => {
+        if (
+            colony.mineralMiners.length ||
+            !colony.structures[STRUCTURE_EXTRACTOR]
+        )
+            return;
+        return creepMaker.makeMineralMiner(colony.room.energyCapacityAvailable);
     },
-    [roles.upgrader]: {
-        handleDemand: (colony, set, nudge, bump) => {
-            // Priority #1: are upgraders full?
-            const upgraders = colony.upgraders;
-            const fullUpgraders = upgraders.filter(
-                (upgrader) =>
-                    upgrader.pos.getRangeTo(colony.room.controller.pos) <= 3 &&
-                    upgrader.store[RESOURCE_ENERGY]
-            );
-            const unfilledUpgraders = upgraders.length - fullUpgraders.length;
-            const upgraderDemand = getRoleDemand(colony, roles.upgrader).value;
-            if (
-                unfilledUpgraders > LOWER_UPGRADER_THRESHOLD &&
-                upgraderDemand >= fullUpgraders.length
-            ) {
-                return nudge(-unfilledUpgraders);
-            }
-
-            // Priority #2: do all haulers have dropoff points?
-            const waitingHaulers = colony.haulers.filter((hauler) => {
-                if (hauler.memory.returning) {
-                    return false;
-                }
-                const full = hauler.store[RESOURCE_ENERGY];
-                const storageDropoff =
-                    colony.room.storage &&
-                    colony.room.storage.id === hauler.memory.dropoff;
-                const storageAboveThreshold =
-                    colony.room.storage &&
-                    colony.room.storage.store[RESOURCE_ENERGY] >
-                        storageThresholds[colony.room.controller.level];
-                return (
-                    full &&
-                    (!hauler.memory.dropoff ||
-                        (storageDropoff && storageAboveThreshold))
-                );
-            }).length;
-            if (waitingHaulers) {
-                return nudge(waitingHaulers);
-            }
-
-            // If there's no problems at all, let's nudge towards our current count
-            const target = colony.upgraders.length - 0.5;
-            return nudge(upgraderDemand < target ? 2 : -2);
-        },
-        make: (colony) =>
-            creepMaker.makeUpgrader(colony.room.energyCapacityAvailable),
+    [roles.upgrader]: (colony) => {
+        // Don't really need a condition here;
+        // if we need to use up energy, these are our guys
+        return creepMaker.makeUpgrader(colony.room.energyCapacityAvailable);
     },
 });
 
