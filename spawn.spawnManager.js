@@ -66,10 +66,14 @@ class SpawnManager {
 
                 // We'll also let all other colonies know that we've spawned this creep
                 // if it's a surrogate spawn for another colony trying to get on its feet
-                Memory.newColonies[supportingColony].creepNamesAndRoles.push({
-                    name: next.name,
-                    role: next.memory.role,
-                });
+                if (Memory.newColonies[supportingColony]) {
+                    Memory.newColonies[
+                        supportingColony
+                    ].creepNamesAndRoles.push({
+                        name: next.name,
+                        role: next.memory.role,
+                    });
+                }
             } else if (result === ERR_NOT_ENOUGH_ENERGY) {
                 // Let's wait until we have enough energy
                 break;

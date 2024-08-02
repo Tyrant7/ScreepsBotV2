@@ -1,4 +1,10 @@
-const { roles, REMOTE_ROAD_RCL, REMOTE_CONTAINER_RCL } = require("./constants");
+const {
+    roles,
+    REMOTE_ROAD_RCL,
+    REMOTE_CONTAINER_RCL,
+    storageThresholds,
+} = require("./constants");
+const { getCost } = require("./spawn.spawnUtility");
 
 const creepMaker = require("./spawn.creepMaker");
 const Colony = require("./data.colony");
@@ -217,7 +223,37 @@ const getSortedGroups = (colony) => {
         return [transport];
     }
 
-    // TODO
+    // If we have idle haulers, let's spawn producers
+    const idleHaulers = colony.haulers.filter(
+        (hauler) =>
+            hauler.store.getUsedCapacity() === 0 && !hauler.memory.pickup
+    ).length;
+    if (idleHaulers.length) {
+        return [defense, production, usage, transport];
+    }
+
+    // If we have haulers waiting for dropoffs, let's spawn spenders
+    const waitingHaulers = colony.haulers.filter(
+        (hauler) =>
+            hauler.store.getUsedCapacity() > 0 &&
+            (!(hauler.memory.dropoff || hauler.memory.returning) ||
+                (colony.room.storage &&
+                    colony.room.storage.store[RESOURCE_ENERGY] >
+                        storageThresholds[colony.room.controller.level] &&
+                    hauler.memory.dropoff &&
+                    hauler.memory.dropoff.id === colony.room.storage.id))
+    ).length;
+    if (waitingHaulers.length) {
+        return [defense, usage, production, transport];
+    }
+
+    const unfilledUpgraders = colony.upgraders.filter(
+        (upgrader) => !upgrader.store[RESOURCE_ENERGY]
+    );
+    if (unfilledUpgraders.length) {
+        return [defense, transport, production];
+    }
+    return [defense, production, transport, usage];
 };
 const calculateIncome = (colony) => {
     // TODO
