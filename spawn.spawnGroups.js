@@ -228,8 +228,9 @@ const getSortedGroups = (colony) => {
     // If we have lots of untended pickups, let's spawn transporters
     const MAX_UNTENDED_PICKUPS = 2;
     const averageHaulerSize =
-        colony.haulers[0].body.filter((p) => p.type === CARRY).length *
-        CARRY_CAPACITY;
+        creepMaker
+            .makeHauler(calculateMinEnergy(colony))
+            .body.filter((p) => p === CARRY).length * CARRY_CAPACITY;
     const untendedPickups = colony
         .getPickupRequests({
             store: { getCapacity: () => averageHaulerSize },
