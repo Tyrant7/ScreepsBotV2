@@ -24,15 +24,15 @@ class SpawnManager {
         const spawnsThisTick = {};
         while (inactiveSpawns.length && orderedGroups.length) {
             // We'll get our next spawning creep
-            const nextGroup = orderedGroups[orderedGroups.length - 1];
+            const nextGroup = orderedGroups[0];
             const next = nextGroup.getNextSpawn(colony, spawnsThisTick);
             if (!next) {
-                orderedGroups.pop();
+                orderedGroups.shift();
                 continue;
             }
 
             // Once we've found one, let's get the spawn that will handle that creep
-            const spawn = inactiveSpawns[inactiveSpawns.length - 1];
+            const spawn = inactiveSpawns[0];
 
             // If we're supporting another colony, let's assign this creep to it
             // Simply find the first colony missing one of these creeps
@@ -65,7 +65,7 @@ class SpawnManager {
 
             // If we succesfully spawned, let's mark this spawn as active and record the creep type that we've spawned
             if (result === OK) {
-                inactiveSpawns.pop();
+                inactiveSpawns.shift();
                 spawnsThisTick[next.memory.role] =
                     (spawnsThisTick[next.memory.role] || 0) + 1;
 
