@@ -3,6 +3,7 @@ const { getSortedGroups } = require("./spawn.spawnGroups");
 class SpawnManager {
     run(colony) {
         const orderedGroups = getSortedGroups(colony);
+        console.log(orderedGroups.map((g) => g.debugName).toString());
 
         // Find all of our inactive spawns
         const inactiveSpawns = [];

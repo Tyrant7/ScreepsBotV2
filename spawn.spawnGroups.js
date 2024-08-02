@@ -45,12 +45,14 @@ const calculateMinEnergy = (colony) =>
 class SpawnGroup {
     /**
      * Initializes this group with the given spawn profiles.
+     * @param {string} debugName The name to print out when debugging.
      * @param {{[role: string]: (colony: Colony, count: number) => SpawnRequest | undefined}} profiles
      * An object which maps roles to method which returns a `SpawnRequest` for each creep type in this spawn group,
      * where `colony` is the colony to get the next spawn for, and `count` is the number of existing spawned creeps
      * of that role.
      */
-    constructor(profiles) {
+    constructor(debugName, profiles) {
+        this.debugName = debugName;
         this.profiles = profiles;
     }
 
@@ -94,7 +96,7 @@ class SpawnGroup {
 
 //#region Groups
 
-const defense = new SpawnGroup({
+const defense = new SpawnGroup("defense", {
     [roles.defender]: (colony, count) => {
         if (count >= colony.remoteEnemies.length) return;
 
@@ -121,7 +123,7 @@ const defense = new SpawnGroup({
     },
 });
 
-const production = new SpawnGroup({
+const production = new SpawnGroup("production", {
     [roles.miner]: (colony, count) => {
         if (!colony.getFirstOpenMiningSite()) return;
         return creepMaker.makeMiner(
@@ -139,7 +141,7 @@ const production = new SpawnGroup({
     },
 });
 
-const transport = new SpawnGroup({
+const transport = new SpawnGroup("transport", {
     [roles.hauler]: (colony, count) => {
         if (
             count === 0 &&
@@ -157,7 +159,7 @@ const transport = new SpawnGroup({
     },
 });
 
-const usage = new SpawnGroup({
+const usage = new SpawnGroup("usage", {
     [roles.repairer]: (colony, count) => {
         if (!colony.remotesNeedingRepair.length || count > 0) return;
         return creepMaker.makeRepairer(colony.room.energyCapacityAvailable);
@@ -223,11 +225,25 @@ const getSortedGroups = (colony) => {
         return [transport];
     }
 
+    // If we have lots of untended pickups, let's spawn transporters
+    const MAX_UNTENDED_PICKUPS = 2;
+    const averageHaulerSize =
+        colony.haulers[0].body.filter((p) => p.type === CARRY).length *
+        CARRY_CAPACITY;
+    const untendedPickups = colony
+        .getPickupRequests({
+            store: { getCapacity: () => averageHaulerSize },
+        })
+        .filter((r) => !r.hasEnough);
+    if (untendedPickups.length > MAX_UNTENDED_PICKUPS) {
+        return [defense, transport, usage, production];
+    }
+
     // If we have idle haulers, let's spawn producers
     const idleHaulers = colony.haulers.filter(
         (hauler) =>
             hauler.store.getUsedCapacity() === 0 && !hauler.memory.pickup
-    ).length;
+    );
     if (idleHaulers.length) {
         return [defense, production, usage, transport];
     }
@@ -242,11 +258,12 @@ const getSortedGroups = (colony) => {
                         storageThresholds[colony.room.controller.level] &&
                     hauler.memory.dropoff &&
                     hauler.memory.dropoff.id === colony.room.storage.id))
-    ).length;
+    );
     if (waitingHaulers.length) {
         return [defense, usage, production, transport];
     }
 
+    // If our upgraders aren't full, let's avoid spawning spenders
     const unfilledUpgraders = colony.upgraders.filter(
         (upgrader) => !upgrader.store[RESOURCE_ENERGY]
     );
