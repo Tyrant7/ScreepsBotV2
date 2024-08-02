@@ -164,12 +164,16 @@ class BuilderManager extends CreepManager {
                     }
 
                     // Site was placed on top of us or another creep, let's move the blocker
-                    // away in a random direction quickly
-                    const blocker = target.pos
-                        .lookFor(LOOK_CREEPS)
-                        .find((c) => c.my);
-                    if (blocker) {
-                        blocker.registerMove(Math.floor(Math.random() * 8) + 1);
+                    // away in a random direction quickly if it's stopping us from building here
+                    if (OBSTACLE_OBJECT_TYPES.includes(target.structureType)) {
+                        const blocker = target.pos
+                            .lookFor(LOOK_CREEPS)
+                            .find((c) => c.my);
+                        if (blocker) {
+                            blocker.registerMove(
+                                Math.floor(Math.random() * 8) + 1
+                            );
+                        }
                     }
                 }
             },
