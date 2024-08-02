@@ -1,9 +1,13 @@
+const overlay = require("./debug.overlay");
 const { getSortedGroups } = require("./spawn.spawnGroups");
 
 class SpawnManager {
     run(colony) {
         const orderedGroups = getSortedGroups(colony);
-        console.log(orderedGroups.map((g) => g.debugName).toString());
+        this.drawOverlay(
+            colony,
+            orderedGroups.map((g) => g.debugName)
+        );
 
         // Find all of our inactive spawns
         const inactiveSpawns = [];
@@ -81,8 +85,6 @@ class SpawnManager {
             }
         }
 
-        this.drawOverlay(colony);
-
         // Track our spawn usage
         return (
             colony.structures[STRUCTURE_SPAWN].length - inactiveSpawns.length
@@ -111,18 +113,11 @@ class SpawnManager {
         }
     }
 
-    drawOverlay(colony) {
-        // Old, outdated code
-        /*
-        overlay.addHeading(colony.room.name + "_a", "Spawn Demands");
-        for (const role of Object.values(roles)) {
-            const demand = getRoleDemand(colony, role);
-            if (!demand) continue;
-            const value = demand.value;
-            if (!value) continue;
-            overlay.addColumns(colony.room.name + "_a", role, value.toFixed(4));
+    drawOverlay(colony, profileNames) {
+        overlay.addHeading(colony.room.name + "_a", "Next spawns");
+        for (const profile of profileNames) {
+            overlay.addColumns(colony.room.name + "_a", profile, "");
         }
-        */
     }
 }
 
