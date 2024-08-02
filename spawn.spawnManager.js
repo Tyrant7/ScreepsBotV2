@@ -1,41 +1,8 @@
-const { roles } = require("./constants");
-const {
-    ensureDefaults,
-    getRoleDemand,
-    setRoleDemand,
-    DEFAULT_DEMANDS,
-} = require("./spawn.demandHandler");
-const overlay = require("./debug.overlay");
-
-const spawnGroups = require("./spawn.spawnGroups");
-require("./spawn.spawnEvents");
+const { getSortedGroups } = require("./spawn.spawnGroups");
 
 class SpawnManager {
     run(colony) {
-        // Ensure demands exist
-        ensureDefaults(colony);
-
-        // If we're in a cold boot situation, we'll skip regular spawning
-        const meetsMinimumSpawnRequirements =
-            colony.miners.length &&
-            (colony.haulers.length || colony.starterHaulers.length);
-        if (!meetsMinimumSpawnRequirements) {
-            for (const role in roles) {
-                setRoleDemand(colony, role, DEFAULT_DEMANDS[role] || 0);
-            }
-            return;
-        }
-
-        // We'll update our spawn demands for each spawn group's profiles, then order the groups by priority
-        const orderedGroups = spawnGroups
-            .map((group) => {
-                group.updateDemands(colony);
-                return {
-                    group,
-                    priority: group.getPriority(colony),
-                };
-            })
-            .sort((a, b) => a.priority - b.priority);
+        const orderedGroups = getSortedGroups(colony);
 
         // Find all of our inactive spawns
         const inactiveSpawns = [];
@@ -140,6 +107,8 @@ class SpawnManager {
     }
 
     drawOverlay(colony) {
+        // Old, outdated code
+        /*
         overlay.addHeading(colony.room.name + "_a", "Spawn Demands");
         for (const role of Object.values(roles)) {
             const demand = getRoleDemand(colony, role);
@@ -148,6 +117,7 @@ class SpawnManager {
             if (!value) continue;
             overlay.addColumns(colony.room.name + "_a", role, value.toFixed(4));
         }
+        */
     }
 }
 

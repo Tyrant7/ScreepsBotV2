@@ -1,13 +1,7 @@
 const { roles, REMOTE_ROAD_RCL, REMOTE_CONTAINER_RCL } = require("./constants");
-const { MIN_MAX_DEMAND, getRoleDemand } = require("./spawn.demandHandler");
 
 const creepMaker = require("./spawn.creepMaker");
 const Colony = require("./data.colony");
-
-const RAISE_HAULER_THRESHOLD = 2;
-const LOWER_HAULER_THRESHOLD = 2;
-
-const LOWER_UPGRADER_THRESHOLD = 2;
 
 //#region Utility
 
@@ -167,11 +161,7 @@ const usage = new SpawnGroup({
         return creepMaker.makeScout();
     },
     [roles.builder]: (colony, count) => {
-        if (
-            !colony.constructionSites.length ||
-            count >= MIN_MAX_DEMAND[roles.builder].max
-        )
-            return;
+        if (!colony.constructionSites.length || count >= 3) return;
         return creepMaker.makeBuilder(colony.room.energyCapacityAvailable);
     },
     [roles.claimer]: (colony, count) => {
@@ -219,6 +209,23 @@ const usage = new SpawnGroup({
 
 const groups = [defense, production, transport, usage];
 const getSortedGroups = (colony) => {
+    // If we're in a cold boot situation, we'll skip regular spawning
+    if (!colony.miners.length) {
+        return [production];
+    }
+    if (!colony.haulers.length || colony.starterHaulers.length) {
+        return [transport];
+    }
+
+    // TODO
+};
+const calculateIncome = (colony) => {
+    // TODO
+};
+const calculateTransport = (colony) => {
+    // TODO
+};
+const calculateSpending = (colony) => {
     // TODO
 };
 
