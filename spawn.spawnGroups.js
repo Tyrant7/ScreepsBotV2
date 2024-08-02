@@ -207,8 +207,10 @@ const usage = new SpawnGroup("usage", {
         return creepMaker.makeMineralMiner(colony.room.energyCapacityAvailable);
     },
     [roles.upgrader]: (colony, count) => {
-        // Don't really need a condition here;
-        // if we need to use up energy, these are our guys
+        const emptyUpgraders = colony.upgraders.filter(
+            (upgrader) => !upgrader.store[RESOURCE_ENERGY]
+        );
+        if (emptyUpgraders) return;
         return creepMaker.makeUpgrader(colony.room.energyCapacityAvailable);
     },
 });
