@@ -57,7 +57,17 @@ class RepairerManager extends CreepManager {
         const actionStack = [
             // First let's get energy from the storage
             function (creep, data) {
-                if (!colony.room.storage) return true;
+                if (!colony.room.storage) {
+                    const corePos = colony.room.getPositionAt(
+                        colony.core.x,
+                        colony.core.y
+                    );
+                    creep.betterMoveTo(corePos, {
+                        pathSet: pathSets.default,
+                        range: 3,
+                    });
+                    return creep.pos.getRangeTo(corePos) <= 3;
+                }
                 if (creep.pos.getRangeTo(colony.room.storage) <= 1) {
                     creep.withdraw(colony.room.storage, RESOURCE_ENERGY);
                     return true;
