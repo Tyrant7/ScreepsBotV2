@@ -40,7 +40,7 @@ const storageThresholds = {
 
 const repairThresholds = {
     [STRUCTURE_ROAD]: { min: 0.5, max: 1 },
-    [STRUCTURE_RAMPART]: { min: 0.005, max: 0.01 },
+    [STRUCTURE_RAMPART]: { min: 0.008, max: 0.012 },
 };
 
 const directionDelta = {
