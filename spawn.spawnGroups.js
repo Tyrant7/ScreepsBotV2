@@ -273,7 +273,7 @@ const getSortedGroups = (colony) => {
         (upgrader) => !upgrader.store[RESOURCE_ENERGY]
     );
     if (unfilledUpgraders.length) {
-        return [defense, transport, production];
+        return [defense, production, transport];
     }
     return [defense, production, transport, usage];
 };
