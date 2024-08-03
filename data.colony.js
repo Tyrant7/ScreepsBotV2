@@ -354,9 +354,11 @@ class Colony {
      * @param {ResourceConstant} resourceType The type of resource.
      * @param {number} amount The amount.
      * @param {string[]} dropoffIDs The game IDs of the structures/creeps requesting a dropoff.
+     * @param {boolean} isUrgent Is this request of urgent priority? Urgent requests will be considered
+     * before all other requests.
      * Pass multiple if multiple dropoff points are acceptable (primarily for link usage).
      */
-    createDropoffRequest(amount, resourceType, dropoffIDs) {
+    createDropoffRequest(amount, resourceType, dropoffIDs, isUrgent = false) {
         if (amount === 0) {
             return;
         }
@@ -369,6 +371,7 @@ class Colony {
             amount,
             resourceType,
             dropoffIDs,
+            isUrgent,
             assignedHaulers: [],
         };
     }

@@ -57,115 +57,133 @@ class HaulerManager extends CreepManager {
         const resourceType = Object.keys(creep.store)[0];
         const validDropoffs = colony.getDropoffRequests(resourceType);
 
-        // Create a goal for each dropoff point
-        // Multiple goals will be created for points with multiple dropoff locations
-        let goals = [];
+        // Try urgent requests first
+        const urgentDropoffs = [];
+        const nonUrgentDropoffs = [];
         for (const dropoff of validDropoffs) {
-            // Don't bother trying to trim down if we don't have enough haulers yet
-            if (dropoff.hasEnough) {
-                // Since path length is always <= range, there is no point to searching for targets whose
-                // haulers already have shorter paths than our range
-                const closestDropID =
-                    dropoff.dropoffIDs.length > 1
-                        ? dropoff.dropoffIDs.reduce((closest, curr) => {
-                              return estimateTravelTime(
-                                  creep.pos,
-                                  Game.getObjectById(curr).pos
-                              ) <
-                                  estimateTravelTime(
+            if (dropoff.isUrgent) {
+                urgentDropoffs.push(dropoff);
+                continue;
+            }
+            nonUrgentDropoffs.push(dropoff);
+        }
+
+        const searchGoals = (dropoffs) => {
+            // Create a goal for each dropoff point
+            // Multiple goals will be created for points with multiple dropoff locations
+            let goals = [];
+            for (const dropoff of dropoffs) {
+                // Don't bother trying to trim down if we don't have enough haulers yet
+                if (dropoff.hasEnough) {
+                    // Since path length is always <= range, there is no point to searching for targets whose
+                    // haulers already have shorter paths than our range
+                    const closestDropID =
+                        dropoff.dropoffIDs.length > 1
+                            ? dropoff.dropoffIDs.reduce((closest, curr) => {
+                                  return estimateTravelTime(
                                       creep.pos,
-                                      Game.getObjectById(closest).pos
-                                  )
-                                  ? curr
-                                  : closest;
-                          }).pos
-                        : dropoff.dropoffIDs[0];
-                const closestDropPos = Game.getObjectById(closestDropID).pos;
+                                      Game.getObjectById(curr).pos
+                                  ) <
+                                      estimateTravelTime(
+                                          creep.pos,
+                                          Game.getObjectById(closest).pos
+                                      )
+                                      ? curr
+                                      : closest;
+                              }).pos
+                            : dropoff.dropoffIDs[0];
+                    const closestDropPos =
+                        Game.getObjectById(closestDropID).pos;
 
-                // Get the first hauler that's further from its dropoff point than us
-                const furtherHauler = dropoff.assignedHaulers.find((id) => {
-                    return (
-                        Game.getObjectById(id).getPathLength() >
-                        estimateTravelTime(creep.pos, closestDropPos)
-                    );
-                });
+                    // Get the first hauler that's further from its dropoff point than us
+                    const furtherHauler = dropoff.assignedHaulers.find((id) => {
+                        return (
+                            Game.getObjectById(id).getPathLength() >
+                            estimateTravelTime(creep.pos, closestDropPos)
+                        );
+                    });
 
-                // All haulers are closer than us, so there's no point in trying this target
-                if (!furtherHauler) {
-                    continue;
+                    // All haulers are closer than us, so there's no point in trying this target
+                    if (!furtherHauler) {
+                        continue;
+                    }
+                }
+
+                // Create goals for all dropoff targets with no haulers or at least one hauler further than us
+                for (const id of dropoff.dropoffIDs) {
+                    goals.push({ pos: Game.getObjectById(id).pos, range: 1 });
                 }
             }
 
-            // Create goals for all dropoff targets with no haulers or at least one hauler further than us
-            for (const id of dropoff.dropoffIDs) {
-                goals.push({ pos: Game.getObjectById(id).pos, range: 1 });
-            }
-        }
-
-        while (goals.length) {
-            // Let's get the closest dropoff point by path
-            const closestGoalAndPath = creep.betterFindClosestByPath(goals, {
-                pathSet: pathSets.default,
-            });
-
-            // No good jobs for this creep
-            if (!closestGoalAndPath) {
-                break;
-            }
-
-            // If there aren't enough haulers assigned to this request, let's skip trying to steal it
-            const closestDropoff = validDropoffs.find((dropoff) =>
-                dropoff.dropoffIDs.find((id) =>
-                    Game.getObjectById(id).pos.isEqualTo(
-                        closestGoalAndPath.goal
-                    )
-                )
-            );
-            if (!closestDropoff.hasEnough) {
-                // We're clear -> let's accept the order and start on our path
-                const orderInfo = acceptOrder(
-                    closestDropoff,
-                    closestGoalAndPath.goal,
-                    closestGoalAndPath.path
+            while (goals.length) {
+                // Let's get the closest dropoff point by path
+                const closestGoalAndPath = creep.betterFindClosestByPath(
+                    goals,
+                    {
+                        pathSet: pathSets.default,
+                    }
                 );
-                return this.createDropoffTask(creep, orderInfo);
-            }
 
-            for (const assignedID of closestDropoff.assignedHaulers) {
-                // Let's try to steal this order from other assigned haulers if we're closer by path length
-                // For simplicity, we'll assume all haulers to be the same size
-                const assignedHauler = Game.getObjectById(assignedID);
-                if (!assignedHauler.hasShorterPath(closestGoalAndPath.path)) {
-                    // Steal the order
+                // No good jobs for this creep
+                if (!closestGoalAndPath) {
+                    break;
+                }
+
+                // If there aren't enough haulers assigned to this request, let's skip trying to steal it
+                const closestDropoff = dropoffs.find((dropoff) =>
+                    dropoff.dropoffIDs.find((id) =>
+                        Game.getObjectById(id).pos.isEqualTo(
+                            closestGoalAndPath.goal
+                        )
+                    )
+                );
+                if (!closestDropoff.hasEnough) {
+                    // We're clear -> let's accept the order and start on our path
                     const orderInfo = acceptOrder(
                         closestDropoff,
                         closestGoalAndPath.goal,
                         closestGoalAndPath.path
                     );
-
-                    // Give a new task recursively for the other hauler
-                    colony.unassignDropoff(
-                        closestDropoff.requestID,
-                        assignedHauler.id
-                    );
-                    delete assignedHauler.memory.dropoff;
-
-                    // We need to create the task first to store the dropoff in our memory to ensure the other
-                    // hauler doesn't unknowingly steal it back
-                    const task = this.createDropoffTask(creep, orderInfo);
-                    this.createTask(assignedHauler, colony);
-                    return task;
+                    return this.createDropoffTask(creep, orderInfo);
                 }
+
+                for (const assignedID of closestDropoff.assignedHaulers) {
+                    // Let's try to steal this order from other assigned haulers if we're closer by path length
+                    // For simplicity, we'll assume all haulers to be the same size
+                    const assignedHauler = Game.getObjectById(assignedID);
+                    if (
+                        !assignedHauler.hasShorterPath(closestGoalAndPath.path)
+                    ) {
+                        // Steal the order
+                        const orderInfo = acceptOrder(
+                            closestDropoff,
+                            closestGoalAndPath.goal,
+                            closestGoalAndPath.path
+                        );
+
+                        // Give a new task recursively for the other hauler
+                        colony.unassignDropoff(
+                            closestDropoff.requestID,
+                            assignedHauler.id
+                        );
+                        delete assignedHauler.memory.dropoff;
+
+                        // We need to create the task first to store the dropoff in our memory to ensure the other
+                        // hauler doesn't unknowingly steal it back
+                        const task = this.createDropoffTask(creep, orderInfo);
+                        this.createTask(assignedHauler, colony);
+                        return task;
+                    }
+                }
+
+                // If we couldn't steal, let's remove this goal and try again
+                goals = goals.filter(
+                    (goal) => goal !== closestGoalAndPath.goal
+                );
             }
+        };
 
-            // If we couldn't steal, let's remove this goal and try again
-            goals = goals.filter((goal) => goal !== closestGoalAndPath.goal);
-        }
-
-        // Didn't find a valid order -> alert us
-        this.alertIdleCreep(creep, "D");
-
-        function acceptOrder(dropoff, pos, path) {
+        const acceptOrder = (dropoff, pos, path) => {
             creep.injectPath(path, pos);
 
             // Mark the order so other haulers searching for orders this tick don't also accept it
@@ -182,7 +200,15 @@ class HaulerManager extends CreepManager {
                 ),
                 hash: dropoff.requestID,
             };
-        }
+        };
+
+        const result = searchGoals(urgentDropoffs);
+        if (result) return result;
+        const nonUrgentResult = searchGoals(nonUrgentDropoffs);
+        if (nonUrgentResult) return nonUrgentResult;
+
+        // Didn't find a valid order -> alert us
+        this.alertIdleCreep(creep, "D");
     }
 
     createDropoffTask(creep, reserved) {

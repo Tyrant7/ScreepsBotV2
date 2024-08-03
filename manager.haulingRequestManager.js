@@ -30,9 +30,12 @@ class HaulingRequestManager {
                 continue;
             }
             profiler.wrap("create request", () =>
-                colony.createDropoffRequest(freeCapacity, RESOURCE_ENERGY, [
-                    spawnStructure.id,
-                ])
+                colony.createDropoffRequest(
+                    freeCapacity,
+                    RESOURCE_ENERGY,
+                    [spawnStructure.id],
+                    true
+                )
             );
         }
         profiler.endSample("basic structures");
