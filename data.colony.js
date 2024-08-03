@@ -97,13 +97,14 @@ class Colony {
         this.remoteEnemies = [];
         this.invaderCores = [];
 
-        const isRoadDecayTick = Game.time % ROAD_DECAY_TIME === 0 || RELOAD;
-        if (isRoadDecayTick) {
+        const isDecayTick = Game.time % CONTAINER_DECAY_TIME === 0 || RELOAD;
+        if (isDecayTick) {
             this.remotesNeedingRepair = [];
             this.ownStructuresNeedingRepair = (
                 this.structures[STRUCTURE_ROAD] || []
             )
                 .concat(this.structures[STRUCTURE_RAMPART] || [])
+                .concat(this.structures[STRUCTURE_CONTAINER] || [])
                 .filter(
                     (s) =>
                         s.hits / s.hitsMax <
@@ -141,7 +142,7 @@ class Colony {
 
                 // Every so often, let's scan the roads of each remote to make
                 // sure that none of them have decayed too low
-                if (isRoadDecayTick) {
+                if (isDecayTick) {
                     for (const road of remote.roads) {
                         const room = Game.rooms[road.roomName];
                         if (!room) continue;
