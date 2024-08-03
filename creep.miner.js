@@ -103,6 +103,12 @@ class MinerManager extends CreepManager {
 
                 // We'll also mark this position to discourage creeps from walking through it
                 markWorkingPosition(creep.pos);
+
+                // We'll time how many ticks it took us to get here so we can replace this creep early
+                if (!creep.memory.replaceTime) {
+                    creep.memory.replaceTime =
+                        Game.time - creep.memory.spawnTime;
+                }
             }
 
             // Always return false since miners can never finish their task
@@ -116,11 +122,11 @@ class MinerManager extends CreepManager {
         const unreserved = colony.getFirstOpenMiningSite(creep.pos);
         if (!unreserved) {
             creep.say("No site");
-            // Wait for an opening
-            // TODO //
-            // Fix this so that early replacement can function
             return null;
         }
+
+        creep.memory.replaceTime = 0;
+        creep.memory.spawnTime = Game.time;
 
         // Mark this site as reserved
         creep.memory.miningSite = unreserved;

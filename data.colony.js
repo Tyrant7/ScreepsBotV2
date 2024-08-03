@@ -7,6 +7,7 @@ const profiler = require("./debug.profiler");
 const { RESERVER_COST } = require("./spawn.creepMaker");
 const { MINIMUM_PICKUP_AMOUNT } = require("./constants");
 const { repairThresholds } = require("./constants");
+const { getSpawnTime } = require("./spawn.spawnUtility");
 
 class Colony {
     /**
@@ -251,10 +252,12 @@ class Colony {
 
             // We're going to look for sites where the number of allocated miners is
             // less than the amount of open spaces
+            // Here we'll exclude miners that will die before we arrive at the source
             const allocatedMiners = this.miners.filter(
                 (m) =>
                     m.memory.miningSite &&
-                    m.memory.miningSite.sourceID === site.sourceID
+                    m.memory.miningSite.sourceID === site.sourceID &&
+                    getSpawnTime(m.body) + m.memory.replaceTime <= m.ticksToLive
             );
 
             // First condition:
