@@ -219,8 +219,8 @@ const usage = new SpawnGroup("usage", {
             (upgrader) => !upgrader.store[RESOURCE_ENERGY]
         );
         if (emptyUpgrader) return;
-        // We're using all of our energy, and even though the upgraders are all full
-        // we don't need more since our container is empty
+        // Even though the upgraders are all full,
+        // we don't need more upgraders since our container is empty
         const upgraderContainer = colony.getUpgraderContainer();
         if (upgraderContainer && !upgraderContainer.store[RESOURCE_ENERGY])
             return;
