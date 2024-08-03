@@ -178,7 +178,7 @@ class BasePlanner {
             keys.sourceContainerPositions,
             planBuilder.sourceContainers
         );
-        colony.memory.core = planBuilder.corePos;
+        savePlanData(colony.room.name, "core", planBuilder.corePos);
 
         this.printDebugMessage(
             `🟢 Completed plan serialization in ${(
