@@ -31,30 +31,26 @@ class RepairerManager extends CreepManager {
         }
 
         // We'll want to make sure the remote is still active by the time we get around to it
-        colony.remotesNeedingRepair = colony.remotesNeedingRepair.filter(
-            (r) => r.active
+        colony.remotesNeedingRepair = colony.remotesNeedingRepair.filter((r) =>
+            colony.remotePlans.find(
+                (p) => p.source.id === r.sourceID && p.active
+            )
         );
 
         // Find the lowest health remote that isn't already being repaired
-        const mostUrgent = colony.remotesNeedingRepair
-            .filter(
-                (r) =>
-                    !colony.repairers.find(
-                        (rep) => rep.memory.target.sourceID === r.source.id
-                    )
-            )
-            .reduce(
-                (best, curr) => (curr.hits < best.hits ? curr : best),
-                undefined
-            );
-        if (!mostUrgent) {
+        const nextTarget = colony.remotesNeedingRepair.find(
+            (r) =>
+                !colony.repairers.find(
+                    (rep) =>
+                        rep.memory.target &&
+                        rep.memory.target.sourceID === r.source.id
+                )
+        );
+        if (!nextTarget) {
             creep.say("All done!");
             return;
         }
-        colony.remotesNeedingRepair = colony.remotesNeedingRepair.filter(
-            (r) => r !== mostUrgent
-        );
-        return this.createRemoteRepairTask(creep, colony, mostUrgent);
+        return this.createRemoteRepairTask(creep, colony, nextTarget);
     }
 
     createRemoteRepairTask(creep, colony, target) {
@@ -84,6 +80,8 @@ class RepairerManager extends CreepManager {
                     creep.repair(road);
                 }
                 if (creep.pos.getRangeTo(endPosition) <= 1) {
+                    colony.remotesNeedingRepair =
+                        colony.remotesNeedingRepair.filter((r) => r !== target);
                     return true;
                 }
 
@@ -126,8 +124,9 @@ class RepairerManager extends CreepManager {
                 // that we don't skip any roads
                 // We'll also verify that the road is close to fully repaired
                 if (
-                    creep.store[RESOURCE_ENERGY] &&
-                    road.hitsMax - road.hits <= useRate * REPAIR_POWER
+                    !road ||
+                    (creep.store[RESOURCE_ENERGY] &&
+                        road.hitsMax - road.hits <= useRate * REPAIR_POWER)
                 ) {
                     creep.betterMoveTo(endPosition, {
                         pathSet: pathSets.default,

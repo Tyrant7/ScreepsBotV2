@@ -122,7 +122,7 @@ class Colony {
         if (this.remotePlans) {
             // Get all rooms of our active remotes for construction site and enemy searching
             const remoteRooms = new Set();
-            for (const remote of this.memory.remotes) {
+            for (const remote of this.remotePlans) {
                 if (!remote.active) continue;
                 remoteRooms.add(remote.room);
 
@@ -155,8 +155,6 @@ class Colony {
                             this.remotesNeedingRepair.push({
                                 endPos: remote.container,
                                 sourceID: remote.source.id,
-                                hits:
-                                    roadStructure.hits / roadStructure.hitsMax,
                             });
                             break;
                         }
