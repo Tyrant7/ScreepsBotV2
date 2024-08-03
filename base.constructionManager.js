@@ -347,7 +347,7 @@ const createCache = (colony, rcl, missingStructures) => {
     };
 };
 
-const scoreUtility = (colony, structure, buildTargets) => {
+const scoreUtility = (colony, structure) => {
     const baseUtility = UTILITY_CONSTANTS[structure.type] || 1;
     const isDefensive =
         structure.type === STRUCTURE_RAMPART ||
