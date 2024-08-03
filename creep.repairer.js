@@ -21,12 +21,12 @@ class RepairerManager extends CreepManager {
         }
 
         // We'll want to make sure the remote is still active by the time we get around to it
-        colony.remotesNeedingRepairs = colony.remotesNeedingRepairs.filter(
+        colony.remotesNeedingRepair = colony.remotesNeedingRepair.filter(
             (r) => r.active
         );
 
         // Find the lowest health remote that isn't already being repaired
-        const mostUrgent = colony.remotesNeedingRepairs
+        const mostUrgent = colony.remotesNeedingRepair
             .filter(
                 (r) =>
                     !colony.repairers.find(
