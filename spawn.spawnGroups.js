@@ -215,10 +215,15 @@ const usage = new SpawnGroup("usage", {
         return creepMaker.makeMineralMiner(colony.room.energyCapacityAvailable);
     },
     [roles.upgrader]: (colony, count) => {
-        const emptyUpgraders = colony.upgraders.filter(
+        const emptyUpgrader = colony.upgraders.find(
             (upgrader) => !upgrader.store[RESOURCE_ENERGY]
         );
-        if (emptyUpgraders.length) return;
+        if (emptyUpgrader) return;
+        // We're using all of our energy, and even though the upgraders are all full
+        // we don't need more since our container is empty
+        const upgraderContainer = colony.getUpgraderContainer();
+        if (upgraderContainer && !upgraderContainer.store[RESOURCE_ENERGY])
+            return;
         return creepMaker.makeUpgrader(colony.room.energyCapacityAvailable);
     },
 });
