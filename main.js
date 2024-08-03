@@ -1,6 +1,6 @@
 /*
 
-Tyrant Bot V2
+TyrantBot, created by Tyrant
 
 */
 
