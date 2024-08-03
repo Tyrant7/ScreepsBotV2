@@ -260,7 +260,7 @@ const getSortedGroups = (colony) => {
     const conditions = [
         {
             score: idleHaulers.length,
-            order: [defense, production, usage, transport],
+            order: [defense, production, usage],
         },
         {
             score: waitingHaulers.length,
@@ -272,15 +272,6 @@ const getSortedGroups = (colony) => {
         },
     ];
     return _.max(conditions, (c) => c.score).order;
-};
-const calculateIncome = (colony) => {
-    // TODO
-};
-const calculateTransport = (colony) => {
-    // TODO
-};
-const calculateSpending = (colony) => {
-    // TODO
 };
 
 module.exports = {
