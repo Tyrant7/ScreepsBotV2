@@ -227,16 +227,13 @@ const getSortedGroups = (colony) => {
         return [transport];
     }
 
-    // If we have idle haulers, let's spawn producers
+    // If we have idle haulers, let's vouch for producers
     const idleHaulers = colony.haulers.filter(
         (hauler) =>
             hauler.store.getUsedCapacity() === 0 && !hauler.memory.pickup
     );
-    if (idleHaulers.length) {
-        return [defense, production, usage, transport];
-    }
 
-    // If we have haulers waiting for dropoffs, let's spawn spenders
+    // If we have haulers waiting for dropoffs, let's vouch for spenders
     const waitingHaulers = colony.haulers.filter(
         (hauler) =>
             hauler.store.getUsedCapacity() > 0 &&
@@ -247,14 +244,8 @@ const getSortedGroups = (colony) => {
                     hauler.memory.dropoff &&
                     hauler.memory.dropoff.id === colony.room.storage.id))
     );
-    if (waitingHaulers.length) {
-        return [defense, usage, production, transport];
-    }
 
-    // If we have lots of untended pickups, let's spawn transporters
-    // Note that we're doing this after checking for users to avoid
-    // spawning haulers forever if we have no users
-    const MAX_UNTENDED_PICKUPS = 2;
+    // If we have lots of untended pickups, let's vouch for transporters
     const averageHaulerSize =
         creepMaker
             .makeHauler(calculateMinEnergy(colony))
@@ -264,18 +255,23 @@ const getSortedGroups = (colony) => {
             store: { getCapacity: () => averageHaulerSize },
         })
         .filter((r) => !r.hasEnough);
-    if (untendedPickups.length > MAX_UNTENDED_PICKUPS) {
-        return [defense, transport, usage, production];
-    }
 
-    // If our upgraders aren't full, let's avoid spawning spenders
-    const unfilledUpgraders = colony.upgraders.filter(
-        (upgrader) => !upgrader.store[RESOURCE_ENERGY]
-    );
-    if (unfilledUpgraders.length) {
-        return [defense, production, transport];
-    }
-    return [defense, production, transport, usage];
+    // We're going to look at all cases, and see which is most important
+    const conditions = [
+        {
+            score: idleHaulers.length,
+            order: [defense, production, usage, transport],
+        },
+        {
+            score: waitingHaulers.length,
+            order: [defense, usage, production, transport],
+        },
+        {
+            score: untendedPickups.length,
+            order: [defense, transport, usage, production],
+        },
+    ];
+    return _.max(conditions, (c) => c.score).order;
 };
 const calculateIncome = (colony) => {
     // TODO
