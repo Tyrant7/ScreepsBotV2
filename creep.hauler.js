@@ -230,9 +230,13 @@ class HaulerManager extends CreepManager {
                 }
 
                 // Transfer if within range
-                if (creep.pos.getRangeTo(target) <= 1) {
+                if (
+                    creep.pos.getRangeTo(target) <= 1 &&
+                    creep.memory.lastTransfer !== Game.time
+                ) {
                     creep.transfer(target, dropoff.resourceType);
-                    delete creep.memory.dropoff;
+                    creep.memory.lastTransfer = Game.time;
+                    return true;
                 }
                 // Otherwise, move
                 else {
