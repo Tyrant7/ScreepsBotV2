@@ -1,6 +1,7 @@
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
-const { roles, pathSets } = require("./constants");
+const Colony = require("./data.colony");
+const { roles, pathSets, repairThresholds } = require("./constants");
 const { onRemoteDrop } = require("./event.colonyEvents");
 
 /**
@@ -17,7 +18,16 @@ class RepairerManager extends CreepManager {
      */
     createTask(creep, colony) {
         if (creep.memory.target) {
-            this.createRepairTask(creep, colony, creep.memory.target);
+            return this.createRemoteRepairTask(
+                creep,
+                colony,
+                creep.memory.target
+            );
+        }
+
+        // Prioritize our base's structures over remotes
+        if (colony.ownStructuresNeedingRepair.length) {
+            return this.createBaseRepairTask(creep, colony);
         }
 
         // We'll want to make sure the remote is still active by the time we get around to it
@@ -41,10 +51,13 @@ class RepairerManager extends CreepManager {
             creep.say("All done!");
             return;
         }
-        return this.createRepairTask(creep, colony, mostUrgent);
+        colony.remotesNeedingRepair = colony.remotesNeedingRepair.filter(
+            (r) => r !== mostUrgent
+        );
+        return this.createRemoteRepairTask(creep, colony, mostUrgent);
     }
 
-    createRepairTask(creep, colony, target) {
+    createRemoteRepairTask(creep, colony, target) {
         const actionStack = [
             // First let's get energy from the storage
             function (creep, data) {
@@ -136,11 +149,74 @@ class RepairerManager extends CreepManager {
             actionStack
         );
     }
+
+    createBaseRepairTask(creep, colony) {
+        const actionStack = [
+            // First let's get energy from the storage
+            function (creep, data) {
+                if (!colony.room.storage || creep.store[RESOURCE_ENERGY])
+                    return true;
+                if (creep.pos.getRangeTo(colony.room.storage) <= 1) {
+                    creep.withdraw(colony.room.storage, RESOURCE_ENERGY);
+                    return true;
+                }
+                creep.betterMoveTo(colony.room.storage, {
+                    pathSet: pathSets.default,
+                });
+            },
+            function (creep, { targetID, useRate }) {
+                if (
+                    creep.store[RESOURCE_ENERGY] <=
+                    useRate * REQUEST_ADVANCE_TICKS
+                ) {
+                    colony.createDropoffRequest(
+                        creep.store.getCapacity(),
+                        RESOURCE_ENERGY,
+                        [creep.id]
+                    );
+                }
+
+                const target = Game.getObjectById(targetID);
+                if (!target) return true;
+                if (
+                    target.hits / target.hitsMax >=
+                    repairThresholds[target.structureType].max
+                )
+                    return true;
+
+                if (creep.pos.getRangeTo(target) <= 3) {
+                    creep.repair(target);
+                    return false;
+                }
+                creep.betterMoveTo(target, {
+                    pathSet: pathSets.default,
+                });
+            },
+        ];
+
+        // Find our closest target and remove it
+        const closestTarget = _.min(colony.ownStructuresNeedingRepair, (s) =>
+            creep.pos.getRangeTo(s.pos)
+        );
+        colony.ownStructuresNeedingRepair =
+            colony.ownStructuresNeedingRepair.filter(
+                (s) => s !== closestTarget
+            );
+        return new Task(
+            {
+                targetID: closestTarget.id,
+                useRate: creep.body.filter((p) => p.type === WORK).length,
+            },
+            "repair",
+            actionStack
+        );
+    }
 }
 
 // Free any repairers repairing remotes that we drop
 onRemoteDrop.subscribe((colony, remote) => {
     for (const repairer of colony.repairers) {
+        if (!repairer.memory.target) continue;
         if (repairer.memory.target.sourceID === remote.source.id) {
             delete repairer.memory.target;
         }

@@ -22,6 +22,7 @@ class Colony {
         this.mineral = this.room.find(FIND_MINERALS)[0];
 
         this.remotesNeedingRepair = [];
+        this.ownStructuresNeedingRepair = [];
     }
 
     /**
@@ -95,9 +96,25 @@ class Colony {
         this.remoteEnemies = [];
         this.invaderCores = [];
 
-        const isRoadDecayTick = Game.time % ROAD_DECAY_TIME === 0 && RELOAD;
+        const isRoadDecayTick = Game.time % ROAD_DECAY_TIME === 0 || RELOAD;
         if (isRoadDecayTick) {
             this.remotesNeedingRepair = [];
+            this.ownStructuresNeedingRepair = (
+                this.structures[STRUCTURE_ROAD] || []
+            )
+                .concat(this.structures[STRUCTURE_RAMPART] || [])
+                .filter(
+                    (s) =>
+                        s.hits / s.hitsMax <
+                        repairThresholds[s.structureType].min
+                )
+                .map((s) => {
+                    return {
+                        pos: s.pos,
+                        id: s.id,
+                        hits: s.hits / s.hitsMax,
+                    };
+                });
         }
 
         this.remotePlans = remoteUtility.getRemotePlans(this.room.name);
@@ -131,10 +148,11 @@ class Colony {
                             .lookForAt(LOOK_STRUCTURES, road.x, road.y)
                             .find((s) => s.structureType === STRUCTURE_ROAD);
                         if (
+                            roadStructure &&
                             roadStructure.hits / roadStructure.hitsMax <
-                            repairThresholds[STRUCTURE_ROAD]
+                                repairThresholds[STRUCTURE_ROAD].min
                         ) {
-                            remotesNeedingRepair.push({
+                            this.remotesNeedingRepair.push({
                                 endPos: remote.container,
                                 sourceID: remote.source.id,
                                 hits:

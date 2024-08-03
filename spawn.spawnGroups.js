@@ -169,7 +169,14 @@ const transport = new SpawnGroup("transport", {
 
 const usage = new SpawnGroup("usage", {
     [roles.repairer]: (colony, count) => {
-        if (!colony.remotesNeedingRepair.length || count > 0) return;
+        if (
+            !(
+                colony.remotesNeedingRepair.length ||
+                colony.ownStructuresNeedingRepair.length
+            ) ||
+            count > 0
+        )
+            return;
         return creepMaker.makeRepairer(colony.room.energyCapacityAvailable);
     },
     [roles.scout]: (colony, count) => {
