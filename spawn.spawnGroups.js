@@ -152,6 +152,14 @@ const transport = new SpawnGroup("transport", {
             // that will become a scout in the future
             return creepMaker.makeStarterHauler();
         }
+
+        // Don't spawn a hauler if we have idle haulers
+        const hasIdleHauler = colony.haulers.find(
+            (hauler) =>
+                hauler.store.getUsedCapacity() === 0 && !hauler.memory.pickup
+        );
+        if (hasIdleHauler) return;
+
         return creepMaker.makeHauler(
             calculateMinEnergy(colony),
             colony.memory.constructionLevel >= REMOTE_ROAD_RCL ? 2 : 1
