@@ -1,4 +1,4 @@
-const { pathSets, roles } = require("./constants");
+const { pathSets, roles, REMOTE_CONTAINER_RCL } = require("./constants");
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
 const { markWorkingPosition } = require("./extension.betterPathing");
@@ -63,7 +63,7 @@ class MinerManager extends CreepManager {
                 });
             }
 
-            // Repair our container
+            // Repair/build our container
             if (
                 source &&
                 !source.energy &&
@@ -76,6 +76,21 @@ class MinerManager extends CreepManager {
                         .find((s) => s.structureType === STRUCTURE_CONTAINER);
                     if (container && container.hits < container.hitsMax) {
                         creep.repair(container);
+                    } else {
+                        // We'll build our container if one doesn't exist yet and we're at the right level
+                        const containerSite = sitePos
+                            .lookFor(LOOK_CONSTRUCTION_SITES)
+                            .find(
+                                (s) => s.structureType === STRUCTURE_CONTAINER
+                            );
+                        if (containerSite) {
+                            creep.build(containerSite);
+                        } else if (
+                            creep.room.name !== colony.room.name &&
+                            colony.room.controller.level >= REMOTE_CONTAINER_RCL
+                        ) {
+                            sitePos.createConstructionSite(STRUCTURE_CONTAINER);
+                        }
                     }
                 }
                 // Pickup some energy

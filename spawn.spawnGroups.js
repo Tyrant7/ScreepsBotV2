@@ -128,7 +128,7 @@ const production = new SpawnGroup("production", {
         if (!colony.getFirstOpenMiningSite()) return;
         return creepMaker.makeMiner(
             calculateMinEnergy(colony),
-            colony.memory.constructionLevel >= REMOTE_CONTAINER_RCL
+            colony.room.controller.level >= REMOTE_CONTAINER_RCL
         );
     },
     [roles.reserver]: (colony, count) => {

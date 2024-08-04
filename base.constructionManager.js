@@ -12,7 +12,6 @@ const {
     CONTAINER_PATHING_COST,
     ROAD_PATHING_COST,
     REMOTE_ROAD_RCL,
-    REMOTE_CONTAINER_RCL,
 } = require("./constants");
 const profiler = require("./debug.profiler");
 const estimateTravelTime = require("./util.estimateTravelTime");
