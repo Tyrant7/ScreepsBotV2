@@ -225,9 +225,9 @@ const handleSites = (colony) => {
             pathSets.default,
             bestStructure.pos.roomName
         );
-    } else {
+    } else if (DEBUG.warnOnFailedSitePlacement) {
         console.log(
-            "result from placing construction site at position " +
+            "Result from placing construction site at position " +
                 JSON.stringify(bestStructure.pos) +
                 " resulted in issue with code " +
                 result

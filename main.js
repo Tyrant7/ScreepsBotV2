@@ -52,6 +52,7 @@ global.DEBUG = {
     replanBaseOnReload: false,
     validateBasePlans: true,
     testBasePlanSerialization: true,
+    warnOnFailedSitePlacement: true,
     cpuPrintoutFigures: 4,
 
     logAppraisal: false,
