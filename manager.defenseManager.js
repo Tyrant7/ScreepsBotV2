@@ -37,7 +37,7 @@ class DefenseManager {
 
         // Finally, we'll repair roads that are low
         const lowRoads = (colony.structures[STRUCTURE_ROAD] || []).filter(
-            (r) => r.hits / r.hitsMax <= repairThresholds[STRUCTURE_ROAD]
+            (r) => r.hits / r.hitsMax <= repairThresholds[STRUCTURE_ROAD].min
         );
         if (!lowRoads.length) return;
 

@@ -1,7 +1,7 @@
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
 const Colony = require("./data.colony");
-const { roles, pathSets, repairThresholds } = require("./constants");
+const { roles, pathSets } = require("./constants");
 const { onRemoteDrop } = require("./event.colonyEvents");
 
 /**
