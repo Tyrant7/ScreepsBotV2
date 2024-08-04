@@ -142,6 +142,11 @@ class RemoteManager {
                     if (road.roomName === colony.room.name) {
                         continue;
                     }
+                    // Road's won't only be in their own rooms
+                    if (!matricesByRoom[road.roomName]) {
+                        matricesByRoom[road.roomName] =
+                            new PathFinder.CostMatrix();
+                    }
                     matricesByRoom[road.roomName].set(road.x, road.y, 1);
                 }
                 matricesByRoom[plan.container.roomName].set(

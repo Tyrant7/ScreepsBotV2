@@ -42,7 +42,10 @@ class EconomyManager {
         profiler.startSample("remotes");
         const nudge = 1 / REACTION_SPEED;
         colony.memory.spawnUsage =
-            nudge * lastSpawnUsage + (1 - nudge) * colony.memory.spawnUsage;
+            nudge * lastSpawnUsage +
+            (1 - nudge) *
+                // If no usage has been defined, we'll go with a 0.5 assumption
+                (colony.memory.spawnUsage || 0.5);
 
         // Based on our new estimates, we should be able to add/drop remotes according
         // to what we can or can no longer support
