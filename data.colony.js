@@ -23,7 +23,6 @@ class Colony {
         this.mineral = this.room.find(FIND_MINERALS)[0];
 
         this.remotesNeedingRepair = [];
-        this.ownStructuresNeedingRepair = [];
     }
 
     /**
@@ -100,23 +99,6 @@ class Colony {
         const isDecayTick = Game.time % CONTAINER_DECAY_TIME === 0 || RELOAD;
         if (isDecayTick) {
             this.remotesNeedingRepair = [];
-            this.ownStructuresNeedingRepair = (
-                this.structures[STRUCTURE_ROAD] || []
-            )
-                .concat(this.structures[STRUCTURE_RAMPART] || [])
-                .concat(this.structures[STRUCTURE_CONTAINER] || [])
-                .filter(
-                    (s) =>
-                        s.hits / s.hitsMax <
-                        repairThresholds[s.structureType].min
-                )
-                .map((s) => {
-                    return {
-                        pos: s.pos,
-                        id: s.id,
-                        hits: s.hits / s.hitsMax,
-                    };
-                });
         }
 
         this.remotePlans = remoteUtility.getRemotePlans(this.room.name);

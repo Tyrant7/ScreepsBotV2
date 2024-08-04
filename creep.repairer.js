@@ -25,11 +25,6 @@ class RepairerManager extends CreepManager {
             );
         }
 
-        // Prioritize our base's structures over remotes
-        if (colony.ownStructuresNeedingRepair.length) {
-            return this.createBaseRepairTask(creep, colony);
-        }
-
         // We'll want to make sure the remote is still active by the time we get around to it
         colony.remotesNeedingRepair = colony.remotesNeedingRepair.filter((r) =>
             colony.remotePlans.find(
@@ -152,68 +147,6 @@ class RepairerManager extends CreepManager {
                     target.endPos.y,
                     target.endPos.roomName
                 ),
-                useRate: creep.body.filter((p) => p.type === WORK).length,
-            },
-            "repair",
-            actionStack
-        );
-    }
-
-    createBaseRepairTask(creep, colony) {
-        const actionStack = [
-            // First let's get energy from the storage
-            function (creep, data) {
-                if (!colony.room.storage || creep.store[RESOURCE_ENERGY])
-                    return true;
-                if (creep.pos.getRangeTo(colony.room.storage) <= 1) {
-                    creep.withdraw(colony.room.storage, RESOURCE_ENERGY);
-                    return true;
-                }
-                creep.betterMoveTo(colony.room.storage, {
-                    pathSet: pathSets.default,
-                });
-            },
-            function (creep, { targetID, useRate }) {
-                if (
-                    creep.store[RESOURCE_ENERGY] <=
-                    useRate * REQUEST_ADVANCE_TICKS
-                ) {
-                    colony.createDropoffRequest(
-                        creep.store.getCapacity(),
-                        RESOURCE_ENERGY,
-                        [creep.id]
-                    );
-                }
-
-                const target = Game.getObjectById(targetID);
-                if (!target) return true;
-                if (
-                    target.hits / target.hitsMax >=
-                    repairThresholds[target.structureType].max
-                )
-                    return true;
-
-                if (creep.pos.getRangeTo(target) <= 3) {
-                    creep.repair(target);
-                    return false;
-                }
-                creep.betterMoveTo(target, {
-                    pathSet: pathSets.default,
-                });
-            },
-        ];
-
-        // Find our closest target and remove it
-        const closestTarget = _.min(colony.ownStructuresNeedingRepair, (s) =>
-            creep.pos.getRangeTo(s.pos)
-        );
-        colony.ownStructuresNeedingRepair =
-            colony.ownStructuresNeedingRepair.filter(
-                (s) => s !== closestTarget
-            );
-        return new Task(
-            {
-                targetID: closestTarget.id,
                 useRate: creep.body.filter((p) => p.type === WORK).length,
             },
             "repair",

@@ -1,3 +1,5 @@
+const { repairThresholds } = require("./constants");
+
 class DefenseManager {
     /**
      * Runs an extremely basic defense system for this room.
@@ -26,8 +28,23 @@ class DefenseManager {
         const lowCreep = colony.room
             .find(FIND_MY_CREEPS)
             .find((c) => c.hits < c.hitsMax);
+        if (lowCreep) {
+            for (const tower of towers) {
+                tower.heal(lowCreep);
+            }
+            return;
+        }
+
+        // Finally, we'll repair roads that are low
+        const lowRoads = (colony.structures[STRUCTURE_ROAD] || []).filter(
+            (r) => r.hits / r.hitsMax <= repairThresholds[STRUCTURE_ROAD]
+        );
+        if (!lowRoads.length) return;
+
+        let i = 0;
         for (const tower of towers) {
-            tower.heal(lowCreep);
+            tower.repair(lowRoads[i % lowRoads.length]);
+            i++;
         }
     }
 }
