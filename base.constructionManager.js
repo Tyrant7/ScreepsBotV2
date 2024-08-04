@@ -101,10 +101,10 @@ const handleSites = (colony) => {
     }
 
     // We only care about the rest when we can place a site
-    if (
-        colony.memory.buildTargets &&
-        colony.memory.buildTargets.length >= MAX_SITES
-    ) {
+    if (!colony.memory.buildTargets) {
+        colony.memory.buildTargets = [];
+    }
+    if (colony.memory.buildTargets.length >= MAX_SITES) {
         return;
     }
     const cache = caches[colony.room.name];
@@ -149,7 +149,7 @@ const handleSites = (colony) => {
                   // If the two candidates have the same score, we'll rank them by distance instead
                   if (currScore === best.score) {
                       const buildTargets = colony.memory.buildTargets;
-                      if (buildTargets && buildTargets.length) {
+                      if (buildTargets.length) {
                           const next = buildTargets[buildTargets.length - 1];
                           const nextPos = new RoomPosition(
                               next.pos.x,
