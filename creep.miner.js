@@ -2,6 +2,7 @@ const { pathSets, roles, REMOTE_CONTAINER_RCL } = require("./constants");
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
 const { markWorkingPosition } = require("./extension.betterPathing");
+const { onRemoteDrop } = require("./event.colonyEvents");
 
 class MinerManager extends CreepManager {
     createTask(creep, colony) {
@@ -148,5 +149,20 @@ class MinerManager extends CreepManager {
         return new Task(unreserved, "mine", actionStack);
     }
 }
+
+onRemoteDrop.subscribe((colony, remote) => {
+    // Let's drop the site for this container
+    for (const id in Game.constructionSites) {
+        const site = Game.constructionSites[id];
+        if (
+            site.pos.x === remote.container.x &&
+            site.pos.y === remote.container.y &&
+            site.pos.roomName === remote.room
+        ) {
+            site.remove();
+            break;
+        }
+    }
+});
 
 module.exports = MinerManager;
