@@ -284,7 +284,7 @@ const updateCache = (colony, rcl) => {
     profiler.endSample("filter list");
     profiler.endSample("structure list");
 
-    if (rcl < REMOTE_ROAD_RCL && rcl < REMOTE_CONTAINER_RCL) {
+    if (rcl < REMOTE_ROAD_RCL) {
         createCache(colony, rcl, missingStructures);
         return;
     }
@@ -296,42 +296,36 @@ const updateCache = (colony, rcl) => {
         }
 
         // Push all potential structures
-        const wantedRemoteStructures = [];
+        const missingRemoteStructures = [];
         if (rcl >= REMOTE_ROAD_RCL) {
-            wantedRemoteStructures.push(
-                ...remote.roads.map((road) => {
-                    return {
-                        type: STRUCTURE_ROAD,
-                        pos: new RoomPosition(road.x, road.y, road.roomName),
-                    };
-                })
+            missingRemoteStructures.push(
+                ...remote.roads
+                    .filter((r) => {
+                        const room = Game.rooms[r.roomName];
+                        if (!room) return false;
+                        return !room
+                            .lookForAt(LOOK_STRUCTURES, r.x, r.y)
+                            .concat(
+                                room.lookForAt(
+                                    LOOK_CONSTRUCTION_SITES,
+                                    r.x,
+                                    r.y
+                                )
+                            )
+                            .find((f) => f.structureType === STRUCTURE_ROAD);
+                    })
+                    .map((road) => {
+                        return {
+                            type: STRUCTURE_ROAD,
+                            pos: new RoomPosition(
+                                road.x,
+                                road.y,
+                                road.roomName
+                            ),
+                        };
+                    })
             );
         }
-        if (rcl >= REMOTE_CONTAINER_RCL) {
-            wantedRemoteStructures.push({
-                type: STRUCTURE_CONTAINER,
-                pos: new RoomPosition(
-                    remote.container.x,
-                    remote.container.y,
-                    remote.container.roomName
-                ),
-            });
-        }
-
-        // Then filter out already-built ones
-        const missingRemoteStructures = wantedRemoteStructures.filter((s) => {
-            const room = Game.rooms[s.pos.roomName];
-            if (!room) {
-                return false;
-            }
-            const existingStructure = room
-                .lookForAt(LOOK_STRUCTURES, s.pos.x, s.pos.y)
-                .concat(
-                    room.lookForAt(LOOK_CONSTRUCTION_SITES, s.pos.x, s.pos.y)
-                )
-                .find((f) => f.structureType === s.type);
-            return !existingStructure;
-        });
 
         // Finally let's add this to our list of needed structures
         missingStructures = missingStructures.concat(missingRemoteStructures);
