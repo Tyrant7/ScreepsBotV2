@@ -101,7 +101,7 @@ const handleSites = (colony) => {
     }
 
     // We only care about the rest when we can place a site
-    if (colony.constructionSites.length >= MAX_SITES) {
+    if (colony.memory.buildTargets.length >= MAX_SITES) {
         return;
     }
     const cache = caches[colony.room.name];

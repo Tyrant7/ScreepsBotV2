@@ -178,7 +178,7 @@ const usage = new SpawnGroup("usage", {
         return creepMaker.makeScout();
     },
     [roles.builder]: (colony, count) => {
-        if (!colony.constructionSites.length || count >= 2) return;
+        if (!colony.memory.buildTargets.length || count >= 2) return;
         return creepMaker.makeBuilder(colony.room.energyCapacityAvailable);
     },
     [roles.claimer]: (colony, count) => {
