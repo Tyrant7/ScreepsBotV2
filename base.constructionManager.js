@@ -228,7 +228,9 @@ const handleSites = (colony) => {
         );
     } else {
         console.log(
-            "result from placing construction site resulted in issue with code " +
+            "result from placing construction site at position " +
+                JSON.stringify(bestStructure.pos) +
+                " resulted in issue with code " +
                 result
         );
     }
