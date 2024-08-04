@@ -39,7 +39,6 @@ class ColonizerBuilderManager extends BuilderManager {
                         return this.createPickupTask(creep, resourcePile);
                     }
                 }
-                p;
                 return this.createHarvestTask(creep, colony);
             }
             return super.createBuildTask(colony, creep, spawnSite, true);

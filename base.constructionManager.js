@@ -103,6 +103,12 @@ const handleSites = (colony) => {
     // We only care about the rest when we can place a site
     if (!colony.memory.buildTargets) {
         colony.memory.buildTargets = [];
+    } else {
+        colony.memory.buildTargets = colony.memory.buildTargets.filter((t) => {
+            const room = Game.rooms[t.pos.roomName];
+            if (!room) return true;
+            return room.lookForAt(LOOK_CONSTRUCTION_SITES, t.pos.x, t.pos.y)[0];
+        });
     }
     if (colony.memory.buildTargets.length >= MAX_SITES) {
         return;
