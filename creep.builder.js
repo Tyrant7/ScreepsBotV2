@@ -1,6 +1,7 @@
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
 const { roles, pathSets } = require("./constants");
+const { ROOM_SIZE } = require("./constants");
 
 /**
  * The number of ticks a builder will request energy before it's finished using its current store.
@@ -145,10 +146,10 @@ class BuilderManager extends CreepManager {
                         const nearbyHauler = creep.room
                             .lookForAtArea(
                                 LOOK_CREEPS,
-                                creep.pos.y - 1,
-                                creep.pos.x - 1,
-                                creep.pos.y + 1,
-                                creep.pos.x + 1,
+                                Math.max(creep.pos.y - 1, 0),
+                                Math.max(creep.pos.x - 1, 0),
+                                Math.min(creep.pos.y + 1, ROOM_SIZE),
+                                Math.min(creep.pos.x + 1, ROOM_SIZE),
                                 true
                             )
                             .find(
