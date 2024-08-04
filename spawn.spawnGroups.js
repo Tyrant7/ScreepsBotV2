@@ -17,7 +17,7 @@ const calculateSupportingColonySpawnDemand = (colony, role) =>
         const wanting = newCol.spawnDemands[role];
         const existing = newCol.creepNamesAndRoles.filter(
             (c) => c.role === role
-        );
+        ).length;
         return total + Math.max(wanting - existing, 0);
     }, 0);
 
