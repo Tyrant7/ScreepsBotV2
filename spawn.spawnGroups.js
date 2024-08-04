@@ -124,6 +124,11 @@ const defense = new SpawnGroup("defense", {
 });
 
 const production = new SpawnGroup("production", {
+    [roles.cleaner]: (colony, count) => {
+        // Using / 2 to denote an arbitrary ratio of cleaners to cores
+        if (count >= colony.invaderCores.length / 2) return;
+        return creepMaker.makeCleaner(colony.room.energyCapacityAvailable);
+    },
     [roles.miner]: (colony, count) => {
         if (!colony.getFirstOpenMiningSite()) return;
         return creepMaker.makeMiner(
@@ -134,10 +139,6 @@ const production = new SpawnGroup("production", {
     [roles.reserver]: (colony, count) => {
         if (count >= colony.remoteRooms.length) return;
         return creepMaker.makeReserver();
-    },
-    [roles.cleaner]: (colony, count) => {
-        if (count >= colony.invaderCores.length) return;
-        return creepMaker.makeCleaner(colony.room.energyCapacityAvailable);
     },
 });
 
