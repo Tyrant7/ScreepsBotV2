@@ -3,6 +3,7 @@ const { markWorkingPosition } = require("./extension.betterPathing");
 const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
 const Colony = require("./data.colony");
+const { repairThresholds } = require("./constants");
 
 class UpgraderManager extends CreepManager {
     /**
@@ -50,8 +51,17 @@ class UpgraderManager extends CreepManager {
                 });
             }
 
-            // Always be upgrading when we can
-            creep.upgradeController(target);
+            // If our container is getting low, let's repair it instead
+            if (
+                upgraderContainer &&
+                upgraderContainer.hits / upgraderContainer.hitsMax <=
+                    repairThresholds[STRUCTURE_CONTAINER].min
+            ) {
+                creep.repair(upgraderContainer);
+            } else {
+                // Always be upgrading when we can
+                creep.upgradeController(target);
+            }
 
             // We'll mark this position to discourage creeps from walking through it
             markWorkingPosition(creep.pos);
