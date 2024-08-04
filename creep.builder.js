@@ -145,10 +145,10 @@ class BuilderManager extends CreepManager {
                         const nearbyHauler = creep.room
                             .lookForAtArea(
                                 LOOK_CREEPS,
-                                creep.pos.x - 1,
+                                creep.pos.y - 1,
                                 creep.pos.x - 1,
                                 creep.pos.y + 1,
-                                creep.pos.y + 1,
+                                creep.pos.x + 1,
                                 true
                             )
                             .find(
