@@ -1,27 +1,25 @@
 const initializeStats = () => {
     if (!Memory.stats || RELOAD) {
         Memory.stats = {
-            cpu: {
-                rollingAverage: 0,
-                nSamples: 0,
-            },
+            cpu: undefined,
             rcl: {},
         };
     }
 };
 
-const trackCPU = () => {
+const trackCPU = (periodLength) => {
     initializeStats();
     const used = Game.cpu.getUsed();
-    Memory.stats.cpu.nSamples++;
-    Memory.stats.cpu.rollingAverage =
-        (Memory.stats.cpu.rollingAverage * (Memory.stats.cpu.nSamples - 1) +
-            used) /
-        Memory.stats.cpu.nSamples;
-    return Memory.stats.cpu.rollingAverage;
+    if (Memory.stats.cpu) {
+        const nudge = 1 / periodLength;
+        Memory.stats.cpu = nudge * used + (1 - nudge) * Memory.stats.cpu;
+    } else {
+        Memory.stats.cpu = used;
+    }
+    return Memory.stats.cpu;
 };
 
-const trackRCL = (roomName) => {
+const trackRCL = (roomName, periodLength) => {
     const room = Game.rooms[roomName];
     if (!room) {
         return;
@@ -30,16 +28,27 @@ const trackRCL = (roomName) => {
     initializeStats();
     if (!Memory.stats.rcl[roomName]) {
         Memory.stats.rcl[roomName] = {
-            initialProgress: room.controller.progress,
-            tickTracked: Game.time,
+            lastProgress: room.controller.progress,
         };
+        return 0;
     }
+    const tickProgress =
+        room.controller.progress - Memory.stats.rcl[roomName].lastProgress;
+    Memory.stats.rcl[roomName].lastProgress = room.controller.progress;
 
-    const progDiff =
-        room.controller.progress - Memory.stats.rcl[roomName].initialProgress;
-    const timeDiff = Game.time - Memory.stats.rcl[roomName].tickTracked;
-    const avgDiff = progDiff / timeDiff;
-    return avgDiff;
+    if (Memory.stats.rcl[roomName].avgProgress) {
+        const nudge = 1 / periodLength;
+        Memory.stats.rcl[roomName].avgProgress =
+            nudge * tickProgress +
+            (1 - nudge) * Memory.stats.rcl[roomName].avgProgress;
+
+        console.log(Memory.stats.rcl[roomName].avgProgress);
+    } else {
+        Memory.stats.rcl[roomName].avgProgress = tickProgress;
+
+        console.log(tickProgress);
+    }
+    return Memory.stats.rcl[roomName].avgProgress;
 };
 
 module.exports = {

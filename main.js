@@ -40,6 +40,7 @@ global.DEBUG = {
     trackCreepCounts: true,
     trackActiveRemotes: true,
     trackSpawnUsage: true,
+    statsPeriodLength: 100,
 
     logRemotePlanning: false,
     logRemoteDropping: false,
@@ -229,7 +230,10 @@ const runColonies = () => {
         // Track RCL progress
         if (DEBUG.trackRCLProgress) {
             overlay.addHeading(colony.room.name + "_b", "RCL");
-            const averageRCL = trackStats.trackRCL(colony.room.name);
+            const averageRCL = trackStats.trackRCL(
+                colony.room.name,
+                DEBUG.statsPeriodLength
+            );
             overlay.addText(colony.room.name + "_b", {
                 "RCL Per Tick": averageRCL.toFixed(3),
             });
@@ -334,7 +338,7 @@ const runTraffic = () => {
 //#region Stats
 
 const stats_trackCPU = () => {
-    const rollingAverage = trackStats.trackCPU();
+    const rollingAverage = trackStats.trackCPU(DEBUG.statsPeriodLength);
     for (const roomName in colonies) {
         overlay.addHeading(roomName, "CPU Usage");
         overlay.addText(roomName, {
