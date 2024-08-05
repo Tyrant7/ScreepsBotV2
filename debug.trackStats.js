@@ -41,12 +41,8 @@ const trackRCL = (roomName, periodLength) => {
         Memory.stats.rcl[roomName].avgProgress =
             nudge * tickProgress +
             (1 - nudge) * Memory.stats.rcl[roomName].avgProgress;
-
-        console.log(Memory.stats.rcl[roomName].avgProgress);
     } else {
         Memory.stats.rcl[roomName].avgProgress = tickProgress;
-
-        console.log(tickProgress);
     }
     return Memory.stats.rcl[roomName].avgProgress;
 };
