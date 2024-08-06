@@ -8,6 +8,7 @@ const { RESERVER_COST } = require("./spawn.creepMaker");
 const { MINIMUM_PICKUP_AMOUNT } = require("./constants");
 const { repairThresholds } = require("./constants");
 const { getSpawnTime } = require("./spawn.spawnUtility");
+const { onRemoteAdd, onRemoteDrop } = require("./event.colonyEvents");
 
 class Colony {
     /**
@@ -218,7 +219,7 @@ class Colony {
      * - The ID of the source to mine.
      */
     getFirstOpenMiningSite(pos = null) {
-        let validSites = this.miningSites;
+        const validSites = this.miningSites;
         if (pos) {
             validSites.sort(
                 (a, b) =>
@@ -226,7 +227,7 @@ class Colony {
                     estimateTravelTime(pos, b.pos)
             );
         }
-        return validSites.find((site) => {
+        const bestSite = validSites.find((site) => {
             const source = Game.getObjectById(site.sourceID);
 
             // No view of source -> no miner there yet, so
@@ -271,6 +272,24 @@ class Colony {
             }
             return allocatedMiners.length < openSpaces;
         });
+        if (bestSite) return bestSite;
+
+        // We must be out of planned sites for miners
+        // Let's add a remote, if possible
+        return this.addRemoteIfPossible();
+    }
+
+    /**
+     * Determines if we should add a new remote, and if so, marks the best choice as active,
+     * returning a newly created mining site for this remote.
+     * @returns {{} | undefined} Returns a newly created mining site for the newly activated remote.
+     * Undefined if no remote was activated.
+     */
+    addRemoteIfPossible() {
+        // If CPU and spawn usage are both good
+        // let's add our best choice
+        // TODO //
+        // TODO: Handle remote dropping //
     }
 
     /**
