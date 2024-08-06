@@ -1,3 +1,5 @@
+const Colony = require("./data.colony");
+
 const RemotePlanner = require("./remote.remotePlanner");
 const remotePlanner = new RemotePlanner();
 
@@ -17,8 +19,28 @@ const { getScoutingData } = require("./scouting.scoutingUtility");
 const OUTSIDE_PATH_COST = 100;
 
 class RemoteManager {
+    /**
+     * Runs remote code for the given colony.
+     * @param {Colony} colony The colony to run remote code for.
+     */
     run(colony) {
         this.validatePlans(colony);
+
+        // If we have more than one site that can hold more miners,
+        // let's consider dropping our worst remote
+        const openSites = colony.miningSites.filter(
+            colony.canSiteHoldAdditionalMiners
+        );
+        if (openSites.length > 1) {
+            this.dropRemote(colony);
+            return;
+        }
+
+        // Otherwise, if we have no open mining sites We have no open mining sites,
+        // let's consider adding a remote
+        if (openSites.length === 0) {
+            this.addRemote(colony);
+        }
     }
 
     addRemote(colony) {

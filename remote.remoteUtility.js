@@ -65,8 +65,4 @@ module.exports = {
         }
         return true;
     },
-
-    getBestRemote: function (colony) {
-        
-    }
 };

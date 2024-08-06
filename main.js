@@ -258,8 +258,8 @@ const runColonies = () => {
         );
 
         // Handle economy (spawns and remotes)
-        profiler.wrap("spawns", () => spawnManager.run(colony));
         profiler.wrap("remotes", () => remoteManager.run(colony));
+        profiler.wrap("spawns", () => spawnManager.run(colony));
 
         if (DEBUG.drawPathMatrices || DEBUG.drawWorkingPositions) {
             const matrix = DEBUG.drawPathMatrices

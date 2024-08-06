@@ -227,69 +227,58 @@ class Colony {
                     estimateTravelTime(pos, b.pos)
             );
         }
-        const bestSite = validSites.find((site) => {
-            const source = Game.getObjectById(site.sourceID);
-
-            // No view of source -> no miner there yet, so
-            // this must be a valid site since all sites can hold at least one miner
-            if (!source) return true;
-
-            // We're going to look for sites where the number of allocated miners is
-            // less than the amount of open spaces
-            // Here we'll exclude miners that will die before we arrive at the source
-            const allocatedMiners = this.miners.filter(
-                (m) =>
-                    m.memory.miningSite &&
-                    m.memory.miningSite.sourceID === site.sourceID &&
-                    getSpawnTime(m.body) + m.memory.replaceTime <= m.ticksToLive
-            );
-
-            // First condition:
-            // The total number of WORK parts is less than that needed to fully mine a source
-            const totalWork = allocatedMiners.reduce(
-                (total, curr) =>
-                    total + curr.body.filter((p) => p.type === WORK).length,
-                0
-            );
-            const neededWork = site.isReserved ? MINER_WORK : REMOTE_MINER_WORK;
-            if (totalWork >= neededWork) return false;
-
-            // Second condition:
-            // Fewer miners assigned than the number of open spaces next to this source
-            const sourcePos = source.pos;
-            const roomTerrain = Game.map.getRoomTerrain(site.pos.roomName);
-            let openSpaces = 0;
-            for (let x = sourcePos.x - 1; x <= sourcePos.x + 1; x++) {
-                for (let y = sourcePos.y - 1; y <= sourcePos.y + 1; y++) {
-                    if (x < 1 || x > 48 || y < 1 || y > 48) {
-                        continue;
-                    }
-                    if (roomTerrain.get(x, y) === TERRAIN_MASK_WALL) {
-                        continue;
-                    }
-                    openSpaces++;
-                }
-            }
-            return allocatedMiners.length < openSpaces;
-        });
-        if (bestSite) return bestSite;
-
-        // We must be out of planned sites for miners
-        // Let's add a remote, if possible
-        return this.addRemoteIfPossible();
+        return validSites.find(this.canSiteHoldAdditionalMiners);
     }
 
     /**
-     * Determines if we should add a new remote, and if so, marks the best choice as active,
-     * returning a newly created mining site for this remote.
-     * @returns {{} | undefined} Returns a newly created mining site for the newly activated remote.
-     * Undefined if no remote was activated.
+     * Determines if the given mining site can hold additional miners.
+     * @param {{}} site The given site.
+     * @returns {boolean} True if so, otherwise, false.
      */
-    addRemoteIfPossible() {
-        // If CPU and spawn usage are both good
-        // let's add our best choice
-        // TODO //
-        // TODO: Handle remote dropping //
+    canSiteHoldAdditionalMiners(site) {
+        const source = Game.getObjectById(site.sourceID);
+
+        // No view of source -> no miner there yet, so
+        // this must be a valid site since all sites can hold at least one miner
+        if (!source) return true;
+
+        // We're going to look for sites where the number of allocated miners is
+        // less than the amount of open spaces
+        // Here we'll exclude miners that will die before we arrive at the source
+        const allocatedMiners = this.miners.filter(
+            (m) =>
+                m.memory.miningSite &&
+                m.memory.miningSite.sourceID === site.sourceID &&
+                getSpawnTime(m.body) + m.memory.replaceTime <= m.ticksToLive
+        );
+
+        // First condition:
+        // The total number of WORK parts is less than that needed to fully mine a source
+        const totalWork = allocatedMiners.reduce(
+            (total, curr) =>
+                total + curr.body.filter((p) => p.type === WORK).length,
+            0
+        );
+        const neededWork = site.isReserved ? MINER_WORK : REMOTE_MINER_WORK;
+        if (totalWork >= neededWork) return false;
+
+        // Second condition:
+        // Fewer miners assigned than the number of open spaces next to this source
+        const sourcePos = source.pos;
+        const roomTerrain = Game.map.getRoomTerrain(site.pos.roomName);
+        let openSpaces = 0;
+        for (let x = sourcePos.x - 1; x <= sourcePos.x + 1; x++) {
+            for (let y = sourcePos.y - 1; y <= sourcePos.y + 1; y++) {
+                if (x < 1 || x > 48 || y < 1 || y > 48) {
+                    continue;
+                }
+                if (roomTerrain.get(x, y) === TERRAIN_MASK_WALL) {
+                    continue;
+                }
+                openSpaces++;
+            }
+        }
+        return allocatedMiners.length < openSpaces;
     }
 
     /**
