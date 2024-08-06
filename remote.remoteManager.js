@@ -25,6 +25,7 @@ class RemoteManager {
      */
     run(colony) {
         this.validatePlans(colony);
+        this.drawOverlay(colony);
 
         // If we have more than one site that can hold more miners,
         // let's consider dropping our worst remote
@@ -303,11 +304,12 @@ class RemoteManager {
      * Draws enabled overlays for remotes.
      * @param {{}[]} remotes An array of remotes.
      */
-    drawOverlay() {
+    drawOverlay(colony) {
         if (!DEBUG.drawOverlay) {
             return;
         }
 
+        //#region World Space
         if (DEBUG.drawRemoteOwnership && Memory.temp.roads) {
             const colours = [
                 "#FF0000",
@@ -330,6 +332,20 @@ class RemoteManager {
         }
         if (DEBUG.drawContainerOverlay && Memory.temp.containerPositions) {
             overlay.rects(Memory.temp.containerPositions);
+        }
+        //#endregion
+
+        //#region Panels
+        const activeRemotes = colony.remotePlans.filter((r) => r.active);
+        if (!activeRemotes.length) return;
+
+        overlay.addHeading(colony.room.name, "Remotes");
+        for (const remote of activeRemotes) {
+            overlay.addColumns(
+                colony.room.name,
+                `${remote.source.id.substring(0, 5)} (${remote.room})`,
+                ""
+            );
         }
     }
 }
