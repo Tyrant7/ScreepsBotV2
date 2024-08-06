@@ -6,10 +6,13 @@ const remotePlanner = new RemotePlanner();
 const utility = require("./remote.remoteUtility");
 const { pathSets, REPLAN_REMOTE_INTERVAL, ROOM_SIZE } = require("./constants");
 const { cachePathMatrix } = require("./extension.betterPathing");
+const { getScoutingData } = require("./scouting.scoutingUtility");
+const { getSpawnTime } = require("./spawn.spawnUtility");
+const { makeReserver } = require("./spawn.creepMaker");
+const { onRemoteAdd, onRemoteDrop } = require("./event.colonyEvents");
 
 const overlay = require("./debug.overlay");
 const profiler = require("./debug.profiler");
-const { getScoutingData } = require("./scouting.scoutingUtility");
 
 /**
  * This will be the cost to path outside of our planned roads.
@@ -62,12 +65,12 @@ class RemoteManager {
         const best = this.getBestPlannedRemote(
             inactiveRemotes,
             activeRemotes,
-            colony.memory.remoteRooms
+            colony.remoteRooms
         );
         best.active = true;
 
         // Raise the event so other modules know that we've added a remote
-        onRemoteAdd.invoke(colony, nextRemote);
+        onRemoteAdd.invoke(colony, best);
 
         // Log it
         if (DEBUG.logRemoteDropping) {
@@ -126,9 +129,7 @@ class RemoteManager {
             return true;
         });
         return _.max(validRemotes, (r) => {
-            const penalty = reservedRooms.includes(curr.room)
-                ? 0
-                : reserverCost;
+            const penalty = reservedRooms.includes(r.room) ? 0 : reserverCost;
             return r.score / (r.cost + penalty);
         });
     }
