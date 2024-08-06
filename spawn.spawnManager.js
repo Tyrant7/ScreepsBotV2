@@ -84,11 +84,6 @@ class SpawnManager {
                 break;
             }
         }
-
-        // Track our spawn usage
-        return (
-            colony.structures[STRUCTURE_SPAWN].length - inactiveSpawns.length
-        );
     }
 
     /**

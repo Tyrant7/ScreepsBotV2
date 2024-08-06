@@ -17,38 +17,97 @@ const { getScoutingData } = require("./scouting.scoutingUtility");
 const OUTSIDE_PATH_COST = 100;
 
 class RemoteManager {
-    /**
-     * Draws enabled overlays for remotes.
-     * @param {{}[]} remotes An array of remotes.
-     */
-    drawOverlay() {
-        if (!DEBUG.drawOverlay) {
-            return;
+    run(colony) {
+        this.validatePlans(colony);
+    }
+
+    addRemote(colony) {
+        // Group remotes by activity status
+        const inactiveRemotes = [];
+        const activeRemotes = [];
+        for (const remote of colony.remotePlans) {
+            if (remote.active) {
+                activeRemotes.push(remote);
+                continue;
+            }
+            inactiveRemotes.push(remote);
         }
 
-        if (DEBUG.drawRemoteOwnership && Memory.temp.roads) {
-            const colours = [
-                "#FF0000",
-                "#00FF00",
-                "#0000FF",
-                "#FFFF00",
-                "#00FFFF",
-                "#FF00FF",
-            ];
-            let i = 0;
-            for (const remote in Memory.temp.roads) {
-                for (const road of Memory.temp.roads[remote]) {
-                    overlay.circles([road], {
-                        fill: colours[i % colours.length],
-                        radius: 0.25,
-                    });
+        // We already have all of our remotes
+        if (!inactiveRemotes.length) return;
+
+        const best = this.getBestPlannedRemote(
+            inactiveRemotes,
+            activeRemotes,
+            colony.memory.remoteRooms
+        );
+        best.active = true;
+
+        // Raise the event so other modules know that we've added a remote
+        onRemoteAdd.invoke(colony, nextRemote);
+
+        // Log it
+        if (DEBUG.logRemoteDropping) {
+            console.log(
+                `${colony.room.name} adding remote ${worst.source.id} in room ${worst.room}`
+            );
+        }
+    }
+
+    dropRemote(colony) {
+        const activeRemotes = colony.remotePlans.filter((r) => r.active);
+        if (!activeRemotes.length) return;
+
+        // We don't want to drop a remote that another one depends on, so let's filter for that
+        const nonDependants = activeRemotes.filter(
+            (remote) =>
+                !activeRemotes.find((r) =>
+                    r.dependants.includes(remote.source.id)
+                )
+        );
+
+        // Now we can simply drop the worst non-dependant
+        const worst = _.min(nonDependants, (r) => r.score / r.cost);
+        worst.active = false;
+
+        // Raise the event so other modules know that we've dropped a remote
+        onRemoteDrop.invoke(colony, worst);
+
+        // Log it
+        if (DEBUG.logRemoteDropping) {
+            console.log(
+                `${colony.room.name} dropping remote ${worst.source.id} in room ${worst.room}`
+            );
+        }
+    }
+
+    /**
+     * Finds the best inactive remote given an array of active and inactive remotes.
+     * @param {{}[]} inactiveRemotes Array of inactive remotes.
+     * @param {{}[]} activeRemotes Array of active remotes.
+     * @param {string[]} reservedRooms Array of room names of planned reserved rooms.
+     * @returns {{}} The best fit remote currently available.
+     */
+    getBestPlannedRemote(inactiveRemotes, activeRemotes, reservedRooms) {
+        // Let's make sure to include the cost of a reserver if we aren't already reserving the remote's room
+        const reserverCost = getSpawnTime(makeReserver().body);
+        const validRemotes = inactiveRemotes.filter((r) => {
+            // Ensure we meet the dependancies of this remote
+            for (const depend of r.dependants) {
+                if (
+                    !activeRemotes.find((active) => active.source.id === depend)
+                ) {
+                    return false;
                 }
-                i++;
             }
-        }
-        if (DEBUG.drawContainerOverlay && Memory.temp.containerPositions) {
-            overlay.rects(Memory.temp.containerPositions);
-        }
+            return true;
+        });
+        return _.max(validRemotes, (r) => {
+            const penalty = reservedRooms.includes(curr.room)
+                ? 0
+                : reserverCost;
+            return r.score / (r.cost + penalty);
+        });
     }
 
     /**
@@ -167,6 +226,11 @@ class RemoteManager {
         return colony.remotePlans;
     }
 
+    /**
+     * Plans remotes for the current colony. Also records appropriate debug info given active settings.
+     * @param {Colony} colony The colony to plan remotes for.
+     * @returns {{}[]} The newly planned remotes.
+     */
     planRemotes(colony) {
         const cpu = Game.cpu.getUsed();
         const remotes = remotePlanner.planRemotes(colony);
@@ -211,6 +275,40 @@ class RemoteManager {
         }
 
         return remotes;
+    }
+
+    /**
+     * Draws enabled overlays for remotes.
+     * @param {{}[]} remotes An array of remotes.
+     */
+    drawOverlay() {
+        if (!DEBUG.drawOverlay) {
+            return;
+        }
+
+        if (DEBUG.drawRemoteOwnership && Memory.temp.roads) {
+            const colours = [
+                "#FF0000",
+                "#00FF00",
+                "#0000FF",
+                "#FFFF00",
+                "#00FFFF",
+                "#FF00FF",
+            ];
+            let i = 0;
+            for (const remote in Memory.temp.roads) {
+                for (const road of Memory.temp.roads[remote]) {
+                    overlay.circles([road], {
+                        fill: colours[i % colours.length],
+                        radius: 0.25,
+                    });
+                }
+                i++;
+            }
+        }
+        if (DEBUG.drawContainerOverlay && Memory.temp.containerPositions) {
+            overlay.rects(Memory.temp.containerPositions);
+        }
     }
 }
 

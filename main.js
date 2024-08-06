@@ -79,10 +79,6 @@ const { doMemhack } = require("./extension.memHack");
 const Colony = require("./data.colony");
 const colonies = {};
 
-// Managers
-const EconomyManager = require("./manager.economyManager");
-const DefenseManager = require("./manager.defenseManager");
-
 // Creeps
 const HaulerManager = require("./creep.hauler");
 const StarterHaulerManager = require("./creep.starterHauler");
@@ -121,8 +117,12 @@ const creepRoleMap = {
 };
 
 // Economy
-const economyManager = new EconomyManager();
+const SpawnManager = require("./spawn.spawnManager");
+const spawnManager = new SpawnManager();
 const { checkRCL } = require("./manager.RCLManager");
+
+const RemoteManager = require("./remote.remoteManager");
+const remoteManager = new RemoteManager();
 
 // Base planning
 const BasePlanner = require("./base.basePlanner");
@@ -139,6 +139,7 @@ const ExpansionManager = require("./expansion.expansionManager");
 const expansionManager = new ExpansionManager();
 
 // Defense
+const DefenseManager = require("./manager.defenseManager");
 const defenseManager = new DefenseManager();
 const { restoreSKMatrices } = require("./scouting.scoutingUtility");
 
@@ -256,8 +257,9 @@ const runColonies = () => {
             haulingRequester.generateBasicRequests(colony)
         );
 
-        // Handle economy (remotes and spawns)
-        profiler.wrap("economy", () => economyManager.run(colony));
+        // Handle economy (spawns and remotes)
+        profiler.wrap("spawns", () => spawnManager.run(colony));
+        profiler.wrap("remotes", () => remoteManager.run(colony));
 
         if (DEBUG.drawPathMatrices || DEBUG.drawWorkingPositions) {
             const matrix = DEBUG.drawPathMatrices
