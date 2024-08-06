@@ -51,6 +51,8 @@ onRemoteDrop.subscribe((colony, remote) => {
 
     // Filter build targets that belong to this remote
     colony.memory.buildTargets = colony.memory.buildTargets.filter((b) => {
+        if (b.pos.roomName === colony.room.name) return true;
+
         const room = Game.rooms[b.pos.roomName];
         if (!room) return false;
 
