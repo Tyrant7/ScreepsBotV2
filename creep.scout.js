@@ -12,6 +12,9 @@ class ScoutManager extends CreepManager {
     createTask(creep, colony) {
         // Let's generate a new 'explore' task for the closest room within an arbitrary range to the creep's current room
         const targetName =
+            // We should always explore our immediate neighbours first
+            searchForUnexploredRoomsNearby(colony.room.name, 1) ||
+            // Then nearby to ourselves
             searchForUnexploredRoomsNearby(creep.room.name, 3) ||
             // If we've explored all directions of our current room, go off our base room
             searchForUnexploredRoomsNearby(colony.room.name, 3) ||
