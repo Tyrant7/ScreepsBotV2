@@ -28,8 +28,8 @@ class RemoteManager {
 
         // If we have more than one site that can hold more miners,
         // let's consider dropping our worst remote
-        const openSites = colony.miningSites.filter(
-            colony.canSiteHoldAdditionalMiners
+        const openSites = colony.miningSites.filter((site) =>
+            colony.canSiteHoldAdditionalMiners(site)
         );
         if (openSites.length > 1) {
             this.dropRemote(colony);

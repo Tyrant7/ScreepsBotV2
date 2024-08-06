@@ -227,7 +227,9 @@ class Colony {
                     estimateTravelTime(pos, b.pos)
             );
         }
-        return validSites.find(this.canSiteHoldAdditionalMiners);
+        return validSites.find((site) =>
+            this.canSiteHoldAdditionalMiners(site)
+        );
     }
 
     /**
