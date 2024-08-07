@@ -2,8 +2,17 @@ const {
     INVADER_OWNER,
     SOURCE_KEEPER_OWNER,
     HATE_REMOTE_MULTIPLIER,
+    HATE_KILL_THRESHOLD,
+    MISSION_TYPES,
+    MAX_MISSIONS,
 } = require("./combat.missionConstants");
-const { addHate, determineHateType } = require("./combat.missionUtility");
+const {
+    addHate,
+    determineHateType,
+    getAllPlayerData,
+    createMission,
+    getMissions,
+} = require("./combat.missionUtility");
 const Colony = require("./data.colony");
 
 /**
@@ -31,6 +40,20 @@ class MissionManager {
 
             // Include a multiplier for enemies in our remotes
             addHate(player, determineHateType(enemy) * HATE_REMOTE_MULTIPLIER);
+        }
+    }
+
+    runGlobally() {
+        const allPlayerData = getAllPlayerData();
+        const sortedHate = Object.keys(allPlayerData).sort(
+            (a, b) => allPlayerData[a].hate - allPlayerData[b].hate
+        );
+        const existingMissions = getMissions();
+        while (Object.keys(existingMissions).length < MAX_MISSIONS) {
+            const mostHated = sortedHate.pop();
+            if (allPlayerData[mostHated].hate < HATE_KILL_THRESHOLD) break;
+            if (existingMissions[mostHated]) continue;
+            createMission(mostHated, MISSION_TYPES.KILL);
         }
     }
 }

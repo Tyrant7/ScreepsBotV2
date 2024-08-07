@@ -3,6 +3,7 @@ const {
     HATE_FOR_ATTACKER,
     HATE_FOR_SCOUT,
     HATE_FOR_THIEF,
+    MAX_MISSIONS,
 } = require("./combat.missionConstants");
 
 const verifyPlayerDataExists = (player) => {
@@ -10,6 +11,10 @@ const verifyPlayerDataExists = (player) => {
     Memory.playerData[player] = {
         hate: 0,
     };
+};
+
+const getAllPlayerData = () => {
+    return Memory.playerData;
 };
 
 const addHate = (player, amount) => {
@@ -43,9 +48,21 @@ const determineHateType = (enemy) => {
     return HATE_FOR_SCOUT;
 };
 
+const getMissions = () => {
+    return Memory.missions;
+};
+
+const createMission = (player, type) => {
+    if (Object.keys(Memory.missions) >= MAX_MISSIONS) return;
+    Memory.missions[player] = type;
+};
+
 module.exports = {
     verifyPlayerDataExists,
+    getAllPlayerData,
     addHate,
     coolDown,
     determineHateType,
+    getMissions,
+    createMission,
 };

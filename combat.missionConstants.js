@@ -11,6 +11,13 @@ const HATE_REMOTE_MULTIPLIER = 0.4;
 const SOURCE_KEEPER_OWNER = "Source Keeper";
 const INVADER_OWNER = "Invader";
 
+const HATE_KILL_THRESHOLD = 4000;
+const MAX_MISSIONS = 1;
+
+const MISSION_TYPES = {
+    KILL: 1,
+};
+
 module.exports = {
     ALLIES,
     COOLDOWN_AMOUNT,
@@ -20,4 +27,7 @@ module.exports = {
     HATE_REMOTE_MULTIPLIER,
     SOURCE_KEEPER_OWNER,
     INVADER_OWNER,
+    HATE_KILL_THRESHOLD,
+    MAX_MISSIONS,
+    MISSION_TYPES,
 };
