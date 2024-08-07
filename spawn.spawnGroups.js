@@ -130,7 +130,10 @@ const production = new SpawnGroup("production", {
         return creepMaker.makeCleaner(colony.room.energyCapacityAvailable);
     },
     [roles.reserver]: (colony, count) => {
-        if (count >= colony.remoteRooms.length) return;
+        const remotesRoomsBeingMined = colony.remoteRooms.filter((r) =>
+            colony.miners.find((m) => m.memory.miningSite.pos.roomName === r)
+        );
+        if (count >= remotesRoomsBeingMined.length) return;
         return creepMaker.makeReserver();
     },
     [roles.miner]: (colony, count) => {
