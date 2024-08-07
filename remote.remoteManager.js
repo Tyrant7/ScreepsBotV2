@@ -35,14 +35,27 @@ class RemoteManager {
         const openSites = colony.miningSites.filter((site) =>
             colony.canSiteHoldAdditionalMiners(site)
         );
-        if (openSites.length > 1) {
+
+        // To avoid dropping tons of sites we can actually support due to
+        // invaders or other threats on our better choices, let's not drop anymore sites while we still
+        // have obsolete remotes being mined
+        const obsoleteRemotes = colony.remotePlans.filter(
+            (r) =>
+                !r.active &&
+                colony.miners.find(
+                    (m) =>
+                        m.memory.miningSite &&
+                        m.memory.miningSite.sourceID === r.source.id
+                )
+        );
+        if (openSites.length - obsoleteRemotes.length > 1) {
             this.dropRemote(colony);
             return;
         }
 
         // Otherwise, if we have no open mining sites We have no open mining sites,
         // let's consider adding a remote
-        if (openSites.length === 0) {
+        if (openSites.length - obsoleteRemotes.length <= 0) {
             this.addRemote(colony);
         }
     }
