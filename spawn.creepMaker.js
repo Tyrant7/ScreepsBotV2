@@ -260,6 +260,7 @@ const makeCleaner = (energy) => {
 //#endregion
 
 const RESERVER_COST = getCost(makeReserver().body);
+const CLAIMER_COST = getCost(makeClaimer().body);
 
 module.exports = {
     makeMiner,
@@ -277,4 +278,5 @@ module.exports = {
     makeColonizerBuilder,
     makeColonizerDefender,
     RESERVER_COST,
+    CLAIMER_COST,
 };

@@ -182,11 +182,16 @@ const usage = new SpawnGroup("usage", {
         return creepMaker.makeBuilder(colony.room.energyCapacityAvailable);
     },
     [roles.claimer]: (colony, count) => {
+        // We won't be able to support our expansions
+        if (colony.room.energyCapacityAvailable < creepMaker.CLAIMER_COST)
+            return;
         if (calculateSupportingColonySpawnDemand(colony, roles.claimer) <= 0)
             return;
         return creepMaker.makeClaimer();
     },
     [roles.colonizerBuilder]: (colony, count) => {
+        if (colony.room.energyCapacityAvailable < creepMaker.CLAIMER_COST)
+            return;
         if (
             calculateSupportingColonySpawnDemand(
                 colony,
@@ -199,6 +204,8 @@ const usage = new SpawnGroup("usage", {
         );
     },
     [roles.colonizerDefender]: (colony, count) => {
+        if (colony.room.energyCapacityAvailable < creepMaker.CLAIMER_COST)
+            return;
         if (
             calculateSupportingColonySpawnDemand(
                 colony,
