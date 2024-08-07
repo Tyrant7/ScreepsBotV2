@@ -10,7 +10,7 @@ const COLOR_BY_MISSION_TYPE = {
 const showMissionTargets = () => {
     const allMissions = getAllMissions();
     for (const mission in allMissions) {
-        for (const colony of allMissions[mission].data.supporters) {
+        for (const colony of allMissions[mission].supporters) {
             drawArrow(mission, colony, {
                 color: COLOR_BY_MISSION_TYPE[allMissions[mission].type],
                 lineStyle: "dotted",

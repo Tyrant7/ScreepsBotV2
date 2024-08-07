@@ -35,17 +35,17 @@ class SpawnManager {
             // Once we've found one, let's get the spawn that will handle that creep
             const spawn = inactiveSpawns[0];
 
-            // If we're supporting another colony, let's assign this creep to it
-            // Simply find the first colony missing one of these creeps
+            // If we're supporting a mission, let's assign this creep to it
+            // Simply find the first mission missing one of these creeps
             const supportingColony =
                 colony.memory.supporting && colony.memory.supporting.length
                     ? colony.memory.supporting.find((s) => {
                           const mission = getAllMissions()[s];
-                          if (!mission.data.spawnDemands[next.memory.role])
+                          if (!mission.spawnDemands[next.memory.role])
                               return false;
                           return (
-                              mission.data.spawnDemands[next.memory.role] >
-                              mission.data.creepNamesAndRoles.filter(
+                              mission.spawnDemands[next.memory.role] >
+                              mission.creepNamesAndRoles.filter(
                                   (c) => c.role === next.memory.role
                               ).length
                           );
@@ -67,11 +67,10 @@ class SpawnManager {
                 spawnsThisTick[next.memory.role] =
                     (spawnsThisTick[next.memory.role] || 0) + 1;
 
-                // We'll also let all other colonies know that we've spawned this creep
-                // if it's a surrogate spawn for another colony trying to get on its feet
+                // We'll also let all other colonies know that we've spawned this creep if it's for a mission
                 const mission = getAllMissions()[supportingColony];
                 if (mission) {
-                    mission.data.creepNamesAndRoles.push({
+                    mission.creepNamesAndRoles.push({
                         name: next.name,
                         role: next.memory.role,
                     });

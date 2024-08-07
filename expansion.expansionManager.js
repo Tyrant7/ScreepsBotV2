@@ -66,17 +66,16 @@ class ExpansionManager {
     }
 
     handleExpansions() {
-        // Make sure our colonies are aware of their own creeps for spawn tracking
+        // Make sure our expansion colonies are aware of their own creeps for spawn tracking
         const expansionMissions = getAllMissionsOfType(MISSION_TYPES.COLONIZE);
         for (const expansion in expansionMissions) {
             // Filter out the creeps that we think we own to only include creeps that are still alive
-            expansionMissions[expansion].data.creepNamesAndRoles =
-                expansionMissions[expansion].data.creepNamesAndRoles.filter(
-                    (c) => Game.creeps[c.name]
-                );
+            expansionMissions[expansion].creepNamesAndRoles = expansionMissions[
+                expansion
+            ].creepNamesAndRoles.filter((c) => Game.creeps[c.name]);
 
             // If we've claimed this room, we can remove the claimer from its spawn demand
-            expansionMissions[expansion].data.spawnDemands[roles.claimer] =
+            expansionMissions[expansion].spawnDemands[roles.claimer] =
                 Game.rooms[expansion] && Game.rooms[expansion].controller.my
                     ? 0
                     : 1;

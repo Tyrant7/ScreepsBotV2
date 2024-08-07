@@ -15,8 +15,8 @@ const { getAllMissions } = require("./combat.missionUtility");
 const calculateSupportingColonySpawnDemand = (colony, role) =>
     colony.memory.supporting.reduce((total, curr) => {
         const mission = getAllMissions()[curr];
-        const wanting = mission.data.spawnDemands[role];
-        const existing = mission.data.creepNamesAndRoles.filter(
+        const wanting = mission.spawnDemands[role];
+        const existing = mission.creepNamesAndRoles.filter(
             (c) => c.role === role
         ).length;
         return total + Math.max(wanting - existing, 0);

@@ -8,7 +8,6 @@ const { RESERVER_COST } = require("./spawn.creepMaker");
 const { MINIMUM_PICKUP_AMOUNT } = require("./constants");
 const { repairThresholds } = require("./constants");
 const { getSpawnTime } = require("./spawn.spawnUtility");
-const { onRemoteAdd, onRemoteDrop } = require("./event.colonyEvents");
 const {
     getAllMissions,
     getMissionType,

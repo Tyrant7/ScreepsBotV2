@@ -68,7 +68,7 @@ const getMissionType = (roomName) => {
 
 const createMission = (roomName, type, data) => {
     if (Object.keys(Memory.missions).length >= MAX_MISSIONS) return;
-    Memory.missions[roomName] = { type, data };
+    Memory.missions[roomName] = { type, ...data };
 };
 
 const removeMission = (roomName) => {
