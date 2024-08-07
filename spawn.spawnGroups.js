@@ -132,7 +132,11 @@ const production = new SpawnGroup("production", {
     },
     [roles.reserver]: (colony, count) => {
         const remotesRoomsBeingMined = colony.remoteRooms.filter((r) =>
-            colony.miners.find((m) => m.memory.miningSite.pos.roomName === r)
+            colony.miners.find(
+                (m) =>
+                    m.memory.miningSite &&
+                    m.memory.miningSite.pos.roomName === r
+            )
         );
         if (count >= remotesRoomsBeingMined.length) return;
         return creepMaker.makeReserver();
