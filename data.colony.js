@@ -447,7 +447,10 @@ class Colony {
                     total + Game.getObjectById(currID).store.getFreeCapacity()
                 );
             }, 0);
-            pickup.hasEnough = total >= pickup.amount;
+            // Note that subtracting the minimum amount here helps us avoid sending
+            // 2 haulers to go pick up a request that would normally be ignored by the second
+            // after seeing the first hauler
+            pickup.hasEnough = total >= pickup.amount - MINIMUM_PICKUP_AMOUNT;
         });
 
         return requests.filter((pickup) => {
