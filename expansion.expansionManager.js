@@ -25,18 +25,18 @@ class ExpansionManager {
         );
 
         // For this choice, we'll also let all colonies within range of it
-        // know that they'll be supporting it
+        // know that they'll be supporting this mission
         // We'll store a two-way connection here for debugging purposes
         const supporters = [];
         for (const colony in Memory.colonies) {
             const route = Game.map.findRoute(colony, best);
             const maxSupportDist = CREEP_CLAIM_LIFE_TIME / ROOM_SIZE;
             if (route.length <= maxSupportDist) {
-                if (!Memory.colonies[colony].supporting) {
-                    Memory.colonies[colony].supporting = [];
+                if (!Memory.colonies[colony].missions) {
+                    Memory.colonies[colony].missions = [];
                 }
-                if (!Memory.colonies[colony].supporting.includes(best)) {
-                    Memory.colonies[colony].supporting.push(best);
+                if (!Memory.colonies[colony].missions.includes(best)) {
+                    Memory.colonies[colony].missions.push(best);
                 }
                 supporters.push(colony);
             }

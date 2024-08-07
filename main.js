@@ -62,7 +62,8 @@ global.DEBUG = {
     logAppraisal: false,
     logColonization: false,
     showAppraisalScores: false,
-    showExpansionTargets: false,
+
+    showMissionTargets: false,
 };
 global.RELOAD = true;
 
@@ -134,12 +135,14 @@ const { getPlan: getBasePlan } = require("./base.planningUtility");
 const { handleSites } = require("./base.constructionManager");
 
 // Auto expansion
-const {
-    showAppraisalScores,
-    showExpansionTargets,
-} = require("./debug.expansionDebugUtility");
+const { showAppraisalScores } = require("./debug.expansionDebugUtility");
 const ExpansionManager = require("./expansion.expansionManager");
 const expansionManager = new ExpansionManager();
+
+// Missions
+const { showMissionTargets } = require("./combat.missionDebug");
+const MissionManager = require("./combat.missionManager");
+const missionManager = new MissionManager();
 
 // Defense
 const DefenseManager = require("./manager.defenseManager");
@@ -170,8 +173,12 @@ const runExpansion = () => {
     if (DEBUG.showAppraisalScores) {
         showAppraisalScores();
     }
-    if (DEBUG.showExpansionTargets) {
-        showExpansionTargets();
+};
+
+const runMissions = () => {
+    missionManager.runGlobally();
+    if (DEBUG.showMissionTargets) {
+        showMissionTargets();
     }
 };
 

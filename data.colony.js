@@ -43,15 +43,15 @@ class Colony {
         this.mineral = Game.getObjectById(this.mineral.id);
         profiler.endSample("cache");
 
-        // If any of our supporting colonies have emerged as full colonies, let's remove them
-        if (!this.memory.supporting) {
-            this.memory.supporting = [];
+        if (!this.memory.missions) {
+            this.memory.missions = [];
         }
-        for (const supporting of this.memory.supporting) {
-            const missionType = getMissionType(supporting);
-            if (missionType !== MISSION_TYPES.COLONIZE) {
-                this.memory.supporting = this.memory.supporting.filter(
-                    (s) => s !== supporting
+        // If any of our missions colonies have concluded, let's remove them
+        for (const mission of this.memory.missions) {
+            const missionType = getMissionType(mission);
+            if (!missionType) {
+                this.memory.missions = this.memory.missions.filter(
+                    (s) => s !== mission
                 );
             }
         }

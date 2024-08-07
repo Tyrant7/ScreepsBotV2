@@ -12,8 +12,8 @@ const { getAllMissions } = require("./combat.missionUtility");
 
 //#region Utility
 
-const calculateSupportingColonySpawnDemand = (colony, role) =>
-    colony.memory.supporting.reduce((total, curr) => {
+const calculateMissionSpawnDemand = (colony, role) =>
+    colony.memory.missions.reduce((total, curr) => {
         const mission = getAllMissions()[curr];
         const wanting = mission.spawnDemands[role];
         const existing = mission.creepNamesAndRoles.filter(
@@ -189,19 +189,13 @@ const usage = new SpawnGroup("usage", {
         // We won't be able to support our expansions
         if (colony.room.energyCapacityAvailable < creepMaker.CLAIMER_COST)
             return;
-        if (calculateSupportingColonySpawnDemand(colony, roles.claimer) <= 0)
-            return;
+        if (calculateMissionSpawnDemand(colony, roles.claimer) <= 0) return;
         return creepMaker.makeClaimer();
     },
     [roles.colonizerBuilder]: (colony, count) => {
         if (colony.room.energyCapacityAvailable < creepMaker.CLAIMER_COST)
             return;
-        if (
-            calculateSupportingColonySpawnDemand(
-                colony,
-                roles.colonizerBuilder
-            ) <= 0
-        )
+        if (calculateMissionSpawnDemand(colony, roles.colonizerBuilder) <= 0)
             return;
         return creepMaker.makeColonizerBuilder(
             colony.room.energyCapacityAvailable
@@ -210,12 +204,7 @@ const usage = new SpawnGroup("usage", {
     [roles.colonizerDefender]: (colony, count) => {
         if (colony.room.energyCapacityAvailable < creepMaker.CLAIMER_COST)
             return;
-        if (
-            calculateSupportingColonySpawnDemand(
-                colony,
-                roles.colonizerDefender
-            ) <= 0
-        )
+        if (calculateMissionSpawnDemand(colony, roles.colonizerDefender) <= 0)
             return;
         return creepMaker.makeColonizerDefender(
             colony.room.energyCapacityAvailable

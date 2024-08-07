@@ -4,7 +4,7 @@ const Task = require("./data.task");
 
 class ColonizerBuilderManager extends BuilderManager {
     createTask(creep, colony) {
-        if (creep.memory.expansionTarget === creep.room.name) {
+        if (creep.memory.mission === creep.room.name) {
             if (creep.room.controller.my) {
                 if (creep.memory.home !== creep.room.name) {
                     creep.memory.home = creep.room.name;
@@ -167,7 +167,7 @@ class ColonizerBuilderManager extends BuilderManager {
         const actionStack = [this.basicActions.moveToRoom];
         return new Task(
             {
-                roomName: creep.memory.expansionTarget,
+                roomName: creep.memory.mission,
                 maxRooms: 64,
                 maxOps: 64000,
                 pathSet: pathSets.travel,

@@ -37,9 +37,9 @@ class SpawnManager {
 
             // If we're supporting a mission, let's assign this creep to it
             // Simply find the first mission missing one of these creeps
-            const supportingColony =
-                colony.memory.supporting && colony.memory.supporting.length
-                    ? colony.memory.supporting.find((s) => {
+            const supportingMission =
+                colony.memory.missions && colony.memory.missions.length
+                    ? colony.memory.missions.find((s) => {
                           const mission = getAllMissions()[s];
                           if (!mission.spawnDemands[next.memory.role])
                               return false;
@@ -51,8 +51,8 @@ class SpawnManager {
                           );
                       })
                     : null;
-            if (supportingColony) {
-                next.memory.expansionTarget = supportingColony;
+            if (supportingMission) {
+                next.memory.mission = supportingMission;
             }
 
             // Save the room responsible for this creep and spawn it
@@ -68,7 +68,7 @@ class SpawnManager {
                     (spawnsThisTick[next.memory.role] || 0) + 1;
 
                 // We'll also let all other colonies know that we've spawned this creep if it's for a mission
-                const mission = getAllMissions()[supportingColony];
+                const mission = getAllMissions()[supportingMission];
                 if (mission) {
                     mission.creepNamesAndRoles.push({
                         name: next.name,
