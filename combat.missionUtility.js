@@ -22,6 +22,11 @@ const addHate = (player, amount) => {
     Memory.playerData[player].hate += amount;
 };
 
+const setHate = (player, amount) => {
+    verifyPlayerDataExists(player);
+    Memory.playerData[player].hate = amount;
+};
+
 const coolDown = (amount) => {
     for (const player in Memory.playerData) {
         Memory.playerData[player].hate -= COOLDOWN_AMOUNT;
@@ -61,6 +66,7 @@ module.exports = {
     verifyPlayerDataExists,
     getAllPlayerData,
     addHate,
+    setHate,
     coolDown,
     determineHateType,
     getMissions,
