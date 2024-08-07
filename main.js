@@ -63,7 +63,7 @@ global.DEBUG = {
     logColonization: false,
     showAppraisalScores: false,
 
-    showMissionTargets: false,
+    showMissionTargets: true,
 };
 global.RELOAD = true;
 
@@ -407,6 +407,9 @@ const mainLoop = () => {
 
     // Global expansion-related things should come first so colonies know how to react
     profiler.wrap("expansion", runExpansion);
+
+    // Global mission-related things immediately afterwards
+    profiler.wrap("missions", runMissions);
 
     // Colonies will then run any logic required for creep actions like creating hauler orders
     profiler.wrap("colonies", runColonies);

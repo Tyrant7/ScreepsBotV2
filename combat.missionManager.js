@@ -11,7 +11,7 @@ const {
     determineHateType,
     getAllPlayerData,
     createMission,
-    getMissions,
+    getAllMissions,
 } = require("./combat.missionUtility");
 const Colony = require("./data.colony");
 
