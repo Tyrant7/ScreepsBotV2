@@ -17,6 +17,12 @@ if (!Memory.colonies) {
 if (!Memory.newColonies) {
     Memory.newColonies = {};
 }
+if (!Memory.playerData) {
+    Memory.playerData = {};
+}
+if (!Memory.missions) {
+    Memory.missions = {};
+}
 
 // Globals
 global.ME = "Tyrant7";
