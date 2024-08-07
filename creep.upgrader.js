@@ -5,6 +5,11 @@ const Task = require("./data.task");
 const Colony = require("./data.colony");
 const { repairThresholds } = require("./constants");
 
+/**
+ * When we get low on energy, we'll request more this many ticks in advance.
+ */
+const REQUEST_ADVANCE_TICKS = 5;
+
 class UpgraderManager extends CreepManager {
     /**
      * Generates an "upgrade" task for this upgrader.
@@ -91,7 +96,10 @@ class UpgraderManager extends CreepManager {
                 }
                 return;
             }
-            if (creep.store[RESOURCE_ENERGY] <= data.energyUsage * 2) {
+            if (
+                creep.store[RESOURCE_ENERGY] <=
+                data.energyUsage * REQUEST_ADVANCE_TICKS
+            ) {
                 // Otherwise, we don't need to move, we'll simply request
                 // energy for ourself from haulers, if our container doesn't exist yet
                 // Orders for the container itself will be handled by the basic requester
