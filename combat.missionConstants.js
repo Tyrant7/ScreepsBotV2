@@ -3,11 +3,21 @@ const ALLIES = [];
 const COOLDOWN_AMOUNT = 1;
 
 const HATE_FOR_SCOUT = 1;
-const HATE_FOR_ATTACKER = 25;
+const HATE_FOR_THIEF = 2;
+const HATE_FOR_ATTACKER = 35;
+
+const HATE_REMOTE_MULTIPLIER = 0.4;
+
+const SOURCE_KEEPER_OWNER = "Source Keeper";
+const INVADER_OWNER = "Invader";
 
 module.exports = {
     ALLIES,
     COOLDOWN_AMOUNT,
     HATE_FOR_SCOUT,
+    HATE_FOR_THIEF,
     HATE_FOR_ATTACKER,
+    HATE_REMOTE_MULTIPLIER,
+    SOURCE_KEEPER_OWNER,
+    INVADER_OWNER,
 };

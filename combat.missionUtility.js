@@ -1,4 +1,9 @@
-const { COOLDOWN_AMOUNT } = require("./combat.missionConstants");
+const {
+    COOLDOWN_AMOUNT,
+    HATE_FOR_ATTACKER,
+    HATE_FOR_SCOUT,
+    HATE_FOR_THIEF,
+} = require("./combat.missionConstants");
 
 const verifyPlayerDataExists = (player) => {
     if (Memory.playerData[player]) return;
@@ -18,8 +23,29 @@ const coolDown = (amount) => {
     }
 };
 
+/**
+ * Determines the amount of hate to give for an enemy creep in our room.
+ * @param {Creep} enemy The enemy creep.
+ * @returns {number} The amount of hate.
+ */
+const determineHateType = (enemy) => {
+    if (
+        enemy.body.find(
+            (part) =>
+                part.type === ATTACK ||
+                part.type === HEAL ||
+                part.type === RANGED_ATTACK ||
+                part.type === WORK
+        )
+    )
+        return HATE_FOR_ATTACKER;
+    if (enemy.body.find((part) => part.type === CARRY)) return HATE_FOR_THIEF;
+    return HATE_FOR_SCOUT;
+};
+
 module.exports = {
     verifyPlayerDataExists,
     addHate,
     coolDown,
+    determineHateType,
 };
