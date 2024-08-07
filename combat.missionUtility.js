@@ -58,7 +58,7 @@ const getAllMissions = () => {
 };
 
 const getAllMissionsOfType = (type) => {
-    return _.pick(Memory.missions, (k) => Memory.missions[k].type === type);
+    return _.pick(Memory.missions, (k) => k.type === type);
 };
 
 const getMissionType = (roomName) => {
@@ -66,9 +66,15 @@ const getMissionType = (roomName) => {
     return Memory.missions[roomName].type;
 };
 
-const createMission = (roomName, type, data) => {
+const createMission = (roomName, type, supporters, spawnDemands) => {
     if (Object.keys(Memory.missions).length >= MAX_MISSIONS) return;
-    Memory.missions[roomName] = { type, ...data };
+    Memory.missions[roomName] = {
+        type,
+        created: Game.time,
+        supporters,
+        spawnDemands,
+        creepNamesAndRoles: [],
+    };
 };
 
 const removeMission = (roomName) => {

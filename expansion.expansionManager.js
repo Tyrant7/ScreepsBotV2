@@ -43,17 +43,11 @@ class ExpansionManager {
         }
 
         // And create an entry for it in our global colonization spot
-        const entry = {
-            created: Game.time,
-            supporters: supporters,
-            spawnDemands: {
-                [roles.claimer]: 1,
-                [roles.colonizerBuilder]: 2,
-                [roles.colonizerDefender]: 1,
-            },
-            creepNamesAndRoles: [],
-        };
-        createMission(best, MISSION_TYPES.COLONIZE, entry);
+        createMission(best, MISSION_TYPES.COLONIZE, supporters, {
+            [roles.claimer]: 1,
+            [roles.colonizerBuilder]: 2,
+            [roles.colonizerDefender]: 1,
+        });
 
         // After this, we'll clear all expansion scores since they're now out of date
         for (const room in Memory.scoutData) {
