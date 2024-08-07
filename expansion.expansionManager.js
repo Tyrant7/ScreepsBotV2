@@ -1,3 +1,8 @@
+const { MISSION_TYPES } = require("./combat.missionConstants");
+const {
+    createMission,
+    getAllMissionsOfType,
+} = require("./combat.missionUtility");
 const { roles, ROOM_SIZE } = require("./constants");
 const { wrap } = require("./debug.profiler");
 
@@ -48,7 +53,7 @@ class ExpansionManager {
             },
             creepNamesAndRoles: [],
         };
-        Memory.newColonies[best] = entry;
+        createMission(best, MISSION_TYPES.COLONIZE, entry);
 
         // After this, we'll clear all expansion scores since they're now out of date
         for (const room in Memory.scoutData) {
@@ -62,15 +67,16 @@ class ExpansionManager {
 
     handleExpansions() {
         // Make sure our colonies are aware of their own creeps for spawn tracking
-        for (const expansion in Memory.newColonies) {
+        const expansionMissions = getAllMissionsOfType(MISSION_TYPES.COLONIZE);
+        for (const expansion in expansionMissions) {
             // Filter out the creeps that we think we own to only include creeps that are still alive
-            Memory.newColonies[expansion].creepNamesAndRoles =
-                Memory.newColonies[expansion].creepNamesAndRoles.filter(
+            expansionMissions[expansion].data.creepNamesAndRoles =
+                expansionMissions[expansion].data.creepNamesAndRoles.filter(
                     (c) => Game.creeps[c.name]
                 );
 
             // If we've claimed this room, we can remove the claimer from its spawn demand
-            Memory.newColonies[expansion].spawnDemands[roles.claimer] =
+            expansionMissions[expansion].data.spawnDemands[roles.claimer] =
                 Game.rooms[expansion] && Game.rooms[expansion].controller.my
                     ? 0
                     : 1;
@@ -80,7 +86,7 @@ class ExpansionManager {
 
 const hasFreeGCL = () =>
     Object.keys(Memory.colonies).length +
-        Object.keys(Memory.newColonies).length <
+        Object.keys(getAllMissionsOfType(MISSION_TYPES.COLONIZE)).length <
     Game.gcl.level;
 
 module.exports = ExpansionManager;

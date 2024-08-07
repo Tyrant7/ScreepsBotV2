@@ -53,13 +53,26 @@ const determineHateType = (enemy) => {
     return HATE_FOR_SCOUT;
 };
 
-const getMissions = () => {
+const getAllMissions = () => {
     return Memory.missions;
 };
 
-const createMission = (player, type) => {
-    if (Object.keys(Memory.missions) >= MAX_MISSIONS) return;
-    Memory.missions[player] = type;
+const getAllMissionsOfType = (type) => {
+    return _.pick(Memory.missions, (k) => Memory.missions[k].type === type);
+};
+
+const getMissionType = (roomName) => {
+    if (!Memory.missions[roomName]) return 0;
+    return Memory.missions[roomName].type;
+};
+
+const createMission = (roomName, type, data) => {
+    if (Object.keys(Memory.missions).length >= MAX_MISSIONS) return;
+    Memory.missions[roomName] = { type, data };
+};
+
+const removeMission = (roomName) => {
+    delete Memory.missions[roomName];
 };
 
 module.exports = {
@@ -69,6 +82,9 @@ module.exports = {
     setHate,
     coolDown,
     determineHateType,
-    getMissions,
+    getAllMissions,
+    getAllMissionsOfType,
+    getMissionType,
     createMission,
+    removeMission,
 };

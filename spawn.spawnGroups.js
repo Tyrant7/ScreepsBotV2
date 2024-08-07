@@ -8,14 +8,15 @@ const { getCost } = require("./spawn.spawnUtility");
 
 const creepMaker = require("./spawn.creepMaker");
 const Colony = require("./data.colony");
+const { getAllMissions } = require("./combat.missionUtility");
 
 //#region Utility
 
 const calculateSupportingColonySpawnDemand = (colony, role) =>
     colony.memory.supporting.reduce((total, curr) => {
-        const newCol = Memory.newColonies[curr];
-        const wanting = newCol.spawnDemands[role];
-        const existing = newCol.creepNamesAndRoles.filter(
+        const mission = getAllMissions()[curr];
+        const wanting = mission.data.spawnDemands[role];
+        const existing = mission.data.creepNamesAndRoles.filter(
             (c) => c.role === role
         ).length;
         return total + Math.max(wanting - existing, 0);
@@ -224,6 +225,7 @@ const usage = new SpawnGroup("usage", {
         if (count > 0 || !colony.structures[STRUCTURE_EXTRACTOR]) return;
         return creepMaker.makeMineralMiner(colony.room.energyCapacityAvailable);
     },
+    [roles.meleeDuo]: (colony, count) => {},
     [roles.upgrader]: (colony, count) => {
         const emptyUpgrader = colony.upgraders.find(
             (upgrader) => !upgrader.store[RESOURCE_ENERGY]

@@ -48,12 +48,12 @@ class MissionManager {
         const sortedHate = Object.keys(allPlayerData).sort(
             (a, b) => allPlayerData[a].hate - allPlayerData[b].hate
         );
-        const existingMissions = getMissions();
+        const existingMissions = getAllMissions();
         while (Object.keys(existingMissions).length < MAX_MISSIONS) {
             const mostHated = sortedHate.pop();
             if (allPlayerData[mostHated].hate < HATE_KILL_THRESHOLD) break;
-            if (existingMissions[mostHated]) continue;
-            createMission(mostHated, MISSION_TYPES.KILL);
+
+            // Find a room to kill
         }
     }
 }

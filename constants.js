@@ -14,6 +14,8 @@ const roles = {
     claimer: "claimer",
     colonizerBuilder: "c_builder",
     colonizerDefender: "c_defender",
+
+    meleeDuo: "m_duo",
 };
 
 const pathSets = {

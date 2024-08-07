@@ -1,3 +1,4 @@
+const { getAllMissions } = require("./combat.missionUtility");
 const overlay = require("./debug.overlay");
 const { getSortedGroups } = require("./spawn.spawnGroups");
 
@@ -38,20 +39,17 @@ class SpawnManager {
             // Simply find the first colony missing one of these creeps
             const supportingColony =
                 colony.memory.supporting && colony.memory.supporting.length
-                    ? colony.memory.supporting.find(
-                          (s) =>
-                              Memory.newColonies[s].spawnDemands[
-                                  next.memory.role
-                              ] &&
-                              Memory.newColonies[s].spawnDemands[
-                                  next.memory.role
-                              ] >
-                                  Memory.newColonies[
-                                      s
-                                  ].creepNamesAndRoles.filter(
-                                      (c) => c.role === next.memory.role
-                                  ).length
-                      )
+                    ? colony.memory.supporting.find((s) => {
+                          const mission = getAllMissions()[s];
+                          if (!mission.data.spawnDemands[next.memory.role])
+                              return false;
+                          return (
+                              mission.data.spawnDemands[next.memory.role] >
+                              mission.data.creepNamesAndRoles.filter(
+                                  (c) => c.role === next.memory.role
+                              ).length
+                          );
+                      })
                     : null;
             if (supportingColony) {
                 next.memory.expansionTarget = supportingColony;
@@ -71,10 +69,9 @@ class SpawnManager {
 
                 // We'll also let all other colonies know that we've spawned this creep
                 // if it's a surrogate spawn for another colony trying to get on its feet
-                if (Memory.newColonies[supportingColony]) {
-                    Memory.newColonies[
-                        supportingColony
-                    ].creepNamesAndRoles.push({
+                const mission = getAllMissions()[supportingColony];
+                if (mission) {
+                    mission.data.creepNamesAndRoles.push({
                         name: next.name,
                         role: next.memory.role,
                     });

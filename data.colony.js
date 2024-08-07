@@ -9,6 +9,12 @@ const { MINIMUM_PICKUP_AMOUNT } = require("./constants");
 const { repairThresholds } = require("./constants");
 const { getSpawnTime } = require("./spawn.spawnUtility");
 const { onRemoteAdd, onRemoteDrop } = require("./event.colonyEvents");
+const {
+    getAllMissions,
+    getMissionType,
+    removeMission,
+} = require("./combat.missionUtility");
+const { MISSION_TYPES } = require("./combat.missionConstants");
 
 class Colony {
     /**
@@ -43,7 +49,8 @@ class Colony {
             this.memory.supporting = [];
         }
         for (const supporting of this.memory.supporting) {
-            if (!Memory.newColonies[supporting]) {
+            const missionType = getMissionType(supporting);
+            if (missionType !== MISSION_TYPES.COLONIZE) {
                 this.memory.supporting = this.memory.supporting.filter(
                     (s) => s !== supporting
                 );
@@ -182,10 +189,10 @@ class Colony {
         // If this colony has a spawn, let's make sure that it isn't a new colony anymore
         // No need for surrogate spawns anymore
         if (
-            Memory.newColonies[this.room.name] &&
+            getMissionType(this.room.name) === MISSION_TYPES.COLONIZE &&
             this.structures[STRUCTURE_SPAWN]
         ) {
-            delete Memory.newColonies[this.room.name];
+            removeMission(this.room.name);
         }
 
         // Clear tick caches

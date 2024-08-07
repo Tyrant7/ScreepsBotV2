@@ -14,9 +14,6 @@ if (!Memory.scoutData) {
 if (!Memory.colonies) {
     Memory.colonies = {};
 }
-if (!Memory.newColonies) {
-    Memory.newColonies = {};
-}
 if (!Memory.playerData) {
     Memory.playerData = {};
 }

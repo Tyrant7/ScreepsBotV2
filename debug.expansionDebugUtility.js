@@ -18,19 +18,6 @@ const showAppraisalScores = () => {
     }
 };
 
-const showExpansionTargets = () => {
-    for (const newColony in Memory.newColonies) {
-        for (const colony of Memory.newColonies[newColony].supporters) {
-            drawArrow(newColony, colony, {
-                color: "6BEB2A",
-                lineStyle: "dotted",
-                width: 1.5,
-            });
-        }
-    }
-};
-
 module.exports = {
     showAppraisalScores,
-    showExpansionTargets,
 };
