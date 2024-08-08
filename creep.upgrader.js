@@ -77,13 +77,17 @@ class UpgraderManager extends CreepManager {
                     return;
                 }
 
-                const dist = creep.pos.getRangeTo(
-                    upgraderContainerPos.x,
-                    upgraderContainerPos.y
+                const dist = Math.max(
+                    creep.pos.getRangeTo(
+                        upgraderContainerPos.x,
+                        upgraderContainerPos.y
+                    ),
+                    1
                 );
                 if (
                     creep.store[RESOURCE_ENERGY] <=
-                    (dist * data.energyUsage) / data.moveSpeed
+                    data.energyUsage +
+                        ((dist - 1) * data.energyUsage) / data.moveSpeed
                 ) {
                     if (dist <= 1) {
                         creep.withdraw(upgraderContainer, RESOURCE_ENERGY);
