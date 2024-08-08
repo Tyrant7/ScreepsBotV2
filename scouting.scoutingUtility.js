@@ -60,6 +60,7 @@ const packageScoutingData = (room) => {
     });
 
     roomData.towers = 0;
+    roomData.spawns = 0;
     roomData.invaderCores = [];
     roomData.keeperLairs = [];
     for (const structure of room.find(FIND_STRUCTURES)) {
@@ -80,6 +81,8 @@ const packageScoutingData = (room) => {
         if (structure.structureType === STRUCTURE_TOWER) {
             roomData.towers++;
             cachePathMatrix(false, pathSets.travel, room.name);
+        } else if (structure.structureType === STRUCTURE_SPAWN) {
+            roomData.spawns++;
         }
     }
 
