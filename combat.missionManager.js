@@ -87,6 +87,7 @@ class MissionManager {
                 const rankedRooms = this.rankRoomsToAttack(
                     getAllPlayerRooms(mostHated)
                 );
+                if (!rankedRooms.length) break;
                 while (
                     rankedRooms.length &&
                     allPlayerData[mostHated].hate >= HATE_KILL_THRESHOLD
@@ -110,9 +111,6 @@ class MissionManager {
     }
 
     rankRoomsToAttack(roomDatas) {
-        // Can't attack rooms without spawns
-        roomDatas = roomDatas.filter((r) => getScoutingData(r).spawns);
-
         const scores = {};
         for (const room in roomDatas) {
             const data = getScoutingData(room);

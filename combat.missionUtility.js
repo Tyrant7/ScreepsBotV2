@@ -100,7 +100,8 @@ const getColoniesInRange = (point, maxDist, minRCL = 0) => {
 const getAllPlayerRooms = (player) => {
     return _.pick(
         Memory.scoutData,
-        (d) => d.controller && d.controller.owner === player
+        // Must be owned and have at least one spawn
+        (d) => d.controller && d.controller.owner === player && d.spawns
     );
 };
 
