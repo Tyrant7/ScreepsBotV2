@@ -17,12 +17,11 @@ const {
     getAllPlayerRooms,
     coolDown,
 } = require("./combat.missionUtility");
-const { registerMissionCommands } = require("./combat.missionCommands");
 const { roles } = require("./constants");
 const Colony = require("./data.colony");
 
 if (DEBUG.allowCommands) {
-    registerMissionCommands();
+    require("./combat.missionCommands");
 }
 
 /**
