@@ -400,6 +400,8 @@ class Colony {
      * carrying over request data from the previous tick.
      */
     finalizeRequests() {
+        if (!this.haulers) return;
+
         // Let's figure out which haulers are assigned to which requests
         const pickups = {};
         const dropoffs = {};
