@@ -15,7 +15,7 @@ const { getAllMissions } = require("./combat.missionUtility");
 const calculateMissionSpawnDemand = (colony, role) =>
     colony.memory.missions.reduce((total, curr) => {
         const mission = getAllMissions()[curr];
-        const wanting = mission.spawnDemands[role];
+        const wanting = mission.spawnDemands[role] || 0;
         const existing = mission.creepNamesAndRoles.filter(
             (c) => c.role === role
         ).length;
