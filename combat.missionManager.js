@@ -114,7 +114,7 @@ class MissionManager {
         // TODO //
         // Dynamic military sizes based on certain factors like towers and ramparts
         return {
-            [roles.meleeDuo]: 1,
+            [roles.meleeDuo]: 2,
         };
     }
 }
