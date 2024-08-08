@@ -1,6 +1,8 @@
+const { ROOM_SIZE } = require("./constants");
+
 const ALLIES = [];
 
-const COOLDOWN_AMOUNT = 1;
+const COOLDOWN_AMOUNT = 5000;
 
 const HATE_FOR_SCOUT = 1;
 const HATE_FOR_THIEF = 2;
@@ -12,13 +14,20 @@ const SOURCE_KEEPER_OWNER = "Source Keeper";
 const INVADER_OWNER = "Invader";
 
 const HATE_KILL_THRESHOLD = 4000;
-const MAX_MISSIONS = 1;
 
 const MISSION_TYPES = {
     NONE: 0,
     KILL: 1,
     COLONIZE: 2,
 };
+
+/**
+ * Creeps must be able to reach their destination within half of a typical lifetime.
+ */
+const MAX_ATTACK_ROOM_RANGE = CREEP_LIFE_TIME / ROOM_SIZE / 2;
+
+const DEFENSE_SCORE_TOWERS = 10;
+const DEFENSE_SCORE_DISTANCE = 2;
 
 module.exports = {
     ALLIES,
@@ -30,6 +39,8 @@ module.exports = {
     SOURCE_KEEPER_OWNER,
     INVADER_OWNER,
     HATE_KILL_THRESHOLD,
-    MAX_MISSIONS,
     MISSION_TYPES,
+    MAX_ATTACK_ROOM_RANGE,
+    DEFENSE_SCORE_TOWERS,
+    DEFENSE_SCORE_DISTANCE,
 };

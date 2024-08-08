@@ -3,7 +3,6 @@ const {
     HATE_FOR_ATTACKER,
     HATE_FOR_SCOUT,
     HATE_FOR_THIEF,
-    MAX_MISSIONS,
 } = require("./combat.missionConstants");
 
 const verifyPlayerDataExists = (player) => {
@@ -27,10 +26,8 @@ const setHate = (player, amount) => {
     Memory.playerData[player].hate = amount;
 };
 
-const coolDown = (amount) => {
-    for (const player in Memory.playerData) {
-        Memory.playerData[player].hate -= COOLDOWN_AMOUNT;
-    }
+const coolDown = (player) => {
+    Memory.playerData[player].hate -= COOLDOWN_AMOUNT;
 };
 
 /**
@@ -58,7 +55,7 @@ const getAllMissions = () => {
 };
 
 const getAllMissionsOfType = (type) => {
-    return _.pick(Memory.missions, (k) => k.type === type);
+    return _.pick(Memory.missions, (m) => m.type === type);
 };
 
 const getMissionType = (roomName) => {
@@ -67,7 +64,14 @@ const getMissionType = (roomName) => {
 };
 
 const createMission = (roomName, type, supporters, spawnDemands) => {
-    if (Object.keys(Memory.missions).length >= MAX_MISSIONS) return;
+    for (const supporter of supporters) {
+        if (!Memory.colonies[supporter].missions) {
+            Memory.colonies[supporter].missions = [];
+        }
+        if (!Memory.colonies[supporter].missions.includes(point)) {
+            Memory.colonies[supporter].missions.push(point);
+        }
+    }
     Memory.missions[roomName] = {
         type,
         created: Game.time,
@@ -79,6 +83,25 @@ const createMission = (roomName, type, supporters, spawnDemands) => {
 
 const removeMission = (roomName) => {
     delete Memory.missions[roomName];
+};
+
+const getColoniesInRange = (point, maxDist, minRCL = 0) => {
+    const supporters = [];
+    for (const colony in Memory.colonies) {
+        if (Memory.colonies[colony].rcl < minRCL) continue;
+        const route = Game.map.findRoute(colony, point);
+        if (route.length <= maxDist) {
+            supporters.push(colony);
+        }
+    }
+    return supporters;
+};
+
+const getAllPlayerRooms = (player) => {
+    return _.pick(
+        Memory.scoutData,
+        (d) => d.controller && d.controller.owner === player
+    );
 };
 
 module.exports = {
@@ -93,4 +116,6 @@ module.exports = {
     getMissionType,
     createMission,
     removeMission,
+    getColoniesInRange,
+    getAllPlayerRooms,
 };

@@ -59,7 +59,7 @@ const packageScoutingData = (room) => {
         return info;
     });
 
-    roomData.hasTowers = false;
+    roomData.towers = 0;
     roomData.invaderCores = [];
     roomData.keeperLairs = [];
     for (const structure of room.find(FIND_STRUCTURES)) {
@@ -78,14 +78,14 @@ const packageScoutingData = (room) => {
         // If this room has towers and isn't ours, we'll mark it
         // to avoid in our pathsets
         if (structure.structureType === STRUCTURE_TOWER) {
-            roomData.hasTowers = true;
+            roomData.towers++;
             cachePathMatrix(false, pathSets.travel, room.name);
         }
     }
 
     // If this room is an SK room, we'll update our "travel" pathset to avoid the keeper patrol points
-    // We'll also mark down the pointer so we know where they are next time
-    if (roomData.keeperLairs.length && !roomData.hasTowers) {
+    // We'll also mark down the positions so we know where they are next time
+    if (roomData.keeperLairs.length && roomData.towers === 0) {
         roomData.keeperPositions = room
             .find(FIND_HOSTILE_CREEPS)
             .filter((c) => c.owner.username === "Source Keeper")
