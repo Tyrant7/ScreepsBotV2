@@ -273,6 +273,9 @@ const runColonies = () => {
         profiler.wrap("remotes", () => remoteManager.run(colony));
         profiler.wrap("spawns", () => spawnManager.run(colony));
 
+        // Hate accumulation
+        profiler.wrap("hate", () => missionManager.accumulateHate(colony));
+
         if (DEBUG.drawPathMatrices || DEBUG.drawWorkingPositions) {
             const matrix = DEBUG.drawPathMatrices
                 ? getCachedPathMatrix(pathSets.default, colony.room.name)
