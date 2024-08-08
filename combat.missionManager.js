@@ -88,24 +88,19 @@ class MissionManager {
                     getAllPlayerRooms(mostHated)
                 );
                 if (!rankedRooms.length) break;
-                while (
-                    rankedRooms.length &&
-                    allPlayerData[mostHated].hate >= HATE_KILL_THRESHOLD
-                ) {
-                    const nextRoom = rankedRooms.pop();
-                    const coloniesInRange = getColoniesInRange(
-                        nextRoom,
-                        MAX_ATTACK_ROOM_RANGE
-                    );
-                    if (!coloniesInRange.length) continue;
-                    createMission(
-                        nextRoom,
-                        MISSION_TYPES.KILL,
-                        coloniesInRange,
-                        this.determineMilitaryNeeded(nextRoom)
-                    );
-                    coolDown(mostHated);
-                }
+                const nextRoom = rankedRooms.pop();
+                const coloniesInRange = getColoniesInRange(
+                    nextRoom,
+                    MAX_ATTACK_ROOM_RANGE
+                );
+                if (!coloniesInRange.length) continue;
+                createMission(
+                    nextRoom,
+                    MISSION_TYPES.KILL,
+                    coloniesInRange,
+                    this.determineMilitaryNeeded(nextRoom)
+                );
+                coolDown(mostHated);
             }
         }
     }
