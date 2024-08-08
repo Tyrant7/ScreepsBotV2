@@ -16,9 +16,12 @@ const {
     getColoniesInRange,
     getAllPlayerRooms,
     coolDown,
+    getAllMissionsOfType,
+    removeMission,
 } = require("./combat.missionUtility");
 const { roles } = require("./constants");
 const Colony = require("./data.colony");
+const { getScoutingData } = require("./scouting.scoutingUtility");
 
 if (DEBUG.allowCommands) {
     require("./combat.missionCommands");
@@ -53,6 +56,25 @@ class MissionManager {
     }
 
     runGlobally() {
+        this.filterCompletedCombatMissions();
+        this.createKillMissions();
+    }
+
+    filterCompletedCombatMissions() {
+        const combatMissions = getAllMissionsOfType(MISSION_TYPES.KILL);
+        for (const missionRoom in combatMissions) {
+            if (this.isCombatComplete(missionRoom)) {
+                removeMission(missionRoom);
+            }
+        }
+    }
+
+    isCombatComplete(missionRoom) {
+        const scoutData = getScoutingData(missionRoom);
+        return !scoutData.spawns || !scoutData.controller.owner;
+    }
+
+    createKillMissions() {
         const allPlayerData = getAllPlayerData();
         const sortedHate = Object.keys(allPlayerData).sort(
             (a, b) => allPlayerData[a].hate - allPlayerData[b].hate
@@ -90,7 +112,7 @@ class MissionManager {
     rankRoomsToAttack(roomDatas) {
         const scores = {};
         for (const room in roomDatas) {
-            const data = Memory.scoutData[room];
+            const data = getScoutingData(room);
 
             // Score for each tower
             const towerScore = data.towers * DEFENSE_SCORE_TOWERS;
@@ -109,7 +131,7 @@ class MissionManager {
     }
 
     determineMilitaryNeeded(roomName) {
-        const roomData = Memory.scoutData[roomName];
+        const roomData = getScoutingData(roomName);
 
         // TODO //
         // Dynamic military sizes based on certain factors like towers and ramparts
