@@ -13,13 +13,17 @@ const {
     determineHateType,
     getAllPlayerData,
     createMission,
-    getAllMissions,
     getColoniesInRange,
     getAllPlayerRooms,
     coolDown,
 } = require("./combat.missionUtility");
+const { registerMissionCommands } = require("./combat.missionCommands");
 const { roles } = require("./constants");
 const Colony = require("./data.colony");
+
+if (DEBUG.allowCommands) {
+    registerMissionCommands();
+}
 
 /**
  * The `MissionManager` will handle all top-level combat-related code
@@ -106,7 +110,7 @@ class MissionManager {
     }
 
     determineMilitaryNeeded(roomName) {
-        const roomData = Memory.scoutData(roomName);
+        const roomData = Memory.scoutData[roomName];
 
         // TODO //
         // Dynamic military sizes based on certain factors like towers and ramparts

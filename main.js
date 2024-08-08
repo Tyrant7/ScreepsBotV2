@@ -24,6 +24,8 @@ if (!Memory.missions) {
 // Globals
 global.ME = "Tyrant7";
 global.DEBUG = {
+    allowCommands: true,
+
     logTasks: true,
     alertOnIdle: false,
 

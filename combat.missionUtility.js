@@ -68,8 +68,8 @@ const createMission = (roomName, type, supporters, spawnDemands) => {
         if (!Memory.colonies[supporter].missions) {
             Memory.colonies[supporter].missions = [];
         }
-        if (!Memory.colonies[supporter].missions.includes(point)) {
-            Memory.colonies[supporter].missions.push(point);
+        if (!Memory.colonies[supporter].missions.includes(roomName)) {
+            Memory.colonies[supporter].missions.push(roomName);
         }
     }
     Memory.missions[roomName] = {
