@@ -44,18 +44,6 @@ class UpgraderManager extends CreepManager {
                 return;
             }
 
-            // We'll encourage ourselves to not stand on roads
-            if (
-                creep.pos
-                    .lookFor(LOOK_STRUCTURES)
-                    .filter((s) => s.structureType === STRUCTURE_ROAD)[0]
-            ) {
-                creep.betterMoveTo(creep.room.controller.pos, {
-                    range: 1,
-                    maxRooms: 1,
-                });
-            }
-
             // If our container is getting low, let's repair it instead
             if (
                 upgraderContainer &&
