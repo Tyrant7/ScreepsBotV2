@@ -110,6 +110,9 @@ class MissionManager {
     }
 
     rankRoomsToAttack(roomDatas) {
+        // Can't attack rooms without spawns
+        roomDatas = roomDatas.filter((r) => getScoutingData(r).spawns);
+
         const scores = {};
         for (const room in roomDatas) {
             const data = getScoutingData(room);
