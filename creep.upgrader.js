@@ -57,7 +57,14 @@ class UpgraderManager extends CreepManager {
             }
 
             // We'll mark this position to discourage creeps from walking through it
-            markWorkingPosition(creep.pos);
+            // if we're not on a road
+            if (
+                !creep.pos
+                    .lookFor(LOOK_STRUCTURES)
+                    .find((s) => s.structureType === STRUCTURE_ROAD)
+            ) {
+                markWorkingPosition(creep.pos);
+            }
 
             // If we have a container, we'll walk next to it if we're getting low on energy
             if (upgraderContainer) {
