@@ -485,12 +485,18 @@ class Colony {
                 storageThresholds[this.room.controller.level]
         ) {
             // Let's make sure we actually have dropoff requests for energy
-            const dropoffs = Object.values(this._dropoffRequests).filter(
-                (dropoff) => {
-                    return dropoff.resourceType === RESOURCE_ENERGY;
-                }
-            );
-            if (dropoffs.length) {
+            // that aren't already able to be fulfilled
+            const unfilledEnergyDropoff = Object.values(
+                this._dropoffRequests
+            ).find((dropoff) => {
+                if (dropoff.resourceType <= RESOURCE_ENERGY) return false;
+                const total = _.sum(
+                    dropoff.assignedHaulers,
+                    (h) => Game.getObjectById(h).store[dropoff.resourceType]
+                );
+                return total < dropoff.amount;
+            });
+            if (unfilledEnergyDropoff) {
                 validPickups.push({
                     amount: Math.min(
                         this.room.storage.store[RESOURCE_ENERGY],
@@ -521,12 +527,10 @@ class Colony {
         // Add a few properties to each pickup request
         validDropoffs.forEach((dropoff) => {
             // Let's also figure out if this pickup point has enough haulers assigned to fill its request or not
-            const total = dropoff.assignedHaulers.reduce((total, currID) => {
-                return (
-                    total +
-                    Game.getObjectById(currID).store[dropoff.resourceType]
-                );
-            }, 0);
+            const total = _.sum(
+                dropoff.assignedHaulers,
+                (h) => Game.getObjectById(h).store[dropoff.resourceType]
+            );
             dropoff.hasEnough = total >= dropoff.amount;
         });
 
