@@ -229,11 +229,24 @@ const usage = new SpawnGroup("usage", {
         const upgraderContainer = colony.getUpgraderContainer();
         if (upgraderContainer && !upgraderContainer.store[RESOURCE_ENERGY])
             return;
+
+        if (
+            colony.room.storage &&
+            colony.room.storage.store[RESOURCE_ENERGY] <
+                storageThresholds[colony.room.controller.level]
+        )
+            return;
+
         return creepMaker.makeUpgrader(colony.room.energyCapacityAvailable);
     },
 });
 
 //#endregion
+
+const WEIGHT_IDLE_HAULERS = 3;
+const WEIGHT_EXCESS_ENERGY = 1 / 5000;
+const WEIGHT_WAITING_HAULERS = 5;
+const WEIGHT_UNTENDED_PICKUPS = 4;
 
 const groups = [defense, production, transport, usage];
 const getSortedGroups = (colony) => {
@@ -252,16 +265,23 @@ const getSortedGroups = (colony) => {
     );
 
     // If we have haulers waiting for dropoffs, let's vouch for spenders
-    const waitingHaulers = colony.haulers.filter(
-        (hauler) =>
-            hauler.store.getUsedCapacity() > 0 &&
-            (!(hauler.memory.dropoff || hauler.memory.returning) ||
-                (colony.room.storage &&
-                    colony.room.storage.store[RESOURCE_ENERGY] >
-                        storageThresholds[colony.room.controller.level] &&
-                    hauler.memory.dropoff &&
-                    hauler.memory.dropoff.id === colony.room.storage.id))
-    );
+    let spendScore;
+    if (colony.room.storage) {
+        const excessEnergy = Math.max(
+            colony.room.storage.store[RESOURCE_ENERGY] -
+                storageThresholds[colony.room.controller.level],
+            0
+        );
+        spendScore = excessEnergy * WEIGHT_EXCESS_ENERGY;
+        console.log(spendScore);
+    } else {
+        const waitingHaulers = colony.haulers.filter(
+            (hauler) =>
+                hauler.store.getUsedCapacity() > 0 &&
+                !(hauler.memory.dropoff || hauler.memory.returning)
+        );
+        spendScore = waitingHaulers * WEIGHT_WAITING_HAULERS;
+    }
 
     // If we have lots of untended pickups, let's vouch for transporters
     const averageHaulerSize =
@@ -277,15 +297,15 @@ const getSortedGroups = (colony) => {
     // We're going to look at all cases, and see which is most important
     const conditions = [
         {
-            score: idleHaulers.length,
+            score: idleHaulers.length * WEIGHT_IDLE_HAULERS,
             order: [defense, production, usage],
         },
         {
-            score: waitingHaulers.length,
+            score: spendScore,
             order: [defense, usage, production, transport],
         },
         {
-            score: untendedPickups.length,
+            score: untendedPickups.length * WEIGHT_UNTENDED_PICKUPS,
             order: [defense, transport, usage, production],
         },
     ];

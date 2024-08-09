@@ -34,10 +34,10 @@ const maxLevels = {
 
 const storageThresholds = {
     4: 5000,
-    5: 10000,
-    6: 15000,
-    7: 20000,
-    8: 25000,
+    5: 15000,
+    6: 25000,
+    7: 40000,
+    8: 80000,
 };
 
 const repairThresholds = {
