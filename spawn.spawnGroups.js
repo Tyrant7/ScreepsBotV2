@@ -229,14 +229,6 @@ const usage = new SpawnGroup("usage", {
         const upgraderContainer = colony.getUpgraderContainer();
         if (upgraderContainer && !upgraderContainer.store[RESOURCE_ENERGY])
             return;
-
-        if (
-            colony.room.storage &&
-            colony.room.storage.store[RESOURCE_ENERGY] <
-                storageThresholds[colony.room.controller.level]
-        )
-            return;
-
         return creepMaker.makeUpgrader(colony.room.energyCapacityAvailable);
     },
 });
@@ -272,7 +264,8 @@ const getSortedGroups = (colony) => {
                 storageThresholds[colony.room.controller.level],
             0
         );
-        spendScore = excessEnergy * WEIGHT_EXCESS_ENERGY;
+        spendScore =
+            excessEnergy * WEIGHT_EXCESS_ENERGY - colony.upgraders.length;
     } else {
         const waitingHaulers = colony.haulers.filter(
             (hauler) =>
