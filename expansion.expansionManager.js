@@ -6,6 +6,11 @@ const {
 } = require("./mission.missionUtility");
 const { roles, ROOM_SIZE } = require("./constants");
 const { wrap } = require("./debug.profiler");
+const {
+    makeClaimer,
+    makeColonizerBuilder,
+    makeColonizerDefender,
+} = require("./spawn.creepMaker");
 
 class ExpansionManager {
     run() {
@@ -31,9 +36,23 @@ class ExpansionManager {
             MISSION_TYPES.COLONIZE,
             getColoniesInRange(best, CREEP_CLAIM_LIFE_TIME / ROOM_SIZE),
             {
-                [roles.claimer]: 1,
-                [roles.colonizerBuilder]: 2,
-                [roles.colonizerDefender]: 1,
+                [roles.claimer]: [(colony) => makeClaimer()],
+                [roles.colonizerBuilder]: [
+                    (colony) =>
+                        makeColonizerBuilder(
+                            colony.room.energyCapacityAvailable
+                        ),
+                    (colony) =>
+                        makeColonizerBuilder(
+                            colony.room.energyCapacityAvailable
+                        ),
+                ],
+                [roles.colonizerDefender]: [
+                    (colony) =>
+                        makeColonizerDefender(
+                            colony.room.energyCapacityAvailable
+                        ),
+                ],
             }
         );
 
@@ -51,10 +70,10 @@ class ExpansionManager {
         // If we've claimed this room, we can remove the claimer from its spawn demand
         const expansionMissions = getAllMissionsOfType(MISSION_TYPES.COLONIZE);
         for (const expansion in expansionMissions) {
-            expansionMissions[expansion].spawnDemands[roles.claimer] =
+            expansionMissions[expansion].spawnRequests[roles.claimer] =
                 Game.rooms[expansion] && Game.rooms[expansion].controller.my
-                    ? 0
-                    : 1;
+                    ? []
+                    : [(colony) => makeClaimer()];
         }
     }
 }

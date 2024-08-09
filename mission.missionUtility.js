@@ -11,7 +11,7 @@ const getMissionType = (roomName) => {
     return Memory.missions[roomName].type;
 };
 
-const createMission = (roomName, type, supporters, spawnDemands) => {
+const createMission = (roomName, type, supporters, spawnRequests) => {
     for (const supporter of supporters) {
         if (!Memory.colonies[supporter].missions) {
             Memory.colonies[supporter].missions = [];
@@ -24,7 +24,7 @@ const createMission = (roomName, type, supporters, spawnDemands) => {
         type,
         created: Game.time,
         supporters,
-        spawnDemands,
+        spawnRequests,
         creepNamesAndRoles: [],
     };
 };

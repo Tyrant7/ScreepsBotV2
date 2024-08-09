@@ -41,10 +41,10 @@ class SpawnManager {
                 colony.memory.missions && colony.memory.missions.length
                     ? colony.memory.missions.find((s) => {
                           const mission = getAllMissions()[s];
-                          if (!mission.spawnDemands[next.memory.role])
+                          if (!mission.spawnRequests[next.memory.role])
                               return false;
                           return (
-                              mission.spawnDemands[next.memory.role] >
+                              mission.spawnRequests[next.memory.role].length >
                               mission.creepNamesAndRoles.filter(
                                   (c) => c.role === next.memory.role
                               ).length

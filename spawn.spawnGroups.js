@@ -12,15 +12,16 @@ const { getAllMissions } = require("./mission.missionUtility");
 
 //#region Utility
 
-const calculateMissionSpawnDemand = (colony, role) =>
-    colony.memory.missions.reduce((total, curr) => {
-        const mission = getAllMissions()[curr];
-        const wanting = mission.spawnDemands[role] || 0;
+const getNextMissionSpawn = (colony, role) => {
+    for (const room in colony.memory.missions) {
+        const mission = getAllMissions()[room];
+        const wanting = mission.spawnRequests[role].length || 0;
         const existing = mission.creepNamesAndRoles.filter(
             (c) => c.role === role
         ).length;
-        return total + Math.max(wanting - existing, 0);
-    }, 0);
+        if (wanting - existing > 0) return mission.spawnRequests[role](colony);
+    }
+};
 
 const calculateMinEnergy = (colony) =>
     colony.miners.length && colony.haulers.length
@@ -192,32 +193,25 @@ const usage = new SpawnGroup("usage", {
         // We won't be able to support our expansions
         if (colony.room.energyCapacityAvailable < creepMaker.CLAIMER_COST)
             return;
-        if (calculateMissionSpawnDemand(colony, roles.claimer) <= 0) return;
-        return creepMaker.makeClaimer();
+        return getNextMissionSpawn(colony, roles.claimer);
     },
     [roles.colonizerBuilder]: (colony, count) => {
         if (colony.room.energyCapacityAvailable < creepMaker.CLAIMER_COST)
             return;
-        if (calculateMissionSpawnDemand(colony, roles.colonizerBuilder) <= 0)
-            return;
-        return creepMaker.makeColonizerBuilder(
-            colony.room.energyCapacityAvailable
-        );
+        return getNextMissionSpawn(colony, roles.colonizerBuilder);
     },
     [roles.colonizerDefender]: (colony, count) => {
         if (colony.room.energyCapacityAvailable < creepMaker.CLAIMER_COST)
             return;
-        if (calculateMissionSpawnDemand(colony, roles.colonizerDefender) <= 0)
-            return;
-        return creepMaker.makeColonizerDefender(
-            colony.room.energyCapacityAvailable
-        );
+        return getNextMissionSpawn(colony, roles.colonizerDefender);
     },
     [roles.mineralMiner]: (colony, count) => {
         if (count > 0 || !colony.structures[STRUCTURE_EXTRACTOR]) return;
         return creepMaker.makeMineralMiner(colony.room.energyCapacityAvailable);
     },
-    [roles.meleeDuo]: (colony, count) => {},
+    [roles.combatDuo]: (colony, count) => {
+        return getNextMissionSpawn(colony, roles.combatDuo);
+    },
     [roles.upgrader]: (colony, count) => {
         // Always try to have at least one upgrader
         if (count <= 0)

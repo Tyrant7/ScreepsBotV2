@@ -259,6 +259,40 @@ const makeCleaner = (energy) => {
 
 //#endregion
 
+//#region Offense
+
+// Military creeps are a little different for a few reasons
+// 1. We need to spawn them at a certain size, so we'll specify a part count as a parameter
+// 2. We need to specify the part types, since there are different types of duos, quads, etc.
+// 3. They spawn in groups, so we'll also specify the type of creep within each group,
+//    as a duo leader, duo follower, etc.
+
+const makeDuoLeader = (size, partType) => {
+    const body = [];
+    for (let i = 0; i < Math.min(size, MAX_CREEP_SIZE); i++) {
+        body.push(MOVE, partType);
+    }
+    return {
+        body,
+        name: `Duo_Leader_${partType} ${Game.time} [${size}]`,
+        memory: { role: roles.combatDuo, superior: true },
+    };
+};
+
+const makeDuoFollower = (size) => {
+    const body = [];
+    for (let i = 0; i < Math.min(size, MAX_CREEP_SIZE); i++) {
+        body.push(MOVE, HEAL);
+    }
+    return {
+        body,
+        name: `Duo_Follower_${partType} ${Game.time} [${size}]`,
+        memory: { role: roles.combatDuo, superior: false },
+    };
+};
+
+//#endregion
+
 const RESERVER_COST = getCost(makeReserver().body);
 const CLAIMER_COST = getCost(makeClaimer().body);
 
@@ -277,6 +311,8 @@ module.exports = {
     makeClaimer,
     makeColonizerBuilder,
     makeColonizerDefender,
+    makeDuoLeader,
+    makeDuoLeader,
     RESERVER_COST,
     CLAIMER_COST,
 };
