@@ -92,11 +92,13 @@ class CombatManager {
             const mostHated = sortedHate.pop();
             if (allPlayerData[mostHated].hate < HATE_KILL_THRESHOLD) break;
 
-            while (allPlayerData[mostHated].hate >= HATE_KILL_THRESHOLD) {
-                const rankedRooms = this.rankRoomsToAttack(
-                    getAllPlayerRooms(mostHated)
-                );
-                if (!rankedRooms.length) break;
+            const rankedRooms = this.rankRoomsToAttack(
+                getAllPlayerRooms(mostHated)
+            );
+            while (
+                allPlayerData[mostHated].hate >= HATE_KILL_THRESHOLD &&
+                rankedRooms.length
+            ) {
                 const nextRoom = rankedRooms.pop();
                 if (allMissions[nextRoom]) continue;
                 const coloniesInRange = getColoniesInRange(
