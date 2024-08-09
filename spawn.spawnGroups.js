@@ -238,10 +238,10 @@ const usage = new SpawnGroup("usage", {
 
 //#endregion
 
-const WEIGHT_IDLE_HAULERS = 3;
-const WEIGHT_EXCESS_ENERGY = 1 / 5000;
+const WEIGHT_IDLE_HAULERS = 4;
+const WEIGHT_EXCESS_ENERGY = 1 / 15000;
 const WEIGHT_WAITING_HAULERS = 5;
-const WEIGHT_UNTENDED_PICKUPS = 4;
+const WEIGHT_UNTENDED_PICKUPS = 3;
 
 const groups = [defense, production, transport, usage];
 const getSortedGroups = (colony) => {
