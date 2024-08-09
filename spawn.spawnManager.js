@@ -99,6 +99,15 @@ class SpawnManager {
                 spawn.pos.y - 1,
                 { align: "center", opacity: 0.6 }
             );
+            Game.rooms[spawn.pos.roomName].visual.text(
+                spawn.spawning.remainingTime,
+                spawn.pos.x,
+                spawn.pos.y + 0.2,
+                {
+                    align: "center",
+                    opacity: 0.8,
+                }
+            );
         } catch (e) {
             console.log("Error when showing spawn visual: " + e);
         }
