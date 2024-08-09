@@ -136,15 +136,19 @@ const basePlanner = new BasePlanner();
 const { getPlan: getBasePlan } = require("./base.planningUtility");
 const { handleSites } = require("./base.constructionManager");
 
+// Missions
+const { showMissionTargets } = require("./mission.missionVisuals");
+const MissionManager = require("./mission.missionManager");
+const missionManager = new MissionManager();
+
 // Auto expansion
 const { showAppraisalScores } = require("./debug.expansionDebugUtility");
 const ExpansionManager = require("./expansion.expansionManager");
 const expansionManager = new ExpansionManager();
 
-// Missions
-const { showMissionTargets } = require("./combat.missionDebug");
-const MissionManager = require("./combat.missionManager");
-const missionManager = new MissionManager();
+// Combat
+const CombatManager = require("./combat.combatManager");
+const combatManager = new CombatManager();
 
 // Defense
 const DefenseManager = require("./manager.defenseManager");
@@ -170,18 +174,17 @@ const generatePixels = () => {
     }
 };
 
-const runExpansion = () => {
-    expansionManager.run();
-    if (DEBUG.showAppraisalScores) {
-        showAppraisalScores();
-    }
-};
-
 const runMissions = () => {
-    missionManager.runGlobally();
+    profiler.wrap("missions", () => missionManager.run());
     if (DEBUG.showMissionTargets) {
         showMissionTargets();
     }
+
+    profiler.wrap("expansion", () => expansionManager.run());
+    if (DEBUG.showAppraisalScores) {
+        showAppraisalScores();
+    }
+    profiler.wrap("expansion", () => combatManager.run());
 };
 
 const runColonies = () => {
@@ -274,7 +277,7 @@ const runColonies = () => {
         profiler.wrap("spawns", () => spawnManager.run(colony));
 
         // Hate accumulation
-        profiler.wrap("hate", () => missionManager.accumulateHate(colony));
+        profiler.wrap("hate", () => combatManager.accumulateHate(colony));
 
         if (DEBUG.drawPathMatrices || DEBUG.drawWorkingPositions) {
             const matrix = DEBUG.drawPathMatrices
@@ -410,10 +413,7 @@ const mainLoop = () => {
     // by forcing it to deserializng before we run any meaningful code and tracking the cost here
     if (DEBUG.runProfiler) profiler.wrap("deserialize memory", () => Memory);
 
-    // Global expansion-related things should come first so colonies know how to react
-    profiler.wrap("expansion", runExpansion);
-
-    // Global mission-related things immediately afterwards
+    // Global expansion and combat related things should come first so colonies know how to react
     profiler.wrap("missions", runMissions);
 
     // Colonies will then run any logic required for creep actions like creating hauler orders

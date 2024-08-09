@@ -3,35 +3,38 @@ const {
     SOURCE_KEEPER_OWNER,
     HATE_REMOTE_MULTIPLIER,
     HATE_KILL_THRESHOLD,
-    MISSION_TYPES,
     MAX_ATTACK_ROOM_RANGE,
     DEFENSE_SCORE_TOWERS,
     DEFENSE_SCORE_DISTANCE,
-} = require("./combat.missionConstants");
+} = require("./combat.combatConstants");
+const { MISSION_TYPES } = require("./mission.missionConstants");
 const {
     addHate,
     determineHateType,
     getAllPlayerData,
-    createMission,
-    getColoniesInRange,
     getAllPlayerRooms,
     coolDown,
+} = require("./combat.combatUtility");
+const {
+    createMission,
+    getColoniesInRange,
     getAllMissionsOfType,
     removeMission,
-} = require("./combat.missionUtility");
+    getAllMissions,
+} = require("./mission.missionUtility");
 const { roles } = require("./constants");
 const Colony = require("./data.colony");
 const { getScoutingData } = require("./scouting.scoutingUtility");
 
 if (DEBUG.allowCommands) {
-    require("./combat.missionCommands");
+    require("./combat.combatCommands");
 }
 
 /**
- * The `MissionManager` will handle all top-level combat-related code
+ * The `CombatManager` will handle all top-level combat-related code
  * like handling hate and creating missions for who we want to eliminate.
  */
-class MissionManager {
+class CombatManager {
     /**
      * Accumulates hate for the enemies affecting this colony.
      * @param {Colony} colony
@@ -55,7 +58,7 @@ class MissionManager {
         }
     }
 
-    runGlobally() {
+    run() {
         this.filterCompletedCombatMissions();
         this.createKillMissions();
     }
@@ -70,12 +73,18 @@ class MissionManager {
     }
 
     isCombatComplete(missionRoom) {
-        const scoutData = getScoutingData(missionRoom);
-        return !scoutData.spawns || !scoutData.controller.owner;
+        // Combat is completed when all spawns are destroyed
+        return (
+            Game.rooms[missionRoom] &&
+            !Game.rooms[missionRoom]
+                .find(FIND_HOSTILE_STRUCTURES)
+                .find((s) => s.structureType === STRUCTURE_SPAWN)
+        );
     }
 
     createKillMissions() {
         const allPlayerData = getAllPlayerData();
+        const allMissions = getAllMissions();
         const sortedHate = Object.keys(allPlayerData).sort(
             (a, b) => allPlayerData[a].hate - allPlayerData[b].hate
         );
@@ -89,6 +98,7 @@ class MissionManager {
                 );
                 if (!rankedRooms.length) break;
                 const nextRoom = rankedRooms.pop();
+                if (allMissions[nextRoom]) continue;
                 const coloniesInRange = getColoniesInRange(
                     nextRoom,
                     MAX_ATTACK_ROOM_RANGE
@@ -137,4 +147,4 @@ class MissionManager {
     }
 }
 
-module.exports = MissionManager;
+module.exports = CombatManager;

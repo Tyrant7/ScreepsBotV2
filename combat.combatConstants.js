@@ -15,12 +15,6 @@ const INVADER_OWNER = "Invader";
 
 const HATE_KILL_THRESHOLD = 4000;
 
-const MISSION_TYPES = {
-    NONE: 0,
-    KILL: 1,
-    COLONIZE: 2,
-};
-
 /**
  * Creeps must be able to reach their destination within half of a typical lifetime.
  */
@@ -39,7 +33,6 @@ module.exports = {
     SOURCE_KEEPER_OWNER,
     INVADER_OWNER,
     HATE_KILL_THRESHOLD,
-    MISSION_TYPES,
     MAX_ATTACK_ROOM_RANGE,
     DEFENSE_SCORE_TOWERS,
     DEFENSE_SCORE_DISTANCE,

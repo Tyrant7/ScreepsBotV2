@@ -1,4 +1,4 @@
-const { getAllMissions } = require("./combat.missionUtility");
+const { getAllMissions } = require("./mission.missionUtility");
 const overlay = require("./debug.overlay");
 const { getSortedGroups } = require("./spawn.spawnGroups");
 

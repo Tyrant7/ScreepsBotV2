@@ -1,9 +1,9 @@
-const { MISSION_TYPES } = require("./combat.missionConstants");
+const { MISSION_TYPES } = require("./mission.missionConstants");
 const {
     createMission,
     getAllMissionsOfType,
     getColoniesInRange,
-} = require("./combat.missionUtility");
+} = require("./mission.missionUtility");
 const { roles, ROOM_SIZE } = require("./constants");
 const { wrap } = require("./debug.profiler");
 
@@ -48,15 +48,9 @@ class ExpansionManager {
     }
 
     handleExpansions() {
-        // Make sure our expansion colonies are aware of their own creeps for spawn tracking
+        // If we've claimed this room, we can remove the claimer from its spawn demand
         const expansionMissions = getAllMissionsOfType(MISSION_TYPES.COLONIZE);
         for (const expansion in expansionMissions) {
-            // Filter out the creeps that we think we own to only include creeps that are still alive
-            expansionMissions[expansion].creepNamesAndRoles = expansionMissions[
-                expansion
-            ].creepNamesAndRoles.filter((c) => Game.creeps[c.name]);
-
-            // If we've claimed this room, we can remove the claimer from its spawn demand
             expansionMissions[expansion].spawnDemands[roles.claimer] =
                 Game.rooms[expansion] && Game.rooms[expansion].controller.my
                     ? 0

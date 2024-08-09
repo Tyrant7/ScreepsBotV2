@@ -8,12 +8,8 @@ const { RESERVER_COST } = require("./spawn.creepMaker");
 const { MINIMUM_PICKUP_AMOUNT } = require("./constants");
 const { repairThresholds } = require("./constants");
 const { getSpawnTime } = require("./spawn.spawnUtility");
-const {
-    getAllMissions,
-    getMissionType,
-    removeMission,
-} = require("./combat.missionUtility");
-const { MISSION_TYPES } = require("./combat.missionConstants");
+const { getMissionType, removeMission } = require("./mission.missionUtility");
+const { MISSION_TYPES } = require("./mission.missionConstants");
 
 class Colony {
     /**

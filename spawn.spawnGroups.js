@@ -8,7 +8,7 @@ const { getCost } = require("./spawn.spawnUtility");
 
 const creepMaker = require("./spawn.creepMaker");
 const Colony = require("./data.colony");
-const { getAllMissions } = require("./combat.missionUtility");
+const { getAllMissions } = require("./mission.missionUtility");
 
 //#region Utility
 

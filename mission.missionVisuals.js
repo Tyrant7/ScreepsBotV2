@@ -1,5 +1,5 @@
-const { MISSION_TYPES } = require("./combat.missionConstants");
-const { getAllMissions } = require("./combat.missionUtility");
+const { MISSION_TYPES } = require("./mission.missionConstants");
+const { getAllMissions } = require("./mission.missionUtility");
 const { drawArrow } = require("./debug.mapOverlay");
 
 const COLOR_BY_MISSION_TYPE = {
