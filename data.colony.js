@@ -1,7 +1,7 @@
 const remoteUtility = require("./remote.remoteUtility");
 const estimateTravelTime = require("./util.estimateTravelTime");
 const { getPlanData, keys } = require("./base.planningUtility");
-const { roles, ROOM_SIZE } = require("./constants");
+const { roles, ROOM_SIZE, storageThresholds } = require("./constants");
 const { MINER_WORK, REMOTE_MINER_WORK } = require("./spawn.spawnConstants");
 const profiler = require("./debug.profiler");
 const { RESERVER_COST } = require("./spawn.creepMaker");
@@ -447,8 +447,23 @@ class Colony {
      * @returns {{}[]} An array of pickup requests.
      */
     getPickupRequests(creep) {
-        const requests = Object.values(this._pickupRequests);
-        requests.forEach((pickup) => {
+        const validPickups = Object.values(this._pickupRequests).filter(
+            (pickup) => {
+                if (pickup.amount < MINIMUM_PICKUP_AMOUNT) {
+                    return false;
+                }
+                return (
+                    !pickup.isSource ||
+                    // Using our core as our distance since we don't want further haulers accepting the orders
+                    // before earlier because the further ones see there as being more energy than the closer ones
+                    pickup.amount +
+                        pickup.fillrate *
+                            estimateTravelTime(this.core, pickup.pos) >=
+                        creep.store.getCapacity()
+                );
+            }
+        );
+        validPickups.forEach((pickup) => {
             // Let's also figure out if this pickup point has enough haulers assigned to fill its request or not
             const total = pickup.assignedHaulers.reduce((total, currID) => {
                 return (
@@ -462,20 +477,35 @@ class Colony {
                 total >= pickup.amount - creep.store.getCapacity();
         });
 
-        return requests.filter((pickup) => {
-            if (pickup.amount < MINIMUM_PICKUP_AMOUNT) {
-                return false;
-            }
-            return (
-                !pickup.isSource ||
-                // Using our core as our distance since we don't want further haulers accepting the orders
-                // before earlier because the further ones see there as being more energy than the closer ones
-                pickup.amount +
-                    pickup.fillrate *
-                        estimateTravelTime(this.core, pickup.pos) >=
-                    creep.store.getCapacity()
+        // If we have no requests and need energy delivered, let's take energy from storage
+        // (only if it's above our predefined threshold for this room)
+        if (
+            !validPickups.length &&
+            this.room.storage &&
+            this.room.storage.store[RESOURCE_ENERGY] >
+                storageThresholds[this.room.controller.level]
+        ) {
+            // Let's make sure we actually have dropoff requests for energy
+            const dropoffs = Object.values(this._dropoffRequests).filter(
+                (dropoff) => {
+                    return dropoff.resourceType === resourceType;
+                }
             );
-        });
+            if (dropoffs.length) {
+                return [
+                    {
+                        amount: Math.min(
+                            this.storage.store[RESOURCE_ENERGY],
+                            creep.store.getCapacity()
+                        ),
+                        resourceType: resourceType,
+                        dropoffIDs: [this.room.storage.id],
+                        assignedHaulers: [],
+                    },
+                ];
+            }
+        }
+        return validPickups;
     }
 
     /**
