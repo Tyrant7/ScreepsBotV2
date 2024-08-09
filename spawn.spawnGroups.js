@@ -273,7 +273,6 @@ const getSortedGroups = (colony) => {
             0
         );
         spendScore = excessEnergy * WEIGHT_EXCESS_ENERGY;
-        console.log(spendScore);
     } else {
         const waitingHaulers = colony.haulers.filter(
             (hauler) =>

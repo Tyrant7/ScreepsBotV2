@@ -477,29 +477,30 @@ class Colony {
                 total >= pickup.amount - creep.store.getCapacity();
         });
 
-        // If we have no requests and need energy delivered, let's take energy from storage
+        // If we have need energy delivered, let's allow energy to be taken from storage
         // (only if it's above our predefined threshold for this room)
         if (
-            !validPickups.length &&
             this.room.storage &&
             this.room.storage.store[RESOURCE_ENERGY] >
                 storageThresholds[this.room.controller.level]
         ) {
+            console.log("dasd");
+
             // Let's make sure we actually have dropoff requests for energy
             const dropoffs = Object.values(this._dropoffRequests).filter(
                 (dropoff) => {
-                    return dropoff.resourceType === resourceType;
+                    return dropoff.resourceType === RESOURCE_ENERGY;
                 }
             );
             if (dropoffs.length) {
                 return [
                     {
                         amount: Math.min(
-                            this.storage.store[RESOURCE_ENERGY],
+                            this.room.storage.store[RESOURCE_ENERGY],
                             creep.store.getCapacity()
                         ),
-                        resourceType: resourceType,
-                        dropoffIDs: [this.room.storage.id],
+                        resourceType: RESOURCE_ENERGY,
+                        pos: this.room.storage.pos,
                         assignedHaulers: [],
                     },
                 ];
