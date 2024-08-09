@@ -489,7 +489,7 @@ class Colony {
             const unfilledEnergyDropoff = Object.values(
                 this._dropoffRequests
             ).find((dropoff) => {
-                if (dropoff.resourceType <= RESOURCE_ENERGY) return false;
+                if (dropoff.resourceType !== RESOURCE_ENERGY) return false;
                 const total = _.sum(
                     dropoff.assignedHaulers,
                     (h) => Game.getObjectById(h).store[dropoff.resourceType]
