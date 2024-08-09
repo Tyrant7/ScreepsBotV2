@@ -219,6 +219,10 @@ const usage = new SpawnGroup("usage", {
     },
     [roles.meleeDuo]: (colony, count) => {},
     [roles.upgrader]: (colony, count) => {
+        // Always try to have at least one upgrader
+        if (count <= 0)
+            return creepMaker.makeUpgrader(colony.room.energyCapacityAvailable);
+
         const emptyUpgrader = colony.upgraders.find(
             (upgrader) => !upgrader.store[RESOURCE_ENERGY]
         );
