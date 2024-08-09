@@ -20,6 +20,9 @@ const createMission = (roomName, type, supporters, spawnRequests) => {
             Memory.colonies[supporter].missions.push(roomName);
         }
     }
+
+    console.log("creating: " + roomName);
+
     Memory.missions[roomName] = {
         type,
         created: Game.time,
@@ -30,6 +33,13 @@ const createMission = (roomName, type, supporters, spawnRequests) => {
 };
 
 const removeMission = (roomName) => {
+    console.log("removing: " + roomName);
+
+    for (const supporter of Memory.missions[roomName].supporters) {
+        Memory.colonies[supporter].missions = Memory.colonies[
+            supporter
+        ].missions.filter((m) => m !== roomName);
+    }
     delete Memory.missions[roomName];
 };
 

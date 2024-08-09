@@ -8,7 +8,11 @@ const { RESERVER_COST } = require("./spawn.creepMaker");
 const { MINIMUM_PICKUP_AMOUNT } = require("./constants");
 const { repairThresholds } = require("./constants");
 const { getSpawnTime } = require("./spawn.spawnUtility");
-const { getMissionType, removeMission } = require("./mission.missionUtility");
+const {
+    getMissionType,
+    removeMission,
+    getAllMissions,
+} = require("./mission.missionUtility");
 const { MISSION_TYPES } = require("./mission.missionConstants");
 
 class Colony {
@@ -42,12 +46,12 @@ class Colony {
         if (!this.memory.missions) {
             this.memory.missions = [];
         }
-        // If any of our missions colonies have concluded, let's remove them
+        // If any of our missions colonies have concluded, let's remove them as an extra safety net
+        const allMissions = getAllMissions();
         for (const mission of this.memory.missions) {
-            const missionType = getMissionType(mission);
-            if (!missionType) {
+            if (!allMissions[mission]) {
                 this.memory.missions = this.memory.missions.filter(
-                    (s) => s !== mission
+                    (m) => m !== mission
                 );
             }
         }

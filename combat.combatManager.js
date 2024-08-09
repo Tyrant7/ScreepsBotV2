@@ -68,6 +68,7 @@ class CombatManager {
         const combatMissions = getAllMissionsOfType(MISSION_TYPES.KILL);
         for (const missionRoom in combatMissions) {
             if (this.isCombatComplete(missionRoom)) {
+                console.log(missionRoom);
                 removeMission(missionRoom);
             }
         }
@@ -145,11 +146,11 @@ class CombatManager {
         // TODO //
         // Dynamic military sizes based on certain factors like towers and ramparts
         return {
-            [roles.meleeDuo]: {
+            [roles.combatDuo]: {
                 amount: 2,
                 make: (colony, missionCreeps) => {
                     const existingDuos = missionCreeps.filter(
-                        (c) => c.role === roles.meleeDuo
+                        (c) => c.role === roles.combatDuo
                     );
                     const leaders = existingDuos.filter(
                         (d) => Game.creeps[d.name].memory.superior
