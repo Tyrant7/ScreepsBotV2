@@ -257,7 +257,9 @@ const getSortedGroups = (colony) => {
     const conditions = [];
 
     // If we have idle haulers, let's vouch for producers
-    const idleHaulers = colony.haulers.filter((hauler) => hauler.memory.idle);
+    const idleHaulers = colony.haulers.filter(
+        (hauler) => hauler.store.getUsedCapacity() === 0 && hauler.memory.idle
+    );
     conditions.push({
         score: idleHaulers.length * WEIGHT_IDLE_HAULERS,
         order: [defense, production, usage],
