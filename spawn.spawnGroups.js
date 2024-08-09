@@ -292,8 +292,7 @@ const getSortedGroups = (colony) => {
         } else {
             const waitingHaulers = colony.haulers.filter(
                 (hauler) =>
-                    hauler.store.getUsedCapacity() > 0 &&
-                    !(hauler.memory.dropoff || hauler.memory.returning)
+                    hauler.store.getUsedCapacity() > 0 && hauler.memory.idle
             );
             conditions.push({
                 score: waitingHaulers * WEIGHT_WAITING_HAULERS,
