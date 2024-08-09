@@ -484,8 +484,6 @@ class Colony {
             this.room.storage.store[RESOURCE_ENERGY] >
                 storageThresholds[this.room.controller.level]
         ) {
-            console.log("dasd");
-
             // Let's make sure we actually have dropoff requests for energy
             const dropoffs = Object.values(this._dropoffRequests).filter(
                 (dropoff) => {
@@ -493,17 +491,15 @@ class Colony {
                 }
             );
             if (dropoffs.length) {
-                return [
-                    {
-                        amount: Math.min(
-                            this.room.storage.store[RESOURCE_ENERGY],
-                            creep.store.getCapacity()
-                        ),
-                        resourceType: RESOURCE_ENERGY,
-                        pos: this.room.storage.pos,
-                        assignedHaulers: [],
-                    },
-                ];
+                validPickups.push({
+                    amount: Math.min(
+                        this.room.storage.store[RESOURCE_ENERGY],
+                        creep.store.getCapacity()
+                    ),
+                    resourceType: RESOURCE_ENERGY,
+                    pos: this.room.storage.pos,
+                    assignedHaulers: [],
+                });
             }
         }
         return validPickups;
