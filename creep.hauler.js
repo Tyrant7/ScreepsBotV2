@@ -5,6 +5,13 @@ const { pathSets, MINIMUM_PICKUP_AMOUNT } = require("./constants");
 
 class HaulerManager extends CreepManager {
     createTask(creep, colony) {
+        if (!creep.memory.lastTransfer) {
+            creep.memory.lastTransfer = {
+                time: -1,
+                amount: 0,
+            };
+        }
+
         if (creep.memory.dropoff) {
             return this.createDropoffTask(creep, creep.memory.dropoff);
         } else if (creep.memory.pickup) {
@@ -12,7 +19,11 @@ class HaulerManager extends CreepManager {
         }
 
         // Return an appropriate task for the creep
-        if (creep.store.getUsedCapacity()) {
+        if (
+            (creep.store.getUsedCapacity() &&
+                creep.memory.lastTransfer.time !== Game.time) ||
+            creep.memory.lastTransfer.amount < creep.store.getUsedCapacity()
+        ) {
             // For dropoff tasks, let's ensure that we're in the base before attempting
             // to grab a target to avoid many pathfinding calls
             if (creep.room.name !== colony.room.name) {
@@ -233,10 +244,16 @@ class HaulerManager extends CreepManager {
                 // Transfer if within range
                 if (
                     creep.pos.getRangeTo(target) <= 1 &&
-                    creep.memory.lastTransfer !== Game.time
+                    creep.memory.lastTransfer.time !== Game.time
                 ) {
                     creep.transfer(target, dropoff.resourceType);
-                    creep.memory.lastTransfer = Game.time;
+                    creep.memory.lastTransfer = {
+                        time: Game.time,
+                        amount: Math.min(
+                            creep.store[dropoff.resourceType],
+                            target.store.getFreeCapacity()
+                        ),
+                    };
                     return true;
                 }
                 // Otherwise, move
@@ -369,7 +386,12 @@ class HaulerManager extends CreepManager {
                 }
 
                 // Can't pickup anything else -> find a dropoff location
-                if (!creep.store.getFreeCapacity()) {
+                // Avoid this check on ticks where we just received this task since we may
+                // not have completed the transfer from our previous task yet
+                if (
+                    !creep.store.getFreeCapacity() &&
+                    creep.memory.lastTransfer.time !== Game.time
+                ) {
                     return true;
                 }
 
@@ -401,7 +423,10 @@ class HaulerManager extends CreepManager {
                 }
 
                 // Pickup!
-                if (creep.pos.getRangeTo(targetPos) <= 1) {
+                if (
+                    creep.pos.getRangeTo(targetPos) <= 1 &&
+                    creep.memory.lastTransfer.time !== Game.time
+                ) {
                     // Pickup dropped resources first
                     const dropped = pickupsAtLocation.find(
                         (p) => p.type === LOOK_RESOURCES
