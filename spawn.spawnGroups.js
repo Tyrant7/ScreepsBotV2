@@ -239,6 +239,8 @@ const WEIGHT_EXCESS_ENERGY = 1 / 5000;
 const WEIGHT_WAITING_HAULERS = 5;
 const WEIGHT_UNTENDED_PICKUPS = 4;
 
+const MAX_UNTENDED_PICKUPS = 2;
+
 const groups = [defense, production, transport, usage];
 const getSortedGroups = (colony) => {
     // If we're in a cold boot situation, we'll skip regular spawning
@@ -259,30 +261,6 @@ const getSortedGroups = (colony) => {
         order: [defense, production, usage],
     });
 
-    // If we have haulers waiting for dropoffs, let's vouch for spenders
-    if (colony.room.storage) {
-        const excessEnergy = Math.max(
-            colony.room.storage.store[RESOURCE_ENERGY] -
-                storageThresholds[colony.room.controller.level],
-            0
-        );
-        conditions.push({
-            score:
-                excessEnergy * WEIGHT_EXCESS_ENERGY - colony.upgraders.length,
-            order: [defense, usage, transport, production],
-        });
-    } else {
-        const waitingHaulers = colony.haulers.filter(
-            (hauler) =>
-                hauler.store.getUsedCapacity() > 0 &&
-                !(hauler.memory.dropoff || hauler.memory.returning)
-        );
-        conditions.push({
-            score: waitingHaulers * WEIGHT_WAITING_HAULERS,
-            order: [defense, usage, production, transport],
-        });
-    }
-
     // If we have lots of untended pickups, let's vouch for transporters
     const averageHaulerSize =
         creepMaker
@@ -297,6 +275,34 @@ const getSortedGroups = (colony) => {
         score: untendedPickups.length * WEIGHT_UNTENDED_PICKUPS,
         order: [defense, transport, usage, production],
     });
+
+    // If we have haulers waiting for dropoffs, let's vouch for spenders
+    // But only if we don't have many untended pickups
+    if (untendedPickups.length <= MAX_UNTENDED_PICKUPS) {
+        if (colony.room.storage) {
+            const excessEnergy = Math.max(
+                colony.room.storage.store[RESOURCE_ENERGY] -
+                    storageThresholds[colony.room.controller.level],
+                0
+            );
+            conditions.push({
+                score:
+                    excessEnergy * WEIGHT_EXCESS_ENERGY -
+                    colony.upgraders.length,
+                order: [defense, usage, transport, production],
+            });
+        } else {
+            const waitingHaulers = colony.haulers.filter(
+                (hauler) =>
+                    hauler.store.getUsedCapacity() > 0 &&
+                    !(hauler.memory.dropoff || hauler.memory.returning)
+            );
+            conditions.push({
+                score: waitingHaulers * WEIGHT_WAITING_HAULERS,
+                order: [defense, usage, production, transport],
+            });
+        }
+    }
 
     // Pick the most currently important one
     return _.max(conditions, (c) => c.score).order;
