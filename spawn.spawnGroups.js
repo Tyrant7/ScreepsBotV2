@@ -239,8 +239,6 @@ const WEIGHT_EXCESS_ENERGY = 1 / 5000;
 const WEIGHT_WAITING_HAULERS = 5;
 const WEIGHT_UNTENDED_PICKUPS = 4;
 
-const MAX_UNTENDED_PICKUPS = 2;
-
 const groups = [defense, production, transport, usage];
 const getSortedGroups = (colony) => {
     // If we're in a cold boot situation, we'll skip regular spawning
@@ -278,7 +276,7 @@ const getSortedGroups = (colony) => {
 
     // If we have haulers waiting for dropoffs, let's vouch for spenders
     // But only if we don't have many untended pickups
-    if (untendedPickups.length <= MAX_UNTENDED_PICKUPS) {
+    if (untendedPickups.length <= colony.haulers.length) {
         if (colony.room.storage) {
             const excessEnergy = Math.max(
                 colony.room.storage.store[RESOURCE_ENERGY] -
