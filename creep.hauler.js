@@ -209,6 +209,7 @@ class HaulerManager extends CreepManager {
 
         // Didn't find a valid order -> alert us
         this.alertIdleCreep(creep, "D");
+        creep.memory.idle = true;
     }
 
     createDropoffTask(creep, reserved) {
@@ -253,6 +254,7 @@ class HaulerManager extends CreepManager {
         ];
 
         creep.memory.dropoff = reserved;
+        creep.memory.idle = false;
         return new Task(reserved, "dropoff", actionStack);
     }
 
@@ -338,6 +340,7 @@ class HaulerManager extends CreepManager {
 
         // Didn't find a valid order -> alert us
         this.alertIdleCreep(creep, "P");
+        creep.memory.idle = true;
 
         function acceptOrder(pickup, path) {
             creep.injectPath(path, pickup.pos);
@@ -436,6 +439,7 @@ class HaulerManager extends CreepManager {
         ];
 
         creep.memory.pickup = reserved;
+        creep.memory.idle = false;
         return new Task(reserved, "pickup", actionStack);
     }
 }
