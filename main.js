@@ -102,6 +102,8 @@ const ClaimerManager = require("./creep.claimer");
 const ColonizerBuilderManager = require("./creep.colonizerBuilder");
 const ColonizerDefenderManager = require("./creep.colonizerDefender");
 
+const DuoManager = require("./creep.duo");
+
 // Mapping
 const { roles, pathSets, INTERRUPT_PATHING_COST } = require("./constants");
 const creepRoleMap = {
@@ -120,6 +122,8 @@ const creepRoleMap = {
     [roles.claimer]: new ClaimerManager(),
     [roles.colonizerBuilder]: new ColonizerBuilderManager(),
     [roles.colonizerDefender]: new ColonizerDefenderManager(),
+
+    [roles.combatDuo]: new DuoManager(),
 };
 
 // Economy

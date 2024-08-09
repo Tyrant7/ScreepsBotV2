@@ -286,7 +286,7 @@ const makeDuoFollower = (size) => {
     }
     return {
         body,
-        name: `Duo_Follower_${partType} ${Game.time} [${size}]`,
+        name: `Duo_Follower ${Game.time} [${size}]`,
         memory: { role: roles.combatDuo, superior: false },
     };
 };

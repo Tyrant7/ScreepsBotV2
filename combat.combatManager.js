@@ -146,27 +146,7 @@ class CombatManager {
         // TODO //
         // Dynamic military sizes based on certain factors like towers and ramparts
         return {
-            [roles.combatDuo]: {
-                amount: 2,
-                make: (colony, missionCreeps) => {
-                    const existingDuos = missionCreeps.filter(
-                        (c) => c.role === roles.combatDuo
-                    );
-                    const leaders = existingDuos.filter(
-                        (d) => Game.creeps[d.name].memory.superior
-                    ).length;
-                    const followers = existingDuos.length - leaders;
-
-                    // Five parts to tank for each tower
-                    const parts = roomData.towers * 5;
-
-                    // If we have more leaders than followers, let's make a follower, otherwise, let's make a leader
-                    // This ensures that our duos will spawn in pairs
-                    return leaders > followers
-                        ? makeDuoFollower(parts)
-                        : makeDuoLeader(parts, WORK);
-                },
-            },
+            [roles.combatDuo]: 2,
         };
     }
 }
