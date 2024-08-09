@@ -15,11 +15,15 @@ const { getAllMissions } = require("./mission.missionUtility");
 const getNextMissionSpawn = (colony, role) => {
     for (const room in colony.memory.missions) {
         const mission = getAllMissions()[room];
-        const wanting = mission.spawnRequests[role].length || 0;
+        const wanting = mission.spawnRequests[role].amount || 0;
         const existing = mission.creepNamesAndRoles.filter(
             (c) => c.role === role
         ).length;
-        if (wanting - existing > 0) return mission.spawnRequests[role](colony);
+        if (wanting - existing > 0)
+            return mission.spawnRequests[role].make(
+                colony,
+                mission.creepNamesAndRoles
+            );
     }
 };
 

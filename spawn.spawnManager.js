@@ -44,7 +44,7 @@ class SpawnManager {
                           if (!mission.spawnRequests[next.memory.role])
                               return false;
                           return (
-                              mission.spawnRequests[next.memory.role].length >
+                              mission.spawnRequests[next.memory.role].amount >
                               mission.creepNamesAndRoles.filter(
                                   (c) => c.role === next.memory.role
                               ).length

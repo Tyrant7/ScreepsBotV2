@@ -312,7 +312,7 @@ module.exports = {
     makeColonizerBuilder,
     makeColonizerDefender,
     makeDuoLeader,
-    makeDuoLeader,
+    makeDuoFollower,
     RESERVER_COST,
     CLAIMER_COST,
 };

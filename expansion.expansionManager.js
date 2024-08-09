@@ -30,29 +30,30 @@ class ExpansionManager {
             d[curr].expansionScore > d[best].expansionScore ? curr : best
         );
 
-        // And create an entry for it in our global colonization spot
+        // And create a mission for it
         createMission(
             best,
             MISSION_TYPES.COLONIZE,
             getColoniesInRange(best, CREEP_CLAIM_LIFE_TIME / ROOM_SIZE),
             {
-                [roles.claimer]: [(colony) => makeClaimer()],
-                [roles.colonizerBuilder]: [
-                    (colony) =>
+                [roles.claimer]: {
+                    amount: 1,
+                    make: (colony, missionCreeps) => makeClaimer(),
+                },
+                [roles.colonizerBuilder]: {
+                    amount: 2,
+                    make: (colony, missionCreeps) =>
                         makeColonizerBuilder(
                             colony.room.energyCapacityAvailable
                         ),
-                    (colony) =>
-                        makeColonizerBuilder(
-                            colony.room.energyCapacityAvailable
-                        ),
-                ],
-                [roles.colonizerDefender]: [
-                    (colony) =>
+                },
+                [roles.colonizerDefender]: {
+                    amount: 1,
+                    make: (colony, missionCreeps) =>
                         makeColonizerDefender(
                             colony.room.energyCapacityAvailable
                         ),
-                ],
+                },
             }
         );
 
@@ -70,10 +71,10 @@ class ExpansionManager {
         // If we've claimed this room, we can remove the claimer from its spawn demand
         const expansionMissions = getAllMissionsOfType(MISSION_TYPES.COLONIZE);
         for (const expansion in expansionMissions) {
-            expansionMissions[expansion].spawnRequests[roles.claimer] =
+            expansionMissions[expansion].spawnRequests[roles.claimer].amount =
                 Game.rooms[expansion] && Game.rooms[expansion].controller.my
-                    ? []
-                    : [(colony) => makeClaimer()];
+                    ? 0
+                    : 1;
         }
     }
 }
