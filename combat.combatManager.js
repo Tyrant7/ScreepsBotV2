@@ -60,17 +60,39 @@ class CombatManager {
     }
 
     run() {
-        this.filterCompletedCombatMissions();
+        this.handleCombatMissions();
         this.createKillMissions();
     }
 
-    filterCompletedCombatMissions() {
+    handleCombatMissions() {
         const combatMissions = getAllMissionsOfType(MISSION_TYPES.KILL);
         for (const missionRoom in combatMissions) {
             if (this.isCombatComplete(missionRoom)) {
-                console.log(missionRoom);
                 removeMission(missionRoom);
+                continue;
             }
+
+            // Add spawn requests
+            const mission = getAllMissions()[missionRoom];
+            const existingDuos = mission.creepNamesAndRoles.filter(
+                (c) => c.role === roles.combatDuo
+            );
+            const leaders = existingDuos.filter(
+                (d) => Game.creeps[d.name].memory.superior
+            ).length;
+            const followers = existingDuos.length - leaders;
+
+            // Five parts to tank for each tower
+            const roomData = getScoutingData(missionRoom);
+            const parts = Math.max(roomData.towers, 1) * 5;
+
+            // If we have more leaders than followers, let's make a follower, otherwise, let's make a leader
+            // This ensures that our duos will spawn in pairs
+            return leaders > followers ||
+                // Also don't allow us to spawn our follower and leader in a different room
+                !colony.combatDuos.find((c) => c.memory.superior)
+                ? makeDuoFollower(parts)
+                : makeDuoLeader(parts, WORK);
         }
     }
 
@@ -108,12 +130,7 @@ class CombatManager {
                     MAX_ATTACK_ROOM_RANGE
                 );
                 if (!coloniesInRange.length) continue;
-                createMission(
-                    nextRoom,
-                    MISSION_TYPES.KILL,
-                    coloniesInRange,
-                    this.determineMilitaryNeeded(nextRoom)
-                );
+                createMission(nextRoom, MISSION_TYPES.KILL, coloniesInRange);
                 coolDown(mostHated);
             }
         }
@@ -138,16 +155,6 @@ class CombatManager {
             scores[room] = towerScore - distancePenalty;
         }
         return Object.keys(roomDatas).sort((a, b) => scores[a] - scores[b]);
-    }
-
-    determineMilitaryNeeded(roomName) {
-        const roomData = getScoutingData(roomName);
-
-        // TODO //
-        // Dynamic military sizes based on certain factors like towers and ramparts
-        return {
-            [roles.combatDuo]: 2,
-        };
     }
 }
 

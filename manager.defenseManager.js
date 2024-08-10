@@ -1,4 +1,5 @@
-const { repairThresholds } = require("./constants");
+const { repairThresholds, roles } = require("./constants");
+const { wrap } = require("./debug.profiler");
 
 class DefenseManager {
     /**
@@ -6,6 +7,11 @@ class DefenseManager {
      * @param {Colony} colony The colony object associated with the room to run defense logic for.
      */
     run(colony) {
+        wrap("base", () => this.defendBase(colony));
+        wrap("remotes", () => this.defendRemotes(colony));
+    }
+
+    defendBase(colony) {
         const enemies = colony.enemies;
         const towers = colony.structures[STRUCTURE_TOWER];
         if (enemies.length) {
@@ -46,6 +52,37 @@ class DefenseManager {
             tower.repair(lowRoads[i % lowRoads.length]);
             i++;
         }
+    }
+
+    defendRemotes(colony) {
+        if (colony.defenders.length >= colony.remoteEnemies.length) return;
+
+        // Find our strongest enemy
+        const mostFightParts = colony.remoteEnemies.reduce(
+            (strongest, curr) => {
+                const fightParts = curr.body.filter(
+                    (p) =>
+                        p.type === RANGED_ATTACK ||
+                        p.type === ATTACK ||
+                        p.type === HEAL
+                ).length;
+                return fightParts > strongest ? fightParts : strongest;
+            },
+            0
+        );
+
+        // Make an appropriately sized defender
+        // i.e. one level larger in size
+        colony.addSpawnRequest(
+            roles.defender,
+            (colony, count) => {
+                return creepMaker.makeMiniDefender(
+                    Math.ceil(mostFightParts / 4) + 1,
+                    colony.room.energyCapacityAvailable
+                );
+            },
+            0
+        );
     }
 }
 

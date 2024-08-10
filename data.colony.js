@@ -195,7 +195,7 @@ class Colony {
         }
 
         // Clear tick caches
-        this.wantedStructures = null;
+        this._spawnRequests = [];
         this._pickupRequests = {};
         this._dropoffRequests = {};
 
@@ -607,6 +607,18 @@ class Colony {
     }
 
     // #endregion
+
+    // #region Spawning
+
+    addSpawnRequest(role, make, priority = 0) {
+        this._spawnRequests.push({ role, make, priority });
+    }
+
+    getSpawnRequests() {
+        return this._spawnRequests;
+    }
+
+    //# endregion
 }
 
 module.exports = Colony;

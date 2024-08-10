@@ -5,24 +5,9 @@ const {
     storageThresholds,
 } = require("./constants");
 const { getCost } = require("./spawn.spawnUtility");
-
 const creepMaker = require("./spawn.creepMaker");
-const Colony = require("./data.colony");
-const { getAllMissions } = require("./mission.missionUtility");
-const { makeDuo } = require("./combat.combatSpawnHelper");
 
 //#region Utility
-
-const getMissionRequiringSpawn = (colony, role) => {
-    for (const room of colony.memory.missions) {
-        const mission = getAllMissions()[room];
-        const wanting = mission.spawnRequests[role] || 0;
-        const existing = mission.creepNamesAndRoles.filter(
-            (c) => c.role === role
-        ).length;
-        if (wanting - existing > 0) return room;
-    }
-};
 
 const calculateMinEnergy = (colony) =>
     colony.miners.length && colony.haulers.length
@@ -41,92 +26,11 @@ const calculateMinEnergy = (colony) =>
  * to include the creep's role.
  */
 
-/**
- * A spawn group is responsible for spawning creeps that complete a
- * specific goal for our colony, like harvesting energy, transport, or spending.
- */
-class SpawnGroup {
-    /**
-     * Initializes this group with the given spawn profiles.
-     * @param {string} debugName The name to print out when debugging.
-     * @param {{[role: string]: (colony: Colony, count: number) => SpawnRequest | undefined}} profiles
-     * An object which maps roles to method which returns a `SpawnRequest` for each creep type in this spawn group,
-     * where `colony` is the colony to get the next spawn for, and `count` is the number of existing spawned creeps
-     * of that role.
-     */
-    constructor(debugName, profiles) {
-        this.debugName = debugName;
-        this.profiles = profiles;
-    }
-
-    /**
-     * Iterates over the spawn profiles in order of priority to find the next one in need of spawning.
-     * @param {Colony} colony The colony to determine the next spawn for.
-     * @param {{ [role: string]: number }} spawnsThisTick An object with the number spawns already scheduled this tick
-     * for this colony. Undefined if none.
-     * @return {SpawnRequest | undefined} A newly created `SpawnRequest object with the necessary spawning info.
-     */
-    getNextSpawn(colony, spawnsThisTick) {
-        for (const role in this.profiles) {
-            // Here we have to look for the key rather than use the value of the role,
-            // since that's what's used in the Colony object
-            const matchingRole = Object.keys(roles).find(
-                (r) => roles[r] === role
-            );
-
-            const current = colony[matchingRole + "s"].length;
-            const scheduled = spawnsThisTick[role] || 0;
-
-            const makeCreep = this.profiles[role];
-            const newCreep = makeCreep(colony, current + scheduled);
-
-            // If this spawn profile had no desire for an additional spawn,
-            // we'll go to the next one
-            if (!newCreep) continue;
-
-            // If we can't afford the new creep, let's ignore it as well
-            if (
-                !newCreep.body.length ||
-                getCost(newCreep.body) > colony.room.energyCapacityAvailable
-            )
-                continue;
-            return newCreep;
-        }
-    }
-}
-
 //#endregion
 
 //#region Groups
 
-const defense = new SpawnGroup("defense", {
-    [roles.defender]: (colony, count) => {
-        if (count >= colony.remoteEnemies.length) return;
-
-        // Find our strongest enemy
-        const mostFightParts = colony.remoteEnemies.reduce(
-            (strongest, curr) => {
-                const fightParts = curr.body.filter(
-                    (p) =>
-                        p.type === RANGED_ATTACK ||
-                        p.type === ATTACK ||
-                        p.type === HEAL
-                ).length;
-                return fightParts > strongest ? fightParts : strongest;
-            },
-            0
-        );
-
-        // Make an appropriately sized defender
-        // i.e. one level larger in size
-        return creepMaker.makeMiniDefender(
-            Math.ceil(mostFightParts / 4) + 1,
-            colony.room.energyCapacityAvailable
-        );
-    },
-});
-
-const production = new SpawnGroup("production", {
+const production = {
     [roles.cleaner]: (colony, count) => {
         // Using / 2 to denote an arbitrary ratio of cleaners to cores
         if (count >= colony.invaderCores.length / 2) return;
@@ -150,9 +54,9 @@ const production = new SpawnGroup("production", {
             colony.room.controller.level >= REMOTE_CONTAINER_RCL
         );
     },
-});
+};
 
-const transport = new SpawnGroup("transport", {
+const transport = {
     [roles.hauler]: (colony, count) => {
         if (
             count === 0 &&
@@ -175,9 +79,9 @@ const transport = new SpawnGroup("transport", {
             colony.memory.constructionLevel >= REMOTE_ROAD_RCL ? 2 : 1
         );
     },
-});
+};
 
-const usage = new SpawnGroup("usage", {
+const usage = {
     [roles.repairer]: (colony, count) => {
         if (!colony.remotesNeedingRepair.length || count > 0) return;
         return creepMaker.makeRepairer(colony.room.energyCapacityAvailable);
@@ -190,35 +94,9 @@ const usage = new SpawnGroup("usage", {
         if (!colony.memory.buildTargets.length || count >= 2) return;
         return creepMaker.makeBuilder(colony.room.energyCapacityAvailable);
     },
-    [roles.claimer]: (colony, count) => {
-        // We won't be able to support our expansions
-        if (colony.room.energyCapacityAvailable < creepMaker.CLAIMER_COST)
-            return;
-        if (!getMissionRequiringSpawn(colony, roles.claimer)) return;
-        return creepMaker.makeClaimer();
-    },
-    [roles.colonizerBuilder]: (colony, count) => {
-        if (colony.room.energyCapacityAvailable < creepMaker.CLAIMER_COST)
-            return;
-        if (!getMissionRequiringSpawn(colony, roles.colonizerBuilder)) return;
-        return creepMaker.makeColonizerBuilder(
-            colony.room.energyCapacityAvailable
-        );
-    },
-    [roles.colonizerDefender]: (colony, count) => {
-        if (colony.room.energyCapacityAvailable < creepMaker.CLAIMER_COST)
-            return;
-        if (!getMissionRequiringSpawn(colony, roles.colonizerDefender)) return;
-        return creepMaker.makeColonizerDefender(colony);
-    },
     [roles.mineralMiner]: (colony, count) => {
         if (count > 0 || !colony.structures[STRUCTURE_EXTRACTOR]) return;
         return creepMaker.makeMineralMiner(colony.room.energyCapacityAvailable);
-    },
-    [roles.combatDuo]: (colony, count) => {
-        const combatMission = getMissionRequiringSpawn(colony, roles.combatDuo);
-        if (!combatMission) return;
-        return makeDuo(colony, combatMission);
     },
     [roles.upgrader]: (colony, count) => {
         // Always try to have at least one upgrader
@@ -236,7 +114,7 @@ const usage = new SpawnGroup("usage", {
             return;
         return creepMaker.makeUpgrader(colony.room.energyCapacityAvailable);
     },
-});
+};
 
 //#endregion
 
@@ -245,7 +123,6 @@ const WEIGHT_EXCESS_ENERGY = 1 / 15000;
 const WEIGHT_WAITING_HAULERS = 5;
 const WEIGHT_UNTENDED_PICKUPS = 3;
 
-const groups = [defense, production, transport, usage];
 const getSortedGroups = (colony) => {
     // If we're in a cold boot situation, we'll skip regular spawning
     if (!colony.miners.length) {
@@ -264,7 +141,7 @@ const getSortedGroups = (colony) => {
     );
     conditions.push({
         score: idleHaulers.length * WEIGHT_IDLE_HAULERS,
-        order: [defense, production, usage],
+        order: [production, usage],
     });
 
     // If we have lots of untended pickups, let's vouch for transporters
@@ -279,7 +156,7 @@ const getSortedGroups = (colony) => {
         .filter((r) => !r.hasEnough);
     conditions.push({
         score: untendedPickups.length * WEIGHT_UNTENDED_PICKUPS,
-        order: [defense, transport, usage, production],
+        order: [transport, usage, production],
     });
 
     // If we have haulers waiting for dropoffs, let's vouch for spenders
@@ -295,7 +172,7 @@ const getSortedGroups = (colony) => {
                 score:
                     excessEnergy * WEIGHT_EXCESS_ENERGY -
                     colony.upgraders.length,
-                order: [defense, usage, transport, production],
+                order: [usage, transport, production],
             });
         } else {
             const waitingHaulers = colony.haulers.filter(
@@ -304,7 +181,7 @@ const getSortedGroups = (colony) => {
             );
             conditions.push({
                 score: waitingHaulers * WEIGHT_WAITING_HAULERS,
-                order: [defense, usage, production, transport],
+                order: [usage, production, transport],
             });
         }
     }
@@ -313,7 +190,63 @@ const getSortedGroups = (colony) => {
     return _.max(conditions, (c) => c.score).order;
 };
 
+const getRelevantSpawnRequests = (colony, availableSpawns) => {
+    const groups = getSortedGroups(colony);
+    const allRequests = [];
+    const requestsByRole = {};
+
+    // We'll consider one off requests as above the group they've been given for priority
+    // i.e. a priority 0 would come first, then a priority 1 would come after our first sorted group
+    const oneOffs = colony
+        .getSpawnRequests()
+        .sort((a, b) => a.priority - b.priority);
+
+    // This will simply add eco requests until we're added enough
+    let i = 0;
+    for (let group of groups) {
+        while (oneOffs.length && oneOffs[0].priority <= 0) {
+            const added = oneOffs.shift();
+            group = { [added.role]: added.make, ...group };
+        }
+        i++;
+
+        for (const role in group) {
+            if (allRequests.length >= availableSpawns) return allRequests;
+
+            // Here we have to look for the key rather than use the value of the role,
+            // since that's what's used in the Colony object
+            const matchingRole = Object.keys(roles).find(
+                (r) => roles[r] === role
+            );
+
+            const current = colony[matchingRole + "s"].length;
+            const scheduled = requestsByRole[role] || 0;
+
+            const request = firstGroup[role](colony, current + scheduled);
+
+            // If this spawn profile had no desire for an additional spawn,
+            // we'll go to the next one
+            if (!request) continue;
+
+            // If we can't afford the new creep, let's ignore it as well
+            if (
+                !request.body.length ||
+                getCost(request.body) > colony.room.energyCapacityAvailable
+            )
+                continue;
+
+            allRequests.push(request);
+            requestsByRole[role] = (requestsByRole[roles] || 0) + 1;
+        }
+    }
+
+    // Add our remaining one-offs
+    while (oneOffs.length) {
+        allRequests.push(oneOffs.shift());
+    }
+    return allRequests;
+};
+
 module.exports = {
-    groups,
-    getSortedGroups,
+    getRelevantSpawnRequests,
 };

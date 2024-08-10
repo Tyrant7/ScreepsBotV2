@@ -11,7 +11,7 @@ const getMissionType = (roomName) => {
     return Memory.missions[roomName].type;
 };
 
-const createMission = (roomName, type, supporters, spawnRequests) => {
+const createMission = (roomName, type, supporters) => {
     for (const supporter of supporters) {
         if (!Memory.colonies[supporter].missions) {
             Memory.colonies[supporter].missions = [];
@@ -27,7 +27,6 @@ const createMission = (roomName, type, supporters, spawnRequests) => {
         type,
         created: Game.time,
         supporters,
-        spawnRequests,
         creepNamesAndRoles: [],
     };
 };
@@ -41,6 +40,10 @@ const removeMission = (roomName) => {
         ].missions.filter((m) => m !== roomName);
     }
     delete Memory.missions[roomName];
+};
+
+const countMissionCreeps = (mission, role) => {
+    return mission.creepNamesAndRoles.filter((c) => c.role === role).length;
 };
 
 const getColoniesInRange = (point, maxDist, minRCL = 0) => {
@@ -61,5 +64,6 @@ module.exports = {
     getMissionType,
     createMission,
     removeMission,
+    countMissionCreeps,
     getColoniesInRange,
 };

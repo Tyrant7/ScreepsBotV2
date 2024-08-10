@@ -3,6 +3,7 @@ const {
     createMission,
     getAllMissionsOfType,
     getColoniesInRange,
+    countMissionCreeps,
 } = require("./mission.missionUtility");
 const { roles, ROOM_SIZE } = require("./constants");
 const { wrap } = require("./debug.profiler");
@@ -15,7 +16,6 @@ const {
 class ExpansionManager {
     run() {
         wrap("expand", this.expandIfPossible);
-        wrap("handle", this.handleExpansions);
     }
 
     expandIfPossible() {
@@ -34,12 +34,7 @@ class ExpansionManager {
         createMission(
             best,
             MISSION_TYPES.COLONIZE,
-            getColoniesInRange(best, CREEP_CLAIM_LIFE_TIME / ROOM_SIZE),
-            {
-                [roles.claimer]: 1,
-                [roles.colonizerBuilder]: 2,
-                [roles.colonizerDefender]: 1,
-            }
+            getColoniesInRange(best, CREEP_CLAIM_LIFE_TIME / ROOM_SIZE)
         );
 
         // After this, we'll clear all expansion scores since they're now out of date
@@ -52,14 +47,44 @@ class ExpansionManager {
         }
     }
 
-    handleExpansions() {
-        // If we've claimed this room, we can remove the claimer from its spawn demand
+    handleColony(colony) {
+        // We'll add spawn requests for this colony for each expansion it is supporting
         const expansionMissions = getAllMissionsOfType(MISSION_TYPES.COLONIZE);
-        for (const expansion in expansionMissions) {
-            expansionMissions[expansion].spawnRequests[roles.claimer] =
-                Game.rooms[expansion] && Game.rooms[expansion].controller.my
-                    ? 0
-                    : 1;
+        for (const room of colony.memory.missions) {
+            const expansion = expansionMissions[expansion];
+            if (!expansion) continue;
+
+            // Skip them if we can't afford the requests
+            if (colony.room.energyCapacityAvailable < creepMaker.CLAIMER_COST)
+                continue;
+
+            if (countMissionCreeps(mission, roles.claimer) < 1) {
+                colony.addSpawnRequest(
+                    roles.claimer,
+                    (colony, count) => makeClaimer(),
+                    1
+                );
+            }
+            if (countMissionCreeps(mission, roles.colonizerBuilder) < 2) {
+                colony.addSpawnRequest(
+                    roles.colonizerBuilder,
+                    (colony, count) =>
+                        makeColonizerBuilder(
+                            colony.room.energyCapacityAvailable
+                        ),
+                    1
+                );
+            }
+            if (countMissionCreeps(mission, roles.colonizerDefender) < 1) {
+                colony.addSpawnRequest(
+                    roles.colonizerDefender,
+                    (colony, count) =>
+                        makeColonizerDefender(
+                            colony.room.energyCapacityAvailable
+                        ),
+                    1
+                );
+            }
         }
     }
 }
