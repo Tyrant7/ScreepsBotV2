@@ -29,19 +29,30 @@ class HaulingRequestManager {
             if (!freeCapacity) {
                 continue;
             }
+            // Towers don't always need to be full
+            const isUrgent =
+                spawnStructure.structureType !== STRUCTURE_TOWER ||
+                colony.enemies.length ||
+                spawnStructure.store[RESOURCE_ENERGY] <
+                    spawnStructure.store.getCapacity() / 2;
             profiler.wrap("create request", () =>
                 colony.createDropoffRequest(
                     freeCapacity,
                     RESOURCE_ENERGY,
                     [spawnStructure.id],
-                    true
+                    isUrgent
                 )
             );
         }
         profiler.endSample("basic structures");
         profiler.startSample("upgraders");
         const upgraderContainer = colony.getUpgraderContainer();
-        if (colony.upgraders.length && upgraderContainer) {
+        if (
+            colony.upgraders.length &&
+            upgraderContainer &&
+            // Some arbitrary value here to prevent haulers from constantly depositing small amounts
+            upgraderContainer.store.getFreeCapacity() > 500
+        ) {
             // Request energy for our container
             colony.createDropoffRequest(
                 upgraderContainer.store.getFreeCapacity(),
