@@ -54,7 +54,22 @@ class CombatManager {
                 (c) => c.role === roles.combatDuo
             );
 
-            if (existingDuos >= 2) continue;
+            const leaders = existingDuos.filter(
+                (d) => Game.creeps[d.name].memory.superior
+            ).length;
+            const followers = existingDuos.length - leaders;
+
+            // We have enough
+            if (leaders === followers && leaders >= 1) continue;
+
+            const colonyLeaders = colony.combatDuos.filter(
+                (d) => d.memory.superior
+            ).length;
+            const colonyFollowers = colony.combatDuos.length - colonyLeaders;
+
+            // We'll skip this colony since it can only spawn leaders and we need followers
+            if (leaders > followers && colonyLeaders <= colonyFollowers)
+                continue;
 
             // Five parts to tank for each tower
             const roomData = getScoutingData(missionRoom);
@@ -62,7 +77,7 @@ class CombatManager {
 
             // Ensure that our duos will spawn in pairs
             // Also don't allow us to spawn our follower and leader in a different room
-            if (colony.combatDuos.length % 2 !== 0) {
+            if (colonyLeaders > colonyFollowers) {
                 // Duo followers should be more urgent than leaders,
                 // since we want them to complete the pair as quickly
                 // as possible and avoid wasting any TTL
