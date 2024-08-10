@@ -222,7 +222,7 @@ const getRelevantSpawnRequests = (colony, availableSpawns) => {
             const current = colony[matchingRole + "s"].length;
             const scheduled = requestsByRole[role] || 0;
 
-            const request = firstGroup[role](colony, current + scheduled);
+            const request = group[role](colony, current + scheduled);
 
             // If this spawn profile had no desire for an additional spawn,
             // we'll go to the next one
