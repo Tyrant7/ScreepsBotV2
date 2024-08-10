@@ -195,11 +195,15 @@ const getRelevantSpawnRequests = (colony, availableSpawns) => {
     const allRequests = [];
     const requestsByRole = {};
 
+    // We'll ignore spawn requests if we have fewer creeps than can maintain our colony
+    const meetsMinimumRequestThreshold =
+        colony.miners.length >= colony.sources.length && colony.haulers.length;
+
     // We'll consider one off requests as above the group they've been given for priority
     // i.e. a priority 0 would come first, then a priority 1 would come after our first sorted group
-    const oneOffs = colony
-        .getSpawnRequests()
-        .sort((a, b) => a.priority - b.priority);
+    const oneOffs = meetsMinimumRequestThreshold
+        ? colony.getSpawnRequests().sort((a, b) => a.priority - b.priority)
+        : [];
 
     // This will simply add eco requests until we're added enough
     let i = 0;
