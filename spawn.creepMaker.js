@@ -274,7 +274,7 @@ const makeDuoLeader = (size, partType) => {
     }
     return {
         body,
-        name: `Duo_Leader_${partType} ${Game.time} [${size}]`,
+        name: `Duo_Leader ${Game.time} [${size}]`,
         memory: { role: roles.combatDuo, superior: true },
     };
 };
