@@ -71,6 +71,10 @@ class CombatManager {
             if (leaders > followers && colonyLeaders <= colonyFollowers)
                 continue;
 
+            // We'll skip this colony since it can only spawn followers and we need leaders
+            if (leaders < followers && colonyLeaders > colonyFollowers)
+                continue;
+
             // Five parts to tank for each tower
             const roomData = getScoutingData(missionRoom);
             const parts = Math.max(roomData.towers, 1) * 5;

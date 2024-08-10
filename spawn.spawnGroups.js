@@ -239,7 +239,7 @@ const getRelevantSpawnRequests = (colony, availableSpawns) => {
             )
                 continue;
 
-            console.log(request.name);
+            console.log(colony.room.name + ": " + request.name);
 
             allRequests.push(request);
             requestsByRole[role] = (requestsByRole[roles] || 0) + 1;
