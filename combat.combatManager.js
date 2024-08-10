@@ -72,10 +72,13 @@ class CombatManager {
                 // Also don't allow us to spawn our follower and leader in a different room
                 !colony.combatDuos.find((c) => c.memory.superior)
             ) {
+                // Duo followers should be more urgent than leaders,
+                // since we want them to complete the pair as quickly
+                // as possible and avoid wasting any TTL
                 colony.addSpawnRequest(
                     roles.combatDuo,
                     (colony, count) => makeDuoFollower(parts),
-                    1
+                    0
                 );
                 continue;
             }
