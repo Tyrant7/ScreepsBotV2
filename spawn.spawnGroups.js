@@ -246,10 +246,8 @@ const getRelevantSpawnRequests = (colony, availableSpawns) => {
         }
     }
 
-    // Add our remaining one-offs
-    while (oneOffs.length) {
-        allRequests.push(oneOffs.shift());
-    }
+    // Add our remaining, lowest priority, one-offs
+    allRequests.push(...oneOffs);
     return allRequests;
 };
 
