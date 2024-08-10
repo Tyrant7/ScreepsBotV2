@@ -58,6 +58,12 @@ const getAllPlayerRooms = (player) => {
     );
 };
 
+const selectCombatTarget = (creep, room) => {
+    return room
+        .find(FIND_STRUCTURES)
+        .find((s) => s.structureType !== STRUCTURE_CONTROLLER);
+};
+
 module.exports = {
     verifyPlayerDataExists,
     getAllPlayerData,
@@ -66,4 +72,5 @@ module.exports = {
     coolDown,
     determineHateType,
     getAllPlayerRooms,
+    selectCombatTarget,
 };

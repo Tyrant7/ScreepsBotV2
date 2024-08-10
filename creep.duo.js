@@ -2,6 +2,7 @@ const CreepManager = require("./manager.creepManager");
 const Task = require("./data.task");
 const { pathSets } = require("./constants");
 const estimateTravelTime = require("./util.estimateTravelTime");
+const { selectCombatTarget } = require("./combat.combatUtility");
 
 class DuoManager extends CreepManager {
     createTask(creep, colony) {
@@ -31,78 +32,93 @@ class DuoManager extends CreepManager {
             }
         }
 
-        console.log("hmmm");
-
-        if (creep.room.name === creep.memory.mission) {
-            return this.createAttackTask(creep, colony);
+        if (creep.memory.superior) {
+            return this.createLeaderTask(creep);
         }
-        return this.createMoveTask(creep, colony);
+        return new Task({}, "follow", function (creep, data) {
+            return false;
+        });
     }
 
-    createMoveTask(creep, colony) {
-        if (creep.memory.superior) {
-            const actionStack = [
-                function (creep, { moveToRoom, options }) {
-                    const pair = Game.creeps[creep.memory.pair];
-                    if (!pair) return true;
-
-                    // We'll handle room edges a little differently
-                    const onRoomEdge =
-                        creep.pos.x >= 49 ||
-                        creep.pos.x <= 0 ||
-                        creep.pos.y >= 49 ||
-                        creep.pos.x <= 0;
-
-                    // Stay next to our pair
-                    if (
-                        !onRoomEdge &&
-                        estimateTravelTime(creep.pos, pair.pos) > 1
-                    )
-                        return false;
-                    moveToRoom(creep, options);
-                },
-            ];
-            const options = {
-                roomName: creep.memory.mission,
-                maxRooms: 32,
-                maxOps: 16384,
-                pathSet: pathSets.travel,
-            };
-            return new Task(
-                {
-                    moveToRoom: this.basicActions.moveToRoom,
-                    options,
-                },
-                "lead",
-                actionStack
-            );
-        }
-
+    createLeaderTask(creep) {
         const actionStack = [
-            function (creep, data) {
+            function (creep, { moveToRoom }) {
                 const pair = Game.creeps[creep.memory.pair];
                 if (!pair) return true;
-                creep.betterMoveTo(pair, {
+
+                // Here we'll control our pair through this task to maximize the coordination
+                // between our two creeps
+                // Our pair will preheal itself if inside the mission room
+                if (
+                    pair.hits < pair.hitsMax ||
+                    creep.room.name === creep.memory.mission
+                ) {
+                    pair.heal(pair);
+                } else if (creep.hits < creep.hitsMax) {
+                    pair.heal(creep);
+                }
+
+                const target = Game.getObjectById(creep.memory.targetID);
+                if (!target && creep.room.name === creep.memory.mission) {
+                    // Choose a target if we don't have one yet
+                    const t = selectCombatTarget(creep, creep.room);
+                    if (!t) return true;
+                    creep.memory.targetID = t.id;
+                    creep.memory.targetPos = t.pos;
+                }
+
+                // Attack our target
+                if (target && creep.pos.getRangeTo(target) <= 1) {
+                    creep.smartAttack(target);
+                    return false;
+                }
+
+                // Keep our pair following us as long as we're moving
+                pair.betterMoveTo(creep, {
                     range: 0,
                     pathSet: pathSets.travel,
                 });
-                if (creep.hits < creep.hitsMax) {
-                    creep.heal(creep);
-                } else if (pair.hits < pair.hitsMax) {
-                    creep.heal(pair);
+
+                // We'll handle room edges a little differently
+                const onRoomEdge =
+                    creep.pos.x >= 48 ||
+                    creep.pos.x <= 1 ||
+                    creep.pos.y >= 48 ||
+                    creep.pos.x <= 1;
+                // Stay next to our pair
+                if (!onRoomEdge && estimateTravelTime(creep.pos, pair.pos) > 1)
+                    return false;
+
+                // Move to our target
+                // Note that this position is separate:
+                // In case we leave the room on the way to our target
+                // we don't want to change our movement target
+                if (creep.memory.targetPos) {
+                    const movePos = new RoomPosition(
+                        creep.memory.targetPos.x,
+                        creep.memory.targetPos.y,
+                        creep.memory.targetPos.roomName
+                    );
+                    creep.betterMoveTo(movePos, {
+                        pathSet: pathSets.travel,
+                    });
+                    return false;
                 }
+                moveToRoom(creep, {
+                    roomName: creep.memory.mission,
+                    maxRooms: 32,
+                    maxOps: 16384,
+                    pathSet: pathSets.travel,
+                });
             },
         ];
-        return new Task({}, "follow", actionStack);
-    }
-
-    createAttackTask(creep, colony) {
-        return new Task({}, "attack", [
-            function (creep, colony) {
-                creep.say("kill");
-                return false;
+        return new Task(
+            {
+                moveToRoom: this.basicActions.moveToRoom,
             },
-        ]);
+            "lead",
+            actionStack
+        );
     }
 }
 

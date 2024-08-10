@@ -80,6 +80,7 @@ require("./extension.betterRoomVisual");
 const harabiTrafficManager = require("./extension.harabiTraffic");
 require("./extension.trackRCL");
 const { doMemhack } = require("./extension.memHack");
+require("./extensions.smartAttack");
 
 // Data
 const Colony = require("./data.colony");
