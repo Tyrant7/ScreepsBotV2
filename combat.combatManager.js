@@ -140,10 +140,11 @@ class CombatManager {
     isCombatComplete(missionRoom) {
         // Combat is completed when all spawns are destroyed
         return (
-            Game.rooms[missionRoom] &&
-            !Game.rooms[missionRoom]
-                .find(FIND_HOSTILE_STRUCTURES)
-                .find((s) => s.structureType === STRUCTURE_SPAWN)
+            getScoutingData(missionRoom).spawns === 0 ||
+            (Game.rooms[missionRoom] &&
+                !Game.rooms[missionRoom]
+                    .find(FIND_HOSTILE_STRUCTURES)
+                    .find((s) => s.structureType === STRUCTURE_SPAWN))
         );
     }
 
@@ -166,6 +167,7 @@ class CombatManager {
             ) {
                 const nextRoom = rankedRooms.pop();
                 if (allMissions[nextRoom]) continue;
+                if (isCombatComplete(nextRoom)) continue;
                 const coloniesInRange = getColoniesInRange(
                     nextRoom,
                     MAX_ATTACK_ROOM_RANGE

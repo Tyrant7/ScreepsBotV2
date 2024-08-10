@@ -6,6 +6,11 @@ const { selectCombatTarget } = require("./combat.combatUtility");
 
 class DuoManager extends CreepManager {
     createTask(creep, colony) {
+        if (!creep.memory.mission) {
+            creep.say("<3");
+            return null;
+        }
+
         // Pair dies, we should unpair
         if (!Game.creeps[creep.memory.pair]) {
             delete creep.memory.pair;
@@ -62,7 +67,12 @@ class DuoManager extends CreepManager {
                 if (!target && creep.room.name === creep.memory.mission) {
                     // Choose a target if we don't have one yet
                     const t = selectCombatTarget(creep, creep.room);
-                    if (!t) return true;
+                    if (!t) {
+                        delete creep.memory.mission;
+                        delete creep.memory.targetID;
+                        delete creep.memory.targetPos;
+                        return true;
+                    }
                     creep.memory.targetID = t.id;
                     creep.memory.targetPos = t.pos;
                 }
