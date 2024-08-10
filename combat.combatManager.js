@@ -45,8 +45,8 @@ class CombatManager {
     createSpawnRequests(colony) {
         // We'll add spawn requests for this colony for each expansion it is supporting
         const combatMissions = getAllMissionsOfType(MISSION_TYPES.KILL);
-        for (const room of colony.memory.missions) {
-            const mission = combatMissions[room];
+        for (const missionRoom of colony.memory.missions) {
+            const mission = combatMissions[missionRoom];
             if (!mission) continue;
 
             // Add spawn requests

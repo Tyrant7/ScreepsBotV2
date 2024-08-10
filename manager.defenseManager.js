@@ -1,5 +1,6 @@
 const { repairThresholds, roles } = require("./constants");
 const { wrap } = require("./debug.profiler");
+const { makeMiniDefender } = require("./spawn.creepMaker");
 
 class DefenseManager {
     /**
@@ -76,7 +77,7 @@ class DefenseManager {
         colony.addSpawnRequest(
             roles.defender,
             (colony, count) => {
-                return creepMaker.makeMiniDefender(
+                return makeMiniDefender(
                     Math.ceil(mostFightParts / 4) + 1,
                     colony.room.energyCapacityAvailable
                 );

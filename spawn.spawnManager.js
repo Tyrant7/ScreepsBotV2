@@ -13,7 +13,10 @@ class SpawnManager {
             }
             inactiveSpawns.push(spawn);
         }
-        const spawnRequests = getRelevantSpawnRequests(colony);
+        const spawnRequests = getRelevantSpawnRequests(
+            colony,
+            inactiveSpawns.length
+        );
         while (inactiveSpawns.length && spawnRequests.length) {
             // We'll get our next spawning creep
             const next = spawnRequests.pop();

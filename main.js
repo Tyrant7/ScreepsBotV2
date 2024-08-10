@@ -276,11 +276,10 @@ const runColonies = () => {
             haulingRequester.generateBasicRequests(colony)
         );
 
-        // Hate accumulation
-        profiler.wrap("hate", () => combatManager.accumulateHate(colony));
-
-        // Expansion handling
-        // We'll create some spawn requests here, so it should happen before spawning does
+        // Expansion handling as well as hate accumulation
+        // We'll create some spawn requests here for both expansion and combat,
+        // so it should happen before spawning does
+        profiler.wrap("hate", () => combatManager.handleColony(colony));
         profiler.wrap("expansion", () => expansionManager.handleColony(colony));
 
         // Handle economy (spawns and remotes)
