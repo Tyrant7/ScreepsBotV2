@@ -19,7 +19,9 @@ const makeDuo = (colony, missionRoom) => {
 
     // If we have more leaders than followers, let's make a follower, otherwise, let's make a leader
     // This ensures that our duos will spawn in pairs
-    return leaders > followers
+    return leaders > followers ||
+        // Also don't allow us to spawn our follower and leader in a different room
+        !colony.combatDuos.find((c) => c.memory.superior)
         ? makeDuoFollower(parts)
         : makeDuoLeader(parts, WORK);
 };
