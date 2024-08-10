@@ -61,7 +61,7 @@ class ExpansionManager {
             if (countMissionCreeps(mission, roles.claimer) < 1) {
                 colony.addSpawnRequest(
                     roles.claimer,
-                    (colony, count) => makeClaimer(),
+                    (colony, count) => makeClaimer(missionRoom),
                     1
                 );
             }
@@ -70,7 +70,8 @@ class ExpansionManager {
                     roles.colonizerBuilder,
                     (colony, count) =>
                         makeColonizerBuilder(
-                            colony.room.energyCapacityAvailable
+                            colony.room.energyCapacityAvailable,
+                            missionRoom
                         ),
                     1
                 );
@@ -80,7 +81,8 @@ class ExpansionManager {
                     roles.colonizerDefender,
                     (colony, count) =>
                         makeColonizerDefender(
-                            colony.room.energyCapacityAvailable
+                            colony.room.energyCapacityAvailable,
+                            missionRoom
                         ),
                     1
                 );

@@ -87,14 +87,14 @@ class CombatManager {
                 // as possible and avoid wasting any TTL
                 colony.addSpawnRequest(
                     roles.combatDuo,
-                    (colony, count) => makeDuoFollower(parts),
+                    (colony, count) => makeDuoFollower(parts, missionRoom),
                     0
                 );
                 continue;
             }
             colony.addSpawnRequest(
                 roles.combatDuo,
-                (colony, count) => makeDuoLeader(parts, WORK),
+                (colony, count) => makeDuoLeader(parts, WORK, missionRoom),
                 1
             );
         }

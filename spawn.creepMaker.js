@@ -185,31 +185,31 @@ const makeScout = () => {
     };
 };
 
-const makeClaimer = () => {
+const makeClaimer = (missionRoom) => {
     return {
         body: [MOVE, CLAIM],
         name: "Claimer " + Game.time + " [1]",
-        memory: { role: roles.claimer },
+        memory: { role: roles.claimer, mission: missionRoom },
     };
 };
 
-const makeColonizerBuilder = (energy) => {
+const makeColonizerBuilder = (energy, missionRoom) => {
     const builderBody = makeBuilder(energy).body;
     const level = builderBody.filter((p) => p === WORK).length;
     return {
         body: builderBody,
         name: "C_Builder " + Game.time + " [" + level + "]",
-        memory: { role: roles.colonizerBuilder },
+        memory: { role: roles.colonizerBuilder, mission: missionRoom },
     };
 };
 
-const makeColonizerDefender = (energy) => {
+const makeColonizerDefender = (energy, missionRoom) => {
     const defenderBody = makeMiniDefender(Infinity, energy).body;
     const level = defenderBody.filter((p) => p === HEAL).length;
     return {
         body: defenderBody,
         name: "C_Defender " + Game.time + " [" + level + "]",
-        memory: { role: roles.colonizerDefender },
+        memory: { role: roles.colonizerDefender, mission: missionRoom },
     };
 };
 
@@ -266,8 +266,10 @@ const makeCleaner = (energy) => {
 // 2. We need to specify the part types, since there are different types of duos, quads, etc.
 // 3. They spawn in groups, so we'll also specify the type of creep within each group,
 //    as a duo leader, duo follower, etc.
+// 4. They spawn as part of a mission, so we'll take a mission parameter;
+//    this also goes for expansion creeps
 
-const makeDuoLeader = (size, partType) => {
+const makeDuoLeader = (size, partType, missionRoom) => {
     const body = [];
     for (let i = 0; i < Math.min(size, MAX_CREEP_SIZE); i++) {
         body.push(MOVE, partType);
@@ -275,11 +277,11 @@ const makeDuoLeader = (size, partType) => {
     return {
         body,
         name: `Duo_Leader ${Game.time} [${size}]`,
-        memory: { role: roles.combatDuo, superior: true },
+        memory: { role: roles.combatDuo, superior: true, mission: missionRoom },
     };
 };
 
-const makeDuoFollower = (size) => {
+const makeDuoFollower = (size, missionRoom) => {
     const body = [];
     for (let i = 0; i < Math.min(size, MAX_CREEP_SIZE); i++) {
         body.push(MOVE, HEAL);
@@ -287,7 +289,11 @@ const makeDuoFollower = (size) => {
     return {
         body,
         name: `Duo_Follower ${Game.time} [${size}]`,
-        memory: { role: roles.combatDuo, superior: false },
+        memory: {
+            role: roles.combatDuo,
+            superior: false,
+            mission: missionRoom,
+        },
     };
 };
 

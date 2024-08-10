@@ -14,16 +14,29 @@ class DuoManager extends CreepManager {
             if (pair) {
                 creep.memory.pair = pair.name;
                 pair.memory.pair = creep.name;
+            } else {
+                return new Task({ time: Game.time }, "wait", function (
+                    creep,
+                    { time }
+                ) {
+                    creep.say("no pair!");
+                    return time < Game.time;
+                });
             }
         }
 
-        return new Task({}, "exist", [
-            function (creep, colony) {
-                creep.say("Duo " + creep.memory.pair);
-                return false;
-            },
-        ]);
+        if (creep.room.name === creep.memory.mission)
+            return new Task({}, "exist", [
+                function (creep, colony) {
+                    creep.say("Duo " + creep.memory.pair);
+                    return false;
+                },
+            ]);
     }
+
+    createMoveTask(creep, colony) {}
+
+    createAttackTask(creep, colony) {}
 }
 
 module.exports = DuoManager;
