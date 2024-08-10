@@ -7,8 +7,6 @@ const {
 const { getCost } = require("./spawn.spawnUtility");
 const creepMaker = require("./spawn.creepMaker");
 
-const overlay = require("./debug.overlay");
-
 //#region Utility
 
 const calculateMinEnergy = (colony) =>
@@ -241,9 +239,6 @@ const getRelevantSpawnRequests = (colony, availableSpawns) => {
 
             allRequests.push(request);
             requestsByRole[role] = (requestsByRole[roles] || 0) + 1;
-
-            // Add this role to the overlay
-            overlay.addColumns(colony.room.name + "_a", role, "");
         }
     }
 

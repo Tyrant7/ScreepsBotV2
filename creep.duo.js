@@ -6,10 +6,7 @@ class DuoManager extends CreepManager {
     createTask(creep, colony) {
         return new Task({}, "exist", [
             function (creep, colony) {
-                creep.say(
-                    "I'm a duo " +
-                        (creep.memory.superior ? "leader" : "follower")
-                );
+                creep.say("Duo " + (creep.memory.superior ? "lead" : "follow"));
                 return false;
             },
         ]);
