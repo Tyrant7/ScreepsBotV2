@@ -167,7 +167,7 @@ class CombatManager {
             ) {
                 const nextRoom = rankedRooms.pop();
                 if (allMissions[nextRoom]) continue;
-                if (isCombatComplete(nextRoom)) continue;
+                if (this.isCombatComplete(nextRoom)) continue;
                 const coloniesInRange = getColoniesInRange(
                     nextRoom,
                     MAX_ATTACK_ROOM_RANGE
