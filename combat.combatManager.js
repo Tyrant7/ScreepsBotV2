@@ -21,6 +21,7 @@ const {
     getAllMissionsOfType,
     removeMission,
     getAllMissions,
+    countMissionCreeps,
 } = require("./mission.missionUtility");
 const { roles } = require("./constants");
 const Colony = require("./data.colony");
@@ -36,6 +37,56 @@ if (DEBUG.allowCommands) {
  * like handling hate and creating missions for who we want to eliminate.
  */
 class CombatManager {
+    handleColony(colony) {
+        this.createSpawnRequests(colony);
+        this.accumulateHate(colony);
+    }
+
+    createSpawnRequests(colony) {
+        // We'll add spawn requests for this colony for each expansion it is supporting
+        const combatMissions = getAllMissionsOfType(MISSION_TYPES.KILL);
+        for (const room of colony.memory.missions) {
+            const mission = combatMissions[room];
+            if (!mission) continue;
+
+            // Add spawn requests
+            const existingDuos = mission.creepNamesAndRoles.filter(
+                (c) => c.role === roles.combatDuo
+            );
+
+            if (existingDuos >= 2) continue;
+
+            const leaders = existingDuos.filter(
+                (d) => Game.creeps[d.name].memory.superior
+            ).length;
+            const followers = existingDuos.length - leaders;
+
+            // Five parts to tank for each tower
+            const roomData = getScoutingData(missionRoom);
+            const parts = Math.max(roomData.towers, 1) * 5;
+
+            // If we have more leaders than followers, let's make a follower, otherwise, let's make a leader
+            // This ensures that our duos will spawn in pairs
+            if (
+                leaders > followers ||
+                // Also don't allow us to spawn our follower and leader in a different room
+                !colony.combatDuos.find((c) => c.memory.superior)
+            ) {
+                colony.addSpawnRequest(
+                    roles.combatDuo,
+                    (colony, count) => makeDuoFollower(parts),
+                    1
+                );
+                continue;
+            }
+            colony.addSpawnRequest(
+                roles.combatDuo,
+                (colony, count) => makeDuoLeader(parts, WORK),
+                1
+            );
+        }
+    }
+
     /**
      * Accumulates hate for the enemies affecting this colony.
      * @param {Colony} colony
@@ -60,39 +111,16 @@ class CombatManager {
     }
 
     run() {
-        this.handleCombatMissions();
+        this.filterCompleteMissions();
         this.createKillMissions();
     }
 
-    handleCombatMissions() {
+    filterCompleteMissions() {
         const combatMissions = getAllMissionsOfType(MISSION_TYPES.KILL);
         for (const missionRoom in combatMissions) {
             if (this.isCombatComplete(missionRoom)) {
                 removeMission(missionRoom);
-                continue;
             }
-
-            // Add spawn requests
-            const mission = getAllMissions()[missionRoom];
-            const existingDuos = mission.creepNamesAndRoles.filter(
-                (c) => c.role === roles.combatDuo
-            );
-            const leaders = existingDuos.filter(
-                (d) => Game.creeps[d.name].memory.superior
-            ).length;
-            const followers = existingDuos.length - leaders;
-
-            // Five parts to tank for each tower
-            const roomData = getScoutingData(missionRoom);
-            const parts = Math.max(roomData.towers, 1) * 5;
-
-            // If we have more leaders than followers, let's make a follower, otherwise, let's make a leader
-            // This ensures that our duos will spawn in pairs
-            return leaders > followers ||
-                // Also don't allow us to spawn our follower and leader in a different room
-                !colony.combatDuos.find((c) => c.memory.superior)
-                ? makeDuoFollower(parts)
-                : makeDuoLeader(parts, WORK);
         }
     }
 

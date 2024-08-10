@@ -51,7 +51,7 @@ class ExpansionManager {
         // We'll add spawn requests for this colony for each expansion it is supporting
         const expansionMissions = getAllMissionsOfType(MISSION_TYPES.COLONIZE);
         for (const room of colony.memory.missions) {
-            const expansion = expansionMissions[expansion];
+            const expansion = expansionMissions[room];
             if (!expansion) continue;
 
             // Skip them if we can't afford the requests

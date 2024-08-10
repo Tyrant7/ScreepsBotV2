@@ -276,12 +276,16 @@ const runColonies = () => {
             haulingRequester.generateBasicRequests(colony)
         );
 
+        // Hate accumulation
+        profiler.wrap("hate", () => combatManager.accumulateHate(colony));
+
+        // Expansion handling
+        // We'll create some spawn requests here, so it should happen before spawning does
+        profiler.wrap("expansion", () => expansionManager.handleColony(colony));
+
         // Handle economy (spawns and remotes)
         profiler.wrap("remotes", () => remoteManager.run(colony));
         profiler.wrap("spawns", () => spawnManager.run(colony));
-
-        // Hate accumulation
-        profiler.wrap("hate", () => combatManager.accumulateHate(colony));
 
         if (DEBUG.drawPathMatrices || DEBUG.drawWorkingPositions) {
             const matrix = DEBUG.drawPathMatrices
