@@ -109,8 +109,8 @@ class RepairerManager extends CreepManager {
                             LOOK_CREEPS,
                             Math.max(creep.pos.y - 1, 0),
                             Math.max(creep.pos.x - 1, 0),
-                            Math.min(creep.pos.y + 1, ROOM_SIZE),
-                            Math.min(creep.pos.x + 1, ROOM_SIZE),
+                            Math.min(creep.pos.y + 1, ROOM_SIZE - 1),
+                            Math.min(creep.pos.x + 1, ROOM_SIZE - 1),
                             true
                         )
                         .find(
