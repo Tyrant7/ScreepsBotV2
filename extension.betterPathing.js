@@ -112,7 +112,16 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
                 if (c.memory.role !== this.memory.role) return false;
                 if (c.memory.relayTick === Game.time) return false;
                 // Can't relay with multiple resource types
-                if (Object.keys(this.store) > 1 || Object.keys(c.store) > 1)
+                if (
+                    Object.keys(this.store).length > 1 ||
+                    Object.keys(c.store).length > 1
+                )
+                    return false;
+                // Also don't relay if we're both empty
+                if (
+                    Object.keys(this.store).length === 0 &&
+                    Object.keys(this.store).length === 0
+                )
                     return false;
                 const path = c.memory._move ? c.memory._move.path : null;
                 // No point in relaying if we only need to travel 1 tile
