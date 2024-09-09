@@ -102,7 +102,7 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
 
     const path = verifyPath(this);
     if (path.length) {
-        let nextStep = utility.getNextStep(path, this.pos);
+        const nextStep = utility.getNextStep(path, this.pos);
 
         // Handle relaying, if allowed
         if (options.allowRelaying && this.memory.relayTick !== Game.time) {
@@ -111,6 +111,9 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
                 if (!c.my) return false;
                 if (c.memory.role !== this.memory.role) return false;
                 if (c.memory.relayTick === Game.time) return false;
+                // Can't relay with multiple resource types
+                if (Object.keys(this.store) > 1 || Object.keys(c.store) > 1)
+                    return false;
                 const path = c.memory._move ? c.memory._move.path : null;
                 // No point in relaying if we only need to travel 1 tile
                 if (path && path.length === 1) return false;
@@ -127,8 +130,8 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
                 console.log(this.pos + " relaying with " + relayCreep.pos);
 
                 // Swap payload
-                relayCreep.transfer(this);
-                this.transfer(relayCreep);
+                relayCreep.transfer(this, Object.keys(relayCreep.store)[0]);
+                this.transfer(relayCreep, Object.keys(this.store)[0]);
 
                 // Advance our path an extra step before swapping
                 this.memory._move.path = utility.progressPath(
