@@ -260,6 +260,7 @@ class HaulerManager extends CreepManager {
                 else {
                     creep.betterMoveTo(target, {
                         pathSet: pathSets.default,
+                        allowRelaying: true,
                     });
                 }
                 return false;
@@ -453,6 +454,7 @@ class HaulerManager extends CreepManager {
                 } else {
                     creep.betterMoveTo(targetPos, {
                         pathSet: pathSets.default,
+                        allowRelaying: true,
                     });
                 }
                 return false;

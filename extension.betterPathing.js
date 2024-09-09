@@ -102,7 +102,74 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
 
     const path = verifyPath(this);
     if (path.length) {
-        const nextStep = utility.getNextStep(path, this.pos);
+        let nextStep = utility.getNextStep(path, this.pos);
+
+        // Handle relaying, if allowed
+        if (options.allowRelaying && this.memory.relayTick !== Game.time) {
+            // Only relay with creeps that have the same body and role
+            const relayCreep = nextStep.lookFor(LOOK_CREEPS).find((c) => {
+                if (!c.my) return false;
+                if (c.memory.role !== this.memory.role) return false;
+                if (c.memory.relayTick === Game.time) return false;
+                const path = c.memory._move ? c.memory._move.path : null;
+                // No point in relaying if we only need to travel 1 tile
+                if (path && path.length === 1) return false;
+                const sameBody =
+                    c.getActiveBodyparts(CARRY) ===
+                    this.getActiveBodyparts(CARRY);
+                const validPath =
+                    !path ||
+                    path.length === 0 ||
+                    utility.getNextStep(path, c.pos).isEqualTo(this.pos);
+                return sameBody && validPath;
+            });
+            if (relayCreep) {
+                console.log(this.pos + " relaying with " + relayCreep.pos);
+
+                // Swap payload
+                relayCreep.transfer(this);
+                this.transfer(relayCreep);
+
+                // Advance our path an extra step before swapping
+                this.memory._move.path = utility.progressPath(
+                    path,
+                    relayCreep.pos
+                );
+
+                // Advance the other creep's path twice
+                const otherMoveData = relayCreep.memory._move;
+                if (
+                    otherMoveData &&
+                    otherMoveData.path &&
+                    otherMoveData.length
+                ) {
+                    const newOtherPath = utility.progressPath(
+                        otherMoveData.path,
+                        relayCreep.pos
+                    );
+                    relayCreep.memory._move.path = utility.progressPath(
+                        newOtherPath,
+                        this.pos
+                    );
+                }
+
+                // Record relay tick
+                this.memory.relayTick = Game.time;
+                relayCreep.memory.relayTick = Game.time;
+
+                // Swap memory
+                const swap = this.memory;
+                this.memory = relayCreep.memory;
+                relayCreep.memory = swap;
+
+                // Handle full movement for both creeps
+                if (otherMoveData.dest) {
+                    this.betterMoveTo(otherMoveData.dest, options);
+                }
+                relayCreep.betterMoveTo(target, options);
+                return;
+            }
+        }
         const direction = this.pos.getDirectionTo(nextStep);
         if (direction) {
             this.registerMove(direction);
@@ -339,6 +406,9 @@ const utility = {
         }
         if (options.warnOnIncompletePath === undefined) {
             options.warnOnIncompletePath = DEBUG.warnOnIncompletePath;
+        }
+        if (options.allowRelaying === undefined) {
+            options.allowRelaying = false;
         }
         return options;
     },
