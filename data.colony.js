@@ -18,7 +18,7 @@ const { MISSION_TYPES } = require("./mission.missionConstants");
 class Colony {
     /**
      * Initializes some data for this room that is guaranteed to be persistent between ticks.
-     * @param {*} room
+     * @param {Room} room
      */
     constructor(room) {
         this.room = room;

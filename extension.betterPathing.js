@@ -136,8 +136,6 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
                 return sameBody && validPath;
             });
             if (relayCreep) {
-                console.log(this.pos + " relaying with " + relayCreep.pos);
-
                 // Swap payload
                 relayCreep.transfer(this, Object.keys(relayCreep.store)[0]);
                 this.transfer(relayCreep, Object.keys(this.store)[0]);
@@ -199,7 +197,7 @@ Creep.prototype.betterMoveTo = function (target, options = {}) {
  * Finds the closest goal to this creep.
  * @param {RoomPosition[] | {pos: RoomPosition}[]} goals A an array of RoomPositions or any objects with a pos property.
  * @param {{}} options Pathfinding options.
- * @returns {{closestGoal: any, path: RoomPosition[]} | undefined} An object containing the chosen goal, as well as a path.
+ * @returns {{closestGoal: any, path: RoomPosition[]}} An object containing the chosen goal, as well as a path.
  * Undefined if no complete path could be found.
  */
 Creep.prototype.betterFindClosestByPath = function (goals, options = {}) {
@@ -230,10 +228,6 @@ Creep.prototype.betterFindClosestByPath = function (goals, options = {}) {
         // despite the path ending inside the room we're currently in
         (g) => utilEstimateTravelTime(lastPos, g.pos || g) <= options.range
     );
-
-    if (!closestGoal) {
-        return;
-    }
 
     return {
         goal: closestGoal,
